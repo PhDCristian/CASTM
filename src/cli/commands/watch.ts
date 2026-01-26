@@ -1,5 +1,6 @@
 /**
  * Watch mode - auto-recompilation on file changes
+ * Clean, minimal design
  */
 
 import { watch, existsSync } from 'fs';
@@ -8,16 +9,16 @@ import { compileDslToCsv } from '../../compiler.js';
 import { readFile, writeFile, getOutputPath, getRelativePath } from '../utils/files.js';
 import {
   printHeader,
-  printSuccess,
-  printError,
-  printInfo,
+  printResult,
   printCompilationStats,
   printCodeFrame,
+  printHint,
+  printDivider,
   createSpinner,
   chalk,
   symbols,
 } from '../ui/premium.js';
-import { loadConfig } from '../config/store.js';
+import { loadConfig, getCurrentTheme } from '../config/store.js';
 
 interface WatchState {
   isCompiling: boolean;
@@ -52,7 +53,6 @@ export async function startWatchMode(
   const watcher = watch(filePath, { persistent: true }, async (eventType) => {
     if (eventType !== 'change') return;
     
-    // Debounce
     const now = Date.now();
     if (now - state.lastCompileTime < config.watchDebounceMs) return;
     if (state.isCompiling) return;
@@ -69,12 +69,9 @@ export async function startWatchMode(
     if (filename !== basename(filePath)) return;
     if (eventType !== 'change' && eventType !== 'rename') return;
     
-    // Debounce
     const now = Date.now();
     if (now - state.lastCompileTime < config.watchDebounceMs) return;
     if (state.isCompiling) return;
-    
-    // Check if file exists (might have been deleted)
     if (!existsSync(filePath)) return;
     
     state.lastCompileTime = now;
@@ -90,13 +87,11 @@ export async function startWatchMode(
     dirWatcher.close();
     console.log();
     console.log();
-    printInfo('Watch mode stopped');
     printWatchStats(state);
     console.log();
     process.exit(0);
   });
   
-  // Keep alive
   printWatchInstructions();
   
   // Keep process running
@@ -104,28 +99,30 @@ export async function startWatchMode(
 }
 
 /**
- * Print watch mode header
+ * Print watch mode header - minimal
  */
 function printWatchHeader(inputPath: string, outputPath: string): void {
+  const theme = getCurrentTheme();
+  
   console.log();
-  console.log('  ' + chalk.bgCyan.black(' WATCH MODE '));
+  console.log('  ' + chalk.hex(theme.primary)('● watch'));
   console.log();
-  console.log('  ' + chalk.dim('Input:  ') + chalk.cyan(getRelativePath(inputPath)));
-  console.log('  ' + chalk.dim('Output: ') + chalk.cyan(getRelativePath(outputPath)));
+  console.log('  ' + chalk.hex(theme.dim)('in  ') + chalk.white(getRelativePath(inputPath)));
+  console.log('  ' + chalk.hex(theme.dim)('out ') + chalk.white(getRelativePath(outputPath)));
   console.log();
-  console.log('  ' + chalk.dim('─'.repeat(50)));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(40)));
   console.log();
 }
 
 /**
- * Print watch instructions
+ * Print watch instructions - subtle
  */
 function printWatchInstructions(): void {
+  const theme = getCurrentTheme();
   console.log();
-  console.log('  ' + chalk.dim('─'.repeat(50)));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(40)));
   console.log();
-  console.log('  ' + chalk.dim('Watching for changes...'));
-  console.log('  ' + chalk.dim('Press ') + chalk.cyan('Ctrl+C') + chalk.dim(' to stop'));
+  printHint('Watching for changes... Ctrl+C to stop');
   console.log();
 }
 
@@ -133,32 +130,37 @@ function printWatchInstructions(): void {
  * Print watch stats on exit
  */
 function printWatchStats(state: WatchState): void {
-  console.log();
-  console.log('  ' + chalk.bold('Session Stats'));
-  console.log('  ' + chalk.dim('─'.repeat(20)));
-  console.log('  ' + chalk.dim('Compilations: ') + chalk.white(state.compileCount));
-  console.log('  ' + chalk.dim('Errors:       ') + (state.errorCount > 0 ? chalk.red(state.errorCount) : chalk.green('0')));
+  const theme = getCurrentTheme();
+  
+  console.log('  ' + chalk.white('Session'));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(20)));
+  console.log('  ' + chalk.hex(theme.dim)('compiles ') + chalk.white(state.compileCount));
+  console.log('  ' + chalk.hex(theme.dim)('errors   ') + 
+    (state.errorCount > 0 ? chalk.hex(theme.error)(state.errorCount) : chalk.hex(theme.success)('0')));
 }
 
 /**
- * Compile file and show results
+ * Compile file and show results - minimal output
  */
 async function compileFile(
   filePath: string,
   outputPath: string,
   state: WatchState
 ): Promise<void> {
+  const theme = getCurrentTheme();
+  const config = loadConfig();
+  
   state.isCompiling = true;
   const startTime = performance.now();
   
-  const spinner = createSpinner('Compiling...');
-  spinner.start();
+  const spinner = config.showSpinners ? createSpinner('Compiling...') : null;
+  spinner?.start();
   
   try {
     const readResult = readFile(filePath);
     if (!readResult.success) {
-      spinner.fail(chalk.red('Failed to read file'));
-      printError('Read Error', readResult.error);
+      spinner?.fail(chalk.hex(theme.error)('Read failed'));
+      console.log('  ' + chalk.hex(theme.dim)(readResult.error));
       state.errorCount++;
       state.isCompiling = false;
       printWatchInstructions();
@@ -171,8 +173,8 @@ async function compileFile(
       const writeResult = writeFile(outputPath, result.csv!);
       
       if (!writeResult.success) {
-        spinner.fail(chalk.red('Failed to write output'));
-        printError('Write Error', writeResult.error);
+        spinner?.fail(chalk.hex(theme.error)('Write failed'));
+        console.log('  ' + chalk.hex(theme.dim)(writeResult.error));
         state.errorCount++;
         state.isCompiling = false;
         printWatchInstructions();
@@ -182,7 +184,7 @@ async function compileFile(
       const endTime = performance.now();
       state.compileCount++;
       
-      spinner.succeed(chalk.green('Compiled successfully'));
+      spinner?.succeed(chalk.hex(theme.success)('Done'));
       
       printCompilationStats({
         output: getRelativePath(outputPath),
@@ -193,7 +195,7 @@ async function compileFile(
       });
       
     } else {
-      spinner.fail(chalk.red('Compilation failed'));
+      spinner?.fail(chalk.hex(theme.error)('Failed'));
       state.errorCount++;
       state.compileCount++;
       
@@ -206,12 +208,13 @@ async function compileFile(
           getRelativePath(filePath)
         );
       } else {
-        printError('Error', result.error || 'Unknown error');
+        console.log();
+        console.log('  ' + chalk.hex(theme.error)('error: ') + chalk.white(result.error));
       }
     }
   } catch (err: any) {
-    spinner.fail(chalk.red('Unexpected error'));
-    printError('Error', err.message);
+    spinner?.fail(chalk.hex(theme.error)('Error'));
+    console.log('  ' + chalk.hex(theme.dim)(err.message));
     state.errorCount++;
   }
   

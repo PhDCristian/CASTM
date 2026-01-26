@@ -1,7 +1,7 @@
 /**
  * Premium UI components for CLI
- * Inspired by OpenCode, Claude CLI, Gemini CLI
- * With dynamic theme support
+ * Clean, minimal design inspired by Claude Code and OpenCode
+ * No emojis - pure Unicode symbols and typography
  */
 
 import chalk from 'chalk';
@@ -22,28 +22,48 @@ function getThemeGradients() {
   };
 }
 
-// Symbols (static)
+// Clean Unicode symbols - no emojis
 export const symbols = {
+  // Status
   success: '✓',
   error: '✗',
-  warning: '⚠',
-  info: 'ℹ',
+  warning: '!',
+  info: '●',
+  
+  // Navigation
   arrow: '→',
-  bullet: '•',
+  arrowRight: '▸',
+  arrowDown: '▾',
   pointer: '❯',
+  
+  // Structure
   line: '│',
   corner: '└',
+  tee: '├',
   dash: '─',
-  watch: '👁',
-  file: '📄',
-  folder: '📁',
-  gear: '⚙',
-  palette: '🎨',
-  clock: '🕐',
-  sparkle: '✨',
+  dot: '·',
+  bullet: '•',
+  
+  // Actions
+  play: '▶',
+  pause: '⏸',
+  stop: '■',
+  refresh: '↻',
+  
+  // Objects
+  file: '◇',
+  fileActive: '◆',
+  folder: '▪',
+  folderOpen: '▫',
+  
+  // Misc
+  star: '★',
+  check: '✓',
+  cross: '✗',
+  ellipsis: '…',
 };
 
-// Get themed symbols
+// Get themed symbols with colors
 export function getThemedSymbols() {
   const theme = getCurrentTheme();
   return {
@@ -52,31 +72,48 @@ export function getThemedSymbols() {
     warning: chalk.hex(theme.warning)(symbols.warning),
     info: chalk.hex(theme.primary)(symbols.info),
     arrow: chalk.hex(theme.primary)(symbols.arrow),
-    bullet: chalk.hex(theme.dim)(symbols.bullet),
     pointer: chalk.hex(theme.primary)(symbols.pointer),
+    bullet: chalk.hex(theme.dim)(symbols.bullet),
     line: chalk.hex(theme.dim)(symbols.line),
-    corner: chalk.hex(theme.dim)(symbols.corner),
     dash: chalk.hex(theme.dim)(symbols.dash),
+    dot: chalk.hex(theme.dim)(symbols.dot),
+    file: chalk.hex(theme.dim)(symbols.file),
+    fileActive: chalk.hex(theme.primary)(symbols.fileActive),
+    folder: chalk.hex(theme.accent)(symbols.folder),
   };
 }
 
 /**
- * ASCII Art Logo with gradient
+ * Minimal ASCII Logo with gradient
  */
 export function printLogo(): void {
   const { brand, subtle } = getThemeGradients();
+  const theme = getCurrentTheme();
   
+  // Clean, minimal logo
   const logo = `
-   ██████╗ ██████╗ ███████╗███╗   ██╗███████╗██████╗  ██████╗ ███████╗
-  ██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔══██╗██╔════╝ ██╔════╝
-  ██║   ██║██████╔╝█████╗  ██╔██╗ ██║█████╗  ██║  ██║██║  ███╗█████╗  
-  ██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██╔══╝  ██║  ██║██║   ██║██╔══╝  
-  ╚██████╔╝██║     ███████╗██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗
-   ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝`;
+    ┌─────────────────────────────────────────┐
+    │                                         │
+    │   ○ ○ ○   O P E N E D G E   D S L       │
+    │                                         │
+    │   CGRA Compiler Toolchain               │
+    │                                         │
+    └─────────────────────────────────────────┘`;
 
   console.log(brand.multiline(logo));
   console.log();
-  console.log(chalk.dim('                      ') + subtle('DSL Compiler for CGRA'));
+}
+
+/**
+ * Compact header for screens
+ */
+export function printCompactHeader(): void {
+  const { brand } = getThemeGradients();
+  const theme = getCurrentTheme();
+  
+  console.log();
+  console.log('  ' + brand('OpenEdge') + chalk.hex(theme.dim)(' · DSL Compiler v0.1.0'));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(40)));
   console.log();
 }
 
@@ -85,8 +122,9 @@ export function printLogo(): void {
  */
 export function printInlineLogo(): void {
   const { brand } = getThemeGradients();
+  const theme = getCurrentTheme();
   console.log();
-  console.log('  ' + brand('OpenEdge') + chalk.dim(' DSL Compiler v0.1.0'));
+  console.log('  ' + brand('openedge') + chalk.hex(theme.dim)(' v0.1.0'));
   console.log();
 }
 
@@ -97,49 +135,53 @@ export function createSpinner(text: string): Ora {
   const theme = getCurrentTheme();
   return ora({
     text: chalk.hex(theme.dim)(text),
-    spinner: 'dots12',
+    spinner: {
+      interval: 80,
+      frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
+    },
     color: 'cyan',
   });
 }
 
 /**
- * Print a boxed message
+ * Print a minimal boxed message
  */
 export function printBox(content: string, title?: string): void {
   const theme = getCurrentTheme();
   console.log(boxen(content, {
-    padding: 1,
-    margin: { top: 0, bottom: 1, left: 2, right: 2 },
+    padding: { top: 0, bottom: 0, left: 1, right: 1 },
+    margin: { top: 0, bottom: 1, left: 2, right: 0 },
     borderStyle: 'round',
-    borderColor: theme.primary as any,
+    borderColor: theme.dim as any,
+    dimBorder: true,
     title: title,
     titleAlignment: 'left',
   }));
 }
 
 /**
- * Print success message with style
+ * Print success message - minimal style
  */
 export function printSuccess(message: string, details?: string): void {
-  const { success } = getThemeGradients();
-  const syms = getThemedSymbols();
+  const theme = getCurrentTheme();
+  const sym = getThemedSymbols();
   console.log();
-  console.log('  ' + syms.success + ' ' + success(message));
+  console.log('  ' + sym.success + ' ' + chalk.hex(theme.success)(message));
   if (details) {
-    console.log('    ' + chalk.dim(details));
+    console.log('    ' + chalk.hex(theme.dim)(details));
   }
 }
 
 /**
- * Print error message with style
+ * Print error message - minimal style
  */
 export function printError(message: string, details?: string): void {
-  const { error } = getThemeGradients();
-  const syms = getThemedSymbols();
+  const theme = getCurrentTheme();
+  const sym = getThemedSymbols();
   console.log();
-  console.log('  ' + syms.error + ' ' + error(message));
+  console.log('  ' + sym.error + ' ' + chalk.hex(theme.error)(message));
   if (details) {
-    console.log('    ' + chalk.dim(details));
+    console.log('    ' + chalk.hex(theme.dim)(details));
   }
 }
 
@@ -148,11 +190,10 @@ export function printError(message: string, details?: string): void {
  */
 export function printWarning(message: string, details?: string): void {
   const theme = getCurrentTheme();
-  const syms = getThemedSymbols();
   console.log();
-  console.log('  ' + syms.warning + ' ' + chalk.hex(theme.warning)(message));
+  console.log('  ' + chalk.hex(theme.warning)(symbols.warning) + ' ' + chalk.hex(theme.warning)(message));
   if (details) {
-    console.log('    ' + chalk.dim(details));
+    console.log('    ' + chalk.hex(theme.dim)(details));
   }
 }
 
@@ -161,27 +202,26 @@ export function printWarning(message: string, details?: string): void {
  */
 export function printInfo(message: string): void {
   const theme = getCurrentTheme();
-  const syms = getThemedSymbols();
-  console.log('  ' + syms.info + ' ' + chalk.hex(theme.primary)(message));
+  console.log('  ' + chalk.hex(theme.dim)(symbols.info) + ' ' + chalk.white(message));
 }
 
 /**
- * Print a section header
+ * Print a section header - clean style
  */
 export function printHeader(text: string): void {
   const theme = getCurrentTheme();
   console.log();
   console.log('  ' + chalk.bold.white(text));
-  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(text.length + 2)));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(Math.max(text.length, 20))));
 }
 
 /**
- * Print a key-value pair
+ * Print a key-value pair - aligned
  */
 export function printKeyValue(key: string, value: string | number, indent: number = 4): void {
   const theme = getCurrentTheme();
   const spaces = ' '.repeat(indent);
-  console.log(spaces + chalk.hex(theme.dim)(key.padEnd(14)) + chalk.white(String(value)));
+  console.log(spaces + chalk.hex(theme.dim)(key.padEnd(16)) + chalk.white(String(value)));
 }
 
 /**
@@ -196,11 +236,11 @@ export function printStat(label: string, value: string | number, color: 'success
     white: '#ffffff',
   };
   
-  console.log('    ' + chalk.hex(theme.dim)(label.padEnd(14)) + chalk.hex(colorMap[color])(String(value)));
+  console.log('    ' + chalk.hex(theme.dim)(label.padEnd(16)) + chalk.hex(colorMap[color])(String(value)));
 }
 
 /**
- * Print compilation stats in a nice format
+ * Print compilation stats - clean table format
  */
 export function printCompilationStats(stats: {
   output?: string;
@@ -214,30 +254,29 @@ export function printCompilationStats(stats: {
   console.log();
   
   if (stats.output) {
-    printStat('Output', stats.output, 'primary');
+    printStat('output', stats.output, 'primary');
   }
   if (stats.cycles !== undefined) {
-    printStat('Cycles', stats.cycles, 'success');
+    printStat('cycles', stats.cycles, 'success');
   }
   if (stats.grid) {
-    printStat('Grid', `${stats.grid.width}×${stats.grid.height}`, 'white');
+    printStat('grid', `${stats.grid.width}×${stats.grid.height}`, 'white');
   }
   if (stats.memoryRegions !== undefined) {
-    printStat('Memory', `${stats.memoryRegions} region${stats.memoryRegions !== 1 ? 's' : ''}`, 'white');
+    printStat('memory', `${stats.memoryRegions} region${stats.memoryRegions !== 1 ? 's' : ''}`, 'white');
   }
   if (stats.assertions !== undefined && stats.assertions > 0) {
-    printStat('Assertions', stats.assertions, 'warning');
+    printStat('assertions', stats.assertions, 'warning');
   }
   
-  console.log();
-  
   if (stats.time !== undefined) {
-    console.log('  ' + chalk.hex(theme.dim)(`Completed in ${stats.time.toFixed(0)}ms`));
+    console.log();
+    console.log('  ' + chalk.hex(theme.dim)(`Done in ${stats.time.toFixed(0)}ms`));
   }
 }
 
 /**
- * Print a code frame with syntax highlighting
+ * Print a code frame with syntax highlighting - minimal style
  */
 export function printCodeFrame(
   source: string,
@@ -247,63 +286,66 @@ export function printCodeFrame(
   filePath?: string
 ): void {
   const theme = getCurrentTheme();
-  const syms = getThemedSymbols();
   const lines = source.split('\n');
   const startLine = Math.max(0, line - 3);
   const endLine = Math.min(lines.length, line + 2);
   
   console.log();
   
-  // File location
+  // File location - clean format
   if (filePath) {
-    console.log('    ' + chalk.hex(theme.primary).underline(`${filePath}:${line}:${column}`));
+    console.log('  ' + chalk.hex(theme.dim)('at ') + chalk.hex(theme.primary).underline(`${filePath}:${line}:${column}`));
     console.log();
   }
 
-  // Code context
+  // Code context with line numbers
   for (let i = startLine; i < endLine; i++) {
     const lineNum = i + 1;
     const isErrorLine = lineNum === line;
-    const lineNumStr = String(lineNum).padStart(5);
+    const lineNumStr = String(lineNum).padStart(4);
+    const gutter = chalk.hex(theme.dim)(' │ ');
     
     if (isErrorLine) {
       // Error line with marker
-      console.log('  ' + chalk.hex(theme.error)('>') + ' ' + chalk.hex(theme.error)(lineNumStr) + ' ' + syms.line + ' ' + lines[i]);
+      console.log(
+        '  ' + chalk.hex(theme.error)(lineNumStr) + 
+        chalk.hex(theme.error)(' │ ') + 
+        lines[i]
+      );
       
       // Underline the error position
       const spaces = ' '.repeat(column - 1);
-      console.log('          ' + syms.line + ' ' + spaces + chalk.hex(theme.error)('^^'));
+      console.log(
+        '  ' + ' '.repeat(4) + 
+        chalk.hex(theme.error)(' │ ') + 
+        spaces + chalk.hex(theme.error)('^'.repeat(Math.min(3, lines[i].length - column + 1)))
+      );
     } else {
       // Context line
-      console.log('    ' + chalk.hex(theme.dim)(lineNumStr) + ' ' + syms.line + ' ' + chalk.hex(theme.dim)(lines[i]));
+      console.log(
+        '  ' + chalk.hex(theme.dim)(lineNumStr) + 
+        gutter + 
+        chalk.hex(theme.dim)(lines[i])
+      );
     }
   }
   
   console.log();
-  console.log('    ' + chalk.hex(theme.error).bold('Error: ') + chalk.white(message));
+  console.log('  ' + chalk.hex(theme.error)('error: ') + chalk.white(message));
   console.log();
 }
 
 /**
- * Print welcome message for interactive mode
+ * Print welcome message for interactive mode - minimal
  */
 export function printWelcome(): void {
   const theme = getCurrentTheme();
   console.clear();
   printLogo();
   
-  console.log(boxen(
-    chalk.hex(theme.dim)('Use ') + chalk.hex(theme.primary)('↑↓') + chalk.hex(theme.dim)(' to navigate, ') +
-    chalk.hex(theme.primary)('Enter') + chalk.hex(theme.dim)(' to select, ') +
-    chalk.hex(theme.primary)('Ctrl+C') + chalk.hex(theme.dim)(' to exit'),
-    {
-      padding: { top: 0, bottom: 0, left: 1, right: 1 },
-      margin: { top: 0, bottom: 1, left: 2, right: 2 },
-      borderStyle: 'round',
-      borderColor: 'gray',
-      dimBorder: true,
-    }
-  ));
+  // Minimal help text
+  console.log('  ' + chalk.hex(theme.dim)('Navigate with ↑↓  Select with Enter  Exit with Ctrl+C'));
+  console.log();
 }
 
 /**
@@ -311,69 +353,59 @@ export function printWelcome(): void {
  */
 export function printDivider(): void {
   const theme = getCurrentTheme();
-  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(50)));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(45)));
 }
 
 /**
- * Print file info badge
+ * Print file info - minimal badge style
  */
 export function printFileBadge(filePath: string): void {
   const theme = getCurrentTheme();
   console.log();
-  console.log('  ' + chalk.bgHex(theme.primary).black(' FILE ') + ' ' + chalk.hex(theme.primary)(filePath));
+  console.log('  ' + chalk.hex(theme.dim)('file ') + chalk.hex(theme.primary)(filePath));
 }
 
 /**
- * Print status badge
+ * Print status badge - text only, no background
  */
 export function printStatusBadge(status: 'valid' | 'invalid' | 'compiling' | 'watching'): void {
   const theme = getCurrentTheme();
   const badges = {
-    valid: chalk.bgHex(theme.success).black(' VALID '),
-    invalid: chalk.bgHex(theme.error).white(' INVALID '),
-    compiling: chalk.bgHex(theme.warning).black(' COMPILING '),
-    watching: chalk.bgHex(theme.primary).black(' WATCHING '),
+    valid: chalk.hex(theme.success)('● valid'),
+    invalid: chalk.hex(theme.error)('● invalid'),
+    compiling: chalk.hex(theme.warning)('● compiling'),
+    watching: chalk.hex(theme.primary)('● watching'),
   };
   console.log('  ' + badges[status]);
 }
 
 /**
- * Print theme preview
+ * Print theme preview - minimal color swatches
  */
 export function printThemePreview(themeName: string, theme: Theme): void {
-  const { brand } = getThemeGradients();
-  
   console.log();
   console.log('  ' + chalk.bold(theme.name));
-  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(20)));
-  console.log('  ' + chalk.hex(theme.primary)('■') + ' Primary   ' + 
-              chalk.hex(theme.secondary)('■') + ' Secondary');
-  console.log('  ' + chalk.hex(theme.success)('■') + ' Success   ' + 
-              chalk.hex(theme.error)('■') + ' Error');
-  console.log('  ' + chalk.hex(theme.warning)('■') + ' Warning   ' + 
-              chalk.hex(theme.accent)('■') + ' Accent');
+  console.log('  ' + 
+    chalk.hex(theme.primary)('●') + ' ' +
+    chalk.hex(theme.secondary)('●') + ' ' +
+    chalk.hex(theme.accent)('●') + ' ' +
+    chalk.hex(theme.success)('●') + ' ' +
+    chalk.hex(theme.error)('●')
+  );
 }
 
 /**
- * Animate text typing effect (for dramatic effect)
+ * Print a list item - clean format
  */
-export async function typeText(text: string, speed: number = 30): Promise<void> {
-  for (const char of text) {
-    process.stdout.write(char);
-    await new Promise(resolve => setTimeout(resolve, speed));
-  }
-  console.log();
+export function printListItem(text: string, active: boolean = false, indent: number = 2): void {
+  const theme = getCurrentTheme();
+  const spaces = ' '.repeat(indent);
+  const marker = active ? chalk.hex(theme.primary)(symbols.pointer) : chalk.hex(theme.dim)(symbols.dot);
+  console.log(spaces + marker + ' ' + text);
 }
 
 /**
- * Clear screen and reset cursor
- */
-export function clearScreen(): void {
-  console.clear();
-}
-
-/**
- * Print recent files list
+ * Print recent files list - minimal format
  */
 export function printRecentFiles(files: { path: string; accessCount: number }[]): void {
   const theme = getCurrentTheme();
@@ -385,10 +417,65 @@ export function printRecentFiles(files: { path: string; accessCount: number }[])
   
   files.forEach((file, index) => {
     const num = chalk.hex(theme.dim)(`${index + 1}.`);
-    const path = chalk.hex(theme.primary)(file.path);
-    const count = chalk.hex(theme.dim)(`(${file.accessCount}×)`);
+    const path = chalk.white(file.path);
+    const count = chalk.hex(theme.dim)(`×${file.accessCount}`);
     console.log(`  ${num} ${path} ${count}`);
   });
+}
+
+/**
+ * Print a progress indicator
+ */
+export function printProgress(current: number, total: number, label?: string): void {
+  const theme = getCurrentTheme();
+  const width = 20;
+  const filled = Math.round((current / total) * width);
+  const empty = width - filled;
+  
+  const bar = chalk.hex(theme.primary)('█'.repeat(filled)) + 
+              chalk.hex(theme.dim)('░'.repeat(empty));
+  
+  const percent = Math.round((current / total) * 100);
+  const text = label ? `${label} ` : '';
+  
+  process.stdout.write(`\r  ${text}${bar} ${percent}%`);
+  
+  if (current === total) {
+    console.log();
+  }
+}
+
+/**
+ * Clear screen and reset cursor
+ */
+export function clearScreen(): void {
+  console.clear();
+}
+
+/**
+ * Print a subtle hint
+ */
+export function printHint(text: string): void {
+  const theme = getCurrentTheme();
+  console.log('  ' + chalk.hex(theme.dim).italic(text));
+}
+
+/**
+ * Print action result in compact form
+ */
+export function printResult(success: boolean, message: string, time?: number): void {
+  const theme = getCurrentTheme();
+  const sym = success ? 
+    chalk.hex(theme.success)(symbols.success) : 
+    chalk.hex(theme.error)(symbols.error);
+  
+  let line = '  ' + sym + ' ' + message;
+  
+  if (time !== undefined) {
+    line += chalk.hex(theme.dim)(` (${time.toFixed(0)}ms)`);
+  }
+  
+  console.log(line);
 }
 
 export { chalk, gradient, ora };
