@@ -1,6 +1,6 @@
 /**
  * Premium Interactive Mode
- * Inspired by OpenCode, Claude CLI, Gemini CLI
+ * With recent files, watch mode, and theme selection
  */
 
 import { select, input } from '@inquirer/prompts';
@@ -19,48 +19,245 @@ import {
   printCodeFrame,
   printFileBadge,
   printDivider,
+  printThemePreview,
+  printRecentFiles,
   createSpinner,
   clearScreen,
   chalk,
   symbols,
 } from '../ui/premium.js';
+import {
+  loadConfig,
+  saveConfig,
+  getRecentFiles,
+  addRecentFile,
+  clearRecentFiles,
+  getLastDirectory,
+  setLastDirectory,
+  getCurrentTheme,
+  setTheme,
+  getThemeNames,
+  BUILTIN_THEMES,
+} from '../config/store.js';
+import { startWatchMode } from './watch.js';
 
 // Store state
-let lastDirectory = process.cwd();
 let selectedFile: string | null = null;
 
 /**
- * Custom theme for inquirer
+ * Custom theme for inquirer based on current theme
  */
-const theme = {
-  prefix: chalk.cyan('❯'),
-  spinner: {
-    interval: 80,
-    frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'].map(f => chalk.cyan(f)),
-  },
-  style: {
-    answer: chalk.cyan,
-    message: chalk.bold.white,
-    error: chalk.red,
-    help: chalk.dim,
-    highlight: chalk.cyan,
-    key: chalk.cyan.bold,
-  },
-};
+function getInquirerTheme() {
+  const theme = getCurrentTheme();
+  return {
+    prefix: chalk.hex(theme.primary)('❯'),
+    spinner: {
+      interval: 80,
+      frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'].map(f => chalk.hex(theme.primary)(f)),
+    },
+    style: {
+      answer: (text: string) => chalk.hex(theme.primary)(text),
+      message: (text: string) => chalk.bold.white(text),
+      error: (text: string) => chalk.hex(theme.error)(text),
+      help: (text: string) => chalk.hex(theme.dim)(text),
+      highlight: (text: string) => chalk.hex(theme.primary)(text),
+      key: (text: string) => chalk.hex(theme.primary).bold(text),
+    },
+  };
+}
+
+/**
+ * Show recent files menu
+ */
+async function showRecentFiles(): Promise<string | null> {
+  const theme = getCurrentTheme();
+  const recentFiles = getRecentFiles();
+  
+  if (recentFiles.length === 0) {
+    printInfo('No recent files');
+    await new Promise(r => setTimeout(r, 1500));
+    return null;
+  }
+  
+  clearScreen();
+  printHeader(`${symbols.clock} Recent Files`);
+  console.log();
+  
+  const choices = [
+    ...recentFiles.map((f, i) => ({
+      name: chalk.hex(theme.primary)(`${i + 1}.`) + ' ' + chalk.white(basename(f.path)) + 
+            chalk.hex(theme.dim)(` (${f.accessCount}×)`),
+      value: f.path,
+      description: dirname(f.path),
+    })),
+    { name: chalk.hex(theme.dim)('─'.repeat(30)), value: '__SEP__', disabled: true } as any,
+    { name: chalk.hex(theme.error)('🗑  Clear history'), value: '__CLEAR__' },
+    { name: chalk.yellow('← Back'), value: '__BACK__' },
+  ];
+  
+  const selection = await select({
+    message: 'Select a recent file',
+    choices,
+    pageSize: 15,
+    theme: getInquirerTheme(),
+  });
+  
+  if (selection === '__BACK__' || selection === '__SEP__') {
+    return null;
+  }
+  
+  if (selection === '__CLEAR__') {
+    clearRecentFiles();
+    printSuccess('History cleared');
+    await new Promise(r => setTimeout(r, 1000));
+    return null;
+  }
+  
+  return selection;
+}
+
+/**
+ * Theme selection menu
+ */
+async function showThemeMenu(): Promise<void> {
+  const config = loadConfig();
+  
+  clearScreen();
+  printHeader(`${symbols.palette} Theme Selection`);
+  console.log();
+  console.log('  ' + chalk.dim('Current theme: ') + chalk.white(BUILTIN_THEMES[config.theme]?.name || config.theme));
+  console.log();
+  
+  const themeNames = getThemeNames();
+  const choices = [
+    ...themeNames.map(name => {
+      const theme = BUILTIN_THEMES[name];
+      const isCurrent = name === config.theme;
+      const preview = chalk.hex(theme.primary)('■') + 
+                     chalk.hex(theme.secondary)('■') + 
+                     chalk.hex(theme.accent)('■');
+      return {
+        name: (isCurrent ? chalk.green('● ') : '  ') + 
+              chalk.white(theme.name) + ' ' + preview,
+        value: name,
+      };
+    }),
+    { name: chalk.hex(getCurrentTheme().dim)('─'.repeat(30)), value: '__SEP__', disabled: true } as any,
+    { name: chalk.yellow('← Back'), value: '__BACK__' },
+  ];
+  
+  const selection = await select({
+    message: 'Select a theme',
+    choices,
+    pageSize: 12,
+    theme: getInquirerTheme(),
+  });
+  
+  if (selection === '__BACK__' || selection === '__SEP__') {
+    return;
+  }
+  
+  setTheme(selection);
+  printSuccess(`Theme changed to ${BUILTIN_THEMES[selection].name}`);
+  await new Promise(r => setTimeout(r, 1000));
+}
+
+/**
+ * Settings menu
+ */
+async function showSettingsMenu(): Promise<void> {
+  const theme = getCurrentTheme();
+  
+  while (true) {
+    const config = loadConfig();
+    
+    clearScreen();
+    printHeader(`${symbols.gear} Settings`);
+    console.log();
+    
+    const choices = [
+      { 
+        name: `${symbols.palette} Theme: ${chalk.hex(theme.primary)(BUILTIN_THEMES[config.theme]?.name || config.theme)}`,
+        value: 'theme',
+      },
+      {
+        name: `${symbols.clock} Recent files limit: ${chalk.hex(theme.primary)(config.recentFilesLimit)}`,
+        value: 'recentLimit',
+      },
+      {
+        name: `${symbols.sparkle} Show spinners: ${config.showSpinners ? chalk.green('Yes') : chalk.red('No')}`,
+        value: 'spinners',
+      },
+      {
+        name: `${symbols.file} Clear screen on action: ${config.clearScreenOnAction ? chalk.green('Yes') : chalk.red('No')}`,
+        value: 'clearScreen',
+      },
+      { name: chalk.hex(theme.dim)('─'.repeat(30)), value: '__SEP__', disabled: true } as any,
+      { name: chalk.yellow('← Back to menu'), value: '__BACK__' },
+    ];
+    
+    const selection = await select({
+      message: 'Settings',
+      choices,
+      theme: getInquirerTheme(),
+    });
+    
+    if (selection === '__BACK__') {
+      return;
+    }
+    
+    switch (selection) {
+      case 'theme':
+        await showThemeMenu();
+        break;
+        
+      case 'recentLimit':
+        const limitStr = await input({
+          message: 'Recent files limit (1-50):',
+          default: String(config.recentFilesLimit),
+          theme: getInquirerTheme(),
+        });
+        const limit = parseInt(limitStr, 10);
+        if (limit >= 1 && limit <= 50) {
+          config.recentFilesLimit = limit;
+          saveConfig(config);
+          printSuccess(`Limit set to ${limit}`);
+        }
+        break;
+        
+      case 'spinners':
+        config.showSpinners = !config.showSpinners;
+        saveConfig(config);
+        break;
+        
+      case 'clearScreen':
+        config.clearScreenOnAction = !config.clearScreenOnAction;
+        saveConfig(config);
+        break;
+    }
+  }
+}
 
 /**
  * Browse for a DSL file with premium UI
  */
 async function browseForFile(): Promise<string | null> {
-  let currentDir = lastDirectory;
+  let currentDir = getLastDirectory();
+  const theme = getCurrentTheme();
   
   while (true) {
     clearScreen();
-    printHeader('📂 File Browser');
-    console.log('  ' + chalk.dim('Location: ') + chalk.cyan(currentDir));
+    printHeader(`${symbols.folder} File Browser`);
+    console.log('  ' + chalk.hex(theme.dim)('Location: ') + chalk.hex(theme.primary)(currentDir));
     console.log();
     
-    const entries = readdirSync(currentDir);
+    let entries: string[];
+    try {
+      entries = readdirSync(currentDir);
+    } catch {
+      entries = [];
+    }
+    
     const dirs = entries.filter(e => {
       try {
         return statSync(join(currentDir, e)).isDirectory() && !e.startsWith('.');
@@ -76,7 +273,7 @@ async function browseForFile(): Promise<string | null> {
     // Parent directory
     if (currentDir !== '/') {
       choices.push({ 
-        name: chalk.dim('..') + chalk.dim(' (parent)'), 
+        name: chalk.hex(theme.dim)('..') + chalk.hex(theme.dim)(' (parent)'), 
         value: '__PARENT__' 
       });
     }
@@ -84,7 +281,7 @@ async function browseForFile(): Promise<string | null> {
     // Directories first
     dirs.forEach(d => {
       choices.push({ 
-        name: chalk.blue('📁 ') + chalk.blue(d), 
+        name: chalk.blue(`${symbols.folder} `) + chalk.blue(d), 
         value: `__DIR__:${d}` 
       });
     });
@@ -92,14 +289,14 @@ async function browseForFile(): Promise<string | null> {
     // DSL files
     dslFiles.forEach(f => {
       choices.push({ 
-        name: chalk.green('📄 ') + chalk.white(f), 
+        name: chalk.green(`${symbols.file} `) + chalk.white(f), 
         value: join(currentDir, f),
         description: 'DSL source file'
       });
     });
     
     // Options
-    choices.push({ name: chalk.dim('─'.repeat(30)), value: '__SEP__', disabled: true } as any);
+    choices.push({ name: chalk.hex(theme.dim)('─'.repeat(30)), value: '__SEP__', disabled: true } as any);
     choices.push({ name: chalk.yellow('✏️  Enter path manually'), value: '__MANUAL__' });
     choices.push({ name: chalk.red('← Back to menu'), value: '__CANCEL__' });
     
@@ -107,7 +304,7 @@ async function browseForFile(): Promise<string | null> {
       message: 'Select a file or directory',
       choices,
       pageSize: 15,
-      theme,
+      theme: getInquirerTheme(),
     });
     
     if (selection === '__CANCEL__') {
@@ -123,10 +320,10 @@ async function browseForFile(): Promise<string | null> {
       const manualPath = await input({
         message: 'Enter file path:',
         default: join(currentDir, 'kernel.dsl'),
-        theme,
+        theme: getInquirerTheme(),
       });
       if (existsSync(manualPath)) {
-        lastDirectory = dirname(resolve(manualPath));
+        setLastDirectory(dirname(resolve(manualPath)));
         return resolve(manualPath);
       } else {
         printError('File not found', manualPath);
@@ -141,7 +338,8 @@ async function browseForFile(): Promise<string | null> {
     }
     
     // It's a file
-    lastDirectory = dirname(selection);
+    setLastDirectory(dirname(selection));
+    addRecentFile(selection);
     return selection;
   }
 }
@@ -150,59 +348,71 @@ async function browseForFile(): Promise<string | null> {
  * Compile action with spinner
  */
 async function doCompile(filePath: string): Promise<void> {
-  clearScreen();
+  const theme = getCurrentTheme();
+  const config = loadConfig();
+  
+  if (config.clearScreenOnAction) {
+    clearScreen();
+  }
   printHeader('🔨 Compile');
   printFileBadge(getRelativePath(filePath));
   console.log();
   
-  const spinner = createSpinner('Reading source file...');
-  spinner.start();
+  const spinner = config.showSpinners ? createSpinner('Reading source file...') : null;
+  spinner?.start();
   
   const startTime = performance.now();
   
-  // Simulate slight delay for effect
-  await new Promise(r => setTimeout(r, 300));
+  if (config.showSpinners) {
+    await new Promise(r => setTimeout(r, 300));
+  }
   
   const readResult = readFile(filePath);
   if (!readResult.success) {
-    spinner.fail(chalk.red('Failed to read file'));
+    spinner?.fail(chalk.hex(theme.error)('Failed to read file'));
     printError('Read Error', readResult.error);
     return;
   }
   
-  spinner.text = 'Compiling...';
-  await new Promise(r => setTimeout(r, 200));
+  if (spinner) spinner.text = 'Compiling...';
+  if (config.showSpinners) {
+    await new Promise(r => setTimeout(r, 200));
+  }
   
   const result = compileDslToCsv(readResult.content!);
   
   if (result.success) {
-    spinner.text = 'Writing output...';
+    if (spinner) spinner.text = 'Writing output...';
     
     const defaultOutput = getOutputPath(filePath);
     
-    spinner.stop();
+    spinner?.stop();
     console.log();
     
     const outputPath = await input({
       message: 'Output file',
       default: defaultOutput,
-      theme,
+      theme: getInquirerTheme(),
     });
     
-    const writeSpinner = createSpinner('Writing CSV...');
-    writeSpinner.start();
+    const writeSpinner = config.showSpinners ? createSpinner('Writing CSV...') : null;
+    writeSpinner?.start();
     
-    await new Promise(r => setTimeout(r, 200));
+    if (config.showSpinners) {
+      await new Promise(r => setTimeout(r, 200));
+    }
     
     const writeResult = writeFile(outputPath, result.csv!);
     if (!writeResult.success) {
-      writeSpinner.fail(chalk.red('Failed to write file'));
+      writeSpinner?.fail(chalk.hex(theme.error)('Failed to write file'));
       printError('Write Error', writeResult.error);
       return;
     }
     
     const endTime = performance.now();
-    writeSpinner.succeed(chalk.green('Compiled successfully'));
+    writeSpinner?.succeed(chalk.hex(theme.success)('Compiled successfully'));
+    
+    addRecentFile(filePath);
     
     printCompilationStats({
       output: getRelativePath(outputPath),
@@ -213,7 +423,7 @@ async function doCompile(filePath: string): Promise<void> {
       time: endTime - startTime,
     });
   } else {
-    spinner.fail(chalk.red('Compilation failed'));
+    spinner?.fail(chalk.hex(theme.error)('Compilation failed'));
     
     if (result.line && readResult.content) {
       printCodeFrame(
@@ -233,19 +443,26 @@ async function doCompile(filePath: string): Promise<void> {
  * Check action with spinner
  */
 async function doCheck(filePath: string): Promise<void> {
-  clearScreen();
+  const theme = getCurrentTheme();
+  const config = loadConfig();
+  
+  if (config.clearScreenOnAction) {
+    clearScreen();
+  }
   printHeader('✅ Validate');
   printFileBadge(getRelativePath(filePath));
   console.log();
   
-  const spinner = createSpinner('Validating syntax...');
-  spinner.start();
+  const spinner = config.showSpinners ? createSpinner('Validating syntax...') : null;
+  spinner?.start();
   
-  await new Promise(r => setTimeout(r, 400));
+  if (config.showSpinners) {
+    await new Promise(r => setTimeout(r, 400));
+  }
   
   const readResult = readFile(filePath);
   if (!readResult.success) {
-    spinner.fail(chalk.red('Failed to read file'));
+    spinner?.fail(chalk.hex(theme.error)('Failed to read file'));
     printError('Read Error', readResult.error);
     return;
   }
@@ -253,7 +470,8 @@ async function doCheck(filePath: string): Promise<void> {
   const result = compileDslToCsv(readResult.content!);
   
   if (result.success) {
-    spinner.succeed(chalk.green('No errors found'));
+    spinner?.succeed(chalk.hex(theme.success)('No errors found'));
+    addRecentFile(filePath);
     console.log();
     printKeyValue('Cycles', result.maxCycles || 0);
     printKeyValue('Memory regions', result.memoryRegions?.length || 0);
@@ -261,7 +479,7 @@ async function doCheck(filePath: string): Promise<void> {
       printKeyValue('Assertions', result.assertions.length);
     }
   } else {
-    spinner.fail(chalk.red('Validation failed'));
+    spinner?.fail(chalk.hex(theme.error)('Validation failed'));
     
     if (result.line && readResult.content) {
       printCodeFrame(
@@ -281,33 +499,42 @@ async function doCheck(filePath: string): Promise<void> {
  * Info action
  */
 async function doInfo(filePath: string): Promise<void> {
-  clearScreen();
+  const theme = getCurrentTheme();
+  const config = loadConfig();
+  
+  if (config.clearScreenOnAction) {
+    clearScreen();
+  }
   printHeader('ℹ️  Program Info');
   printFileBadge(getRelativePath(filePath));
   console.log();
   
-  const spinner = createSpinner('Analyzing program...');
-  spinner.start();
+  const spinner = config.showSpinners ? createSpinner('Analyzing program...') : null;
+  spinner?.start();
   
-  await new Promise(r => setTimeout(r, 400));
+  if (config.showSpinners) {
+    await new Promise(r => setTimeout(r, 400));
+  }
   
   const readResult = readFile(filePath);
   if (!readResult.success) {
-    spinner.fail(chalk.red('Failed to read file'));
+    spinner?.fail(chalk.hex(theme.error)('Failed to read file'));
     printError('Read Error', readResult.error);
     return;
   }
   
   const result = compileDslToCsv(readResult.content!);
   
-  spinner.stop();
+  spinner?.stop();
   console.log();
   
   if (result.success) {
-    console.log('  ' + chalk.bgGreen.black(' VALID '));
+    console.log('  ' + chalk.bgHex(theme.success).black(' VALID '));
     console.log();
     
-    printKeyValue('Status', chalk.green('Valid'));
+    addRecentFile(filePath);
+    
+    printKeyValue('Status', chalk.hex(theme.success)('Valid'));
     
     if (result.maxCycles !== undefined) {
       printKeyValue('Cycles', result.maxCycles);
@@ -321,9 +548,9 @@ async function doInfo(filePath: string): Promise<void> {
       console.log();
       printHeader('Memory Regions');
       result.memoryRegions.forEach(region => {
-        const name = region.name || chalk.dim('anonymous');
-        const addr = chalk.cyan(`0x${region.start.toString(16).toUpperCase()}`);
-        console.log(`    ${chalk.dim('•')} ${name} ${chalk.dim('at')} ${addr} ${chalk.dim(`(${region.values.length} values)`)}`);
+        const name = region.name || chalk.hex(theme.dim)('anonymous');
+        const addr = chalk.hex(theme.primary)(`0x${region.start.toString(16).toUpperCase()}`);
+        console.log(`    ${chalk.hex(theme.dim)('•')} ${name} ${chalk.hex(theme.dim)('at')} ${addr} ${chalk.hex(theme.dim)(`(${region.values.length} values)`)}`);
       });
     }
     
@@ -332,21 +559,10 @@ async function doInfo(filePath: string): Promise<void> {
       printHeader('Assertions');
       printKeyValue('Count', result.assertions.length);
     }
-    
-    if (result.ioConfig) {
-      console.log();
-      printHeader('I/O Configuration');
-      if (result.ioConfig.loadAddrs.length > 0) {
-        printKeyValue('Load addresses', result.ioConfig.loadAddrs.map(a => `0x${a.toString(16)}`).join(', '));
-      }
-      if (result.ioConfig.storeAddrs.length > 0) {
-        printKeyValue('Store addresses', result.ioConfig.storeAddrs.map(a => `0x${a.toString(16)}`).join(', '));
-      }
-    }
   } else {
-    console.log('  ' + chalk.bgRed.white(' INVALID '));
+    console.log('  ' + chalk.bgHex(theme.error).white(' INVALID '));
     console.log();
-    printKeyValue('Status', chalk.red('Invalid'));
+    printKeyValue('Status', chalk.hex(theme.error)('Invalid'));
     printKeyValue('Error', result.error || 'Unknown');
     if (result.line) {
       printKeyValue('Line', result.line);
@@ -355,12 +571,35 @@ async function doInfo(filePath: string): Promise<void> {
 }
 
 /**
+ * Watch mode action
+ */
+async function doWatch(filePath: string): Promise<void> {
+  const theme = getCurrentTheme();
+  
+  console.log();
+  const outputPath = await input({
+    message: 'Output file',
+    default: getOutputPath(filePath),
+    theme: getInquirerTheme(),
+  });
+  
+  console.log();
+  printInfo('Starting watch mode...');
+  console.log('  ' + chalk.hex(theme.dim)('Press Ctrl+C to stop'));
+  
+  await new Promise(r => setTimeout(r, 500));
+  
+  await startWatchMode(filePath, outputPath);
+}
+
+/**
  * Wait for keypress
  */
 async function waitForKey(): Promise<void> {
+  const theme = getCurrentTheme();
   console.log();
-  console.log('  ' + chalk.dim('Press Enter to continue...'));
-  await input({ message: '', theme: { ...theme, prefix: '' } });
+  console.log('  ' + chalk.hex(theme.dim)('Press Enter to continue...'));
+  await input({ message: '', theme: { ...getInquirerTheme(), prefix: '' } });
 }
 
 /**
@@ -370,19 +609,22 @@ export async function runInteractiveMode(): Promise<void> {
   printWelcome();
   
   while (true) {
+    const theme = getCurrentTheme();
+    const recentFiles = getRecentFiles();
+    
     // Build menu
     const choices: { name: string; value: string; description?: string }[] = [];
     
     if (selectedFile) {
       // Show current file
       console.log();
-      console.log('  ' + chalk.dim('Selected: ') + chalk.cyan(basename(selectedFile)));
-      console.log('  ' + chalk.dim(dirname(selectedFile)));
+      console.log('  ' + chalk.hex(theme.dim)('Selected: ') + chalk.hex(theme.primary)(basename(selectedFile)));
+      console.log('  ' + chalk.hex(theme.dim)(dirname(selectedFile)));
       console.log();
       
       choices.push(
         { 
-          name: chalk.green('🔨 Compile'), 
+          name: chalk.hex(theme.success)('🔨 Compile'), 
           value: 'compile',
           description: 'Compile DSL to CSV'
         },
@@ -392,13 +634,18 @@ export async function runInteractiveMode(): Promise<void> {
           description: 'Check for errors'
         },
         { 
-          name: chalk.cyan('ℹ  Info'), 
+          name: chalk.hex(theme.primary)('ℹ  Info'), 
           value: 'info',
           description: 'Show program details'
         },
-        { name: chalk.dim('─'.repeat(30)), value: '__SEP__', disabled: true } as any,
+        {
+          name: chalk.hex(theme.warning)(`${symbols.watch} Watch`),
+          value: 'watch',
+          description: 'Auto-recompile on changes'
+        },
+        { name: chalk.hex(theme.dim)('─'.repeat(30)), value: '__SEP1__', disabled: true } as any,
         { 
-          name: chalk.yellow('📂 Change file'), 
+          name: chalk.yellow(`${symbols.folder} Change file`), 
           value: 'browse',
           description: 'Select a different file'
         },
@@ -406,14 +653,31 @@ export async function runInteractiveMode(): Promise<void> {
     } else {
       choices.push(
         { 
-          name: chalk.cyan('📂 Open file'), 
+          name: chalk.hex(theme.primary)(`${symbols.folder} Open file`), 
           value: 'browse',
           description: 'Browse for DSL file'
         },
       );
     }
     
-    choices.push({ name: chalk.dim('─'.repeat(30)), value: '__SEP2__', disabled: true } as any);
+    // Recent files (if any and no file selected)
+    if (!selectedFile && recentFiles.length > 0) {
+      choices.push(
+        {
+          name: chalk.hex(theme.secondary)(`${symbols.clock} Recent files`) + 
+                chalk.hex(theme.dim)(` (${recentFiles.length})`),
+          value: 'recent',
+          description: 'Open a recent file'
+        },
+      );
+    }
+    
+    choices.push({ name: chalk.hex(theme.dim)('─'.repeat(30)), value: '__SEP2__', disabled: true } as any);
+    choices.push({ 
+      name: chalk.hex(theme.accent)(`${symbols.gear} Settings`), 
+      value: 'settings',
+      description: 'Configure OpenEdge'
+    });
     choices.push({ 
       name: chalk.red('✕  Exit'), 
       value: 'exit',
@@ -423,12 +687,22 @@ export async function runInteractiveMode(): Promise<void> {
     const action = await select({
       message: 'What would you like to do?',
       choices,
-      theme,
+      theme: getInquirerTheme(),
     });
     
     switch (action) {
       case 'browse':
         selectedFile = await browseForFile();
+        clearScreen();
+        printWelcome();
+        break;
+        
+      case 'recent':
+        const recentFile = await showRecentFiles();
+        if (recentFile) {
+          selectedFile = recentFile;
+          addRecentFile(recentFile);
+        }
         clearScreen();
         printWelcome();
         break;
@@ -460,9 +734,22 @@ export async function runInteractiveMode(): Promise<void> {
         }
         break;
         
+      case 'watch':
+        if (selectedFile) {
+          await doWatch(selectedFile);
+          // Watch mode exits with Ctrl+C
+        }
+        break;
+        
+      case 'settings':
+        await showSettingsMenu();
+        clearScreen();
+        printWelcome();
+        break;
+        
       case 'exit':
         console.log();
-        console.log('  ' + chalk.dim('Goodbye! 👋'));
+        console.log('  ' + chalk.hex(theme.dim)('Goodbye! 👋'));
         console.log();
         process.exit(0);
     }

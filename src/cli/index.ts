@@ -11,6 +11,8 @@ import { compileCommand } from './commands/compile.js';
 import { checkCommand } from './commands/check.js';
 import { infoCommand } from './commands/info.js';
 import { runInteractiveMode } from './commands/interactive.js';
+import { startWatchMode } from './commands/watch.js';
+import { setTheme, getThemeNames, BUILTIN_THEMES } from './config/store.js';
 
 // Package version (will be updated from package.json in build)
 const VERSION = '0.1.0';
@@ -28,6 +30,17 @@ program.addCommand(compileCommand);
 program.addCommand(checkCommand);
 program.addCommand(infoCommand);
 
+// Watch mode command
+program
+  .command('watch')
+  .alias('w')
+  .description('Watch file for changes and auto-recompile')
+  .argument('<file>', 'DSL source file to watch')
+  .option('-o, --output <file>', 'Output CSV file')
+  .action(async (file: string, options: { output?: string }) => {
+    await startWatchMode(file, options.output);
+  });
+
 // Interactive mode command
 program
   .command('interactive')
@@ -35,6 +48,32 @@ program
   .description('Launch interactive menu-driven mode')
   .action(async () => {
     await runInteractiveMode();
+  });
+
+// Theme command
+program
+  .command('theme')
+  .description('Change the CLI theme')
+  .argument('[name]', 'Theme name (list available if omitted)')
+  .action((name?: string) => {
+    const themes = getThemeNames();
+    
+    if (!name) {
+      console.log('\nAvailable themes:\n');
+      themes.forEach(t => {
+        const theme = BUILTIN_THEMES[t];
+        console.log(`  • ${theme.name} (${t})`);
+      });
+      console.log('\nUsage: openedge theme <name>\n');
+      return;
+    }
+    
+    if (setTheme(name)) {
+      console.log(`\nTheme changed to: ${BUILTIN_THEMES[name].name}\n`);
+    } else {
+      console.log(`\nUnknown theme: ${name}`);
+      console.log(`Available: ${themes.join(', ')}\n`);
+    }
   });
 
 // Custom help
@@ -46,6 +85,8 @@ Examples:
   $ openedge check kernel.dsl                Validate without output
   $ openedge info kernel.dsl                 Show program statistics
   $ openedge info kernel.dsl --json          Output stats as JSON
+  $ openedge watch kernel.dsl                Watch and auto-recompile
+  $ openedge theme dracula                   Change to Dracula theme
   $ openedge interactive                     Launch interactive mode
   $ openedge i                               (shortcut for interactive)
 
