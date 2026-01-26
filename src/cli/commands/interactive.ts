@@ -23,6 +23,9 @@ import {
   printRecentFiles,
   printResult,
   printHint,
+  printHelpPanel,
+  printDslPreview,
+  printKeyboardHints,
   createSpinner,
   clearScreen,
   chalk,
@@ -558,6 +561,29 @@ async function doInfo(filePath: string): Promise<void> {
 }
 
 /**
+ * Preview action - show source with syntax highlighting
+ */
+async function doPreview(filePath: string): Promise<void> {
+  const theme = getCurrentTheme();
+  const config = loadConfig();
+  
+  if (config.clearScreenOnAction) {
+    clearScreen();
+  }
+  
+  printHeader('Preview');
+  console.log('  ' + chalk.hex(theme.dim)('source ') + chalk.white(getRelativePath(filePath)));
+  
+  const readResult = readFile(filePath);
+  if (!readResult.success) {
+    printError('Error', readResult.error);
+    return;
+  }
+  
+  printDslPreview(readResult.content!, 25);
+}
+
+/**
  * Watch mode action
  */
 async function doWatch(filePath: string): Promise<void> {
@@ -613,6 +639,7 @@ export async function runInteractiveMode(): Promise<void> {
         { name: chalk.white('Compile') + chalk.hex(theme.dim)(' → CSV'), value: 'compile' },
         { name: chalk.white('Validate') + chalk.hex(theme.dim)(' syntax'), value: 'check' },
         { name: chalk.white('Info') + chalk.hex(theme.dim)(' details'), value: 'info' },
+        { name: chalk.white('Preview') + chalk.hex(theme.dim)(' source'), value: 'preview' },
         { name: chalk.white('Watch') + chalk.hex(theme.dim)(' auto-rebuild'), value: 'watch' },
         { name: chalk.hex(theme.dim)('─'.repeat(40)), value: '__SEP1__', disabled: true } as any,
         { name: chalk.white('Change file'), value: 'browse' },
@@ -632,6 +659,7 @@ export async function runInteractiveMode(): Promise<void> {
     }
     
     choices.push({ name: chalk.hex(theme.dim)('─'.repeat(40)), value: '__SEP2__', disabled: true } as any);
+    choices.push({ name: chalk.white('Help') + chalk.hex(theme.dim)(' ?'), value: 'help' });
     choices.push({ name: chalk.white('Settings'), value: 'settings' });
     choices.push({ name: chalk.hex(theme.dim)('Exit'), value: 'exit' });
     
@@ -685,10 +713,26 @@ export async function runInteractiveMode(): Promise<void> {
         }
         break;
         
+      case 'preview':
+        if (selectedFile) {
+          await doPreview(selectedFile);
+          await waitForKey();
+          clearScreen();
+          printWelcome();
+        }
+        break;
+        
       case 'watch':
         if (selectedFile) {
           await doWatch(selectedFile);
         }
+        break;
+        
+      case 'help':
+        printHelpPanel();
+        await waitForKey();
+        clearScreen();
+        printWelcome();
         break;
         
       case 'settings':

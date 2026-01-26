@@ -34,6 +34,7 @@ export const symbols = {
   arrow: '→',
   arrowRight: '▸',
   arrowDown: '▾',
+  arrowUp: '▴',
   pointer: '❯',
   
   // Structure
@@ -55,6 +56,11 @@ export const symbols = {
   fileActive: '◆',
   folder: '▪',
   folderOpen: '▫',
+  
+  // Keys
+  enter: '↵',
+  escape: '⎋',
+  tab: '⇥',
   
   // Misc
   star: '★',
@@ -84,48 +90,73 @@ export function getThemedSymbols() {
 }
 
 /**
- * Minimal ASCII Logo with gradient
+ * Premium ASCII Logo with gradient - sleek design
  */
 export function printLogo(): void {
-  const { brand, subtle } = getThemeGradients();
+  const { brand } = getThemeGradients();
   const theme = getCurrentTheme();
   
-  // Clean, minimal logo
+  // Sleek, modern logo
   const logo = `
-    ┌─────────────────────────────────────────┐
-    │                                         │
-    │   ○ ○ ○   O P E N E D G E   D S L       │
-    │                                         │
-    │   CGRA Compiler Toolchain               │
-    │                                         │
-    └─────────────────────────────────────────┘`;
+   ┌────────────────────────────────────────────────┐
+   │                                                │
+   │    ╱╲    OpenEdge DSL                          │
+   │   ╱  ╲   ─────────────────                     │
+   │  ╱    ╲  CGRA Compiler Toolchain    v0.1.0    │
+   │ ╱──────╲                                       │
+   │                                                │
+   └────────────────────────────────────────────────┘`;
 
   console.log(brand.multiline(logo));
   console.log();
 }
 
 /**
- * Compact header for screens
+ * Print compact header with version
  */
 export function printCompactHeader(): void {
   const { brand } = getThemeGradients();
   const theme = getCurrentTheme();
   
   console.log();
-  console.log('  ' + brand('OpenEdge') + chalk.hex(theme.dim)(' · DSL Compiler v0.1.0'));
+  console.log('  ' + brand('openedge') + chalk.hex(theme.dim)(' · v0.1.0'));
   console.log('  ' + chalk.hex(theme.dim)('─'.repeat(40)));
   console.log();
 }
 
 /**
- * Print a smaller inline logo
+ * Print keyboard shortcuts hint bar
  */
-export function printInlineLogo(): void {
-  const { brand } = getThemeGradients();
+export function printKeyboardHints(hints: { key: string; action: string }[]): void {
   const theme = getCurrentTheme();
+  
+  const formatted = hints.map(h => 
+    chalk.hex(theme.primary)(h.key) + chalk.hex(theme.dim)(` ${h.action}`)
+  ).join(chalk.hex(theme.dim)('  │  '));
+  
+  console.log('  ' + formatted);
   console.log();
-  console.log('  ' + brand('openedge') + chalk.hex(theme.dim)(' v0.1.0'));
+}
+
+/**
+ * Print status bar at bottom
+ */
+export function printStatusBar(left: string, right?: string): void {
+  const theme = getCurrentTheme();
+  const width = 50;
+  
+  const leftText = chalk.hex(theme.dim)(left);
+  const rightText = right ? chalk.hex(theme.dim)(right) : '';
+  
   console.log();
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(width)));
+  
+  if (right) {
+    const padding = width - left.length - right.length;
+    console.log('  ' + leftText + ' '.repeat(Math.max(padding, 2)) + rightText);
+  } else {
+    console.log('  ' + leftText);
+  }
 }
 
 /**
@@ -141,22 +172,6 @@ export function createSpinner(text: string): Ora {
     },
     color: 'cyan',
   });
-}
-
-/**
- * Print a minimal boxed message
- */
-export function printBox(content: string, title?: string): void {
-  const theme = getCurrentTheme();
-  console.log(boxen(content, {
-    padding: { top: 0, bottom: 0, left: 1, right: 1 },
-    margin: { top: 0, bottom: 1, left: 2, right: 0 },
-    borderStyle: 'round',
-    borderColor: theme.dim as any,
-    dimBorder: true,
-    title: title,
-    titleAlignment: 'left',
-  }));
 }
 
 /**
@@ -306,14 +321,12 @@ export function printCodeFrame(
     const gutter = chalk.hex(theme.dim)(' │ ');
     
     if (isErrorLine) {
-      // Error line with marker
       console.log(
         '  ' + chalk.hex(theme.error)(lineNumStr) + 
         chalk.hex(theme.error)(' │ ') + 
-        lines[i]
+        highlightDslSyntax(lines[i], theme)
       );
       
-      // Underline the error position
       const spaces = ' '.repeat(column - 1);
       console.log(
         '  ' + ' '.repeat(4) + 
@@ -321,7 +334,6 @@ export function printCodeFrame(
         spaces + chalk.hex(theme.error)('^'.repeat(Math.min(3, lines[i].length - column + 1)))
       );
     } else {
-      // Context line
       console.log(
         '  ' + chalk.hex(theme.dim)(lineNumStr) + 
         gutter + 
@@ -336,16 +348,49 @@ export function printCodeFrame(
 }
 
 /**
+ * Highlight DSL syntax - basic highlighting
+ */
+export function highlightDslSyntax(code: string, theme: Theme): string {
+  // Keywords
+  code = code.replace(/\b(kernel|config|cycle|function|for|while|if|else|row)\b/g, 
+    chalk.hex(theme.primary)('$1'));
+  
+  // Directives
+  code = code.replace(/(\.\w+)/g, chalk.hex(theme.accent)('$1'));
+  
+  // Registers
+  code = code.replace(/\b(R\d+|ROUT|RCL|RCR|RCU|RCD|ZERO)\b/g, 
+    chalk.hex(theme.warning)('$1'));
+  
+  // Operations
+  code = code.replace(/\b(LWI|SWI|SADD|SSUB|SMUL|SDIV|NOP|EXIT|ASSERT)\b/g, 
+    chalk.hex(theme.success)('$1'));
+  
+  // Numbers
+  code = code.replace(/\b(0x[0-9a-fA-F]+|\d+)\b/g, 
+    chalk.hex(theme.secondary)('$1'));
+  
+  // Comments
+  code = code.replace(/(\/\/.*)$/g, chalk.hex(theme.dim)('$1'));
+  
+  // Strings
+  code = code.replace(/(".*?")/g, chalk.hex(theme.secondary)('$1'));
+  
+  return code;
+}
+
+/**
  * Print welcome message for interactive mode - minimal
  */
 export function printWelcome(): void {
-  const theme = getCurrentTheme();
   console.clear();
   printLogo();
   
-  // Minimal help text
-  console.log('  ' + chalk.hex(theme.dim)('Navigate with ↑↓  Select with Enter  Exit with Ctrl+C'));
-  console.log();
+  printKeyboardHints([
+    { key: '↑↓', action: 'navigate' },
+    { key: '↵', action: 'select' },
+    { key: 'ctrl+c', action: 'exit' },
+  ]);
 }
 
 /**
@@ -476,6 +521,75 @@ export function printResult(success: boolean, message: string, time?: number): v
   }
   
   console.log(line);
+}
+
+/**
+ * Print help panel for interactive mode
+ */
+export function printHelpPanel(): void {
+  const theme = getCurrentTheme();
+  const { brand } = getThemeGradients();
+  
+  console.clear();
+  console.log();
+  console.log('  ' + brand('OpenEdge DSL') + chalk.hex(theme.dim)(' · Help'));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(50)));
+  console.log();
+  
+  console.log('  ' + chalk.white('Commands'));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(20)));
+  console.log();
+  printKeyValue('compile', 'Compile DSL source to CSV format');
+  printKeyValue('check', 'Validate syntax without output');
+  printKeyValue('info', 'Show program statistics');
+  printKeyValue('watch', 'Auto-recompile on file changes');
+  console.log();
+  
+  console.log('  ' + chalk.white('Keyboard'));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(20)));
+  console.log();
+  printKeyValue('↑ ↓', 'Navigate menu items');
+  printKeyValue('Enter', 'Select current item');
+  printKeyValue('Ctrl+C', 'Exit / Cancel');
+  console.log();
+  
+  console.log('  ' + chalk.white('CLI Usage'));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(20)));
+  console.log();
+  console.log('    ' + chalk.hex(theme.primary)('openedge') + chalk.hex(theme.dim)(' compile file.dsl -o out.csv'));
+  console.log('    ' + chalk.hex(theme.primary)('openedge') + chalk.hex(theme.dim)(' check file.dsl'));
+  console.log('    ' + chalk.hex(theme.primary)('openedge') + chalk.hex(theme.dim)(' watch file.dsl'));
+  console.log('    ' + chalk.hex(theme.primary)('openedge') + chalk.hex(theme.dim)(' theme dracula'));
+  console.log();
+  
+  console.log('  ' + chalk.white('Themes'));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(20)));
+  console.log();
+  console.log('    default, ocean, sunset, nord, dracula, monokai, cyberpunk, minimal');
+  console.log();
+}
+
+/**
+ * Print DSL file with syntax highlighting
+ */
+export function printDslPreview(content: string, maxLines: number = 15): void {
+  const theme = getCurrentTheme();
+  const lines = content.split('\n').slice(0, maxLines);
+  
+  console.log();
+  lines.forEach((line, i) => {
+    const lineNum = String(i + 1).padStart(3);
+    console.log(
+      '  ' + chalk.hex(theme.dim)(lineNum) + 
+      chalk.hex(theme.dim)(' │ ') + 
+      highlightDslSyntax(line, theme)
+    );
+  });
+  
+  if (content.split('\n').length > maxLines) {
+    console.log('  ' + chalk.hex(theme.dim)(`    │ ... (${content.split('\n').length - maxLines} more lines)`));
+  }
+  console.log();
 }
 
 export { chalk, gradient, ora };
