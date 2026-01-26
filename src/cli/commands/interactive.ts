@@ -3,7 +3,8 @@
  * Clean, minimal design inspired by Claude Code and OpenCode
  */
 
-import { select, input, ExitPromptError } from '@inquirer/prompts';
+import { select, input } from '@inquirer/prompts';
+import { ExitPromptError } from '@inquirer/core';
 import { existsSync, readdirSync, statSync } from 'fs';
 import { join, dirname, basename, resolve } from 'path';
 import { compileDslToCsv } from '../../compiler.js';
