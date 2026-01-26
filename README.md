@@ -1,61 +1,99 @@
 # OpenEdge DSL
 
-A domain-specific language and compiler toolchain for programming Coarse-Grained Reconfigurable Arrays (CGRAs).
+<div align="center">
 
 ```
-   ┌────────────────────────────────────────────────┐
-   │                                                │
-   │    ╱╲    OpenEdge DSL                          │
-   │   ╱  ╲   ─────────────────                     │
-   │  ╱    ╲  CGRA Compiler Toolchain    v0.1.0    │
-   │ ╱──────╲                                       │
-   │                                                │
-   └────────────────────────────────────────────────┘
+ ██████╗ ██████╗ ███████╗███╗   ██╗███████╗██████╗  ██████╗ ███████╗
+██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔══██╗██╔════╝ ██╔════╝
+██║   ██║██████╔╝█████╗  ██╔██╗ ██║█████╗  ██║  ██║██║  ███╗█████╗  
+██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██╔══╝  ██║  ██║██║   ██║██╔══╝  
+╚██████╔╝██║     ███████╗██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗
+ ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝
 ```
 
-## Features
+**CGRA Compiler Toolchain**
 
-- **Spatial-temporal abstraction**: Express computations in terms of cycles and PE coordinates
-- **High-level constructs**: Loops, conditionals, functions, and pragmas
-- **Memory operations**: Named arrays, data initialization, and IO configuration
-- **Pattern generators**: Stencil, reduce, scan, broadcast, and route operations
-- **Premium CLI**: Interactive mode, syntax highlighting, watch mode, themes
+[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg)](https://github.com/PhDCristian/OpenEdgeDSL)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue.svg)](https://www.typescriptlang.org)
+
+*A domain-specific language for programming Coarse-Grained Reconfigurable Arrays*
+
+[Installation](#installation) · [Quick Start](#quick-start) · [Documentation](#dsl-language) · [CLI Reference](#cli-commands)
+
+</div>
+
+---
+
+## Overview
+
+OpenEdge DSL provides a high-level abstraction for expressing spatial-temporal computations on CGRA architectures. Write intuitive code, compile to optimized configurations.
+
+### Key Features
+
+| Feature | Description |
+|---------|-------------|
+| **Spatial-Temporal Model** | Express computations in cycles and PE coordinates |
+| **High-Level Constructs** | Loops, conditionals, functions, and pragmas |
+| **Memory Operations** | Named arrays, data initialization, IO configuration |
+| **Pattern Generators** | Stencil, reduce, scan, broadcast, route operations |
+| **Premium CLI** | Interactive mode, syntax highlighting, themes, watch mode |
+
+---
 
 ## Installation
 
+### From Source
+
 ```bash
-# Clone the repository
 git clone https://github.com/PhDCristian/OpenEdgeDSL.git
 cd OpenEdgeDSL
-
-# Install dependencies
 npm install
-
-# Build the CLI
 npm run build:cli
-
-# (Optional) Link globally
-npm link
+npm link  # Optional: install globally
 ```
 
-Or install from npm:
+### From npm
 
 ```bash
-npm install @phdcristian/openedge-dsl
+npm install -g @phdcristian/openedge-dsl
 ```
+
+---
 
 ## Quick Start
 
 ### Interactive Mode
 
-Launch the interactive menu-driven interface:
-
 ```bash
 openedge
-# or
-openedge interactive
-openedge i
 ```
+
+<div align="center">
+
+```
+ ██████╗ ██████╗ ███████╗███╗   ██╗███████╗██████╗  ██████╗ ███████╗
+██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔══██╗██╔════╝ ██╔════╝
+██║   ██║██████╔╝█████╗  ██╔██╗ ██║█████╗  ██║  ██║██║  ███╗█████╗  
+██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██╔══╝  ██║  ██║██║   ██║██╔══╝  
+╚██████╔╝██║     ███████╗██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗
+ ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝
+
+CGRA Compiler Toolchain · v0.1.0
+
+ ↑↓  navigate    ⏎  select    ^C  exit
+
+› Start
+❯ Open file
+  Recent (3)
+  ────────────────────────────────────────
+  Help ?
+  Settings
+  Exit
+```
+
+</div>
 
 ### Command Line
 
@@ -67,26 +105,27 @@ openedge compile kernel.dsl -o output.csv
 openedge check kernel.dsl
 
 # Show program info
-openedge info kernel.dsl
 openedge info kernel.dsl --json
 
-# Watch mode (auto-recompile)
+# Watch mode (auto-recompile on save)
 openedge watch kernel.dsl
 
 # Change theme
 openedge theme dracula
 ```
 
+---
+
 ## CLI Commands
 
 | Command | Alias | Description |
 |---------|-------|-------------|
 | `compile <file>` | | Compile DSL source to CSV format |
-| `check <file>` | | Validate syntax without output |
-| `info <file>` | | Display program statistics |
-| `watch <file>` | `w` | Watch and auto-recompile on changes |
-| `interactive` | `i` | Launch interactive mode |
-| `theme [name]` | | Change or list themes |
+| `check <file>` | | Validate syntax without generating output |
+| `info <file>` | | Display program statistics and memory layout |
+| `watch <file>` | `w` | Watch file and auto-recompile on changes |
+| `interactive` | `i` | Launch interactive menu-driven mode |
+| `theme [name]` | | Change or list available themes |
 
 ### Compile Options
 
@@ -99,40 +138,35 @@ Options:
   --no-color           Disable colored output
 ```
 
-### Info Options
+### Info Output
 
 ```bash
-openedge info <file> [options]
+$ openedge info examples/simple.dsl
 
-Options:
-  --json               Output as JSON
-  --no-color           Disable colored output
+  ✓ Program: examples/simple.dsl
+
+    Status:      Valid
+    Cycles:      5
+    Grid:        2×2
+    Memory:      2 region(s)
+        input: 0x0 (2 values)
+        output: 0x8 (1 values)
 ```
 
-## Interactive Mode
+---
 
-The interactive mode provides a premium menu-driven interface:
+## Interactive Mode Features
 
-```
-› Start
-❯ Open file
-  ────────────────────────────────────────
-  Help ?
-  Settings
-  Exit
-```
-
-### Features
-
-- **File Browser**: Navigate directories and select DSL files
-- **Recent Files**: Quick access to previously opened files
-- **Preview**: View source with syntax highlighting
-- **Compile**: Compile to CSV with stats output
-- **Validate**: Check syntax without generating output
-- **Info**: View program details and memory layout
-- **Watch**: Auto-recompile on file changes
-- **Help**: Inline help panel
-- **Settings**: Configure theme, spinners, and preferences
+| Feature | Description |
+|---------|-------------|
+| **File Browser** | Navigate directories, select `.dsl` files |
+| **Recent Files** | Quick access to previously opened files |
+| **Preview** | View source with syntax highlighting |
+| **Compile** | Compile to CSV with detailed statistics |
+| **Validate** | Check syntax without generating output |
+| **Info** | View program details and memory layout |
+| **Watch** | Auto-recompile on file changes |
+| **Settings** | Configure theme, spinners, preferences |
 
 ### Keyboard Shortcuts
 
@@ -140,15 +174,17 @@ The interactive mode provides a premium menu-driven interface:
 |-----|--------|
 | `↑` `↓` | Navigate menu |
 | `Enter` | Select item |
-| `Ctrl+C` | Exit / Cancel |
+| `Ctrl+C` | Exit gracefully |
+
+---
 
 ## Themes
 
-8 built-in themes available:
+8 built-in color themes:
 
-| Theme | Description |
-|-------|-------------|
-| `default` | Cyan and green |
+| Theme | Style |
+|-------|-------|
+| `default` | Cyan and green (default) |
 | `ocean` | Blue marine tones |
 | `sunset` | Warm red and orange |
 | `nord` | Nord color palette |
@@ -157,34 +193,12 @@ The interactive mode provides a premium menu-driven interface:
 | `cyberpunk` | Bright neon colors |
 | `minimal` | Monochrome minimal |
 
-Change theme:
-
 ```bash
-openedge theme          # List themes
-openedge theme dracula  # Set theme
+openedge theme          # List all themes
+openedge theme dracula  # Apply theme
 ```
 
-## Configuration
-
-Configuration is stored in `~/.openedge/`:
-
-```
-~/.openedge/
-├── config.json    # Theme, preferences
-└── history.json   # Recent files
-```
-
-### Config Options
-
-```json
-{
-  "theme": "default",
-  "recentFilesLimit": 10,
-  "watchDebounceMs": 300,
-  "clearScreenOnAction": true,
-  "showSpinners": true
-}
-```
+---
 
 ## DSL Language
 
@@ -223,8 +237,8 @@ kernel "MyKernel" {
 | Directive | Description |
 |-----------|-------------|
 | `.data name { values }` | Declare data array |
-| `.const NAME value` | Define constant |
-| `.alias NAME value` | Create alias |
+| `.const NAME value` | Define compile-time constant |
+| `.alias NAME value` | Create symbolic alias |
 
 ### Operations
 
@@ -232,28 +246,32 @@ kernel "MyKernel" {
 |-----------|-------------|
 | `LWI Rd, addr` | Load word immediate |
 | `SWI Rs, addr` | Store word immediate |
-| `SADD Rd, Rs1, Rs2` | Signed add |
-| `SSUB Rd, Rs1, Rs2` | Signed subtract |
-| `SMUL Rd, Rs1, Rs2` | Signed multiply |
+| `SADD Rd, Rs1, Rs2` | Signed addition |
+| `SSUB Rd, Rs1, Rs2` | Signed subtraction |
+| `SMUL Rd, Rs1, Rs2` | Signed multiplication |
 | `NOP` | No operation |
 | `EXIT` | End execution |
 
 ### Registers
 
-- `R0` - `R7`: General purpose registers
-- `ROUT`: Output register (for routing)
-- `RCL`, `RCR`, `RCU`, `RCD`: Neighbor registers (left, right, up, down)
-- `ZERO`: Zero constant
+| Register | Description |
+|----------|-------------|
+| `R0` - `R7` | General purpose registers |
+| `ROUT` | Output register (routing) |
+| `RCL`, `RCR`, `RCU`, `RCD` | Neighbor registers (left, right, up, down) |
+| `ZERO` | Zero constant |
 
 ### Control Flow
 
 ```dsl
+// Simple loop
 for i in range(0, 4) {
     cycle {
         @0,i: ADD R0, RCL, R1;
     }
 }
 
+// Nested loops with pragma
 #pragma parallel collapse(2)
 for i in range(0, 4) {
     for j in range(0, 4) {
@@ -272,6 +290,8 @@ for i in range(0, 4) {
 #pragma route (0,0) -> (3,3) payload(R0) accum(R1)
 ```
 
+---
+
 ## Output Format
 
 The compiler generates CSV format compatible with CGRA simulators:
@@ -286,9 +306,11 @@ NOP, NOP, NOP, NOP
 ...
 ```
 
+---
+
 ## Library Usage
 
-Use OpenEdge DSL as a library:
+Use OpenEdge DSL as a TypeScript/JavaScript library:
 
 ```typescript
 import { compileDslToCsv } from '@phdcristian/openedge-dsl';
@@ -308,6 +330,7 @@ const result = compileDslToCsv(source);
 if (result.success) {
   console.log(result.csv);
   console.log('Cycles:', result.maxCycles);
+  console.log('Grid:', result.suggestedGridSize);
   console.log('Memory:', result.memoryRegions);
 } else {
   console.error('Error:', result.error);
@@ -319,57 +342,72 @@ if (result.success) {
 
 | Export | Description |
 |--------|-------------|
-| `compileDslToCsv(code)` | Compile DSL source to CSV format |
+| `compileDslToCsv(code)` | Compile DSL source to CSV |
 | `tokenize(code)` | Tokenize source code |
 | `TokenType` | Enum of token types |
 | `generateCsv(ast, symbols)` | Generate CSV from AST |
 
-### Types
+---
 
-| Type | Description |
-|------|-------------|
-| `Token` | Token with type, value, line, column |
-| `CompilationResult` | Result of compilation |
-| `KernelAst` | Abstract syntax tree |
-| `SymbolTable` | Symbol table with constants, arrays, functions |
+## Configuration
+
+Configuration stored in `~/.openedge/`:
+
+```
+~/.openedge/
+├── config.json    # Theme and preferences
+└── history.json   # Recent files
+```
+
+### Options
+
+```json
+{
+  "theme": "default",
+  "recentFilesLimit": 10,
+  "watchDebounceMs": 300,
+  "clearScreenOnAction": true,
+  "showSpinners": true
+}
+```
+
+---
 
 ## Development
 
 ```bash
-# Install dependencies
-npm install
-
-# Build TypeScript
-npm run build
-
-# Build CLI bundle
-npm run build:cli
-
-# Run tests
-npm test
-
-# Watch mode for development
-npm run build:watch
+npm install          # Install dependencies
+npm run build        # Build TypeScript
+npm run build:cli    # Build CLI bundle
+npm test             # Run tests
+npm run build:watch  # Watch mode
 ```
+
+---
 
 ## Documentation
 
-See the [docs/](./docs/) directory for complete documentation:
+See [`docs/`](./docs/) for complete documentation:
 
 - [Language Specification](./docs/spec/)
 - [Feature Guides](./docs/features/)
 - [Examples](./docs/examples/)
 
+---
+
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details.
 
-## Author
+---
 
-Cristian Campos <cristian@uma.es>  
-PhD Candidate, Universidad de Málaga
+<div align="center">
 
-## Links
+**OpenEdge DSL** · CGRA Compiler Toolchain
 
-- [Repository](https://github.com/PhDCristian/OpenEdgeDSL)
-- [Issues](https://github.com/PhDCristian/OpenEdgeDSL/issues)
+Created by [Cristian Campos](mailto:cristian@uma.es)  
+PhD Candidate · Universidad de Málaga
+
+[GitHub](https://github.com/PhDCristian/OpenEdgeDSL) · [Issues](https://github.com/PhDCristian/OpenEdgeDSL/issues)
+
+</div>
