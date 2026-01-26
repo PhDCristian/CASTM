@@ -13,6 +13,7 @@ import { infoCommand } from './commands/info.js';
 import { runInteractiveMode } from './commands/interactive.js';
 import { startWatchMode } from './commands/watch.js';
 import { setTheme, getThemeNames, BUILTIN_THEMES } from './config/store.js';
+import { runTuiMode } from './tui/index.js';
 
 // Package version (will be updated from package.json in build)
 const VERSION = '0.1.0';
@@ -48,6 +49,15 @@ program
   .description('Launch interactive menu-driven mode')
   .action(async () => {
     await runInteractiveMode();
+  });
+
+// TUI mode command (new React-like interface)
+program
+  .command('tui')
+  .alias('t')
+  .description('Launch TUI mode with side-by-side preview (experimental)')
+  .action(() => {
+    runTuiMode();
   });
 
 // Theme command
@@ -89,6 +99,7 @@ Examples:
   $ openedge theme dracula                   Change to Dracula theme
   $ openedge interactive                     Launch interactive mode
   $ openedge i                               (shortcut for interactive)
+  $ openedge tui                             Launch TUI mode (experimental)
 
 Documentation:
   https://github.com/PhDCristian/OpenEdgeDSL

@@ -67,7 +67,9 @@
     "commander": "^12.0.0",
     "figlet": "^1.10.0",
     "gradient-string": "^3.0.0",
-    "ora": "^9.1.0"
+    "ink": "^6.6.0",
+    "ora": "^9.1.0",
+    "react": "^19.2.3"
   },
   "devDependencies": {
     "@types/figlet": "^1.7.0",
