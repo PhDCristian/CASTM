@@ -1,38 +1,65 @@
 /**
- * Interactive mode - menu-driven CLI interface
+ * Premium Interactive Mode
+ * Inspired by OpenCode, Claude CLI, Gemini CLI
  */
 
-import { select, input, confirm } from '@inquirer/prompts';
+import { select, input } from '@inquirer/prompts';
 import { existsSync, readdirSync, statSync } from 'fs';
 import { join, dirname, basename, resolve } from 'path';
 import { compileDslToCsv } from '../../compiler.js';
-import { logger } from '../utils/logger.js';
 import { readFile, writeFile, getOutputPath, getRelativePath } from '../utils/files.js';
+import {
+  printWelcome,
+  printSuccess,
+  printError,
+  printInfo,
+  printHeader,
+  printKeyValue,
+  printCompilationStats,
+  printCodeFrame,
+  printFileBadge,
+  printDivider,
+  createSpinner,
+  clearScreen,
+  chalk,
+  symbols,
+} from '../ui/premium.js';
 
-// Store last used directory for convenience
+// Store state
 let lastDirectory = process.cwd();
+let selectedFile: string | null = null;
 
 /**
- * Find .dsl files in a directory
+ * Custom theme for inquirer
  */
-function findDslFiles(dir: string): string[] {
-  try {
-    const files = readdirSync(dir);
-    return files
-      .filter(f => f.endsWith('.dsl'))
-      .map(f => join(dir, f));
-  } catch {
-    return [];
-  }
-}
+const theme = {
+  prefix: chalk.cyan('❯'),
+  spinner: {
+    interval: 80,
+    frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'].map(f => chalk.cyan(f)),
+  },
+  style: {
+    answer: chalk.cyan,
+    message: chalk.bold.white,
+    error: chalk.red,
+    help: chalk.dim,
+    highlight: chalk.cyan,
+    key: chalk.cyan.bold,
+  },
+};
 
 /**
- * Browse for a DSL file
+ * Browse for a DSL file with premium UI
  */
 async function browseForFile(): Promise<string | null> {
   let currentDir = lastDirectory;
   
   while (true) {
+    clearScreen();
+    printHeader('📂 File Browser');
+    console.log('  ' + chalk.dim('Location: ') + chalk.cyan(currentDir));
+    console.log();
+    
     const entries = readdirSync(currentDir);
     const dirs = entries.filter(e => {
       try {
@@ -40,37 +67,47 @@ async function browseForFile(): Promise<string | null> {
       } catch {
         return false;
       }
-    });
-    const dslFiles = entries.filter(e => e.endsWith('.dsl'));
+    }).sort();
     
-    const choices: { name: string; value: string }[] = [];
+    const dslFiles = entries.filter(e => e.endsWith('.dsl')).sort();
     
-    // Add parent directory option
+    const choices: { name: string; value: string; description?: string }[] = [];
+    
+    // Parent directory
     if (currentDir !== '/') {
-      choices.push({ name: '📁 ..', value: '__PARENT__' });
+      choices.push({ 
+        name: chalk.dim('..') + chalk.dim(' (parent)'), 
+        value: '__PARENT__' 
+      });
     }
     
-    // Add directories
+    // Directories first
     dirs.forEach(d => {
-      choices.push({ name: `📁 ${d}/`, value: `__DIR__:${d}` });
+      choices.push({ 
+        name: chalk.blue('📁 ') + chalk.blue(d), 
+        value: `__DIR__:${d}` 
+      });
     });
     
-    // Add DSL files
+    // DSL files
     dslFiles.forEach(f => {
-      choices.push({ name: `📄 ${f}`, value: join(currentDir, f) });
+      choices.push({ 
+        name: chalk.green('📄 ') + chalk.white(f), 
+        value: join(currentDir, f),
+        description: 'DSL source file'
+      });
     });
     
-    // Add manual input option
-    choices.push({ name: '✏️  Enter path manually...', value: '__MANUAL__' });
-    choices.push({ name: '❌ Cancel', value: '__CANCEL__' });
-    
-    console.log();
-    logger.dim(`Current: ${currentDir}`);
+    // Options
+    choices.push({ name: chalk.dim('─'.repeat(30)), value: '__SEP__', disabled: true } as any);
+    choices.push({ name: chalk.yellow('✏️  Enter path manually'), value: '__MANUAL__' });
+    choices.push({ name: chalk.red('← Back to menu'), value: '__CANCEL__' });
     
     const selection = await select({
-      message: 'Select a DSL file:',
+      message: 'Select a file or directory',
       choices,
       pageSize: 15,
+      theme,
     });
     
     if (selection === '__CANCEL__') {
@@ -86,12 +123,14 @@ async function browseForFile(): Promise<string | null> {
       const manualPath = await input({
         message: 'Enter file path:',
         default: join(currentDir, 'kernel.dsl'),
+        theme,
       });
       if (existsSync(manualPath)) {
         lastDirectory = dirname(resolve(manualPath));
         return resolve(manualPath);
       } else {
-        logger.error(`File not found: ${manualPath}`);
+        printError('File not found', manualPath);
+        await new Promise(r => setTimeout(r, 1500));
         continue;
       }
     }
@@ -108,36 +147,64 @@ async function browseForFile(): Promise<string | null> {
 }
 
 /**
- * Compile action
+ * Compile action with spinner
  */
 async function doCompile(filePath: string): Promise<void> {
+  clearScreen();
+  printHeader('🔨 Compile');
+  printFileBadge(getRelativePath(filePath));
+  console.log();
+  
+  const spinner = createSpinner('Reading source file...');
+  spinner.start();
+  
   const startTime = performance.now();
+  
+  // Simulate slight delay for effect
+  await new Promise(r => setTimeout(r, 300));
   
   const readResult = readFile(filePath);
   if (!readResult.success) {
-    logger.error(readResult.error!);
+    spinner.fail(chalk.red('Failed to read file'));
+    printError('Read Error', readResult.error);
     return;
   }
+  
+  spinner.text = 'Compiling...';
+  await new Promise(r => setTimeout(r, 200));
   
   const result = compileDslToCsv(readResult.content!);
   
   if (result.success) {
-    // Ask for output path
+    spinner.text = 'Writing output...';
+    
     const defaultOutput = getOutputPath(filePath);
+    
+    spinner.stop();
+    console.log();
+    
     const outputPath = await input({
-      message: 'Output file:',
+      message: 'Output file',
       default: defaultOutput,
+      theme,
     });
+    
+    const writeSpinner = createSpinner('Writing CSV...');
+    writeSpinner.start();
+    
+    await new Promise(r => setTimeout(r, 200));
     
     const writeResult = writeFile(outputPath, result.csv!);
     if (!writeResult.success) {
-      logger.error(writeResult.error!);
+      writeSpinner.fail(chalk.red('Failed to write file'));
+      printError('Write Error', writeResult.error);
       return;
     }
     
     const endTime = performance.now();
-    logger.success('Compiled successfully');
-    logger.stats({
+    writeSpinner.succeed(chalk.green('Compiled successfully'));
+    
+    printCompilationStats({
       output: getRelativePath(outputPath),
       cycles: result.maxCycles,
       grid: result.suggestedGridSize,
@@ -146,9 +213,10 @@ async function doCompile(filePath: string): Promise<void> {
       time: endTime - startTime,
     });
   } else {
-    logger.error('Compilation failed');
+    spinner.fail(chalk.red('Compilation failed'));
+    
     if (result.line && readResult.content) {
-      logger.codeFrame(
+      printCodeFrame(
         readResult.content,
         result.line,
         1,
@@ -156,45 +224,55 @@ async function doCompile(filePath: string): Promise<void> {
         getRelativePath(filePath)
       );
     } else {
-      logger.newline();
-      logger.dim(`  ${result.error}`);
-      logger.newline();
+      printError('Error', result.error || 'Unknown error');
     }
   }
 }
 
 /**
- * Check action
+ * Check action with spinner
  */
 async function doCheck(filePath: string): Promise<void> {
+  clearScreen();
+  printHeader('✅ Validate');
+  printFileBadge(getRelativePath(filePath));
+  console.log();
+  
+  const spinner = createSpinner('Validating syntax...');
+  spinner.start();
+  
+  await new Promise(r => setTimeout(r, 400));
+  
   const readResult = readFile(filePath);
   if (!readResult.success) {
-    logger.error(readResult.error!);
+    spinner.fail(chalk.red('Failed to read file'));
+    printError('Read Error', readResult.error);
     return;
   }
   
   const result = compileDslToCsv(readResult.content!);
-  const relativePath = getRelativePath(filePath);
   
   if (result.success) {
-    logger.success(`${relativePath}: No errors found`);
-    if (result.maxCycles) {
-      logger.dim(`  ${result.maxCycles} cycles, ${result.memoryRegions?.length || 0} memory regions`);
+    spinner.succeed(chalk.green('No errors found'));
+    console.log();
+    printKeyValue('Cycles', result.maxCycles || 0);
+    printKeyValue('Memory regions', result.memoryRegions?.length || 0);
+    if (result.assertions && result.assertions.length > 0) {
+      printKeyValue('Assertions', result.assertions.length);
     }
   } else {
-    logger.error(`${relativePath}: Validation failed`);
+    spinner.fail(chalk.red('Validation failed'));
+    
     if (result.line && readResult.content) {
-      logger.codeFrame(
+      printCodeFrame(
         readResult.content,
         result.line,
         1,
         result.error || 'Unknown error',
-        relativePath
+        getRelativePath(filePath)
       );
     } else {
-      logger.newline();
-      logger.dim(`  ${result.error}`);
-      logger.newline();
+      printError('Error', result.error || 'Unknown error');
     }
   }
 }
@@ -203,137 +281,190 @@ async function doCheck(filePath: string): Promise<void> {
  * Info action
  */
 async function doInfo(filePath: string): Promise<void> {
+  clearScreen();
+  printHeader('ℹ️  Program Info');
+  printFileBadge(getRelativePath(filePath));
+  console.log();
+  
+  const spinner = createSpinner('Analyzing program...');
+  spinner.start();
+  
+  await new Promise(r => setTimeout(r, 400));
+  
   const readResult = readFile(filePath);
   if (!readResult.success) {
-    logger.error(readResult.error!);
+    spinner.fail(chalk.red('Failed to read file'));
+    printError('Read Error', readResult.error);
     return;
   }
   
   const result = compileDslToCsv(readResult.content!);
-  const relativePath = getRelativePath(filePath);
   
+  spinner.stop();
   console.log();
   
   if (result.success) {
-    logger.success(`Program: ${relativePath}`);
+    console.log('  ' + chalk.bgGreen.black(' VALID '));
     console.log();
-    logger.property('Status', 'Valid');
+    
+    printKeyValue('Status', chalk.green('Valid'));
     
     if (result.maxCycles !== undefined) {
-      logger.property('Cycles', result.maxCycles);
+      printKeyValue('Cycles', result.maxCycles);
     }
     
     if (result.suggestedGridSize) {
-      logger.property('Grid', `${result.suggestedGridSize.width}×${result.suggestedGridSize.height}`);
+      printKeyValue('Grid size', `${result.suggestedGridSize.width}×${result.suggestedGridSize.height}`);
     }
     
     if (result.memoryRegions && result.memoryRegions.length > 0) {
-      logger.property('Memory', `${result.memoryRegions.length} region(s)`);
+      console.log();
+      printHeader('Memory Regions');
       result.memoryRegions.forEach(region => {
-        const name = region.name || 'anonymous';
-        const addr = `0x${region.start.toString(16).toUpperCase()}`;
-        logger.dim(`        ${name}: ${addr} (${region.values.length} values)`);
+        const name = region.name || chalk.dim('anonymous');
+        const addr = chalk.cyan(`0x${region.start.toString(16).toUpperCase()}`);
+        console.log(`    ${chalk.dim('•')} ${name} ${chalk.dim('at')} ${addr} ${chalk.dim(`(${region.values.length} values)`)}`);
       });
     }
     
     if (result.assertions && result.assertions.length > 0) {
-      logger.property('Assertions', result.assertions.length);
+      console.log();
+      printHeader('Assertions');
+      printKeyValue('Count', result.assertions.length);
     }
     
     if (result.ioConfig) {
+      console.log();
+      printHeader('I/O Configuration');
       if (result.ioConfig.loadAddrs.length > 0) {
-        logger.property('Load addrs', result.ioConfig.loadAddrs.map(a => `0x${a.toString(16)}`).join(', '));
+        printKeyValue('Load addresses', result.ioConfig.loadAddrs.map(a => `0x${a.toString(16)}`).join(', '));
       }
       if (result.ioConfig.storeAddrs.length > 0) {
-        logger.property('Store addrs', result.ioConfig.storeAddrs.map(a => `0x${a.toString(16)}`).join(', '));
+        printKeyValue('Store addresses', result.ioConfig.storeAddrs.map(a => `0x${a.toString(16)}`).join(', '));
       }
     }
   } else {
-    logger.error(`Program: ${relativePath}`);
+    console.log('  ' + chalk.bgRed.white(' INVALID '));
     console.log();
-    logger.property('Status', 'Invalid');
-    logger.property('Error', result.error || 'Unknown');
+    printKeyValue('Status', chalk.red('Invalid'));
+    printKeyValue('Error', result.error || 'Unknown');
     if (result.line) {
-      logger.property('Line', result.line);
+      printKeyValue('Line', result.line);
     }
   }
-  
-  console.log();
 }
 
 /**
- * Main interactive loop
+ * Wait for keypress
+ */
+async function waitForKey(): Promise<void> {
+  console.log();
+  console.log('  ' + chalk.dim('Press Enter to continue...'));
+  await input({ message: '', theme: { ...theme, prefix: '' } });
+}
+
+/**
+ * Main interactive loop with premium UI
  */
 export async function runInteractiveMode(): Promise<void> {
-  console.log();
-  console.log('  ╔═══════════════════════════════════════╗');
-  console.log('  ║                                       ║');
-  console.log('  ║   🔧 OpenEdge-DSL Interactive Mode    ║');
-  console.log('  ║                                       ║');
-  console.log('  ╚═══════════════════════════════════════╝');
-  console.log();
-  
-  let selectedFile: string | null = null;
+  printWelcome();
   
   while (true) {
-    // Build menu choices
+    // Build menu
     const choices: { name: string; value: string; description?: string }[] = [];
     
     if (selectedFile) {
+      // Show current file
+      console.log();
+      console.log('  ' + chalk.dim('Selected: ') + chalk.cyan(basename(selectedFile)));
+      console.log('  ' + chalk.dim(dirname(selectedFile)));
+      console.log();
+      
       choices.push(
-        { name: '🔨 Compile', value: 'compile', description: 'Compile to CSV' },
-        { name: '✅ Check', value: 'check', description: 'Validate syntax' },
-        { name: 'ℹ️  Info', value: 'info', description: 'Show program details' },
-        { name: '📄 Change file', value: 'browse', description: 'Select different file' },
+        { 
+          name: chalk.green('🔨 Compile'), 
+          value: 'compile',
+          description: 'Compile DSL to CSV'
+        },
+        { 
+          name: chalk.blue('✓  Validate'), 
+          value: 'check',
+          description: 'Check for errors'
+        },
+        { 
+          name: chalk.cyan('ℹ  Info'), 
+          value: 'info',
+          description: 'Show program details'
+        },
+        { name: chalk.dim('─'.repeat(30)), value: '__SEP__', disabled: true } as any,
+        { 
+          name: chalk.yellow('📂 Change file'), 
+          value: 'browse',
+          description: 'Select a different file'
+        },
       );
     } else {
       choices.push(
-        { name: '📂 Open file', value: 'browse', description: 'Browse for DSL file' },
+        { 
+          name: chalk.cyan('📂 Open file'), 
+          value: 'browse',
+          description: 'Browse for DSL file'
+        },
       );
     }
     
-    choices.push(
-      { name: '❌ Exit', value: 'exit', description: 'Quit interactive mode' },
-    );
-    
-    // Show current file if selected
-    if (selectedFile) {
-      console.log();
-      logger.info(`Selected: ${getRelativePath(selectedFile)}`);
-    }
+    choices.push({ name: chalk.dim('─'.repeat(30)), value: '__SEP2__', disabled: true } as any);
+    choices.push({ 
+      name: chalk.red('✕  Exit'), 
+      value: 'exit',
+      description: 'Quit OpenEdge'
+    });
     
     const action = await select({
       message: 'What would you like to do?',
       choices,
+      theme,
     });
     
     switch (action) {
       case 'browse':
         selectedFile = await browseForFile();
+        clearScreen();
+        printWelcome();
         break;
         
       case 'compile':
-        if (selectedFile) await doCompile(selectedFile);
+        if (selectedFile) {
+          await doCompile(selectedFile);
+          await waitForKey();
+          clearScreen();
+          printWelcome();
+        }
         break;
         
       case 'check':
-        if (selectedFile) await doCheck(selectedFile);
+        if (selectedFile) {
+          await doCheck(selectedFile);
+          await waitForKey();
+          clearScreen();
+          printWelcome();
+        }
         break;
         
       case 'info':
-        if (selectedFile) await doInfo(selectedFile);
+        if (selectedFile) {
+          await doInfo(selectedFile);
+          await waitForKey();
+          clearScreen();
+          printWelcome();
+        }
         break;
         
       case 'exit':
         console.log();
-        logger.dim('  Goodbye! 👋');
+        console.log('  ' + chalk.dim('Goodbye! 👋'));
         console.log();
-        return;
-    }
-    
-    // Pause before showing menu again
-    if (action !== 'browse' && action !== 'exit') {
-      await confirm({ message: 'Continue?', default: true });
+        process.exit(0);
     }
   }
 }
