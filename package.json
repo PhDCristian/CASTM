@@ -68,6 +68,7 @@
     "figlet": "^1.10.0",
     "gradient-string": "^3.0.0",
     "ink": "^6.6.0",
+    "ink-text-input": "^6.0.0",
     "ora": "^9.1.0",
     "react": "^19.2.3"
   },

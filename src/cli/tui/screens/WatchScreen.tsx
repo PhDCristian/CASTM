@@ -137,9 +137,11 @@ export function WatchScreen({ file, onNavigate }: WatchScreenProps) {
           {lastCompileResult.success ? (
             <Panel title="Last Compilation" borderColor={theme.dim}>
               <Box flexDirection="column">
-                <Box><Text color={theme.dim}>Cycles: </Text><Text>{lastCompileResult.cycles}</Text></Box>
-                <Box><Text color={theme.dim}>Grid:   </Text><Text>{lastCompileResult.grid?.width}x{lastCompileResult.grid?.height}</Text></Box>
-                <Box><Text color={theme.dim}>Memory: </Text><Text>{lastCompileResult.memory} regions</Text></Box>
+                <Box><Text color={theme.dim}>Cycles: </Text><Text>{lastCompileResult.cycles ?? 'N/A'}</Text></Box>
+                {lastCompileResult.grid && (
+                  <Box><Text color={theme.dim}>Grid:   </Text><Text>{lastCompileResult.grid.width}x{lastCompileResult.grid.height}</Text></Box>
+                )}
+                <Box><Text color={theme.dim}>Memory: </Text><Text>{lastCompileResult.memory ?? 0} regions</Text></Box>
               </Box>
             </Panel>
           ) : (

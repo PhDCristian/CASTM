@@ -122,15 +122,17 @@ export function CompileScreen({ file, onNavigate }: CompileScreenProps) {
               </Box>
               <Box>
                 <Text color={theme.dim} bold>Cycles:   </Text>
-                <Text>{stats.cycles}</Text>
+                <Text>{stats.cycles ?? 'N/A'}</Text>
               </Box>
-              <Box>
-                <Text color={theme.dim} bold>Grid:     </Text>
-                <Text>{stats.grid.width}x{stats.grid.height}</Text>
-              </Box>
+              {stats.grid && (
+                <Box>
+                  <Text color={theme.dim} bold>Grid:     </Text>
+                  <Text>{stats.grid.width}x{stats.grid.height}</Text>
+                </Box>
+              )}
               <Box>
                 <Text color={theme.dim} bold>Memory:   </Text>
-                <Text>{stats.memory} regions</Text>
+                <Text>{stats.memory ?? 0} regions</Text>
               </Box>
             </Box>
           </Panel>

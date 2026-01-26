@@ -34,8 +34,8 @@ OpenEdge DSL provides a high-level abstraction for expressing spatial-temporal c
 
 | Feature | Description |
 |---------|-------------|
+| **Premium TUI** | Double-column explorer, side-by-side preview, real-time feedback |
 | **Spatial-Temporal Model** | Express computations in cycles and PE coordinates |
-| **High-Level Constructs** | Loops, conditionals, functions, and pragmas |
 | **Memory Operations** | Named arrays, data initialization, IO configuration |
 | **Pattern Generators** | Stencil, reduce, scan, broadcast, route operations |
 | **Premium CLI** | Interactive mode, syntax highlighting, themes, watch mode |
@@ -64,36 +64,33 @@ npm install -g @phdcristian/openedge-dsl
 
 ## Quick Start
 
-### Interactive Mode
+### Premium TUI Mode (Recommended)
 
 ```bash
-openedge
+openedge tui  # or just 'openedge t'
 ```
 
 <div align="center">
 
 ```
- ██████╗ ██████╗ ███████╗███╗   ██╗███████╗██████╗  ██████╗ ███████╗
-██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔══██╗██╔════╝ ██╔════╝
-██║   ██║██████╔╝█████╗  ██╔██╗ ██║█████╗  ██║  ██║██║  ███╗█████╗  
-██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██╔══╝  ██║  ██║██║   ██║██╔══╝  
-╚██████╔╝██║     ███████╗██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗
- ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝
-
-CGRA Compiler Toolchain · v0.1.0
-
- ↑↓  navigate    ⏎  select    ^C  exit
-
-› Start
-❯ Open file
-  Recent (3)
-  ────────────────────────────────────────
-  Help ?
-  Settings
-  Exit
+ ┌──────────────────────────────────────┐┌────────────────────────────────────┐
+ │ Browse > /projects/cgra              ││ ◇ kernel.dsl                       │
+ │                                      ││ 1 │ .data input { 10 }             │
+ │ ❯ ▪ examples                         ││ 2 │ kernel "Test" {                │
+ │   ▫ simple.dsl                       ││ 3 │   cycle {                      │
+ │   ▫ matrix_mul.dsl                   ││ 4 │     @0,0: LWI R0, input[0];    │
+ │   ..                                 ││ 5 │   }                            │
+ └──────────────────────────────────────┘└────────────────────────────────────┘
+   ↑↓ navigate   ⏎ select   ESC back   ^C exit
 ```
 
 </div>
+
+### Classic Interactive Mode
+
+```bash
+openedge interactive
+```
 
 ### Command Line
 
@@ -124,7 +121,8 @@ openedge theme dracula
 | `check <file>` | | Validate syntax without generating output |
 | `info <file>` | | Display program statistics and memory layout |
 | `watch <file>` | `w` | Watch file and auto-recompile on changes |
-| `interactive` | `i` | Launch interactive menu-driven mode |
+| `tui` | `t` | Launch modern TUI with side-by-side preview |
+| `interactive` | `i` | Launch classic interactive menu-driven mode |
 | `theme [name]` | | Change or list available themes |
 
 ### Compile Options
@@ -155,16 +153,21 @@ $ openedge info examples/simple.dsl
 
 ---
 
-## Interactive Mode Features
+## TUI & Interactive Features
 
+| Feature | TUI (Modern) | Interactive (Classic) |
+|---------|--------------|-----------------------|
+| **Layout** | Double-column | Single-column |
+| **Preview** | Real-time (on hover) | On select |
+| **Navigation** | Arrow keys + ESC | Arrow keys |
+| **Visuals** | React-based Ink | Inquirer-based |
+| **File Browser** | Side-by-side | Menu-driven |
+
+### Common Features
 | Feature | Description |
 |---------|-------------|
-| **File Browser** | Navigate directories, select `.dsl` files |
 | **Recent Files** | Quick access to previously opened files |
-| **Preview** | View source with syntax highlighting |
 | **Compile** | Compile to CSV with detailed statistics |
-| **Validate** | Check syntax without generating output |
-| **Info** | View program details and memory layout |
 | **Watch** | Auto-recompile on file changes |
 | **Settings** | Configure theme, spinners, preferences |
 
@@ -172,8 +175,9 @@ $ openedge info examples/simple.dsl
 
 | Key | Action |
 |-----|--------|
-| `↑` `↓` | Navigate menu |
+| `↑` `↓` | Navigate menu / files |
 | `Enter` | Select item |
+| `ESC` | Go back (TUI only) |
 | `Ctrl+C` | Exit gracefully |
 
 ---

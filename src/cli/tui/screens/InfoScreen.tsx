@@ -53,12 +53,14 @@ export function InfoScreen({ file, onNavigate }: InfoScreenProps) {
               </Box>
               <Box>
                 <Text color={theme.dim} bold>Max Cycles:   </Text>
-                <Text>{result.maxCycles}</Text>
+                <Text>{result.maxCycles ?? 'N/A'}</Text>
               </Box>
-              <Box>
-                <Text color={theme.dim} bold>Grid Size:    </Text>
-                <Text>{result.suggestedGridSize?.width} x {result.suggestedGridSize?.height}</Text>
-              </Box>
+              {result.suggestedGridSize && (
+                <Box>
+                  <Text color={theme.dim} bold>Grid Size:    </Text>
+                  <Text>{result.suggestedGridSize.width} x {result.suggestedGridSize.height}</Text>
+                </Box>
+              )}
               <Box>
                 <Text color={theme.dim} bold>Assertions:   </Text>
                 <Text>{result.assertions?.length || 0}</Text>
