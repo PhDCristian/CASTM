@@ -6,6 +6,9 @@
   "main": "dist/index.js",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "bin": {
+    "openedge": "./bin/openedge.js"
+  },
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -14,21 +17,28 @@
     "./compiler": {
       "types": "./dist/compiler.d.ts",
       "import": "./dist/compiler.js"
+    },
+    "./cli": {
+      "types": "./dist/cli/index.d.ts",
+      "import": "./dist/cli/index.js"
     }
   },
   "files": [
     "dist",
+    "bin",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
     "build": "tsc",
     "build:watch": "tsc --watch",
+    "build:cli": "esbuild src/cli/index.ts --bundle --platform=node --target=node18 --outfile=dist/cli.js --format=esm --packages=external",
+    "cli": "node bin/openedge.js",
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "lint": "eslint src --ext .ts",
     "clean": "rm -rf dist",
-    "prepublishOnly": "npm run clean && npm run build"
+    "prepublishOnly": "npm run clean && npm run build && npm run build:cli"
   },
   "keywords": [
     "cgra",
@@ -36,7 +46,8 @@
     "compiler",
     "reconfigurable",
     "spatial-computing",
-    "openedge"
+    "openedge",
+    "cli"
   ],
   "author": "Cristian Campos <cristian@uma.es>",
   "license": "MIT",
@@ -48,8 +59,12 @@
     "url": "https://github.com/PhDCristian/OpenEdgeDSL/issues"
   },
   "homepage": "https://github.com/PhDCristian/OpenEdgeDSL#readme",
+  "dependencies": {
+    "commander": "^12.0.0"
+  },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "esbuild": "^0.27.2",
     "typescript": "^5.3.0",
     "vitest": "^1.0.0"
   },
