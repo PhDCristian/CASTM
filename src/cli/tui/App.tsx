@@ -8,7 +8,7 @@ import { Box, Text, render, useApp, useStdout } from 'ink';
 import gradient from 'gradient-string';
 import { basename, dirname } from 'path';
 
-import { useTheme } from './theme.js';
+import { useTheme, premiumColors, symbols, gradients } from './theme.js';
 import { SelectList, SelectOption, CodePreview, FileViewer } from './components/index.js';
 import { FileBrowser } from './components/FileBrowser.js';
 import { CompileScreen, WatchScreen, InfoScreen, CheckScreen } from './screens/index.js';
@@ -29,16 +29,18 @@ import {
 import { readFileSync } from 'fs';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SHARED COMPONENTS
+// SHARED COMPONENTS - Vercel Style
 // ═══════════════════════════════════════════════════════════════════════════
 
+// Sleek, minimal logo with gradient
 const LOGO_LINES = [
-  ' ██████╗ ██████╗ ███████╗███╗   ██╗███████╗██████╗  ██████╗ ███████╗',
-  '██╔═══██╗██╔══██╗██╔════╝████╗  ██║██╔════╝██╔══██╗██╔════╝ ██╔════╝',
-  '██║   ██║██████╔╝█████╗  ██╔██╗ ██║█████╗  ██║  ██║██║  ███╗█████╗  ',
-  '██║   ██║██╔═══╝ ██╔══╝  ██║╚██╗██║██╔══╝  ██║  ██║██║   ██║██╔══╝  ',
-  '╚██████╔╝██║     ███████╗██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗',
-  ' ╚═════╝ ╚═╝     ╚══════╝╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝',
+  '╭───────────────────────────────────────────╮',
+  '│                                           │',
+  '│   ▲  O P E N E D G E                      │',
+  '│                                           │',
+  '│   CGRA Compiler Toolchain                 │',
+  '│                                           │',
+  '╰───────────────────────────────────────────╯',
 ];
 
 const STARTUP_TIPS = [
@@ -47,21 +49,21 @@ const STARTUP_TIPS = [
   'Try "openedge theme dracula" for a dark purple theme',
   'Recent files are saved for quick access',
   'Navigate menus with arrow keys, select with Enter',
+  'Press ? for keyboard shortcuts',
 ];
 
 function Logo() {
   const theme = useTheme();
-  const brand = gradient([theme.primary, theme.secondary]);
+  const brand = gradient([premiumColors.accentCyan, premiumColors.accentPink]);
   
   return (
     <Box flexDirection="column" marginBottom={1}>
       {LOGO_LINES.map((line, i) => (
         <Text key={i}>{brand(line)}</Text>
       ))}
-      <Box marginTop={1}>
-        <Text color={theme.dim}>CGRA Compiler Toolchain</Text>
-        <Text color={theme.dim}> · </Text>
-        <Text color={theme.primary}>v0.1.0</Text>
+      <Box marginTop={1} justifyContent="center">
+        <Text backgroundColor={premiumColors.accentBlue} color="#000" bold> v0.1.0 </Text>
+        <Text color={premiumColors.textDim}>  CGRA DSL Compiler</Text>
       </Box>
     </Box>
   );
@@ -73,8 +75,9 @@ function RandomTip() {
   
   return (
     <Box marginBottom={1}>
-      <Text color={theme.dim}>tip: </Text>
-      <Text color={theme.accent}>{tip}</Text>
+      <Text color={premiumColors.accentOrange}>{symbols.lightning}</Text>
+      <Text color={premiumColors.textDim}> tip: </Text>
+      <Text color={premiumColors.textMuted}>{tip}</Text>
     </Box>
   );
 }
@@ -117,7 +120,7 @@ function MainMenu({ selectedFile, onNavigate }: MainMenuProps) {
       { label: 'Check', value: 'check', description: 'validate syntax' },
       { label: 'Info', value: 'info', description: 'show details' },
       { label: 'Watch', value: 'watch', description: 'auto-rebuild' },
-      { label: '─'.repeat(30), value: '__SEP__', disabled: true },
+      { label: '─'.repeat(25), value: '__SEP__', disabled: true },
       { label: 'Change file', value: 'browse' },
     );
   } else {
@@ -129,7 +132,7 @@ function MainMenu({ selectedFile, onNavigate }: MainMenuProps) {
   }
   
   options.push(
-    { label: '─'.repeat(30), value: '__SEP2__', disabled: true },
+    { label: '─'.repeat(25), value: '__SEP2__', disabled: true },
     { label: 'Settings', value: 'settings' },
     { label: 'Exit', value: 'exit' },
   );
@@ -154,9 +157,9 @@ function MainMenu({ selectedFile, onNavigate }: MainMenuProps) {
       
       {selectedFile && (
         <Box marginBottom={1}>
-          <Text color={theme.dim}>file </Text>
-          <Text color={theme.primary}>{basename(selectedFile)}</Text>
-          <Text color={theme.dim}> in {dirname(selectedFile)}</Text>
+          <Text color={premiumColors.accentGreen}>{symbols.file} </Text>
+          <Text color={premiumColors.textBright} bold>{basename(selectedFile)}</Text>
+          <Text color={premiumColors.textDim}> {symbols.arrow} {dirname(selectedFile)}</Text>
         </Box>
       )}
       
@@ -174,9 +177,9 @@ function Settings({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   const config = loadConfig();
   
   const options: SelectOption<string>[] = [
-    { label: 'Theme', value: 'theme', description: `· ${BUILTIN_THEMES[config.theme]?.name || config.theme}` },
-    { label: 'Spinners', value: 'spinners', description: config.showSpinners ? '· on' : '· off' },
-    { label: '─'.repeat(30), value: '__SEP__', disabled: true },
+    { label: 'Theme', value: 'theme', description: `› ${BUILTIN_THEMES[config.theme]?.name || config.theme}` },
+    { label: 'Spinners', value: 'spinners', description: config.showSpinners ? '› on' : '› off' },
+    { label: '─'.repeat(25), value: '__SEP__', disabled: true },
     { label: 'Back', value: 'back' },
   ];
   
@@ -202,7 +205,7 @@ function ThemeSelector({ onNavigate }: { onNavigate: (screen: Screen) => void })
   const themeNames = getThemeNames();
   const options: SelectOption<string>[] = [
     ...themeNames.map(name => ({ label: `${name === config.theme ? '● ' : '  '}${BUILTIN_THEMES[name].name}`, value: name })),
-    { label: '─'.repeat(30), value: '__SEP__', disabled: true },
+    { label: '─'.repeat(25), value: '__SEP__', disabled: true },
     { label: 'Back', value: 'back' },
   ];
   
@@ -239,7 +242,7 @@ function RecentFiles({ onSelect, onNavigate }: { onSelect: (file: string) => voi
   
   const options: SelectOption<string>[] = [
     ...recentFiles.map((f, i) => ({ label: `${i + 1}. ${basename(f.path)}`, value: f.path, description: dirname(f.path) })),
-    { label: '─'.repeat(30), value: '__SEP__', disabled: true },
+    { label: '─'.repeat(25), value: '__SEP__', disabled: true },
     { label: 'Back', value: '__BACK__' },
   ];
   

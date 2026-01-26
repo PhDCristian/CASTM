@@ -20,7 +20,7 @@ export {
   normalizeWhitespace,
   isIdentifierStart,
   isIdentifierPart
-} from './string-utils';
+} from './string-utils.js';
 
 // Source location utilities
 export {
@@ -33,7 +33,7 @@ export {
   offsetToPosition,
   positionToOffset,
   getSourceSnippet
-} from './source-location';
+} from './source-location.js';
 
 // Expression evaluation
 export {
@@ -44,4 +44,4 @@ export {
   evaluateExpressionString,
   substituteVariable,
   isCompileTimeExpression
-} from './expression';
+} from './expression.js';

@@ -31,49 +31,49 @@ function getThemeGradients() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 export const symbols = {
-  // Status
-  success: '✓',
-  error: '✗',
-  warning: '⚠',
-  info: '●',
+  // Status (ASCII-safe)
+  success: '+',
+  error: 'x',
+  warning: '!',
+  info: '*',
   
-  // Navigation
-  arrow: '→',
-  arrowRight: '▸',
-  arrowDown: '▾',
-  arrowUp: '▴',
-  pointer: '❯',
+  // Navigation (ASCII-safe)
+  arrow: '->',
+  arrowRight: '>',
+  arrowDown: 'v',
+  arrowUp: '^',
+  pointer: '>',
   
-  // Structure
-  line: '│',
-  corner: '└',
-  tee: '├',
-  dash: '─',
-  dot: '·',
-  bullet: '•',
+  // Structure (ASCII-safe)
+  line: '|',
+  corner: '+',
+  tee: '+',
+  dash: '-',
+  dot: '.',
+  bullet: '*',
   
-  // Actions
-  play: '▶',
-  pause: '⏸',
-  stop: '■',
-  refresh: '↻',
+  // Actions (ASCII-safe)
+  play: '>',
+  pause: '||',
+  stop: '#',
+  refresh: '@',
   
-  // Objects
-  file: '◇',
-  fileActive: '◆',
-  folder: '▪',
-  folderOpen: '▫',
+  // Objects (ASCII-safe)
+  file: '*',
+  fileActive: '#',
+  folder: '[D]',
+  folderOpen: '[D]',
   
-  // Progress
-  blockFull: '█',
-  blockMed: '▓',
-  blockLight: '░',
+  // Progress (ASCII-safe)
+  blockFull: '#',
+  blockMed: '=',
+  blockLight: '-',
   
-  // Decorative
-  star: '★',
-  diamond: '◆',
-  circle: '●',
-  circleEmpty: '○',
+  // Decorative (ASCII-safe)
+  star: '*',
+  diamond: '#',
+  circle: 'o',
+  circleEmpty: 'o',
 };
 
 export function getThemedSymbols() {
@@ -302,7 +302,7 @@ export function createSpinner(text: string): Ora {
     text: chalk.hex(theme.dim)(text),
     spinner: {
       interval: 80,
-      frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'],
+      frames: ['|', '/', '-', '\\'],
     },
     color: 'cyan',
     prefixText: '  ',

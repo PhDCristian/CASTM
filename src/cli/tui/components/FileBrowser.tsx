@@ -7,7 +7,7 @@ import { Box, Text, useInput, useApp } from 'ink';
 import TextInput from 'ink-text-input';
 import { readdirSync, statSync, readFileSync } from 'fs';
 import { join, dirname, basename } from 'path';
-import { useTheme, symbols } from '../theme.js';
+import { useTheme, symbols, premiumColors } from '../theme.js';
 import { CodePreview } from './CodePreview.js';
 
 interface FileBrowserProps {
@@ -266,7 +266,7 @@ export function FileBrowser({ initialPath, onSelect, onEscape }: FileBrowserProp
               maxLines={18} // Increased height
             />
           ) : (
-            <Box borderStyle="round" borderColor={theme.dim} paddingX={1} paddingY={1}>
+            <Box borderStyle="single" borderColor={theme.dim} paddingX={1} paddingY={1}>
               <Text color={theme.dim}>No preview available</Text>
             </Box>
           )}
@@ -275,15 +275,15 @@ export function FileBrowser({ initialPath, onSelect, onEscape }: FileBrowserProp
       
       {/* Footer hints */}
       <Box marginTop={1}>
-        <Text backgroundColor="#333333" color="white"> ↑↓ </Text>
-        <Text color={theme.dim}> navigate  </Text>
-        <Text backgroundColor="#333333" color="white"> ⏎ </Text>
+        <Text backgroundColor={premiumColors.bgLight} color={premiumColors.textBright}> ↑↓ </Text>
+        <Text color={theme.dim}> nav  </Text>
+        <Text backgroundColor={premiumColors.bgLight} color={premiumColors.textBright}> ↵ </Text>
         <Text color={theme.dim}> select  </Text>
-        <Text backgroundColor="#333333" color="white"> / </Text>
+        <Text backgroundColor={premiumColors.bgLight} color={premiumColors.textBright}> / </Text>
         <Text color={theme.dim}> search  </Text>
-        <Text backgroundColor="#333333" color="white"> Bksp </Text>
+        <Text backgroundColor={premiumColors.bgLight} color={premiumColors.textBright}> ⌫ </Text>
         <Text color={theme.dim}> up  </Text>
-        <Text backgroundColor="#333333" color="white"> ESC </Text>
+        <Text backgroundColor={premiumColors.bgLight} color={premiumColors.textBright}> esc </Text>
         <Text color={theme.dim}> back</Text>
       </Box>
     </Box>

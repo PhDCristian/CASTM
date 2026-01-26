@@ -4,8 +4,8 @@
  * Helpers for tracking and converting source positions.
  */
 
-import { SourceRange } from '../types/errors';
-import { Token } from '../types/tokens';
+import { SourceRange } from '../types/errors.js';
+import { Token } from '../types/tokens.js';
 
 /**
  * Represents a position in source code

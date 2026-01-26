@@ -64,10 +64,10 @@ let selectedFile: string | null = null;
 function getInquirerTheme() {
   const theme = getCurrentTheme();
   return {
-    prefix: chalk.hex(theme.primary)('›'),
+    prefix: chalk.hex(theme.primary)('>'),
     spinner: {
       interval: 80,
-      frames: ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'].map(f => chalk.hex(theme.primary)(f)),
+      frames: ['|', '/', '-', '\\'].map(f => chalk.hex(theme.primary)(f)),
     },
     style: {
       answer: (text: string) => chalk.hex(theme.primary)(text),

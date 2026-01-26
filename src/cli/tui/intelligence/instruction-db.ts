@@ -151,22 +151,43 @@ export const INSTRUCTION_DB: Record<string, InstructionDef> = {
 };
 
 export function getInstructionInfo(line: string): InstructionDef | null {
-  const trimmed = line.trim();
+  let trimmed = line.trim();
+  
+  // Skip empty lines and full-line comments
   if (!trimmed || trimmed.startsWith('//') || trimmed.startsWith('.')) return null;
+  
+  // Remove inline comments
+  const commentIndex = trimmed.indexOf('//');
+  if (commentIndex > 0) {
+    trimmed = trimmed.slice(0, commentIndex).trim();
+  }
+  
+  // Skip control flow keywords
+  const lowerTrimmed = trimmed.toLowerCase();
+  if (lowerTrimmed.startsWith('kernel') || 
+      lowerTrimmed.startsWith('cycle') || 
+      lowerTrimmed.startsWith('config') ||
+      lowerTrimmed.startsWith('row') ||
+      lowerTrimmed.startsWith('end') ||
+      trimmed === '{' || trimmed === '}') {
+    return null;
+  }
   
   // Check for pragma
   if (trimmed.startsWith('#pragma')) return INSTRUCTION_DB['#PRAGMA'];
   
-  // Extract opcode (assuming "OPCODE ..." or "LABEL: OPCODE ...")
-  // Remove label if present
+  // Extract opcode - handle "@row,col: OPCODE ..." format
   let cleanLine = trimmed;
   if (cleanLine.includes(':')) {
-    cleanLine = cleanLine.split(':')[1].trim();
+    cleanLine = cleanLine.split(':').slice(1).join(':').trim();
   }
   
-  const parts = cleanLine.split(/\s+/);
-  if (parts.length === 0) return null;
+  // Get first word as opcode
+  const parts = cleanLine.split(/[\s,;(]+/);
+  if (parts.length === 0 || !parts[0]) return null;
   
   const opcode = parts[0].toUpperCase();
+  
+  // Only return if it's a known instruction
   return INSTRUCTION_DB[opcode] || null;
 }
