@@ -3,7 +3,7 @@
  * Clean, minimal design inspired by Claude Code and OpenCode
  */
 
-import { select, input } from '@inquirer/prompts';
+import { select, input, ExitPromptError } from '@inquirer/prompts';
 import { existsSync, readdirSync, statSync } from 'fs';
 import { join, dirname, basename, resolve } from 'path';
 import { compileDslToCsv } from '../../compiler.js';
@@ -76,6 +76,45 @@ function getInquirerTheme() {
 }
 
 /**
+ * Graceful exit handler
+ */
+function gracefulExit(): never {
+  const theme = getCurrentTheme();
+  console.log();
+  console.log('  ' + chalk.hex(theme.dim)('Goodbye'));
+  console.log();
+  process.exit(0);
+}
+
+/**
+ * Safe select wrapper - handles Ctrl+C gracefully
+ */
+async function safeSelect<T>(options: Parameters<typeof select<T>>[0]): Promise<T> {
+  try {
+    return await select(options);
+  } catch (error) {
+    if (error instanceof ExitPromptError) {
+      gracefulExit();
+    }
+    throw error;
+  }
+}
+
+/**
+ * Safe input wrapper - handles Ctrl+C gracefully
+ */
+async function safeInput(options: Parameters<typeof input>[0]): Promise<string> {
+  try {
+    return await input(options);
+  } catch (error) {
+    if (error instanceof ExitPromptError) {
+      gracefulExit();
+    }
+    throw error;
+  }
+}
+
+/**
  * Show recent files menu - clean list
  */
 async function showRecentFiles(): Promise<string | null> {
@@ -104,7 +143,7 @@ async function showRecentFiles(): Promise<string | null> {
     { name: chalk.hex(theme.dim)('Back'), value: '__BACK__' },
   ];
   
-  const selection = await select({
+  const selection = await safeSelect({
     message: 'Select file',
     choices,
     pageSize: 12,
@@ -156,7 +195,7 @@ async function showThemeMenu(): Promise<void> {
     { name: chalk.hex(theme.dim)('Back'), value: '__BACK__' },
   ];
   
-  const selection = await select({
+  const selection = await safeSelect({
     message: 'Select theme',
     choices,
     pageSize: 12,
@@ -205,7 +244,7 @@ async function showSettingsMenu(): Promise<void> {
       { name: chalk.hex(theme.dim)('Back'), value: '__BACK__' },
     ];
     
-    const selection = await select({
+    const selection = await safeSelect({
       message: 'Configure',
       choices,
       theme: getInquirerTheme(),
@@ -221,7 +260,7 @@ async function showSettingsMenu(): Promise<void> {
         break;
         
       case 'recentLimit':
-        const limitStr = await input({
+        const limitStr = await safeInput({
           message: 'Limit (1-50):',
           default: String(config.recentFilesLimit),
           theme: getInquirerTheme(),
@@ -308,7 +347,7 @@ async function browseForFile(): Promise<string | null> {
     choices.push({ name: chalk.white('Enter path'), value: '__MANUAL__' });
     choices.push({ name: chalk.hex(theme.dim)('Cancel'), value: '__CANCEL__' });
     
-    const selection = await select({
+    const selection = await safeSelect({
       message: 'Select',
       choices,
       pageSize: 15,
@@ -325,7 +364,7 @@ async function browseForFile(): Promise<string | null> {
     }
     
     if (selection === '__MANUAL__') {
-      const manualPath = await input({
+      const manualPath = await safeInput({
         message: 'Path:',
         default: join(currentDir, 'kernel.dsl'),
         theme: getInquirerTheme(),
@@ -391,7 +430,7 @@ async function doCompile(filePath: string): Promise<void> {
     console.log();
     
     const defaultOutput = getOutputPath(filePath);
-    const outputPath = await input({
+    const outputPath = await safeInput({
       message: 'Output',
       default: defaultOutput,
       theme: getInquirerTheme(),
@@ -597,7 +636,7 @@ async function doWatch(filePath: string): Promise<void> {
   const theme = getCurrentTheme();
   
   console.log();
-  const outputPath = await input({
+  const outputPath = await safeInput({
     message: 'Output',
     default: getOutputPath(filePath),
     theme: getInquirerTheme(),
@@ -616,10 +655,9 @@ async function doWatch(filePath: string): Promise<void> {
  * Wait for keypress - minimal prompt
  */
 async function waitForKey(): Promise<void> {
-  const theme = getCurrentTheme();
   console.log();
   printHint('Press Enter to continue');
-  await input({ message: '', theme: { ...getInquirerTheme(), prefix: '' } });
+  await safeInput({ message: '', theme: { ...getInquirerTheme(), prefix: '' } });
 }
 
 /**
@@ -628,131 +666,135 @@ async function waitForKey(): Promise<void> {
 export async function runInteractiveMode(): Promise<void> {
   printWelcome();
   
-  while (true) {
-    const theme = getCurrentTheme();
-    const recentFiles = getRecentFiles();
-    
-    // Build menu
-    const choices: { name: string; value: string }[] = [];
-    
-    if (selectedFile) {
-      // Show current file
-      console.log();
-      console.log('  ' + chalk.hex(theme.dim)('file ') + chalk.hex(theme.primary)(basename(selectedFile)));
-      console.log('  ' + chalk.hex(theme.dim)(dirname(selectedFile)));
-      console.log();
+  try {
+    while (true) {
+      const theme = getCurrentTheme();
+      const recentFiles = getRecentFiles();
       
-      choices.push(
-        { name: chalk.white('Compile') + chalk.hex(theme.dim)(' → CSV'), value: 'compile' },
-        { name: chalk.white('Validate') + chalk.hex(theme.dim)(' syntax'), value: 'check' },
-        { name: chalk.white('Info') + chalk.hex(theme.dim)(' details'), value: 'info' },
-        { name: chalk.white('Preview') + chalk.hex(theme.dim)(' source'), value: 'preview' },
-        { name: chalk.white('Watch') + chalk.hex(theme.dim)(' auto-rebuild'), value: 'watch' },
-        { name: chalk.hex(theme.dim)('─'.repeat(40)), value: '__SEP1__', disabled: true } as any,
-        { name: chalk.white('Change file'), value: 'browse' },
-      );
-    } else {
-      choices.push(
-        { name: chalk.white('Open file'), value: 'browse' },
-      );
-    }
-    
-    // Recent files
-    if (!selectedFile && recentFiles.length > 0) {
-      choices.push({
-        name: chalk.white('Recent') + chalk.hex(theme.dim)(` (${recentFiles.length})`),
-        value: 'recent',
+      // Build menu
+      const choices: { name: string; value: string }[] = [];
+      
+      if (selectedFile) {
+        // Show current file
+        console.log();
+        console.log('  ' + chalk.hex(theme.dim)('file ') + chalk.hex(theme.primary)(basename(selectedFile)));
+        console.log('  ' + chalk.hex(theme.dim)(dirname(selectedFile)));
+        console.log();
+        
+        choices.push(
+          { name: chalk.white('Compile') + chalk.hex(theme.dim)(' → CSV'), value: 'compile' },
+          { name: chalk.white('Validate') + chalk.hex(theme.dim)(' syntax'), value: 'check' },
+          { name: chalk.white('Info') + chalk.hex(theme.dim)(' details'), value: 'info' },
+          { name: chalk.white('Preview') + chalk.hex(theme.dim)(' source'), value: 'preview' },
+          { name: chalk.white('Watch') + chalk.hex(theme.dim)(' auto-rebuild'), value: 'watch' },
+          { name: chalk.hex(theme.dim)('─'.repeat(40)), value: '__SEP1__', disabled: true } as any,
+          { name: chalk.white('Change file'), value: 'browse' },
+        );
+      } else {
+        choices.push(
+          { name: chalk.white('Open file'), value: 'browse' },
+        );
+      }
+      
+      // Recent files
+      if (!selectedFile && recentFiles.length > 0) {
+        choices.push({
+          name: chalk.white('Recent') + chalk.hex(theme.dim)(` (${recentFiles.length})`),
+          value: 'recent',
+        });
+      }
+      
+      choices.push({ name: chalk.hex(theme.dim)('─'.repeat(40)), value: '__SEP2__', disabled: true } as any);
+      choices.push({ name: chalk.white('Help') + chalk.hex(theme.dim)(' ?'), value: 'help' });
+      choices.push({ name: chalk.white('Settings'), value: 'settings' });
+      choices.push({ name: chalk.hex(theme.dim)('Exit'), value: 'exit' });
+      
+      const action = await safeSelect({
+        message: selectedFile ? 'Action' : 'Start',
+        choices,
+        theme: getInquirerTheme(),
       });
+      
+      switch (action) {
+        case 'browse':
+          selectedFile = await browseForFile();
+          clearScreen();
+          printWelcome();
+          break;
+          
+        case 'recent':
+          const recentFile = await showRecentFiles();
+          if (recentFile) {
+            selectedFile = recentFile;
+            addRecentFile(recentFile);
+          }
+          clearScreen();
+          printWelcome();
+          break;
+          
+        case 'compile':
+          if (selectedFile) {
+            await doCompile(selectedFile);
+            await waitForKey();
+            clearScreen();
+            printWelcome();
+          }
+          break;
+          
+        case 'check':
+          if (selectedFile) {
+            await doCheck(selectedFile);
+            await waitForKey();
+            clearScreen();
+            printWelcome();
+          }
+          break;
+          
+        case 'info':
+          if (selectedFile) {
+            await doInfo(selectedFile);
+            await waitForKey();
+            clearScreen();
+            printWelcome();
+          }
+          break;
+          
+        case 'preview':
+          if (selectedFile) {
+            await doPreview(selectedFile);
+            await waitForKey();
+            clearScreen();
+            printWelcome();
+          }
+          break;
+          
+        case 'watch':
+          if (selectedFile) {
+            await doWatch(selectedFile);
+          }
+          break;
+          
+        case 'help':
+          printHelpPanel();
+          await waitForKey();
+          clearScreen();
+          printWelcome();
+          break;
+          
+        case 'settings':
+          await showSettingsMenu();
+          clearScreen();
+          printWelcome();
+          break;
+          
+        case 'exit':
+          gracefulExit();
+      }
     }
-    
-    choices.push({ name: chalk.hex(theme.dim)('─'.repeat(40)), value: '__SEP2__', disabled: true } as any);
-    choices.push({ name: chalk.white('Help') + chalk.hex(theme.dim)(' ?'), value: 'help' });
-    choices.push({ name: chalk.white('Settings'), value: 'settings' });
-    choices.push({ name: chalk.hex(theme.dim)('Exit'), value: 'exit' });
-    
-    const action = await select({
-      message: selectedFile ? 'Action' : 'Start',
-      choices,
-      theme: getInquirerTheme(),
-    });
-    
-    switch (action) {
-      case 'browse':
-        selectedFile = await browseForFile();
-        clearScreen();
-        printWelcome();
-        break;
-        
-      case 'recent':
-        const recentFile = await showRecentFiles();
-        if (recentFile) {
-          selectedFile = recentFile;
-          addRecentFile(recentFile);
-        }
-        clearScreen();
-        printWelcome();
-        break;
-        
-      case 'compile':
-        if (selectedFile) {
-          await doCompile(selectedFile);
-          await waitForKey();
-          clearScreen();
-          printWelcome();
-        }
-        break;
-        
-      case 'check':
-        if (selectedFile) {
-          await doCheck(selectedFile);
-          await waitForKey();
-          clearScreen();
-          printWelcome();
-        }
-        break;
-        
-      case 'info':
-        if (selectedFile) {
-          await doInfo(selectedFile);
-          await waitForKey();
-          clearScreen();
-          printWelcome();
-        }
-        break;
-        
-      case 'preview':
-        if (selectedFile) {
-          await doPreview(selectedFile);
-          await waitForKey();
-          clearScreen();
-          printWelcome();
-        }
-        break;
-        
-      case 'watch':
-        if (selectedFile) {
-          await doWatch(selectedFile);
-        }
-        break;
-        
-      case 'help':
-        printHelpPanel();
-        await waitForKey();
-        clearScreen();
-        printWelcome();
-        break;
-        
-      case 'settings':
-        await showSettingsMenu();
-        clearScreen();
-        printWelcome();
-        break;
-        
-      case 'exit':
-        console.log();
-        console.log('  ' + chalk.hex(theme.dim)('Goodbye'));
-        console.log();
-        process.exit(0);
+  } catch (error) {
+    if (error instanceof ExitPromptError) {
+      gracefulExit();
     }
+    throw error;
   }
 }
