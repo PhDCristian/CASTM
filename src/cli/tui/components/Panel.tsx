@@ -1,52 +1,53 @@
 /**
- * Panel Component - A box with optional title and colored border
+ * Panel Component - A modern container with consistent padding and borders
  */
 
 import React from 'react';
 import { Box, Text } from 'ink';
-import { useTheme, symbols } from '../theme.js';
+import { useTheme } from '../theme.js';
 
 interface PanelProps {
   title?: string;
   children: React.ReactNode;
   borderColor?: string;
   width?: number | string;
-  padding?: number;
+  paddingX?: number;
+  paddingY?: number;
+  marginTop?: number;
+  marginBottom?: number;
 }
 
-export function Panel({ title, children, borderColor, width, padding = 1 }: PanelProps) {
+export function Panel({ 
+  title, 
+  children, 
+  borderColor, 
+  width, 
+  paddingX = 2, 
+  paddingY = 0,
+  marginTop = 0,
+  marginBottom = 0
+}: PanelProps) {
   const theme = useTheme();
   const color = borderColor || theme.primary;
   
   return (
-    <Box flexDirection="column" width={width}>
-      {/* Top border */}
-      <Box>
-        <Text color={color}>{symbols.boxTopLeft}</Text>
-        {title && (
-          <>
-            <Text color={color}>{symbols.boxHorizontal} </Text>
-            <Text color={color} bold>{title}</Text>
-            <Text color={color}> {symbols.boxHorizontal.repeat(10)}</Text>
-          </>
-        )}
-        {!title && <Text color={color}>{symbols.boxHorizontal.repeat(20)}</Text>}
-        <Text color={color}>{symbols.boxTopRight}</Text>
-      </Box>
-      
-      {/* Content */}
-      <Box paddingLeft={padding} paddingRight={padding}>
-        <Text color={color}>{symbols.boxVertical}</Text>
-        <Box flexDirection="column" paddingLeft={1}>
-          {children}
+    <Box 
+      flexDirection="column" 
+      width={width}
+      borderStyle="round"
+      borderColor={color}
+      paddingX={paddingX}
+      paddingY={paddingY}
+      marginTop={marginTop}
+      marginBottom={marginBottom}
+    >
+      {title && (
+        <Box marginTop={-1} marginBottom={1}>
+          <Text backgroundColor={theme.primary} color="black" bold> {title.toUpperCase()} </Text>
         </Box>
-      </Box>
-      
-      {/* Bottom border */}
-      <Box>
-        <Text color={color}>{symbols.boxBottomLeft}</Text>
-        <Text color={color}>{symbols.boxHorizontal.repeat(20)}</Text>
-        <Text color={color}>{symbols.boxBottomRight}</Text>
+      )}
+      <Box flexDirection="column">
+        {children}
       </Box>
     </Box>
   );

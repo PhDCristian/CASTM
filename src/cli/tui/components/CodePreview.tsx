@@ -100,11 +100,26 @@ function TokenText({ token, theme }: { token: Token; theme: ReturnType<typeof us
 
 export function CodePreview({ code, title, maxLines = 8, highlightLine }: CodePreviewProps) {
   const theme = useTheme();
-  const lines = code.split('\n').slice(0, maxLines);
-  const lineNumWidth = String(lines.length).length + 1;
+  const allLines = code.split('\n');
+  
+  // Calculate viewport based on highlightLine
+  let startLineIndex = 0;
+  if (highlightLine && highlightLine > 0) {
+    // Center the highlighted line
+    const halfWindow = Math.floor(maxLines / 2);
+    startLineIndex = Math.max(0, highlightLine - 1 - halfWindow);
+    
+    // Adjust if near the end
+    if (startLineIndex + maxLines > allLines.length) {
+      startLineIndex = Math.max(0, allLines.length - maxLines);
+    }
+  }
+
+  const lines = allLines.slice(startLineIndex, startLineIndex + maxLines);
+  const lineNumWidth = String(allLines.length).length + 1;
   
   return (
-    <Box flexDirection="column" borderStyle="round" borderColor={theme.dim} paddingX={1}>
+    <Box flexDirection="column" paddingX={1}>
       {title && (
         <Box marginBottom={1}>
           <Text color={theme.primary}>{symbols.file} </Text>
@@ -112,14 +127,21 @@ export function CodePreview({ code, title, maxLines = 8, highlightLine }: CodePr
         </Box>
       )}
       
+      {startLineIndex > 0 && (
+         <Box>
+           <Text color={theme.dim}>... {startLineIndex} lines above</Text>
+         </Box>
+      )}
+
       {lines.map((line, i) => {
-        const lineNum = i + 1;
+        const lineNum = startLineIndex + i + 1;
         const isHighlighted = lineNum === highlightLine;
         const tokens = tokenizeLine(line);
         
         return (
           <Box key={i}>
             <Text color={isHighlighted ? theme.warning : theme.dim}>
+              {isHighlighted ? symbols.pointer : ' '}
               {String(lineNum).padStart(lineNumWidth)} {symbols.line}{' '}
             </Text>
             {tokens.map((token, j) => (
@@ -129,10 +151,10 @@ export function CodePreview({ code, title, maxLines = 8, highlightLine }: CodePr
         );
       })}
       
-      {code.split('\n').length > maxLines && (
-        <Box marginTop={1}>
+      {startLineIndex + maxLines < allLines.length && (
+        <Box marginTop={0}>
           <Text color={theme.dim}>
-            ... {code.split('\n').length - maxLines} more lines
+            ... {allLines.length - (startLineIndex + maxLines)} more lines
           </Text>
         </Box>
       )}

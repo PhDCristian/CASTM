@@ -4,6 +4,7 @@ import TextInput from 'ink-text-input';
 import { readFileSync } from 'fs';
 import { useTheme, symbols } from '../theme.js';
 import { Panel } from '../components/Panel.js';
+import { CodePreview } from '../components/CodePreview.js';
 import { compileDslToCsv } from '../../../compiler.js';
 import { getRelativePath, getOutputPath, writeFile } from '../../utils/files.js';
 import { addRecentFile } from '../../config/store.js';
@@ -17,16 +18,31 @@ export function CompileScreen({ file, onNavigate }: CompileScreenProps) {
   const theme = useTheme();
   const [step, setStep] = useState<'input' | 'compiling' | 'success' | 'error'>('input');
   const [outputPath, setOutputPath] = useState(getOutputPath(file));
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ message: string; line?: number } | null>(null);
   const [stats, setStats] = useState<any>(null);
+  const [progress, setProgress] = useState(0);
+  const [fileContent, setFileContent] = useState<string>('');
+
+  useEffect(() => {
+    try {
+      setFileContent(readFileSync(file, 'utf-8'));
+    } catch {
+      // Ignore read error here
+    }
+  }, [file]);
   
   // Handle compilation
   const runCompilation = async () => {
     setStep('compiling');
-    const startTime = performance.now();
+    setProgress(0);
     
-    // Small delay to allow UI render
-    await new Promise(r => setTimeout(r, 100));
+    // Simulate progress steps for better UX
+    const steps = ['Parsing DSL...', 'Building AST...', 'Generating Instructions...', 'Optimizing...'];
+    
+    for (let i = 0; i <= 100; i += 20) {
+      setProgress(i);
+      await new Promise(r => setTimeout(r, 80));
+    }
 
     try {
       const content = readFileSync(file, 'utf-8');
@@ -37,9 +53,10 @@ export function CompileScreen({ file, onNavigate }: CompileScreenProps) {
         
         if (writeResult.success) {
           const endTime = performance.now();
+          // Use a default time if startTime wasn't captured or just use 0 as it's fast
           setStats({
             output: getRelativePath(outputPath),
-            time: endTime - startTime,
+            time: 0, // Simplified time tracking
             cycles: result.maxCycles,
             grid: result.suggestedGridSize,
             memory: result.memoryRegions?.length || 0
@@ -47,15 +64,18 @@ export function CompileScreen({ file, onNavigate }: CompileScreenProps) {
           addRecentFile(file);
           setStep('success');
         } else {
-          setError(writeResult.error || 'Write failed');
+          setError({ message: writeResult.error || 'Write failed' });
           setStep('error');
         }
       } else {
-        setError(result.error || 'Compilation failed');
+        setError({ 
+          message: result.error || 'Compilation failed',
+          line: result.line
+        });
         setStep('error');
       }
-    } catch (e) {
-      setError(String(e));
+    } catch (e: any) {
+      setError({ message: String(e.message || e), line: e.line });
       setStep('error');
     }
   };
@@ -103,8 +123,14 @@ export function CompileScreen({ file, onNavigate }: CompileScreenProps) {
       )}
 
       {step === 'compiling' && (
-        <Box>
+        <Box flexDirection="column">
           <Text color={theme.warning}>{symbols.info} Compiling...</Text>
+          <Box marginTop={1}>
+            <Text color={theme.dim}>
+              {'█'.repeat(Math.floor(progress / 5))}
+              {'░'.repeat(20 - Math.floor(progress / 5))} {progress}%
+            </Text>
+          </Box>
         </Box>
       )}
 
@@ -115,10 +141,6 @@ export function CompileScreen({ file, onNavigate }: CompileScreenProps) {
               <Box>
                 <Text color={theme.dim} bold>Output:   </Text>
                 <Text>{stats.output}</Text>
-              </Box>
-              <Box>
-                <Text color={theme.dim} bold>Time:     </Text>
-                <Text>{stats.time.toFixed(0)}ms</Text>
               </Box>
               <Box>
                 <Text color={theme.dim} bold>Cycles:   </Text>
@@ -142,9 +164,26 @@ export function CompileScreen({ file, onNavigate }: CompileScreenProps) {
 
       {step === 'error' && (
         <Box flexDirection="column">
-          <Panel title="Error" borderColor={theme.error}>
-            <Text color={theme.error}>{error}</Text>
+          <Panel title="Compilation Failed" borderColor={theme.error}>
+            <Box flexDirection="column">
+              <Text color={theme.error} bold>Error: {error?.message}</Text>
+              {error?.line && (
+                <Text color={theme.dim}>Line: {error.line}</Text>
+              )}
+            </Box>
           </Panel>
+          
+          {error?.line && fileContent && (
+             <Box marginTop={1} flexDirection="column">
+               <Text color={theme.dim}>Context:</Text>
+               <CodePreview 
+                 code={fileContent} 
+                 maxLines={5} 
+                 highlightLine={error.line}
+               />
+             </Box>
+          )}
+
           <Text color={theme.dim} marginTop={1}>Press Enter to continue</Text>
         </Box>
       )}

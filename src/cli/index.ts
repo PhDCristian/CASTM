@@ -57,6 +57,15 @@ program
   .alias('t')
   .description('Launch TUI mode with side-by-side preview (experimental)')
   .action(() => {
+    // Clear screen for immersive experience
+    console.clear();
+    process.stdout.write('\x1b[?1049h'); // Enable alternate screen buffer
+    
+    // Handle exit to restore screen
+    process.on('exit', () => {
+      process.stdout.write('\x1b[?1049l'); // Disable alternate screen buffer
+    });
+    
     runTuiMode();
   });
 

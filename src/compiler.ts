@@ -169,6 +169,19 @@ export function compileDslToCsv(dslCode: string): CompilationResult {
   }
 }
 
+/**
+ * Analyzes DSL code and returns the full AST for visualization tools
+ */
+export function analyzeDsl(dslCode: string): { success: boolean; ast?: KernelAst; error?: string } {
+  try {
+    const tokens = tokenize(dslCode);
+    const { ast } = parse(tokens);
+    return { success: true, ast };
+  } catch (e: any) {
+    return { success: false, error: e.message };
+  }
+}
+
 // ==========================================
 // 2. Parser (Pass 1)
 // ==========================================

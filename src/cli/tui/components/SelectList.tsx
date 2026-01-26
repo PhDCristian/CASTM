@@ -82,7 +82,7 @@ export function SelectList<T = string>({
   });
   
   return (
-    <Box flexDirection="column">
+    <Box flexDirection="column" gap={0}>
       {options.map((option, index) => {
         const isSelected = enabledIndices[selectedIndex] === index;
         const isDisabled = option.disabled;
@@ -90,22 +90,24 @@ export function SelectList<T = string>({
         if (isDisabled) {
           // Separator
           return (
-            <Box key={index} marginLeft={2}>
+            <Box key={index} paddingX={1} marginTop={1} marginBottom={0}>
               <Text color={theme.dim}>{option.label}</Text>
             </Box>
           );
         }
         
         return (
-          <Box key={index}>
-            <Text color={isSelected ? theme.primary : theme.dim}>
-              {isSelected ? symbols.pointer : ' '}{' '}
-            </Text>
-            <Text color={isSelected ? 'white' : theme.dim} bold={isSelected}>
-              {option.label}
-            </Text>
-            {option.description && (
-              <Text color={theme.dim}> {option.description}</Text>
+          <Box key={index} paddingX={1}>
+            {isSelected ? (
+              <Text color={theme.primary}>
+                 <Text color={theme.primary} bold>{symbols.pointer} {option.label}</Text>
+                 {option.description && <Text color={theme.dim}> {option.description}</Text>}
+              </Text>
+            ) : (
+              <Text color={theme.dim}>
+                 <Text>  {option.label}</Text>
+                 {option.description && <Text color={theme.dim}> {option.description}</Text>}
+              </Text>
             )}
           </Box>
         );
