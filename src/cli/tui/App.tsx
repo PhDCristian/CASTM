@@ -3,31 +3,29 @@
  * React-like terminal UI with Ink
  */
 
-import React, { useState, useEffect } from 'react';
-import { Box, Text, render, useApp, useInput } from 'ink';
+import React, { useState } from 'react';
+import { Box, Text, render, useApp } from 'ink';
 import gradient from 'gradient-string';
-import { readFileSync } from 'fs';
 import { basename, dirname } from 'path';
 
-import { useTheme, symbols } from './theme.js';
+import { useTheme } from './theme.js';
 import { SelectList, SelectOption, FileBrowser, CodePreview } from './components/index.js';
+import { CompileScreen, WatchScreen, InfoScreen, CheckScreen } from './screens/index.js';
 import { 
   getRecentFiles, 
   addRecentFile, 
   getLastDirectory,
   setLastDirectory,
-  getCurrentTheme,
   setTheme,
   getThemeNames,
   BUILTIN_THEMES,
   loadConfig,
   saveConfig,
 } from '../config/store.js';
-import { compileDslToCsv } from '../../compiler.js';
-import { getRelativePath, getOutputPath, writeFile } from '../utils/files.js';
+import { readFileSync } from 'fs';
 
 // ═══════════════════════════════════════════════════════════════════════════
-// LOGO COMPONENT
+// LOGO & SHARED COMPONENTS
 // ═══════════════════════════════════════════════════════════════════════════
 
 const LOGO_LINES = [
@@ -78,7 +76,7 @@ function RandomTip() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SCREEN TYPES
+// TYPES
 // ═══════════════════════════════════════════════════════════════════════════
 
 type Screen = 
@@ -88,10 +86,12 @@ type Screen =
   | { type: 'settings' }
   | { type: 'theme' }
   | { type: 'compile'; file: string }
-  | { type: 'result'; success: boolean; message: string; details?: string[] };
+  | { type: 'watch'; file: string }
+  | { type: 'info'; file: string }
+  | { type: 'check'; file: string };
 
 // ═══════════════════════════════════════════════════════════════════════════
-// MAIN MENU SCREEN
+// MAIN MENU
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface MainMenuProps {
@@ -111,9 +111,8 @@ function MainMenu({ selectedFile, onNavigate }: MainMenuProps) {
       { label: 'Compile', value: 'compile', description: '→ CSV' },
       { label: 'Check', value: 'check', description: 'validate syntax' },
       { label: 'Info', value: 'info', description: 'show details' },
-      { label: 'Preview', value: 'preview', description: 'view source' },
       { label: 'Watch', value: 'watch', description: 'auto-rebuild' },
-      { label: '─'.repeat(30), value: '__SEP1__', disabled: true },
+      { label: '─'.repeat(30), value: '__SEP__', disabled: true },
       { label: 'Change file', value: 'browse' },
     );
   } else {
@@ -132,21 +131,14 @@ function MainMenu({ selectedFile, onNavigate }: MainMenuProps) {
   
   const handleSelect = (value: string) => {
     switch (value) {
-      case 'browse':
-        onNavigate({ type: 'browse' });
-        break;
-      case 'recent':
-        onNavigate({ type: 'recent' });
-        break;
-      case 'settings':
-        onNavigate({ type: 'settings' });
-        break;
-      case 'compile':
-        if (selectedFile) onNavigate({ type: 'compile', file: selectedFile });
-        break;
-      case 'exit':
-        exit();
-        break;
+      case 'browse': onNavigate({ type: 'browse' }); break;
+      case 'recent': onNavigate({ type: 'recent' }); break;
+      case 'settings': onNavigate({ type: 'settings' }); break;
+      case 'compile': if (selectedFile) onNavigate({ type: 'compile', file: selectedFile }); break;
+      case 'check': if (selectedFile) onNavigate({ type: 'check', file: selectedFile }); break;
+      case 'info': if (selectedFile) onNavigate({ type: 'info', file: selectedFile }); break;
+      case 'watch': if (selectedFile) onNavigate({ type: 'watch', file: selectedFile }); break;
+      case 'exit': exit(); break;
     }
   };
   
@@ -182,7 +174,7 @@ function MainMenu({ selectedFile, onNavigate }: MainMenuProps) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SETTINGS SCREEN
+// SETTINGS
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface SettingsProps {
@@ -210,27 +202,19 @@ function Settings({ onNavigate }: SettingsProps) {
   
   const handleSelect = (value: string) => {
     switch (value) {
-      case 'theme':
-        onNavigate({ type: 'theme' });
+      case 'theme': onNavigate({ type: 'theme' }); break;
+      case 'spinners': 
+        config.showSpinners = !config.showSpinners; 
+        saveConfig(config); 
+        onNavigate({ type: 'settings' }); // Force re-render
         break;
-      case 'spinners':
-        config.showSpinners = !config.showSpinners;
-        saveConfig(config);
-        // Re-render by navigating to same screen
-        onNavigate({ type: 'settings' });
-        break;
-      case 'back':
-        onNavigate({ type: 'main' });
-        break;
+      case 'back': onNavigate({ type: 'main' }); break;
     }
   };
   
   return (
     <Box flexDirection="column">
-      <Box marginBottom={1}>
-        <Text color={theme.primary} bold>Settings</Text>
-      </Box>
-      
+      <Box marginBottom={1}><Text color={theme.primary} bold>Settings</Text></Box>
       <SelectList 
         options={options} 
         onSelect={handleSelect}
@@ -241,7 +225,7 @@ function Settings({ onNavigate }: SettingsProps) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// THEME SELECTOR SCREEN
+// THEME SELECTOR
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface ThemeSelectorProps {
@@ -261,7 +245,6 @@ function ThemeSelector({ onNavigate }: ThemeSelectorProps) {
       return {
         label: `${isCurrent ? '● ' : '  '}${t.name}`,
         value: name,
-        description: '',
       };
     }),
     { label: '─'.repeat(30), value: '__SEP__', disabled: true },
@@ -273,38 +256,20 @@ function ThemeSelector({ onNavigate }: ThemeSelectorProps) {
       onNavigate({ type: 'settings' });
       return;
     }
-    
     setTheme(value);
     onNavigate({ type: 'settings' });
   };
   
   const handleHighlight = (value: string) => {
-    if (value !== '__SEP__' && value !== 'back') {
-      setPreviewTheme(value);
-    }
+    if (value !== '__SEP__' && value !== 'back') setPreviewTheme(value);
   };
   
-  // Generate preview code with selected theme colors
   const previewT = BUILTIN_THEMES[previewTheme] || theme;
-  const previewCode = [
-    `// ${previewT.name} theme preview`,
-    '.data input { 10, 20 }',
-    '',
-    'kernel "Example" {',
-    '    cycle {',
-    '        @0,0: LWI R0, input[0];',
-    '    }',
-    '}',
-  ].join('\n');
   
   return (
     <Box flexDirection="row">
-      {/* Left: Theme list */}
       <Box flexDirection="column" width={30} marginRight={2}>
-        <Box marginBottom={1}>
-          <Text color={theme.primary} bold>Theme</Text>
-        </Box>
-        
+        <Box marginBottom={1}><Text color={theme.primary} bold>Theme</Text></Box>
         <SelectList 
           options={options} 
           onSelect={handleSelect}
@@ -312,43 +277,22 @@ function ThemeSelector({ onNavigate }: ThemeSelectorProps) {
           onEscape={() => onNavigate({ type: 'settings' })}
         />
       </Box>
-      
-      {/* Right: Code preview */}
       <Box flexDirection="column" flexGrow={1}>
         <Box borderStyle="round" borderColor={previewT.primary} paddingX={1} flexDirection="column">
-          <Box marginBottom={1}>
-            <Text color={previewT.primary} bold>{previewT.name}</Text>
-          </Box>
-          
+          <Box marginBottom={1}><Text color={previewT.primary} bold>{previewT.name}</Text></Box>
           <Text color={previewT.dim}>{'// Sample code'}</Text>
           <Box>
-            <Text color={previewT.accent}>.data</Text>
-            <Text> input {'{'} </Text>
-            <Text color={previewT.secondary}>10, 20</Text>
-            <Text> {'}'}</Text>
-          </Box>
-          <Text> </Text>
-          <Box>
-            <Text color={previewT.primary}>kernel</Text>
-            <Text> </Text>
-            <Text color={previewT.secondary}>"Example"</Text>
-            <Text> {'{'}</Text>
+            <Text color={previewT.accent}>.data</Text><Text> input {'{'} </Text>
+            <Text color={previewT.secondary}>10</Text><Text> {'}'}</Text>
           </Box>
           <Box>
-            <Text>    </Text>
-            <Text color={previewT.primary}>cycle</Text>
-            <Text> {'{'}</Text>
+            <Text color={previewT.primary}>kernel</Text><Text> </Text>
+            <Text color={previewT.secondary}>"Test"</Text><Text> {'{'}</Text>
           </Box>
           <Box>
-            <Text>        </Text>
-            <Text color={previewT.accent}>@0,0:</Text>
-            <Text> </Text>
-            <Text color={previewT.success}>LWI</Text>
-            <Text> </Text>
-            <Text color={previewT.warning}>R0</Text>
-            <Text>, input[0];</Text>
+            <Text>  </Text><Text color={previewT.success}>LWI</Text><Text> </Text>
+            <Text color={previewT.warning}>R0</Text><Text>, input[0];</Text>
           </Box>
-          <Text>{'    }'}</Text>
           <Text>{'}'}</Text>
         </Box>
       </Box>
@@ -357,7 +301,7 @@ function ThemeSelector({ onNavigate }: ThemeSelectorProps) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// RECENT FILES SCREEN
+// RECENT FILES
 // ═══════════════════════════════════════════════════════════════════════════
 
 interface RecentFilesProps {
@@ -384,17 +328,14 @@ function RecentFiles({ onSelect, onNavigate }: RecentFilesProps) {
   const handleHighlight = (value: string) => {
     if (value === '__BACK__' || value === '__SEP__') {
       setPreviewContent(null);
-      setPreviewFile(null);
       return;
     }
-    
     try {
       const content = readFileSync(value, 'utf-8');
       setPreviewContent(content);
       setPreviewFile(basename(value));
     } catch {
       setPreviewContent(null);
-      setPreviewFile(null);
     }
   };
   
@@ -403,7 +344,6 @@ function RecentFiles({ onSelect, onNavigate }: RecentFilesProps) {
       onNavigate({ type: 'main' });
       return;
     }
-    
     addRecentFile(value);
     onSelect(value);
     onNavigate({ type: 'main' });
@@ -411,12 +351,8 @@ function RecentFiles({ onSelect, onNavigate }: RecentFilesProps) {
   
   return (
     <Box flexDirection="row">
-      {/* Left: File list */}
       <Box flexDirection="column" width={40} marginRight={2}>
-        <Box marginBottom={1}>
-          <Text color={theme.primary} bold>Recent Files</Text>
-        </Box>
-        
+        <Box marginBottom={1}><Text color={theme.primary} bold>Recent Files</Text></Box>
         <SelectList 
           options={options} 
           onSelect={handleSelect}
@@ -424,15 +360,9 @@ function RecentFiles({ onSelect, onNavigate }: RecentFilesProps) {
           onEscape={() => onNavigate({ type: 'main' })}
         />
       </Box>
-      
-      {/* Right: Preview */}
       <Box flexDirection="column" flexGrow={1}>
         {previewContent ? (
-          <CodePreview 
-            code={previewContent} 
-            title={previewFile || undefined}
-            maxLines={12}
-          />
+          <CodePreview code={previewContent} title={previewFile || undefined} maxLines={12} />
         ) : (
           <Box borderStyle="round" borderColor={theme.dim} paddingX={1} paddingY={1}>
             <Text color={theme.dim}>Select a file to preview</Text>
@@ -444,127 +374,14 @@ function RecentFiles({ onSelect, onNavigate }: RecentFilesProps) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// COMPILE SCREEN
-// ═══════════════════════════════════════════════════════════════════════════
-
-interface CompileScreenProps {
-  file: string;
-  onNavigate: (screen: Screen) => void;
-}
-
-function CompileScreen({ file, onNavigate }: CompileScreenProps) {
-  const theme = useTheme();
-  const [status, setStatus] = useState<'compiling' | 'success' | 'error'>('compiling');
-  const [error, setError] = useState<string | null>(null);
-  const [stats, setStats] = useState<{ output: string; time: number } | null>(null);
-  
-  useEffect(() => {
-    const compile = async () => {
-      const startTime = performance.now();
-      
-      try {
-        const content = readFileSync(file, 'utf-8');
-        const result = compileDslToCsv(content);
-        
-        if (result.success) {
-          const outputPath = getOutputPath(file);
-          const writeResult = writeFile(outputPath, result.csv!);
-          
-          if (writeResult.success) {
-            const endTime = performance.now();
-            setStats({ output: getRelativePath(outputPath), time: endTime - startTime });
-            setStatus('success');
-            addRecentFile(file);
-          } else {
-            setError(writeResult.error || 'Failed to write output');
-            setStatus('error');
-          }
-        } else {
-          setError(result.error || 'Compilation failed');
-          setStatus('error');
-        }
-      } catch (e) {
-        setError(String(e));
-        setStatus('error');
-      }
-    };
-    
-    // Small delay for visual feedback
-    setTimeout(compile, 100);
-  }, [file]);
-  
-  useInput((input, key) => {
-    if (key.return || key.escape) {
-      onNavigate({ type: 'main' });
-    }
-  });
-  
-  return (
-    <Box flexDirection="column">
-      <Box marginBottom={1}>
-        <Text color={theme.primary} bold>Compile</Text>
-      </Box>
-      
-      <Box marginBottom={1}>
-        <Text color={theme.dim}>source </Text>
-        <Text>{getRelativePath(file)}</Text>
-      </Box>
-      
-      {status === 'compiling' && (
-        <Text color={theme.warning}>Compiling...</Text>
-      )}
-      
-      {status === 'success' && stats && (
-        <Box flexDirection="column">
-          <Box>
-            <Text color={theme.success}>{symbols.success} </Text>
-            <Text color={theme.success}>Compiled successfully</Text>
-          </Box>
-          <Box marginTop={1} borderStyle="round" borderColor={theme.success} paddingX={1} flexDirection="column">
-            <Box>
-              <Text color={theme.dim}>Output  </Text>
-              <Text>{stats.output}</Text>
-            </Box>
-            <Box>
-              <Text color={theme.dim}>Time    </Text>
-              <Text>{stats.time.toFixed(0)}ms</Text>
-            </Box>
-          </Box>
-        </Box>
-      )}
-      
-      {status === 'error' && (
-        <Box flexDirection="column">
-          <Box>
-            <Text color={theme.error}>{symbols.error} </Text>
-            <Text color={theme.error}>Compilation failed</Text>
-          </Box>
-          <Box marginTop={1} borderStyle="round" borderColor={theme.error} paddingX={1}>
-            <Text color="white">{error}</Text>
-          </Box>
-        </Box>
-      )}
-      
-      {status !== 'compiling' && (
-        <Box marginTop={1}>
-          <Text color={theme.dim}>Press Enter to continue</Text>
-        </Box>
-      )}
-    </Box>
-  );
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// MAIN APP
+// MAIN APP ROUTER
 // ═══════════════════════════════════════════════════════════════════════════
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ type: 'main' });
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   
-  const handleNavigate = (newScreen: Screen) => {
-    setScreen(newScreen);
-  };
+  const handleNavigate = (newScreen: Screen) => setScreen(newScreen);
   
   const handleFileSelect = (file: string) => {
     setSelectedFile(file);
@@ -576,41 +393,26 @@ function App() {
   switch (screen.type) {
     case 'main':
       return <MainMenu selectedFile={selectedFile} onNavigate={handleNavigate} />;
-      
     case 'browse':
-      return (
-        <FileBrowser 
-          initialPath={getLastDirectory()} 
-          onSelect={handleFileSelect}
-          onEscape={() => handleNavigate({ type: 'main' })}
-        />
-      );
-      
+      return <FileBrowser initialPath={getLastDirectory()} onSelect={handleFileSelect} onEscape={() => handleNavigate({ type: 'main' })} />;
     case 'recent':
-      return (
-        <RecentFiles 
-          onSelect={setSelectedFile}
-          onNavigate={handleNavigate}
-        />
-      );
-      
+      return <RecentFiles onSelect={setSelectedFile} onNavigate={handleNavigate} />;
     case 'settings':
       return <Settings onNavigate={handleNavigate} />;
-      
     case 'theme':
       return <ThemeSelector onNavigate={handleNavigate} />;
-      
     case 'compile':
       return <CompileScreen file={screen.file} onNavigate={handleNavigate} />;
-      
+    case 'watch':
+      return <WatchScreen file={screen.file} onNavigate={handleNavigate} />;
+    case 'info':
+      return <InfoScreen file={screen.file} onNavigate={handleNavigate} />;
+    case 'check':
+      return <CheckScreen file={screen.file} onNavigate={handleNavigate} />;
     default:
       return <MainMenu selectedFile={selectedFile} onNavigate={handleNavigate} />;
   }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ENTRY POINT
-// ═══════════════════════════════════════════════════════════════════════════
 
 export function runTuiMode(): void {
   render(<App />);
