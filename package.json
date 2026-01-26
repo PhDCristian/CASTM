@@ -1,0 +1,59 @@
+{
+  "name": "@phdcristian/openedge-dsl",
+  "version": "0.1.0",
+  "description": "OpenEdge-DSL: A domain-specific language for programming Coarse-Grained Reconfigurable Arrays (CGRAs)",
+  "type": "module",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./compiler": {
+      "types": "./dist/compiler.d.ts",
+      "import": "./dist/compiler.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "build:watch": "tsc --watch",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "cgra",
+    "dsl",
+    "compiler",
+    "reconfigurable",
+    "spatial-computing",
+    "openedge"
+  ],
+  "author": "Cristian Campos <cristian@uma.es>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PhDCristian/OpenEdgeDSL.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PhDCristian/OpenEdgeDSL/issues"
+  },
+  "homepage": "https://github.com/PhDCristian/OpenEdgeDSL#readme",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
