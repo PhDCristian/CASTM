@@ -26,6 +26,10 @@ import {
   printHelpPanel,
   printDslPreview,
   printKeyboardHints,
+  printSuccessPanel,
+  printInfoPanel,
+  printBannerHeader,
+  printSectionHeader,
   createSpinner,
   clearScreen,
   chalk,
@@ -580,7 +584,10 @@ async function doPreview(filePath: string): Promise<void> {
     return;
   }
   
-  printDslPreview(readResult.content!, 25);
+  printDslPreview(readResult.content!, { 
+    maxLines: 25, 
+    title: getRelativePath(filePath),
+  });
 }
 
 /**
