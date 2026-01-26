@@ -7,7 +7,7 @@ import chalk from 'chalk';
 import gradient from 'gradient-string';
 import boxen from 'boxen';
 import ora, { Ora } from 'ora';
-import { getCurrentTheme, Theme } from '../config/store.js';
+import { getCurrentTheme, Theme, BUILTIN_THEMES } from '../config/store.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // THEME AND GRADIENTS
@@ -601,6 +601,103 @@ export function printDslPreview(content: string, options: {
   console.log();
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ERROR CARDS
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface ErrorCardOptions {
+  message: string;
+  file?: string;
+  line?: number;
+  column?: number;
+  source?: string;
+  suggestion?: string;
+}
+
+/**
+ * Get suggestion based on error message
+ */
+function getErrorSuggestion(error: string): string | undefined {
+  const patterns: [RegExp, string][] = [
+    [/unexpected token/i, 'Check for missing semicolons, commas, or brackets'],
+    [/unknown register/i, 'Valid registers: R0-R7, ROUT, RCL, RCR, RCU, RCD, ZERO'],
+    [/unknown operation/i, 'Valid operations: LWI, SWI, SADD, SSUB, SMUL, NOP, EXIT'],
+    [/expected.*,/i, 'Add a comma between operands'],
+    [/expected.*;/i, 'Add a semicolon at the end of the statement'],
+    [/expected.*\}/i, 'Add a closing brace }'],
+    [/expected.*\{/i, 'Add an opening brace {'],
+    [/undefined.*variable/i, 'Declare the variable with .data or .const before use'],
+    [/unexpected end/i, 'Check for unclosed blocks or missing statements'],
+  ];
+  
+  for (const [pattern, suggestion] of patterns) {
+    if (pattern.test(error)) {
+      return suggestion;
+    }
+  }
+  
+  return undefined;
+}
+
+/**
+ * Print a styled error card with context and suggestions
+ */
+export function printErrorCard(options: ErrorCardOptions): void {
+  const theme = getCurrentTheme();
+  
+  let content = chalk.hex(theme.error)(symbols.error + ' ') + chalk.white(options.message);
+  
+  // File location
+  if (options.file) {
+    const location = options.line 
+      ? `${options.file}:${options.line}${options.column ? ':' + options.column : ''}`
+      : options.file;
+    content += '\n' + chalk.hex(theme.dim)('   at ') + chalk.hex(theme.primary).underline(location);
+  }
+  
+  // Code context
+  if (options.source && options.line) {
+    const lines = options.source.split('\n');
+    const errorLine = options.line - 1;
+    const start = Math.max(0, errorLine - 1);
+    const end = Math.min(lines.length, errorLine + 2);
+    
+    content += '\n';
+    
+    for (let i = start; i < end; i++) {
+      const lineNum = i + 1;
+      const isError = lineNum === options.line;
+      const prefix = isError ? chalk.hex(theme.error)('→ ') : '  ';
+      const numStr = String(lineNum).padStart(3);
+      
+      if (isError) {
+        content += '\n' + prefix + chalk.hex(theme.error)(numStr) + chalk.hex(theme.error)(' │ ') + chalk.white(lines[i]);
+        if (options.column && options.column > 0) {
+          const pointer = ' '.repeat(options.column - 1) + chalk.hex(theme.error)('▲');
+          content += '\n' + '  ' + '   ' + chalk.hex(theme.error)(' │ ') + pointer;
+        }
+      } else {
+        content += '\n' + prefix + chalk.hex(theme.dim)(numStr + ' │ ' + lines[i]);
+      }
+    }
+  }
+  
+  // Auto-suggestion
+  const suggestion = options.suggestion || getErrorSuggestion(options.message);
+  if (suggestion) {
+    content += '\n\n' + chalk.hex(theme.accent)('hint: ') + chalk.white(suggestion);
+  }
+  
+  console.log(boxen(content, {
+    title: chalk.hex(theme.error)(' Error '),
+    titleAlignment: 'left',
+    padding: { left: 1, right: 1, top: 0, bottom: 0 },
+    margin: { left: 1, top: 1, bottom: 1, right: 0 },
+    borderStyle: 'round',
+    borderColor: theme.error,
+  }));
+}
+
 /**
  * Print code frame for errors
  */
@@ -729,6 +826,40 @@ export function printHelpPanel(): void {
 // THEME DISPLAY
 // ═══════════════════════════════════════════════════════════════════════════
 
+/**
+ * Generate sample DSL code colored with a specific theme
+ */
+export function generateThemePreviewCode(themeName: string): string {
+  const t = BUILTIN_THEMES[themeName] || getCurrentTheme();
+  
+  const lines = [
+    chalk.hex(t.dim)('// Sample code'),
+    chalk.hex(t.accent)('.data') + ' input { ' + chalk.hex(t.secondary)('10, 20') + ' }',
+    '',
+    chalk.hex(t.primary)('kernel') + ' ' + chalk.hex(t.secondary)('"Example"') + ' {',
+    '    ' + chalk.hex(t.primary)('cycle') + ' {',
+    '        ' + chalk.hex(t.accent)('@0,0:') + ' ' + chalk.hex(t.success)('LWI') + ' ' + chalk.hex(t.warning)('R0') + ', input[0];',
+    '    }',
+    '}',
+  ];
+  
+  return lines.join('\n');
+}
+
+/**
+ * Print theme code preview panel
+ */
+export function printThemeCodePreview(themeName: string): void {
+  const t = BUILTIN_THEMES[themeName] || getCurrentTheme();
+  const code = generateThemePreviewCode(themeName);
+  
+  console.log(createPanel(code, {
+    title: chalk.hex(t.primary)(' ' + t.name + ' '),
+    borderColor: t.primary,
+    style: 'round',
+  }));
+}
+
 export function printThemePreview(themeName: string, theme: Theme, active: boolean = false): void {
   const marker = active ? chalk.hex(theme.primary)('● ') : '  ';
   const name = active ? chalk.bold.white(theme.name) : chalk.white(theme.name);
@@ -791,6 +922,39 @@ export function printListItem(text: string, active: boolean = false, indent: num
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// FILE PREVIEW
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Generate a syntax-highlighted preview of a DSL file
+ */
+export function generateFilePreview(content: string, maxLines: number = 6): string {
+  const theme = getCurrentTheme();
+  const lines = content.split('\n').slice(0, maxLines);
+  
+  return lines.map((line, i) => {
+    const lineNum = String(i + 1).padStart(2);
+    const tokens = tokenizeDslLine(line);
+    const coloredLine = tokens.map(t => colorizeToken(t, theme)).join('');
+    return chalk.hex(theme.dim)(lineNum + ' │ ') + coloredLine;
+  }).join('\n');
+}
+
+/**
+ * Print file preview panel
+ */
+export function printFilePreviewPanel(fileName: string, content: string): void {
+  const theme = getCurrentTheme();
+  const preview = generateFilePreview(content, 6);
+  
+  console.log(createPanel(preview, {
+    title: chalk.hex(theme.primary)(' ' + symbols.file + ' ' + fileName + ' '),
+    borderColor: theme.dim,
+    style: 'round',
+  }));
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // UTILITIES
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -842,6 +1006,171 @@ export function printStatusBadge(status: 'valid' | 'invalid' | 'compiling' | 'wa
     watching: chalk.hex(theme.primary)('● watching'),
   };
   console.log('  ' + badges[status]);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// WATCH MODE STATUS BAR
+// ═══════════════════════════════════════════════════════════════════════════
+
+export interface WatchStats {
+  compiles: number;
+  errors: number;
+  startTime: number;
+  lastStatus: 'ok' | 'error';
+}
+
+/**
+ * Format elapsed time for display
+ */
+function formatElapsedTime(startTime: number): string {
+  const elapsed = Math.floor((Date.now() - startTime) / 1000);
+  
+  if (elapsed < 60) {
+    return `${elapsed}s`;
+  }
+  
+  const minutes = Math.floor(elapsed / 60);
+  const seconds = elapsed % 60;
+  
+  if (minutes < 60) {
+    return `${minutes}m ${seconds}s`;
+  }
+  
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  return `${hours}h ${mins}m`;
+}
+
+/**
+ * Create watch mode status bar
+ */
+export function printWatchStatusBar(stats: WatchStats): void {
+  const theme = getCurrentTheme();
+  
+  const statusIcon = stats.lastStatus === 'ok' 
+    ? chalk.hex(theme.success)('●') 
+    : chalk.hex(theme.error)('●');
+  
+  const statusText = stats.lastStatus === 'ok'
+    ? chalk.hex(theme.success)('ok')
+    : chalk.hex(theme.error)('error');
+  
+  const compiles = chalk.white(stats.compiles);
+  const errors = stats.errors > 0 
+    ? chalk.hex(theme.error)(stats.errors) 
+    : chalk.hex(theme.dim)('0');
+  
+  const elapsed = formatElapsedTime(stats.startTime);
+  
+  const content = 
+    `${statusIcon} ${statusText}` +
+    chalk.hex(theme.dim)('  │  ') +
+    chalk.hex(theme.dim)('compiles: ') + compiles +
+    chalk.hex(theme.dim)('  │  ') +
+    chalk.hex(theme.dim)('errors: ') + errors +
+    chalk.hex(theme.dim)('  │  ') +
+    chalk.hex(theme.dim)(elapsed);
+  
+  const bar = boxen(content + '\n' + chalk.hex(theme.dim)('Ctrl+C to exit'), {
+    padding: { left: 1, right: 1, top: 0, bottom: 0 },
+    margin: { left: 1, top: 0, bottom: 0, right: 0 },
+    borderStyle: 'round',
+    borderColor: stats.lastStatus === 'ok' ? theme.success : theme.error,
+    dimBorder: true,
+  });
+  
+  console.log(bar);
+}
+
+/**
+ * Print watch session summary
+ */
+export function printWatchSummary(stats: WatchStats): void {
+  const theme = getCurrentTheme();
+  const elapsed = formatElapsedTime(stats.startTime);
+  
+  const items = [
+    { label: 'Duration', value: elapsed },
+    { label: 'Compiles', value: String(stats.compiles) },
+    { label: 'Errors', value: String(stats.errors) },
+  ];
+  
+  console.log();
+  printInfoPanel('Session Summary', items);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// STARTUP TIPS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const STARTUP_TIPS = [
+  'Use "openedge watch" for auto-recompile on save',
+  'Press Ctrl+C at any time to exit gracefully',
+  'Try "openedge theme dracula" for a dark purple theme',
+  'Use --json flag for machine-readable output',
+  'Recent files are saved for quick access',
+  'Check syntax without compiling: openedge check file.dsl',
+  'View program stats: openedge info file.dsl',
+  'Navigate menus with arrow keys, select with Enter',
+  'Settings are stored in ~/.openedge/config.json',
+  'Use "openedge compile -o output.csv" to specify output file',
+];
+
+/**
+ * Print a random startup tip
+ */
+export function printRandomTip(): void {
+  const theme = getCurrentTheme();
+  const tip = STARTUP_TIPS[Math.floor(Math.random() * STARTUP_TIPS.length)];
+  
+  console.log('  ' + chalk.hex(theme.dim)('tip: ') + chalk.hex(theme.accent)(tip));
+  console.log();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ANIMATED LOGO
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Sleep utility for animations
+ */
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Print animated logo with typing effect
+ */
+export async function printAnimatedLogo(delayMs: number = 40): Promise<void> {
+  const { brand } = getThemeGradients();
+  const theme = getCurrentTheme();
+  
+  console.log();
+  
+  for (const line of LOGO_LINES) {
+    console.log('  ' + brand(line));
+    await sleep(delayMs);
+  }
+  
+  console.log();
+  console.log('  ' + chalk.hex(theme.dim)('CGRA Compiler Toolchain') + 
+              chalk.hex(theme.dim)(' · ') + 
+              chalk.hex(theme.primary)('v0.1.0'));
+  console.log();
+}
+
+/**
+ * Print animated welcome screen (for first startup)
+ */
+export async function printWelcomeAnimated(): Promise<void> {
+  console.clear();
+  await printAnimatedLogo();
+  printRandomTip();
+  printKeyboardHints([
+    { key: '↑↓', action: 'navigate' },
+    { key: '⏎', action: 'select' },
+    { key: '^C', action: 'exit' },
+  ]);
 }
 
 export { chalk, gradient, ora };

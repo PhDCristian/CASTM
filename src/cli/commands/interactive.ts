@@ -5,12 +5,14 @@
 
 import { select, input } from '@inquirer/prompts';
 import { ExitPromptError } from '@inquirer/core';
-import { existsSync, readdirSync, statSync } from 'fs';
+import { existsSync, readdirSync, statSync, readFileSync } from 'fs';
 import { join, dirname, basename, resolve } from 'path';
 import { compileDslToCsv } from '../../compiler.js';
 import { readFile, writeFile, getOutputPath, getRelativePath } from '../utils/files.js';
 import {
   printWelcome,
+  printWelcomeAnimated,
+  printRandomTip,
   printSuccess,
   printError,
   printInfo,
@@ -21,6 +23,7 @@ import {
   printFileBadge,
   printDivider,
   printThemePreview,
+  printThemeCodePreview,
   printRecentFiles,
   printResult,
   printHint,
@@ -31,6 +34,7 @@ import {
   printInfoPanel,
   printBannerHeader,
   printSectionHeader,
+  printFilePreviewPanel,
   createSpinner,
   clearScreen,
   chalk,
@@ -166,7 +170,7 @@ async function showRecentFiles(): Promise<string | null> {
 }
 
 /**
- * Theme selection menu - minimal preview
+ * Theme selection menu - with code preview
  */
 async function showThemeMenu(): Promise<void> {
   const config = loadConfig();
@@ -175,7 +179,9 @@ async function showThemeMenu(): Promise<void> {
   clearScreen();
   printHeader('Theme');
   console.log();
-  console.log('  ' + chalk.hex(theme.dim)('current: ') + chalk.white(BUILTIN_THEMES[config.theme]?.name || config.theme));
+  
+  // Show code preview of current theme
+  printThemeCodePreview(config.theme);
   console.log();
   
   const themeNames = getThemeNames();
@@ -208,8 +214,14 @@ async function showThemeMenu(): Promise<void> {
   }
   
   setTheme(selection);
-  printResult(true, `Theme: ${BUILTIN_THEMES[selection].name}`);
-  await new Promise(r => setTimeout(r, 800));
+  
+  // Show preview of new theme briefly
+  clearScreen();
+  printHeader('Theme');
+  console.log();
+  printThemeCodePreview(selection);
+  printResult(true, `Theme changed to ${BUILTIN_THEMES[selection].name}`);
+  await new Promise(r => setTimeout(r, 1200));
 }
 
 /**
@@ -288,7 +300,7 @@ async function showSettingsMenu(): Promise<void> {
 }
 
 /**
- * Browse for a DSL file - clean file tree
+ * Browse for a DSL file - clean file tree with preview
  */
 async function browseForFile(): Promise<string | null> {
   let currentDir = getLastDirectory();
@@ -316,6 +328,19 @@ async function browseForFile(): Promise<string | null> {
     }).sort();
     
     const dslFiles = entries.filter(e => e.endsWith('.dsl')).sort();
+    
+    // Show preview of first DSL file in directory
+    if (dslFiles.length > 0) {
+      const firstFile = dslFiles[0];
+      const filePath = join(currentDir, firstFile);
+      try {
+        const content = readFileSync(filePath, 'utf-8');
+        printFilePreviewPanel(firstFile, content);
+        console.log();
+      } catch {
+        // Ignore read errors for preview
+      }
+    }
     
     const choices: { name: string; value: string }[] = [];
     
@@ -665,7 +690,8 @@ async function waitForKey(): Promise<void> {
  * Main interactive loop - clean menu
  */
 export async function runInteractiveMode(): Promise<void> {
-  printWelcome();
+  // First startup: animated logo + tip
+  await printWelcomeAnimated();
   
   try {
     while (true) {

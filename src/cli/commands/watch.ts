@@ -14,17 +14,19 @@ import {
   printCodeFrame,
   printHint,
   printDivider,
+  printWatchStatusBar,
+  printWatchSummary,
   createSpinner,
   chalk,
   symbols,
+  WatchStats,
 } from '../ui/premium.js';
 import { loadConfig, getCurrentTheme } from '../config/store.js';
 
 interface WatchState {
   isCompiling: boolean;
   lastCompileTime: number;
-  compileCount: number;
-  errorCount: number;
+  stats: WatchStats;
 }
 
 /**
@@ -40,8 +42,12 @@ export async function startWatchMode(
   const state: WatchState = {
     isCompiling: false,
     lastCompileTime: 0,
-    compileCount: 0,
-    errorCount: 0,
+    stats: {
+      compiles: 0,
+      errors: 0,
+      startTime: Date.now(),
+      lastStatus: 'ok',
+    },
   };
   
   // Initial compile
@@ -86,13 +92,10 @@ export async function startWatchMode(
     watcher.close();
     dirWatcher.close();
     console.log();
-    console.log();
-    printWatchStats(state);
+    printWatchSummary(state.stats);
     console.log();
     process.exit(0);
   });
-  
-  printWatchInstructions();
   
   // Keep process running
   await new Promise(() => {});
@@ -115,32 +118,7 @@ function printWatchHeader(inputPath: string, outputPath: string): void {
 }
 
 /**
- * Print watch instructions - subtle
- */
-function printWatchInstructions(): void {
-  const theme = getCurrentTheme();
-  console.log();
-  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(40)));
-  console.log();
-  printHint('Watching for changes... Ctrl+C to stop');
-  console.log();
-}
-
-/**
- * Print watch stats on exit
- */
-function printWatchStats(state: WatchState): void {
-  const theme = getCurrentTheme();
-  
-  console.log('  ' + chalk.white('Session'));
-  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(20)));
-  console.log('  ' + chalk.hex(theme.dim)('compiles ') + chalk.white(state.compileCount));
-  console.log('  ' + chalk.hex(theme.dim)('errors   ') + 
-    (state.errorCount > 0 ? chalk.hex(theme.error)(state.errorCount) : chalk.hex(theme.success)('0')));
-}
-
-/**
- * Compile file and show results - minimal output
+ * Compile file and show results - with status bar
  */
 async function compileFile(
   filePath: string,
@@ -161,9 +139,11 @@ async function compileFile(
     if (!readResult.success) {
       spinner?.fail(chalk.hex(theme.error)('Read failed'));
       console.log('  ' + chalk.hex(theme.dim)(readResult.error));
-      state.errorCount++;
+      state.stats.errors++;
+      state.stats.lastStatus = 'error';
       state.isCompiling = false;
-      printWatchInstructions();
+      console.log();
+      printWatchStatusBar(state.stats);
       return;
     }
     
@@ -175,14 +155,17 @@ async function compileFile(
       if (!writeResult.success) {
         spinner?.fail(chalk.hex(theme.error)('Write failed'));
         console.log('  ' + chalk.hex(theme.dim)(writeResult.error));
-        state.errorCount++;
+        state.stats.errors++;
+        state.stats.lastStatus = 'error';
         state.isCompiling = false;
-        printWatchInstructions();
+        console.log();
+        printWatchStatusBar(state.stats);
         return;
       }
       
       const endTime = performance.now();
-      state.compileCount++;
+      state.stats.compiles++;
+      state.stats.lastStatus = 'ok';
       
       spinner?.succeed(chalk.hex(theme.success)('Done'));
       
@@ -196,8 +179,9 @@ async function compileFile(
       
     } else {
       spinner?.fail(chalk.hex(theme.error)('Failed'));
-      state.errorCount++;
-      state.compileCount++;
+      state.stats.errors++;
+      state.stats.compiles++;
+      state.stats.lastStatus = 'error';
       
       if (result.line && readResult.content) {
         printCodeFrame(
@@ -215,9 +199,11 @@ async function compileFile(
   } catch (err: any) {
     spinner?.fail(chalk.hex(theme.error)('Error'));
     console.log('  ' + chalk.hex(theme.dim)(err.message));
-    state.errorCount++;
+    state.stats.errors++;
+    state.stats.lastStatus = 'error';
   }
   
   state.isCompiling = false;
-  printWatchInstructions();
+  console.log();
+  printWatchStatusBar(state.stats);
 }

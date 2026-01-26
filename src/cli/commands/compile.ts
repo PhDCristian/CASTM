@@ -4,8 +4,8 @@
 
 import { Command } from 'commander';
 import { compileDslToCsv } from '../../compiler.js';
-import { logger } from '../utils/logger.js';
 import { readFile, writeFile, getOutputPath, getRelativePath } from '../utils/files.js';
+import { printSuccess, printCompilationStats, printErrorCard, printError } from '../ui/premium.js';
 
 export const compileCommand = new Command('compile')
   .description('Compile DSL source file to CSV format')
@@ -23,7 +23,10 @@ export const compileCommand = new Command('compile')
     // Read input file
     const readResult = readFile(file);
     if (!readResult.success) {
-      logger.error(readResult.error!);
+      printErrorCard({
+        message: readResult.error || 'Failed to read file',
+        file: getRelativePath(file),
+      });
       process.exit(1);
     }
     
@@ -36,7 +39,10 @@ export const compileCommand = new Command('compile')
       const writeResult = writeFile(outputPath, result.csv!);
       
       if (!writeResult.success) {
-        logger.error(writeResult.error!);
+        printErrorCard({
+          message: writeResult.error || 'Failed to write file',
+          file: getRelativePath(outputPath),
+        });
         process.exit(1);
       }
       
@@ -44,8 +50,8 @@ export const compileCommand = new Command('compile')
       if (!options.quiet) {
         const endTime = performance.now();
         
-        logger.success('Compiled successfully');
-        logger.stats({
+        printSuccess('Compiled successfully');
+        printCompilationStats({
           output: getRelativePath(outputPath),
           cycles: result.maxCycles,
           grid: result.suggestedGridSize,
@@ -55,22 +61,14 @@ export const compileCommand = new Command('compile')
         });
       }
     } else {
-      // Compilation error
-      logger.error('Compilation failed');
-      
-      if (result.line && readResult.content) {
-        logger.codeFrame(
-          readResult.content,
-          result.line,
-          1, // Column not always available
-          result.error || 'Unknown error',
-          getRelativePath(file)
-        );
-      } else {
-        logger.newline();
-        logger.dim(`  ${result.error}`);
-        logger.newline();
-      }
+      // Compilation error - use new error card
+      printErrorCard({
+        message: result.error || 'Compilation failed',
+        file: getRelativePath(file),
+        line: result.line,
+        column: 1,
+        source: readResult.content,
+      });
       
       process.exit(1);
     }

@@ -4,18 +4,24 @@
 
 import { Command } from 'commander';
 import { compileDslToCsv } from '../../compiler.js';
-import { logger } from '../utils/logger.js';
 import { readFile, getRelativePath } from '../utils/files.js';
+import { printSuccess, printErrorCard, chalk, getCurrentTheme } from '../ui/premium.js';
+import { getCurrentTheme as getTheme } from '../config/store.js';
 
 export const checkCommand = new Command('check')
   .description('Validate DSL source file without generating output')
   .argument('<file>', 'DSL source file to validate')
   .option('--no-color', 'Disable colored output')
   .action((file: string) => {
+    const theme = getTheme();
+    
     // Read input file
     const readResult = readFile(file);
     if (!readResult.success) {
-      logger.error(readResult.error!);
+      printErrorCard({
+        message: readResult.error || 'Failed to read file',
+        file: getRelativePath(file),
+      });
       process.exit(1);
     }
     
@@ -24,29 +30,22 @@ export const checkCommand = new Command('check')
     const relativePath = getRelativePath(file);
     
     if (result.success) {
-      logger.success(`${relativePath}: No errors found`);
+      printSuccess(`${relativePath}: No errors found`);
       
       // Show some basic info
       if (result.maxCycles) {
-        logger.dim(`  ${result.maxCycles} cycles, ${result.memoryRegions?.length || 0} memory regions`);
+        console.log(chalk.hex(theme.dim)(`    ${result.maxCycles} cycles, ${result.memoryRegions?.length || 0} memory regions`));
       }
-      logger.newline();
+      console.log();
     } else {
-      logger.error(`${relativePath}: Validation failed`);
-      
-      if (result.line && readResult.content) {
-        logger.codeFrame(
-          readResult.content,
-          result.line,
-          1,
-          result.error || 'Unknown error',
-          relativePath
-        );
-      } else {
-        logger.newline();
-        logger.dim(`  ${result.error}`);
-        logger.newline();
-      }
+      // Use new error card
+      printErrorCard({
+        message: result.error || 'Validation failed',
+        file: relativePath,
+        line: result.line,
+        column: 1,
+        source: readResult.content,
+      });
       
       process.exit(1);
     }
