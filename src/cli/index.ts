@@ -12,6 +12,7 @@ import { checkCommand } from './commands/check.js';
 import { infoCommand } from './commands/info.js';
 import { runInteractiveMode } from './commands/interactive.js';
 import { startWatchMode } from './commands/watch.js';
+import { initCommand, newCommand } from './commands/scaffold.js';
 import { setTheme, getThemeNames, BUILTIN_THEMES } from './config/store.js';
 import { runTuiMode } from './tui/index.js';
 import { startServer as startLspServer } from './lsp/index.js';
@@ -40,6 +41,8 @@ program
 program.addCommand(compileCommand);
 program.addCommand(checkCommand);
 program.addCommand(infoCommand);
+program.addCommand(initCommand);
+program.addCommand(newCommand);
 
 // Watch mode command
 program
@@ -136,6 +139,12 @@ Examples:
   $ openedge watch kernel.dsl                Watch and auto-recompile
   $ openedge watch kernel.dsl -dm            Watch with diff and metrics
   $ openedge watch kernel.dsl -n             Watch with notifications
+  $ openedge init my-project                 Create new project (basic template)
+  $ openedge init my-project -t zkp          Create new ZKP project
+  $ openedge init --list                     List available project templates
+  $ openedge new kernel MyKernel             Create kernel from template
+  $ openedge new kernel -t matrix MyMatrix   Create matrix kernel
+  $ openedge new kernel --list               List available kernel templates
   $ openedge theme dracula                   Change to Dracula theme
   $ openedge interactive                     Launch interactive mode
   $ openedge i                               (shortcut for interactive)
