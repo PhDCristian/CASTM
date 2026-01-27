@@ -13,6 +13,7 @@ import { infoCommand } from './commands/info.js';
 import { runInteractiveMode } from './commands/interactive.js';
 import { startWatchMode } from './commands/watch.js';
 import { initCommand, newCommand } from './commands/scaffold.js';
+import { batchCommand } from './commands/batch.js';
 import { setTheme, getThemeNames, BUILTIN_THEMES } from './config/store.js';
 import { runTuiMode } from './tui/index.js';
 import { startServer as startLspServer } from './lsp/index.js';
@@ -43,6 +44,7 @@ program.addCommand(checkCommand);
 program.addCommand(infoCommand);
 program.addCommand(initCommand);
 program.addCommand(newCommand);
+program.addCommand(batchCommand);
 
 // Watch mode command
 program
@@ -133,6 +135,10 @@ program.addHelpText('after', `
 Examples:
   $ openedge compile kernel.dsl              Compile to kernel.csv
   $ openedge compile kernel.dsl -o out.csv   Compile to out.csv
+  $ openedge batch "**/*.dsl"                Compile all DSL files
+  $ openedge batch "src/*.dsl" -o dist       Compile to dist/ directory
+  $ openedge batch "*.dsl" -p 4              Compile with 4 workers
+  $ openedge batch "*.dsl" -f json           Output JSON report
   $ openedge check kernel.dsl                Validate without output
   $ openedge info kernel.dsl                 Show program statistics
   $ openedge info kernel.dsl --json          Output stats as JSON
