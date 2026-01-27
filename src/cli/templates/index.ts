@@ -791,3 +791,58 @@ export function applyTemplateVariables(
   }
   return result;
 }
+
+/**
+ * Generate project files from a template
+ */
+export function generateProjectFiles(templateId: string, projectName: string): { path: string; content: string }[] {
+  const template = PROJECT_TEMPLATES[templateId];
+  if (!template) {
+    return [];
+  }
+  
+  return template.files.map(file => ({
+    path: file.path,
+    content: applyTemplateVariables(file.content, { 
+      name: projectName,
+      projectName: projectName,
+    }),
+  }));
+}
+
+/**
+ * Generate kernel file content from a template
+ */
+export function generateKernelFile(templateId: string, kernelName: string): string {
+  const template = KERNEL_TEMPLATES[templateId];
+  if (!template) {
+    return `// Kernel: ${kernelName}\n// Template not found\n`;
+  }
+  
+  return applyTemplateVariables(template.content, {
+    name: kernelName,
+    kernelName: kernelName,
+  });
+}
+
+/**
+ * Get list of project templates for UI display
+ */
+export function getProjectTemplateList(): { id: string; name: string; description: string }[] {
+  return Object.entries(PROJECT_TEMPLATES).map(([id, t]) => ({
+    id,
+    name: t.name,
+    description: t.description,
+  }));
+}
+
+/**
+ * Get list of kernel templates for UI display
+ */
+export function getKernelTemplateList(): { id: string; name: string; description: string }[] {
+  return Object.entries(KERNEL_TEMPLATES).map(([id, t]) => ({
+    id,
+    name: t.name,
+    description: t.description,
+  }));
+}

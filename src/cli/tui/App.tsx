@@ -11,7 +11,7 @@ import { basename, dirname } from 'path';
 import { useTheme, premiumColors, symbols, gradients } from './theme.js';
 import { SelectList, SelectOption, CodePreview, FileViewer } from './components/index.js';
 import { FileBrowser } from './components/FileBrowser.js';
-import { CompileScreen, WatchScreen, InfoScreen, CheckScreen } from './screens/index.js';
+import { CompileScreen, WatchScreen, InfoScreen, CheckScreen, BatchScreen, ScaffoldScreen } from './screens/index.js';
 import { SplashScreen } from './ui/SplashScreen.js';
 import { Layout } from './ui/Layout.js';
 
@@ -96,7 +96,9 @@ type Screen =
   | { type: 'compile'; file: string }
   | { type: 'watch'; file: string }
   | { type: 'info'; file: string }
-  | { type: 'check'; file: string };
+  | { type: 'check'; file: string }
+  | { type: 'batch' }
+  | { type: 'scaffold' };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SUB-SCREENS
@@ -131,7 +133,11 @@ function MainMenu({ selectedFile, onNavigate }: MainMenuProps) {
     }
   }
   
+  // Add batch and scaffold options (always available)
   options.push(
+    { label: '─'.repeat(25), value: '__SEP1__', disabled: true },
+    { label: 'Batch compile', value: 'batch', description: 'compile multiple files' },
+    { label: 'New project/kernel', value: 'scaffold', description: 'create from template' },
     { label: '─'.repeat(25), value: '__SEP2__', disabled: true },
     { label: 'Settings', value: 'settings' },
     { label: 'Exit', value: 'exit' },
@@ -146,6 +152,8 @@ function MainMenu({ selectedFile, onNavigate }: MainMenuProps) {
       case 'check': if (selectedFile) onNavigate({ type: 'check', file: selectedFile }); break;
       case 'info': if (selectedFile) onNavigate({ type: 'info', file: selectedFile }); break;
       case 'watch': if (selectedFile) onNavigate({ type: 'watch', file: selectedFile }); break;
+      case 'batch': onNavigate({ type: 'batch' }); break;
+      case 'scaffold': onNavigate({ type: 'scaffold' }); break;
       case 'exit': exit(); break;
     }
   };
@@ -308,6 +316,8 @@ function App() {
     case 'watch': content = <WatchScreen file={screen.file} onNavigate={handleNavigate} />; status = 'WATCHING'; break;
     case 'info': content = <InfoScreen file={screen.file} onNavigate={handleNavigate} />; break;
     case 'check': content = <CheckScreen file={screen.file} onNavigate={handleNavigate} />; break;
+    case 'batch': content = <BatchScreen onNavigate={handleNavigate} />; status = 'BATCH'; break;
+    case 'scaffold': content = <ScaffoldScreen onNavigate={handleNavigate} />; status = 'CREATE'; break;
     default: content = <MainMenu selectedFile={selectedFile} onNavigate={handleNavigate} />;
   }
 
