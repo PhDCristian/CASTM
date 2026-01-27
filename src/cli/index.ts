@@ -14,6 +14,7 @@ import { runInteractiveMode } from './commands/interactive.js';
 import { startWatchMode } from './commands/watch.js';
 import { initCommand, newCommand } from './commands/scaffold.js';
 import { batchCommand } from './commands/batch.js';
+import { replCommand } from './repl/index.js';
 import { setTheme, getThemeNames, BUILTIN_THEMES } from './config/store.js';
 import { runTuiMode } from './tui/index.js';
 import { startServer as startLspServer } from './lsp/index.js';
@@ -45,6 +46,7 @@ program.addCommand(infoCommand);
 program.addCommand(initCommand);
 program.addCommand(newCommand);
 program.addCommand(batchCommand);
+program.addCommand(replCommand);
 
 // Watch mode command
 program
@@ -158,6 +160,7 @@ Examples:
   $ openedge new kernel MyKernel             Create kernel from template
   $ openedge new kernel -t matrix MyMatrix   Create matrix kernel
   $ openedge new kernel --list               List available kernel templates
+  $ openedge repl                            Launch interactive DSL shell
   $ openedge theme dracula                   Change to Dracula theme
   $ openedge interactive                     Launch interactive mode
   $ openedge i                               (shortcut for interactive)
