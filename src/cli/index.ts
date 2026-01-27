@@ -91,14 +91,21 @@ program
   .alias('t')
   .description('Launch TUI mode with side-by-side preview (experimental)')
   .action(() => {
-    // Clear screen for immersive experience
+    // Enable alternate screen buffer for immersive experience
+    process.stdout.write('\x1b[?1049h'); // Switch to alternate buffer
+    process.stdout.write('\x1b[?25l');   // Hide cursor
     console.clear();
-    process.stdout.write('\x1b[?1049h'); // Enable alternate screen buffer
     
-    // Handle exit to restore screen
-    process.on('exit', () => {
-      process.stdout.write('\x1b[?1049l'); // Disable alternate screen buffer
-    });
+    // Cleanup function to restore terminal
+    const cleanup = () => {
+      process.stdout.write('\x1b[?25h');   // Show cursor
+      process.stdout.write('\x1b[?1049l'); // Switch back to main buffer
+    };
+    
+    // Handle all exit scenarios
+    process.on('exit', cleanup);
+    process.on('SIGINT', () => { cleanup(); process.exit(0); });
+    process.on('SIGTERM', () => { cleanup(); process.exit(0); });
     
     runTuiMode();
   });
