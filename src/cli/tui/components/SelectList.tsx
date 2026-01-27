@@ -96,30 +96,33 @@ export function SelectList<T = string>({
           );
         }
         
+        // Premium single-line design:
+        // Selected:     ▶ Label · description (bright + accent)
+        // Not selected:   Label · description (white + dim)
         return (
-          <Box key={index} flexDirection="column" paddingX={1}>
-            {/* Main row: pointer + label */}
-            <Box>
-              {isSelected ? (
-                <>
-                  <Text color={theme.primary} bold>{symbols.pointer} </Text>
-                  <Text color={theme.primary} bold>{option.label}</Text>
-                </>
-              ) : (
-                <>
-                  <Text color={theme.dim}>  </Text>
-                  <Text color={theme.dim}>{option.label}</Text>
-                </>
-              )}
-            </Box>
-            
-            {/* Description row: indented, dimmer, always visible if present */}
-            {option.description && (
-              <Box marginLeft={3}>
-                <Text color={isSelected ? theme.accent : theme.dim} dimColor={!isSelected}>
-                  {option.description}
-                </Text>
-              </Box>
+          <Box key={index} paddingX={1}>
+            {isSelected ? (
+              <>
+                <Text color={theme.primary} bold>{symbols.pointer} </Text>
+                <Text color="white" bold>{option.label}</Text>
+                {option.description && (
+                  <>
+                    <Text color={theme.dim}> · </Text>
+                    <Text color={theme.accent}>{option.description}</Text>
+                  </>
+                )}
+              </>
+            ) : (
+              <>
+                <Text>  </Text>
+                <Text color="#aaaaaa">{option.label}</Text>
+                {option.description && (
+                  <>
+                    <Text color={theme.dim}> · </Text>
+                    <Text color={theme.dim}>{option.description}</Text>
+                  </>
+                )}
+              </>
             )}
           </Box>
         );
