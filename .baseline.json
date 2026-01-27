@@ -1,0 +1,21 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-01-27T09:17:28.070Z",
+  "cliVersion": "0.1.0",
+  "files": [
+    {
+      "file": "examples/simple.dsl",
+      "cycles": 0,
+      "gridWidth": 4,
+      "gridHeight": 4,
+      "memoryRegions": 2,
+      "peUtilization": 37.5,
+      "success": true
+    }
+  ],
+  "summary": {
+    "totalFiles": 1,
+    "totalCycles": 0,
+    "avgPeUtilization": 37.5
+  }
+}

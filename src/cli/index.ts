@@ -14,6 +14,7 @@ import { runInteractiveMode } from './commands/interactive.js';
 import { startWatchMode } from './commands/watch.js';
 import { initCommand, newCommand } from './commands/scaffold.js';
 import { batchCommand } from './commands/batch.js';
+import { benchCommand } from './commands/bench.js';
 import { replCommand } from './repl/index.js';
 import { setTheme, getThemeNames, BUILTIN_THEMES } from './config/store.js';
 import { runTuiMode } from './tui/index.js';
@@ -46,6 +47,7 @@ program.addCommand(infoCommand);
 program.addCommand(initCommand);
 program.addCommand(newCommand);
 program.addCommand(batchCommand);
+program.addCommand(benchCommand);
 program.addCommand(replCommand);
 
 // Watch mode command
@@ -148,6 +150,9 @@ Examples:
   $ openedge batch "src/*.dsl" -o dist       Compile to dist/ directory
   $ openedge batch "*.dsl" -p 4              Compile with 4 workers
   $ openedge batch "*.dsl" -f json           Output JSON report
+  $ openedge bench src/ --save baseline.json Save metrics as baseline
+  $ openedge bench src/ -b baseline.json     Compare against baseline
+  $ openedge bench src/ -b base.json -t 10   Fail if regression > 10%
   $ openedge check kernel.dsl                Validate without output
   $ openedge info kernel.dsl                 Show program statistics
   $ openedge info kernel.dsl --json          Output stats as JSON

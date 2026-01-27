@@ -1,0 +1,76 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-01-27T09:17:40.963Z",
+  "cliVersion": "0.1.0",
+  "files": [
+    {
+      "file": "docs/examples/fft/fft_butterfly_complex.dsl",
+      "cycles": 0,
+      "gridWidth": 4,
+      "gridHeight": 4,
+      "memoryRegions": 6,
+      "peUtilization": 181.3,
+      "success": true
+    },
+    {
+      "file": "docs/examples/fft/fft_butterfly_dual_complex.dsl",
+      "cycles": 0,
+      "gridWidth": 4,
+      "gridHeight": 4,
+      "memoryRegions": 9,
+      "peUtilization": 212.5,
+      "success": true
+    },
+    {
+      "file": "docs/examples/fft/fft_butterfly_full_dfg.dsl",
+      "cycles": 0,
+      "gridWidth": 4,
+      "gridHeight": 4,
+      "memoryRegions": 5,
+      "peUtilization": 100,
+      "success": true
+    },
+    {
+      "file": "docs/examples/fft/fft_butterfly_simple.dsl",
+      "cycles": 0,
+      "gridWidth": 0,
+      "gridHeight": 0,
+      "memoryRegions": 0,
+      "peUtilization": 0,
+      "success": false,
+      "error": "Expected SEMICOLON, but found NUMBER('1')"
+    },
+    {
+      "file": "docs/examples/fft/fft_dual_optimized.dsl",
+      "cycles": 0,
+      "gridWidth": 4,
+      "gridHeight": 4,
+      "memoryRegions": 9,
+      "peUtilization": 150,
+      "success": true
+    },
+    {
+      "file": "docs/examples/fft/fft_dual_parallel.dsl",
+      "cycles": 0,
+      "gridWidth": 4,
+      "gridHeight": 4,
+      "memoryRegions": 4,
+      "peUtilization": 68.8,
+      "success": true
+    },
+    {
+      "file": "docs/examples/fft/fft_dual_ultra.dsl",
+      "cycles": 0,
+      "gridWidth": 4,
+      "gridHeight": 4,
+      "memoryRegions": 5,
+      "peUtilization": 118.8,
+      "success": true
+    }
+  ],
+  "summary": {
+    "totalFiles": 7,
+    "totalCycles": 0,
+    "avgPeUtilization": 138.6
+  }
+}
