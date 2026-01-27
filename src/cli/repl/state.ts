@@ -2,10 +2,15 @@
  * REPL State Manager
  * 
  * Manages the simulated CGRA state including:
- * - Register values per PE
+ * - Register values per PE (R0-R3 + ROUT per ISA)
  * - Memory contents
  * - Cycle counter
  * - Data declarations
+ * 
+ * Based on OpenEdgeCGRA-ISA v2.0.1:
+ * - RC_NUM_REG = 4 (R0, R1, R2, R3)
+ * - ROUT: Output register (always receives ALU result except NOP)
+ * - Operand sources: ZERO, SELF, RCL, RCR, RCT, RCB, R0-R3, IMM
  */
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -17,18 +22,21 @@ export interface RegisterFile {
   R1: number;
   R2: number;
   R3: number;
-  R4: number;
-  R5: number;
-  R6: number;
-  R7: number;
-  ROUT: number;
+  ROUT: number;  // Output register - connected to neighbors
+}
+
+// Flags: [sign, zero] as per ISA
+export interface Flags {
+  sign: boolean;  // flag[1] = bit 31 of result (1 if negative)
+  zero: boolean;  // flag[0] = NOR of all bits (1 if result = 0)
 }
 
 export interface PE {
   row: number;
   col: number;
   registers: RegisterFile;
-  lastModified?: string; // Track which register was last modified
+  flags: Flags;           // Current flags (from last ALU operation)
+  lastModified?: string;  // Track which register was last modified
 }
 
 export interface MemoryRegion {
@@ -69,9 +77,12 @@ export interface ReplState {
 function createRegisterFile(): RegisterFile {
   return {
     R0: 0, R1: 0, R2: 0, R3: 0,
-    R4: 0, R5: 0, R6: 0, R7: 0,
     ROUT: 0,
   };
+}
+
+function createFlags(): Flags {
+  return { sign: false, zero: true };  // Initial: result is 0
 }
 
 function createPE(row: number, col: number): PE {
@@ -79,6 +90,7 @@ function createPE(row: number, col: number): PE {
     row,
     col,
     registers: createRegisterFile(),
+    flags: createFlags(),
   };
 }
 
@@ -109,10 +121,11 @@ export function createInitialState(width: number = 4, height: number = 4): ReplS
 // ═══════════════════════════════════════════════════════════════════════════
 
 export function resetState(state: ReplState): void {
-  // Reset all registers
+  // Reset all registers and flags
   for (let row = 0; row < state.gridHeight; row++) {
     for (let col = 0; col < state.gridWidth; col++) {
       state.grid[row][col].registers = createRegisterFile();
+      state.grid[row][col].flags = createFlags();
       state.grid[row][col].lastModified = undefined;
     }
   }
@@ -138,6 +151,42 @@ export function getPE(state: ReplState, row: number, col: number): PE | null {
     return null;
   }
   return state.grid[row][col];
+}
+
+// Toroidal mesh - get neighbors with wraparound
+export function getNeighborPE(state: ReplState, row: number, col: number, direction: 'L' | 'R' | 'T' | 'B'): PE {
+  const h = state.gridHeight;
+  const w = state.gridWidth;
+  
+  switch (direction) {
+    case 'L': return state.grid[row][(col - 1 + w) % w];  // Left (West)
+    case 'R': return state.grid[row][(col + 1) % w];      // Right (East)
+    case 'T': return state.grid[(row - 1 + h) % h][col];  // Top (North)
+    case 'B': return state.grid[(row + 1) % h][col];      // Bottom (South)
+  }
+}
+
+// Get neighbor's ROUT value (from previous cycle, as per ISA)
+export function getNeighborROUT(state: ReplState, row: number, col: number, direction: 'SELF' | 'RCL' | 'RCR' | 'RCT' | 'RCB'): number {
+  if (direction === 'SELF') {
+    return state.grid[row][col].registers.ROUT;
+  }
+  
+  const dirMap: Record<string, 'L' | 'R' | 'T' | 'B'> = {
+    'RCL': 'L', 'RCR': 'R', 'RCT': 'T', 'RCB': 'B'
+  };
+  
+  const neighbor = getNeighborPE(state, row, col, dirMap[direction]);
+  return neighbor.registers.ROUT;
+}
+
+// Update flags based on result (as per ISA: flag = {sign, zero})
+export function updateFlags(pe: PE, result: number): void {
+  // Treat as 32-bit signed
+  const sign32 = (result & 0x80000000) !== 0;  // Bit 31
+  const isZero = (result & 0xFFFFFFFF) === 0;
+  
+  pe.flags = { sign: sign32, zero: isZero };
 }
 
 export function getRegister(state: ReplState, row: number, col: number, reg: string): number | null {

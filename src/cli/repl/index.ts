@@ -192,12 +192,13 @@ class Repl {
     
     const instructions = [
       ['.data name @ 0x100 = [1,2,3]', 'Declare data in memory'],
-      ['@0,0: LWI R0, data[0]', 'Load from memory'],
-      ['@0,0: SWI R0, data[0]', 'Store to memory'],
-      ['@0,0: ADD R2, R0, R1', 'Add registers'],
-      ['@0,0: MUL R2, R0, R1', 'Multiply registers'],
-      ['@0,0: MOVI R0, 42', 'Load immediate value'],
-      ['@0,0: MOV R1, R0', 'Copy register'],
+      ['@0,0: LWI R0, data[0]', 'Load from memory (indirect)'],
+      ['@0,0: SWI R0, data[0]', 'Store to memory (indirect)'],
+      ['@0,0: SADD R2, R0, R1', 'Signed add'],
+      ['@0,0: SSUB R2, R0, R1', 'Signed subtract'],
+      ['@0,0: SMUL R2, R0, R1', 'Signed multiply'],
+      ['@0,0: MOVI R0, 42', 'Load immediate (convenience)'],
+      ['@0,1: SADD R0, RCL, ZERO', 'Read from left neighbor'],
     ];
     
     for (const [cmd, desc] of instructions) {
@@ -205,6 +206,11 @@ class Repl {
       console.log(chalk.hex(this.theme.dim)(`      ${desc}`));
     }
     
+    console.log();
+    console.log(chalk.hex(this.theme.primary).bold('  Registers & Operands'));
+    console.log(chalk.hex(this.theme.dim)('  ─────────────────────────────────'));
+    console.log(chalk.hex(this.theme.dim)('  Registers: R0, R1, R2, R3, ROUT'));
+    console.log(chalk.hex(this.theme.dim)('  Sources:   ZERO, SELF, RCL, RCR, RCT, RCB, IMM'));
     console.log();
   }
   

@@ -2,11 +2,24 @@
  * REPL Instruction Executor
  * 
  * Executes DSL instructions on the simulated CGRA state.
- * Supports ALU operations, memory operations, and routing.
+ * Based on OpenEdgeCGRA-ISA v2.0.1:
+ * 
+ * Opcodes:
+ * - Type 0: NOP (0), EXIT (25)
+ * - Type 1: SADD, SSUB, SMUL, FXPMUL, SLL, SRL, SRA, LAND, LOR, LXOR, LNAND, LNOR, LXNOR
+ * - Type 2: BSFA (14), BZFA (15) - Conditional selection
+ * - Type 3: BEQ, BNE, BLT, BGE - Conditional branches
+ * - Type 4: JUMP (20)
+ * - Type 5: LWD (21), SWD (22) - Direct memory (streaming)
+ * - Type 6: LWI (23), SWI (24) - Indirect memory (scatter/gather)
+ * 
+ * Operand sources (MUXA/MUXB):
+ * 0=ZERO, 1=SELF, 2=RCL, 3=RCR, 4=RCT, 5=RCB, 6=R0, 7=R1, 8=R2, 9=R3, 10=IMM
  */
 
 import {
   ReplState,
+  PE,
   getRegister,
   setRegister,
   readMemory,
@@ -15,6 +28,9 @@ import {
   declareData,
   incrementCycle,
   addHistory,
+  getPE,
+  getNeighborROUT,
+  updateFlags,
 } from './state.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -101,19 +117,35 @@ function parseMemoryOperand(operand: string, state: ReplState): number | null {
   return null;
 }
 
-function getRegisterValue(state: ReplState, pe: { row: number; col: number }, operand: string): number | null {
+// Get operand value based on ISA operand sources
+function getOperandValue(state: ReplState, pe: { row: number; col: number }, operand: string): number | null {
   const upper = operand.toUpperCase();
   
-  // Immediate value
+  // Immediate value (decimal or hex)
   if (/^-?\d+$/.test(operand)) {
     return parseInt(operand);
   }
+  if (/^0x[0-9a-fA-F]+$/i.test(operand)) {
+    return parseInt(operand, 16);
+  }
   
-  // Zero register
-  if (upper === 'ZERO') return 0;
-  
-  // Regular register
-  return getRegister(state, pe.row, pe.col, upper);
+  // ISA operand sources
+  switch (upper) {
+    case 'ZERO': return 0;
+    case 'SELF': return getNeighborROUT(state, pe.row, pe.col, 'SELF');
+    case 'RCL':  return getNeighborROUT(state, pe.row, pe.col, 'RCL');
+    case 'RCR':  return getNeighborROUT(state, pe.row, pe.col, 'RCR');
+    case 'RCT':  return getNeighborROUT(state, pe.row, pe.col, 'RCT');
+    case 'RCB':  return getNeighborROUT(state, pe.row, pe.col, 'RCB');
+    case 'R0':
+    case 'R1':
+    case 'R2':
+    case 'R3':
+    case 'ROUT':
+      return getRegister(state, pe.row, pe.col, upper);
+    default:
+      return null;
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -167,9 +199,183 @@ function executeOpcode(
   opcode: string, 
   operands: string[]
 ): ExecutionResult {
+  const peObj = getPE(state, pe.row, pe.col)!;
+  
   switch (opcode) {
     // ─────────────────────────────────────────────────────────────────────
-    // LOAD OPERATIONS
+    // TYPE 0: CONTROL
+    // ─────────────────────────────────────────────────────────────────────
+    case 'NOP': {
+      // ROUT maintains value, no operation
+      return { success: true, message: 'No operation (ROUT unchanged)' };
+    }
+    
+    case 'EXIT': {
+      return { success: true, message: 'Kernel exit signaled' };
+    }
+    
+    // ─────────────────────────────────────────────────────────────────────
+    // TYPE 1: ARITHMETIC-LOGIC (SADD, SSUB, SMUL, etc.)
+    // Format: OP [Rd,] Rs1, Rs2   (Rd is optional, result always goes to ROUT)
+    // ─────────────────────────────────────────────────────────────────────
+    case 'SADD':
+    case 'ADD': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const result = (v1! + v2!) | 0;  // 32-bit signed
+      return writeAluResult(state, pe, peObj, rd, result, `${v1} + ${v2} = ${result}`);
+    }
+    
+    case 'SSUB':
+    case 'SUB': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const result = (v1! - v2!) | 0;
+      return writeAluResult(state, pe, peObj, rd, result, `${v1} - ${v2} = ${result}`);
+    }
+    
+    case 'SMUL':
+    case 'MUL': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const result = Math.imul(v1!, v2!);  // 32-bit signed multiply
+      return writeAluResult(state, pe, peObj, rd, result, `${v1} * ${v2} = ${result}`);
+    }
+    
+    case 'FXPMUL': {
+      // Fixed-point multiply Q1.16.15
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const fullResult = BigInt(v1!) * BigInt(v2!);
+      const result = Number((fullResult >> 15n) & 0xFFFFFFFFn) | 0;
+      return writeAluResult(state, pe, peObj, rd, result, `fxp(${v1} * ${v2}) = ${result}`);
+    }
+    
+    case 'SLL':
+    case 'SLT': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const shamt = v2! & 0x1F;  // Only lower 5 bits
+      const result = (v1! << shamt) | 0;
+      return writeAluResult(state, pe, peObj, rd, result, `${v1} << ${shamt} = ${result}`);
+    }
+    
+    case 'SRL':
+    case 'SRT': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const shamt = v2! & 0x1F;
+      const result = v1! >>> shamt;  // Logical right shift
+      return writeAluResult(state, pe, peObj, rd, result, `${v1} >>> ${shamt} = ${result}`);
+    }
+    
+    case 'SRA': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const shamt = v2! & 0x1F;
+      const result = v1! >> shamt;  // Arithmetic right shift
+      return writeAluResult(state, pe, peObj, rd, result, `${v1} >> ${shamt} = ${result}`);
+    }
+    
+    case 'LAND':
+    case 'AND': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const result = v1! & v2!;
+      return writeAluResult(state, pe, peObj, rd, result, `${v1} & ${v2} = ${result}`);
+    }
+    
+    case 'LOR':
+    case 'OR': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const result = v1! | v2!;
+      return writeAluResult(state, pe, peObj, rd, result, `${v1} | ${v2} = ${result}`);
+    }
+    
+    case 'LXOR':
+    case 'XOR': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const result = v1! ^ v2!;
+      return writeAluResult(state, pe, peObj, rd, result, `${v1} ^ ${v2} = ${result}`);
+    }
+    
+    case 'LNAND': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const result = ~(v1! & v2!);
+      return writeAluResult(state, pe, peObj, rd, result, `~(${v1} & ${v2}) = ${result}`);
+    }
+    
+    case 'LNOR': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const result = ~(v1! | v2!);
+      return writeAluResult(state, pe, peObj, rd, result, `~(${v1} | ${v2}) = ${result}`);
+    }
+    
+    case 'LXNOR': {
+      const { rd, v1, v2, err } = parseAluOperands(state, pe, operands);
+      if (err) return { success: false, error: err };
+      
+      const result = ~(v1! ^ v2!);
+      return writeAluResult(state, pe, peObj, rd, result, `~(${v1} ^ ${v2}) = ${result}`);
+    }
+    
+    // ─────────────────────────────────────────────────────────────────────
+    // TYPE 2: CONDITIONAL SELECTION (BSFA, BZFA)
+    // Format: OP Rd, RsA, RsB [, flag_src]
+    // ─────────────────────────────────────────────────────────────────────
+    case 'BSFA': {
+      // rd = sign_flag ? rsA : rsB
+      if (operands.length < 3) {
+        return { success: false, error: 'BSFA requires: Rd, RsA, RsB [, flag_src]' };
+      }
+      const rd = operands[0];
+      const vA = getOperandValue(state, pe, operands[1]);
+      const vB = getOperandValue(state, pe, operands[2]);
+      if (vA === null || vB === null) {
+        return { success: false, error: 'Invalid operand' };
+      }
+      
+      // TODO: Support flag_src from neighbors. For now use own flags.
+      const result = peObj.flags.sign ? vA : vB;
+      return writeAluResult(state, pe, peObj, rd, result, 
+        `sign=${peObj.flags.sign ? 1 : 0} ? ${vA} : ${vB} = ${result}`);
+    }
+    
+    case 'BZFA': {
+      // rd = zero_flag ? rsA : rsB
+      if (operands.length < 3) {
+        return { success: false, error: 'BZFA requires: Rd, RsA, RsB [, flag_src]' };
+      }
+      const rd = operands[0];
+      const vA = getOperandValue(state, pe, operands[1]);
+      const vB = getOperandValue(state, pe, operands[2]);
+      if (vA === null || vB === null) {
+        return { success: false, error: 'Invalid operand' };
+      }
+      
+      const result = peObj.flags.zero ? vA : vB;
+      return writeAluResult(state, pe, peObj, rd, result,
+        `zero=${peObj.flags.zero ? 1 : 0} ? ${vA} : ${vB} = ${result}`);
+    }
+    
+    // ─────────────────────────────────────────────────────────────────────
+    // TYPE 6: INDIRECT MEMORY (LWI, SWI)
     // ─────────────────────────────────────────────────────────────────────
     case 'LWI': {
       // LWI Rd, address
@@ -182,7 +388,15 @@ function executeOpcode(
         return { success: false, error: `Invalid memory address: ${operands[1]}` };
       }
       const value = readMemory(state, addr);
-      setRegister(state, pe.row, pe.col, rd, value);
+      
+      // LWI: result goes to ROUT and optionally to Rd
+      peObj.registers.ROUT = value;
+      updateFlags(peObj, value);
+      if (rd.toUpperCase() !== 'ROUT') {
+        setRegister(state, pe.row, pe.col, rd, value);
+      }
+      peObj.lastModified = rd.toUpperCase();
+      
       return { 
         success: true, 
         message: `${rd} = mem[0x${addr.toString(16)}] = ${value}`,
@@ -191,29 +405,6 @@ function executeOpcode(
       };
     }
     
-    case 'MOVI':
-    case 'LI': {
-      // MOVI Rd, imm
-      if (operands.length < 2) {
-        return { success: false, error: 'MOVI requires: Rd, immediate' };
-      }
-      const rd = operands[0];
-      const imm = parseInt(operands[1]);
-      if (isNaN(imm)) {
-        return { success: false, error: `Invalid immediate value: ${operands[1]}` };
-      }
-      setRegister(state, pe.row, pe.col, rd, imm);
-      return { 
-        success: true, 
-        message: `${rd} = ${imm}`,
-        value: imm,
-        register: rd,
-      };
-    }
-    
-    // ─────────────────────────────────────────────────────────────────────
-    // STORE OPERATIONS
-    // ─────────────────────────────────────────────────────────────────────
     case 'SWI': {
       // SWI Rs, address
       if (operands.length < 2) {
@@ -224,7 +415,7 @@ function executeOpcode(
       if (addr === null) {
         return { success: false, error: `Invalid memory address: ${operands[1]}` };
       }
-      const value = getRegisterValue(state, pe, rs);
+      const value = getOperandValue(state, pe, rs);
       if (value === null) {
         return { success: false, error: `Invalid register: ${rs}` };
       }
@@ -237,219 +428,123 @@ function executeOpcode(
     }
     
     // ─────────────────────────────────────────────────────────────────────
-    // ALU OPERATIONS
+    // CONVENIENCE: MOVI (load immediate - not in ISA but useful for REPL)
     // ─────────────────────────────────────────────────────────────────────
-    case 'ADD':
-    case 'SADD': {
-      // ADD Rd, Rs1, Rs2
-      if (operands.length < 3) {
-        return { success: false, error: 'ADD requires: Rd, Rs1, Rs2' };
+    case 'MOVI':
+    case 'LI': {
+      // MOVI Rd, imm  ->  SADD Rd, ZERO, IMM
+      if (operands.length < 2) {
+        return { success: false, error: 'MOVI requires: Rd, immediate' };
       }
       const rd = operands[0];
-      const v1 = getRegisterValue(state, pe, operands[1]);
-      const v2 = getRegisterValue(state, pe, operands[2]);
-      if (v1 === null || v2 === null) {
-        return { success: false, error: 'Invalid register operand' };
+      const imm = parseInt(operands[1]);
+      if (isNaN(imm)) {
+        return { success: false, error: `Invalid immediate value: ${operands[1]}` };
       }
-      const result = v1 + v2;
-      setRegister(state, pe.row, pe.col, rd, result);
-      return { 
-        success: true, 
-        message: `${rd} = ${v1} + ${v2} = ${result}`,
-        value: result,
-        register: rd,
-      };
-    }
-    
-    case 'SUB':
-    case 'SSUB': {
-      if (operands.length < 3) {
-        return { success: false, error: 'SUB requires: Rd, Rs1, Rs2' };
-      }
-      const rd = operands[0];
-      const v1 = getRegisterValue(state, pe, operands[1]);
-      const v2 = getRegisterValue(state, pe, operands[2]);
-      if (v1 === null || v2 === null) {
-        return { success: false, error: 'Invalid register operand' };
-      }
-      const result = v1 - v2;
-      setRegister(state, pe.row, pe.col, rd, result);
-      return { 
-        success: true, 
-        message: `${rd} = ${v1} - ${v2} = ${result}`,
-        value: result,
-        register: rd,
-      };
-    }
-    
-    case 'MUL':
-    case 'SMUL': {
-      if (operands.length < 3) {
-        return { success: false, error: 'MUL requires: Rd, Rs1, Rs2' };
-      }
-      const rd = operands[0];
-      const v1 = getRegisterValue(state, pe, operands[1]);
-      const v2 = getRegisterValue(state, pe, operands[2]);
-      if (v1 === null || v2 === null) {
-        return { success: false, error: 'Invalid register operand' };
-      }
-      const result = v1 * v2;
-      setRegister(state, pe.row, pe.col, rd, result);
-      return { 
-        success: true, 
-        message: `${rd} = ${v1} * ${v2} = ${result}`,
-        value: result,
-        register: rd,
-      };
-    }
-    
-    case 'AND': {
-      if (operands.length < 3) {
-        return { success: false, error: 'AND requires: Rd, Rs1, Rs2' };
-      }
-      const rd = operands[0];
-      const v1 = getRegisterValue(state, pe, operands[1]);
-      const v2 = getRegisterValue(state, pe, operands[2]);
-      if (v1 === null || v2 === null) {
-        return { success: false, error: 'Invalid register operand' };
-      }
-      const result = v1 & v2;
-      setRegister(state, pe.row, pe.col, rd, result);
-      return { 
-        success: true, 
-        message: `${rd} = ${v1} & ${v2} = ${result}`,
-        value: result,
-        register: rd,
-      };
-    }
-    
-    case 'OR': {
-      if (operands.length < 3) {
-        return { success: false, error: 'OR requires: Rd, Rs1, Rs2' };
-      }
-      const rd = operands[0];
-      const v1 = getRegisterValue(state, pe, operands[1]);
-      const v2 = getRegisterValue(state, pe, operands[2]);
-      if (v1 === null || v2 === null) {
-        return { success: false, error: 'Invalid register operand' };
-      }
-      const result = v1 | v2;
-      setRegister(state, pe.row, pe.col, rd, result);
-      return { 
-        success: true, 
-        message: `${rd} = ${v1} | ${v2} = ${result}`,
-        value: result,
-        register: rd,
-      };
-    }
-    
-    case 'XOR': {
-      if (operands.length < 3) {
-        return { success: false, error: 'XOR requires: Rd, Rs1, Rs2' };
-      }
-      const rd = operands[0];
-      const v1 = getRegisterValue(state, pe, operands[1]);
-      const v2 = getRegisterValue(state, pe, operands[2]);
-      if (v1 === null || v2 === null) {
-        return { success: false, error: 'Invalid register operand' };
-      }
-      const result = v1 ^ v2;
-      setRegister(state, pe.row, pe.col, rd, result);
-      return { 
-        success: true, 
-        message: `${rd} = ${v1} ^ ${v2} = ${result}`,
-        value: result,
-        register: rd,
-      };
-    }
-    
-    case 'SHL':
-    case 'LSL': {
-      if (operands.length < 3) {
-        return { success: false, error: 'SHL requires: Rd, Rs1, Rs2/imm' };
-      }
-      const rd = operands[0];
-      const v1 = getRegisterValue(state, pe, operands[1]);
-      const v2 = getRegisterValue(state, pe, operands[2]);
-      if (v1 === null || v2 === null) {
-        return { success: false, error: 'Invalid register operand' };
-      }
-      const result = v1 << v2;
-      setRegister(state, pe.row, pe.col, rd, result);
-      return { 
-        success: true, 
-        message: `${rd} = ${v1} << ${v2} = ${result}`,
-        value: result,
-        register: rd,
-      };
-    }
-    
-    case 'SHR':
-    case 'LSR': {
-      if (operands.length < 3) {
-        return { success: false, error: 'SHR requires: Rd, Rs1, Rs2/imm' };
-      }
-      const rd = operands[0];
-      const v1 = getRegisterValue(state, pe, operands[1]);
-      const v2 = getRegisterValue(state, pe, operands[2]);
-      if (v1 === null || v2 === null) {
-        return { success: false, error: 'Invalid register operand' };
-      }
-      const result = v1 >>> v2;
-      setRegister(state, pe.row, pe.col, rd, result);
-      return { 
-        success: true, 
-        message: `${rd} = ${v1} >>> ${v2} = ${result}`,
-        value: result,
-        register: rd,
-      };
+      return writeAluResult(state, pe, peObj, rd, imm, `${rd} = ${imm}`);
     }
     
     case 'MOV': {
-      // MOV Rd, Rs
+      // MOV Rd, Rs  ->  SADD Rd, Rs, ZERO
       if (operands.length < 2) {
         return { success: false, error: 'MOV requires: Rd, Rs' };
       }
       const rd = operands[0];
-      const value = getRegisterValue(state, pe, operands[1]);
+      const value = getOperandValue(state, pe, operands[1]);
       if (value === null) {
         return { success: false, error: `Invalid source: ${operands[1]}` };
       }
-      setRegister(state, pe.row, pe.col, rd, value);
-      return { 
-        success: true, 
-        message: `${rd} = ${value}`,
-        value,
-        register: rd,
-      };
-    }
-    
-    case 'NOP': {
-      return { success: true, message: 'No operation' };
+      return writeAluResult(state, pe, peObj, rd, value, `${rd} = ${value}`);
     }
     
     case 'PASS': {
-      // PASS Rd, Rs - pass through
+      // PASS Rd, Rs - pass through (alias for MOV)
       if (operands.length < 2) {
         return { success: false, error: 'PASS requires: Rd, Rs' };
       }
       const rd = operands[0];
-      const value = getRegisterValue(state, pe, operands[1]);
+      const value = getOperandValue(state, pe, operands[1]);
       if (value === null) {
         return { success: false, error: `Invalid source: ${operands[1]}` };
       }
-      setRegister(state, pe.row, pe.col, rd, value);
-      return { 
-        success: true, 
-        message: `${rd} = ${value} (pass)`,
-        value,
-        register: rd,
-      };
+      return writeAluResult(state, pe, peObj, rd, value, `${rd} = ${value} (pass)`);
     }
     
     default:
       return { success: false, error: `Unknown opcode: ${opcode}` };
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Parse ALU operands: supports both "Rd, Rs1, Rs2" and "Rs1, Rs2" formats
+function parseAluOperands(
+  state: ReplState, 
+  pe: { row: number; col: number }, 
+  operands: string[]
+): { rd?: string; v1?: number; v2?: number; err?: string } {
+  if (operands.length < 2) {
+    return { err: 'ALU operation requires at least 2 operands' };
+  }
+  
+  let rd: string | undefined;
+  let op1: string;
+  let op2: string;
+  
+  if (operands.length >= 3) {
+    // Format: Rd, Rs1, Rs2
+    rd = operands[0];
+    op1 = operands[1];
+    op2 = operands[2];
+  } else {
+    // Format: Rs1, Rs2 (result only to ROUT)
+    op1 = operands[0];
+    op2 = operands[1];
+  }
+  
+  const v1 = getOperandValue(state, pe, op1);
+  const v2 = getOperandValue(state, pe, op2);
+  
+  if (v1 === null) return { err: `Invalid operand: ${op1}` };
+  if (v2 === null) return { err: `Invalid operand: ${op2}` };
+  
+  return { rd, v1, v2 };
+}
+
+// Write ALU result: always to ROUT, optionally to Rd if specified
+function writeAluResult(
+  state: ReplState,
+  pe: { row: number; col: number },
+  peObj: PE,
+  rd: string | undefined,
+  result: number,
+  description: string
+): ExecutionResult {
+  // ALU result always goes to ROUT (except NOP)
+  peObj.registers.ROUT = result;
+  updateFlags(peObj, result);
+  
+  // Optionally write to internal register (RF_WE=1)
+  if (rd && rd.toUpperCase() !== 'ROUT') {
+    const upper = rd.toUpperCase();
+    if (['R0', 'R1', 'R2', 'R3'].includes(upper)) {
+      setRegister(state, pe.row, pe.col, rd, result);
+      peObj.lastModified = upper;
+    } else {
+      return { success: false, error: `Invalid destination register: ${rd} (use R0-R3)` };
+    }
+  } else {
+    peObj.lastModified = 'ROUT';
+  }
+  
+  return {
+    success: true,
+    message: rd ? `${rd} = ${description}` : `ROUT = ${description}`,
+    value: result,
+    register: rd || 'ROUT',
+  };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
