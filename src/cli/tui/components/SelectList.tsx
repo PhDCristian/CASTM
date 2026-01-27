@@ -88,26 +88,38 @@ export function SelectList<T = string>({
         const isDisabled = option.disabled;
         
         if (isDisabled) {
-          // Separator
+          // Separator - subtle line
           return (
-            <Box key={index} paddingX={1} marginTop={1} marginBottom={0}>
+            <Box key={index} paddingX={1} marginY={0}>
               <Text color={theme.dim}>{option.label}</Text>
             </Box>
           );
         }
         
         return (
-          <Box key={index} paddingX={1}>
-            {isSelected ? (
-              <Text color={theme.primary}>
-                 <Text color={theme.primary} bold>{symbols.pointer} {option.label}</Text>
-                 {option.description && <Text color={theme.dim}> {option.description}</Text>}
-              </Text>
-            ) : (
-              <Text color={theme.dim}>
-                 <Text>  {option.label}</Text>
-                 {option.description && <Text color={theme.dim}> {option.description}</Text>}
-              </Text>
+          <Box key={index} flexDirection="column" paddingX={1}>
+            {/* Main row: pointer + label */}
+            <Box>
+              {isSelected ? (
+                <>
+                  <Text color={theme.primary} bold>{symbols.pointer} </Text>
+                  <Text color={theme.primary} bold>{option.label}</Text>
+                </>
+              ) : (
+                <>
+                  <Text color={theme.dim}>  </Text>
+                  <Text color={theme.dim}>{option.label}</Text>
+                </>
+              )}
+            </Box>
+            
+            {/* Description row: indented, dimmer, always visible if present */}
+            {option.description && (
+              <Box marginLeft={3}>
+                <Text color={isSelected ? theme.accent : theme.dim} dimColor={!isSelected}>
+                  {option.description}
+                </Text>
+              </Box>
             )}
           </Box>
         );

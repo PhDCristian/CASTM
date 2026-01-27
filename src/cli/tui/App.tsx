@@ -118,29 +118,29 @@ function MainMenu({ selectedFile, onNavigate }: MainMenuProps) {
   
   if (selectedFile) {
     options.push(
-      { label: 'Compile', value: 'compile', description: '→ CSV' },
-      { label: 'Check', value: 'check', description: 'validate syntax' },
-      { label: 'Info', value: 'info', description: 'show details' },
-      { label: 'Watch', value: 'watch', description: 'auto-rebuild' },
-      { label: '─'.repeat(25), value: '__SEP__', disabled: true },
-      { label: 'Change file', value: 'browse' },
+      { label: 'Compile', value: 'compile', description: 'Generate CSV output file' },
+      { label: 'Check', value: 'check', description: 'Validate syntax without output' },
+      { label: 'Info', value: 'info', description: 'Show program statistics' },
+      { label: 'Watch', value: 'watch', description: 'Auto-rebuild on file changes' },
+      { label: '─'.repeat(30), value: '__SEP__', disabled: true },
+      { label: 'Change file', value: 'browse', description: 'Select a different file' },
     );
   } else {
-    options.push({ label: 'Open file', value: 'browse' });
+    options.push({ label: 'Open file', value: 'browse', description: 'Browse and select a DSL file' });
     
     if (recentFiles.length > 0) {
-      options.push({ label: 'Recent', value: 'recent', description: `(${recentFiles.length})` });
+      options.push({ label: 'Recent files', value: 'recent', description: `Quick access to ${recentFiles.length} recent file(s)` });
     }
   }
   
   // Add batch and scaffold options (always available)
   options.push(
-    { label: '─'.repeat(25), value: '__SEP1__', disabled: true },
-    { label: 'Batch compile', value: 'batch', description: 'compile multiple files' },
-    { label: 'New project/kernel', value: 'scaffold', description: 'create from template' },
-    { label: '─'.repeat(25), value: '__SEP2__', disabled: true },
-    { label: 'Settings', value: 'settings' },
-    { label: 'Exit', value: 'exit' },
+    { label: '─'.repeat(30), value: '__SEP1__', disabled: true },
+    { label: 'Batch compile', value: 'batch', description: 'Compile multiple files at once' },
+    { label: 'Create new', value: 'scaffold', description: 'New project or kernel from template' },
+    { label: '─'.repeat(30), value: '__SEP2__', disabled: true },
+    { label: 'Settings', value: 'settings', description: 'Theme and preferences' },
+    { label: 'Exit', value: 'exit', description: 'Close OpenEdge TUI' },
   );
   
   const handleSelect = (value: string) => {
@@ -185,10 +185,10 @@ function Settings({ onNavigate }: { onNavigate: (screen: Screen) => void }) {
   const config = loadConfig();
   
   const options: SelectOption<string>[] = [
-    { label: 'Theme', value: 'theme', description: `› ${BUILTIN_THEMES[config.theme]?.name || config.theme}` },
-    { label: 'Spinners', value: 'spinners', description: config.showSpinners ? '› on' : '› off' },
-    { label: '─'.repeat(25), value: '__SEP__', disabled: true },
-    { label: 'Back', value: 'back' },
+    { label: 'Theme', value: 'theme', description: `Currently: ${BUILTIN_THEMES[config.theme]?.name || config.theme}` },
+    { label: 'Spinners', value: 'spinners', description: config.showSpinners ? 'Enabled - show loading animations' : 'Disabled - minimal output' },
+    { label: '─'.repeat(30), value: '__SEP__', disabled: true },
+    { label: 'Back', value: 'back', description: 'Return to main menu' },
   ];
   
   const handleSelect = (value: string) => {
@@ -212,9 +212,13 @@ function ThemeSelector({ onNavigate }: { onNavigate: (screen: Screen) => void })
   
   const themeNames = getThemeNames();
   const options: SelectOption<string>[] = [
-    ...themeNames.map(name => ({ label: `${name === config.theme ? '● ' : '  '}${BUILTIN_THEMES[name].name}`, value: name })),
-    { label: '─'.repeat(25), value: '__SEP__', disabled: true },
-    { label: 'Back', value: 'back' },
+    ...themeNames.map(name => ({ 
+      label: `${name === config.theme ? '● ' : '  '}${BUILTIN_THEMES[name].name}`, 
+      value: name,
+      description: name === config.theme ? 'Currently active' : 'Click to apply',
+    })),
+    { label: '─'.repeat(30), value: '__SEP__', disabled: true },
+    { label: 'Back', value: 'back', description: 'Return to settings' },
   ];
   
   const handleSelect = (value: string) => {
@@ -249,9 +253,13 @@ function RecentFiles({ onSelect, onNavigate }: { onSelect: (file: string) => voi
   const [previewFile, setPreviewFile] = useState<string | null>(null);
   
   const options: SelectOption<string>[] = [
-    ...recentFiles.map((f, i) => ({ label: `${i + 1}. ${basename(f.path)}`, value: f.path, description: dirname(f.path) })),
-    { label: '─'.repeat(25), value: '__SEP__', disabled: true },
-    { label: 'Back', value: '__BACK__' },
+    ...recentFiles.map((f, i) => ({ 
+      label: `${i + 1}. ${basename(f.path)}`, 
+      value: f.path, 
+      description: dirname(f.path),
+    })),
+    { label: '─'.repeat(30), value: '__SEP__', disabled: true },
+    { label: 'Back', value: '__BACK__', description: 'Return to main menu' },
   ];
   
   const handleHighlight = (value: string) => {

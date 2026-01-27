@@ -43,21 +43,21 @@ export function ScaffoldScreen({ onNavigate }: ScaffoldScreenProps) {
 
   // Type selection options
   const typeOptions: SelectOption<string>[] = [
-    { label: `${symbols.folder} New Project`, value: 'project', description: 'Create a complete project structure' },
-    { label: `${symbols.file} New Kernel`, value: 'kernel', description: 'Add a kernel file to current project' },
-    { label: '─'.repeat(30), value: '__SEP__', disabled: true },
-    { label: 'Back', value: 'back' },
+    { label: 'New Project', value: 'project', description: 'Create a complete project with directory structure' },
+    { label: 'New Kernel', value: 'kernel', description: 'Add a kernel file to current directory' },
+    { label: '─'.repeat(35), value: '__SEP__', disabled: true },
+    { label: 'Back', value: 'back', description: 'Return to main menu' },
   ];
 
   // Template selection options
   const templateOptions: SelectOption<string>[] = [
     ...templates.map(t => ({
-      label: `${t.id === templateId ? '● ' : '  '}${t.name}`,
+      label: t.name,
       value: t.id,
       description: t.description,
     })),
-    { label: '─'.repeat(30), value: '__SEP__', disabled: true },
-    { label: 'Back', value: 'back' },
+    { label: '─'.repeat(35), value: '__SEP__', disabled: true },
+    { label: 'Back', value: 'back', description: 'Return to type selection' },
   ];
 
   // Handle type selection
