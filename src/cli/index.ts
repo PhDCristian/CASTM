@@ -48,8 +48,27 @@ program
   .description('Watch file for changes and auto-recompile')
   .argument('<file>', 'DSL source file to watch')
   .option('-o, --output <file>', 'Output CSV file')
-  .action(async (file: string, options: { output?: string }) => {
-    await startWatchMode(file, options.output);
+  .option('-d, --diff', 'Show diff between compilations')
+  .option('-m, --metrics', 'Show performance metrics delta')
+  .option('-c, --clear', 'Clear screen on each rebuild (default: true)')
+  .option('--no-clear', 'Do not clear screen on rebuild')
+  .option('-n, --notify', 'Send desktop notifications')
+  .option('-e, --exec <command>', 'Run command after successful compile ($INPUT, $OUTPUT)')
+  .action(async (file: string, options: { 
+    output?: string;
+    diff?: boolean;
+    metrics?: boolean;
+    clear?: boolean;
+    notify?: boolean;
+    exec?: string;
+  }) => {
+    await startWatchMode(file, options.output, {
+      diff: options.diff,
+      metrics: options.metrics,
+      clear: options.clear,
+      notify: options.notify,
+      exec: options.exec,
+    });
   });
 
 // Interactive mode command
@@ -115,6 +134,8 @@ Examples:
   $ openedge info kernel.dsl                 Show program statistics
   $ openedge info kernel.dsl --json          Output stats as JSON
   $ openedge watch kernel.dsl                Watch and auto-recompile
+  $ openedge watch kernel.dsl -dm            Watch with diff and metrics
+  $ openedge watch kernel.dsl -n             Watch with notifications
   $ openedge theme dracula                   Change to Dracula theme
   $ openedge interactive                     Launch interactive mode
   $ openedge i                               (shortcut for interactive)

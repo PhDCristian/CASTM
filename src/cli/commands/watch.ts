@@ -1,32 +1,46 @@
 /**
- * Watch mode - auto-recompilation on file changes
- * Clean, minimal design
+ * Enhanced Watch Mode - auto-recompilation with diff and metrics
  */
 
 import { watch, existsSync } from 'fs';
 import { basename, dirname } from 'path';
+import { exec } from 'child_process';
 import { compileDslToCsv } from '../../compiler.js';
 import { readFile, writeFile, getOutputPath, getRelativePath } from '../utils/files.js';
+import { diffCsv, formatDiff, formatDiffSummary, DiffResult } from '../utils/csv-diff.js';
+import { 
+  CompileMetrics, 
+  MetricsDelta, 
+  calculateMetricsDelta, 
+  formatMetrics, 
+  extractMetrics 
+} from '../utils/metrics.js';
 import {
-  printHeader,
-  printResult,
   printCompilationStats,
   printCodeFrame,
-  printHint,
-  printDivider,
   printWatchStatusBar,
   printWatchSummary,
   createSpinner,
   chalk,
-  symbols,
   WatchStats,
 } from '../ui/premium.js';
 import { loadConfig, getCurrentTheme } from '../config/store.js';
+
+export interface WatchOptions {
+  output?: string;
+  diff?: boolean;
+  metrics?: boolean;
+  clear?: boolean;
+  notify?: boolean;
+  exec?: string;
+}
 
 interface WatchState {
   isCompiling: boolean;
   lastCompileTime: number;
   stats: WatchStats;
+  previousCsv: string | null;
+  previousMetrics: CompileMetrics | null;
 }
 
 /**
@@ -34,7 +48,8 @@ interface WatchState {
  */
 export async function startWatchMode(
   filePath: string,
-  outputPath?: string
+  outputPath?: string,
+  options: WatchOptions = {}
 ): Promise<void> {
   const config = loadConfig();
   const resolvedOutput = outputPath || getOutputPath(filePath);
@@ -48,12 +63,16 @@ export async function startWatchMode(
       startTime: Date.now(),
       lastStatus: 'ok',
     },
+    previousCsv: null,
+    previousMetrics: null,
   };
   
   // Initial compile
-  console.clear();
-  printWatchHeader(filePath, resolvedOutput);
-  await compileFile(filePath, resolvedOutput, state);
+  if (options.clear !== false) {
+    console.clear();
+  }
+  printWatchHeader(filePath, resolvedOutput, options);
+  await compileFile(filePath, resolvedOutput, state, options);
   
   // Watch for changes
   const watcher = watch(filePath, { persistent: true }, async (eventType) => {
@@ -65,9 +84,11 @@ export async function startWatchMode(
     
     state.lastCompileTime = now;
     
-    console.clear();
-    printWatchHeader(filePath, resolvedOutput);
-    await compileFile(filePath, resolvedOutput, state);
+    if (options.clear !== false) {
+      console.clear();
+    }
+    printWatchHeader(filePath, resolvedOutput, options);
+    await compileFile(filePath, resolvedOutput, state, options);
   });
   
   // Also watch the directory for file recreation
@@ -82,9 +103,11 @@ export async function startWatchMode(
     
     state.lastCompileTime = now;
     
-    console.clear();
-    printWatchHeader(filePath, resolvedOutput);
-    await compileFile(filePath, resolvedOutput, state);
+    if (options.clear !== false) {
+      console.clear();
+    }
+    printWatchHeader(filePath, resolvedOutput, options);
+    await compileFile(filePath, resolvedOutput, state, options);
   });
   
   // Handle exit
@@ -102,9 +125,9 @@ export async function startWatchMode(
 }
 
 /**
- * Print watch mode header - minimal
+ * Print watch mode header
  */
-function printWatchHeader(inputPath: string, outputPath: string): void {
+function printWatchHeader(inputPath: string, outputPath: string, options: WatchOptions): void {
   const theme = getCurrentTheme();
   
   console.log();
@@ -112,18 +135,31 @@ function printWatchHeader(inputPath: string, outputPath: string): void {
   console.log();
   console.log('  ' + chalk.hex(theme.dim)('in  ') + chalk.white(getRelativePath(inputPath)));
   console.log('  ' + chalk.hex(theme.dim)('out ') + chalk.white(getRelativePath(outputPath)));
+  
+  // Show active options
+  const activeOpts: string[] = [];
+  if (options.diff) activeOpts.push('diff');
+  if (options.metrics) activeOpts.push('metrics');
+  if (options.notify) activeOpts.push('notify');
+  if (options.exec) activeOpts.push('exec');
+  
+  if (activeOpts.length > 0) {
+    console.log('  ' + chalk.hex(theme.dim)('opt ') + chalk.hex(theme.accent)(activeOpts.join(', ')));
+  }
+  
   console.log();
-  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(40)));
+  console.log('  ' + chalk.hex(theme.dim)('─'.repeat(50)));
   console.log();
 }
 
 /**
- * Compile file and show results - with status bar
+ * Compile file and show results
  */
 async function compileFile(
   filePath: string,
   outputPath: string,
-  state: WatchState
+  state: WatchState,
+  options: WatchOptions
 ): Promise<void> {
   const theme = getCurrentTheme();
   const config = loadConfig();
@@ -148,6 +184,8 @@ async function compileFile(
     }
     
     const result = compileDslToCsv(readResult.content!);
+    const endTime = performance.now();
+    const compileTimeMs = endTime - startTime;
     
     if (result.success) {
       const writeResult = writeFile(outputPath, result.csv!);
@@ -163,19 +201,70 @@ async function compileFile(
         return;
       }
       
-      const endTime = performance.now();
       state.stats.compiles++;
       state.stats.lastStatus = 'ok';
       
-      spinner?.succeed(chalk.hex(theme.success)('Done'));
+      // Calculate diff if enabled
+      let diffResult: DiffResult | null = null;
+      if (options.diff && state.previousCsv) {
+        diffResult = diffCsv(state.previousCsv, result.csv!);
+      }
       
+      // Calculate metrics if enabled
+      let metricsResult: { metrics: CompileMetrics; delta: MetricsDelta } | null = null;
+      if (options.metrics) {
+        const metrics = extractMetrics(result, compileTimeMs);
+        const delta = calculateMetricsDelta(state.previousMetrics, metrics);
+        metricsResult = { metrics, delta };
+      }
+      
+      // Show success with summary
+      const summaryParts: string[] = ['Done'];
+      if (diffResult) {
+        summaryParts.push(formatDiffSummary(diffResult));
+      }
+      spinner?.succeed(chalk.hex(theme.success)(summaryParts.join(' ')));
+      
+      // Show compilation stats
       printCompilationStats({
         output: getRelativePath(outputPath),
         cycles: result.maxCycles,
         grid: result.suggestedGridSize,
         memoryRegions: result.memoryRegions?.length || 0,
-        time: endTime - startTime,
+        time: compileTimeMs,
       });
+      
+      // Show diff if enabled and there are changes
+      if (options.diff && diffResult && diffResult.hasChanges) {
+        console.log();
+        console.log('  ' + chalk.hex(theme.accent)('─── diff ───'));
+        console.log();
+        console.log(formatDiff(diffResult, 1));
+      }
+      
+      // Show metrics if enabled
+      if (options.metrics && metricsResult) {
+        console.log();
+        console.log('  ' + chalk.hex(theme.accent)('─── metrics ───'));
+        console.log();
+        console.log(formatMetrics(metricsResult.metrics, metricsResult.delta));
+      }
+      
+      // Update previous state for next comparison
+      state.previousCsv = result.csv!;
+      if (metricsResult) {
+        state.previousMetrics = metricsResult.metrics;
+      }
+      
+      // Send notification if enabled
+      if (options.notify) {
+        sendNotification('OpenEdge', `✓ Compiled ${basename(filePath)}`);
+      }
+      
+      // Execute command if specified
+      if (options.exec) {
+        await executeCommand(options.exec, filePath, outputPath);
+      }
       
     } else {
       spinner?.fail(chalk.hex(theme.error)('Failed'));
@@ -195,6 +284,11 @@ async function compileFile(
         console.log();
         console.log('  ' + chalk.hex(theme.error)('error: ') + chalk.white(result.error));
       }
+      
+      // Send error notification if enabled
+      if (options.notify) {
+        sendNotification('OpenEdge', `✗ Error in ${basename(filePath)}`);
+      }
     }
   } catch (err: any) {
     spinner?.fail(chalk.hex(theme.error)('Error'));
@@ -206,4 +300,62 @@ async function compileFile(
   state.isCompiling = false;
   console.log();
   printWatchStatusBar(state.stats);
+}
+
+/**
+ * Send desktop notification (cross-platform)
+ */
+function sendNotification(title: string, message: string): void {
+  const platform = process.platform;
+  
+  try {
+    if (platform === 'darwin') {
+      // macOS
+      exec(`osascript -e 'display notification "${message}" with title "${title}"'`);
+    } else if (platform === 'linux') {
+      // Linux (requires notify-send)
+      exec(`notify-send "${title}" "${message}"`);
+    } else if (platform === 'win32') {
+      // Windows (requires PowerShell)
+      exec(`powershell -Command "New-BurntToastNotification -Text '${title}', '${message}'"`);
+    }
+  } catch {
+    // Silently fail if notifications aren't available
+  }
+}
+
+/**
+ * Execute a command after successful compile
+ */
+async function executeCommand(
+  command: string, 
+  inputPath: string, 
+  outputPath: string
+): Promise<void> {
+  const theme = getCurrentTheme();
+  
+  // Replace placeholders in command
+  const expandedCommand = command
+    .replace(/\$INPUT/g, inputPath)
+    .replace(/\$OUTPUT/g, outputPath)
+    .replace(/\$FILE/g, inputPath);
+  
+  console.log();
+  console.log('  ' + chalk.hex(theme.dim)('exec: ') + chalk.white(expandedCommand));
+  
+  return new Promise((resolve) => {
+    exec(expandedCommand, (error, stdout, stderr) => {
+      if (error) {
+        console.log('  ' + chalk.hex(theme.error)('✗ ') + chalk.dim(error.message));
+      } else {
+        if (stdout.trim()) {
+          console.log('  ' + chalk.dim(stdout.trim()));
+        }
+        if (stderr.trim()) {
+          console.log('  ' + chalk.yellow(stderr.trim()));
+        }
+      }
+      resolve();
+    });
+  });
 }
