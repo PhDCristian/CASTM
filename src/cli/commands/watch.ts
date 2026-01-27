@@ -5,6 +5,7 @@
 import { watch, existsSync } from 'fs';
 import { basename, dirname } from 'path';
 import { exec } from 'child_process';
+import { createHash } from 'crypto';
 import { compileDslToCsv } from '../../compiler.js';
 import { readFile, writeFile, getOutputPath, getRelativePath } from '../utils/files.js';
 import { diffCsv, formatDiff, formatDiffSummary, DiffResult } from '../utils/csv-diff.js';
@@ -38,6 +39,7 @@ export interface WatchOptions {
 interface WatchState {
   isCompiling: boolean;
   lastCompileTime: number;
+  lastContentHash: string | null;
   stats: WatchStats;
   previousCsv: string | null;
   previousMetrics: CompileMetrics | null;
@@ -57,6 +59,7 @@ export async function startWatchMode(
   const state: WatchState = {
     isCompiling: false,
     lastCompileTime: 0,
+    lastContentHash: null,
     stats: {
       compiles: 0,
       errors: 0,
@@ -74,6 +77,19 @@ export async function startWatchMode(
   printWatchHeader(filePath, resolvedOutput, options);
   await compileFile(filePath, resolvedOutput, state, options);
   
+  // Helper to check if file content actually changed
+  const hasContentChanged = (): boolean => {
+    const readResult = readFile(filePath);
+    if (!readResult.success) return false;
+    
+    const newHash = createHash('md5').update(readResult.content!).digest('hex');
+    if (newHash === state.lastContentHash) {
+      return false; // No actual change
+    }
+    state.lastContentHash = newHash;
+    return true;
+  };
+  
   // Watch for changes
   const watcher = watch(filePath, { persistent: true }, async (eventType) => {
     if (eventType !== 'change') return;
@@ -81,6 +97,9 @@ export async function startWatchMode(
     const now = Date.now();
     if (now - state.lastCompileTime < config.watchDebounceMs) return;
     if (state.isCompiling) return;
+    
+    // Check if content actually changed
+    if (!hasContentChanged()) return;
     
     state.lastCompileTime = now;
     
@@ -100,6 +119,9 @@ export async function startWatchMode(
     if (now - state.lastCompileTime < config.watchDebounceMs) return;
     if (state.isCompiling) return;
     if (!existsSync(filePath)) return;
+    
+    // Check if content actually changed
+    if (!hasContentChanged()) return;
     
     state.lastCompileTime = now;
     
@@ -182,6 +204,9 @@ async function compileFile(
       printWatchStatusBar(state.stats);
       return;
     }
+    
+    // Update content hash for change detection
+    state.lastContentHash = createHash('md5').update(readResult.content!).digest('hex');
     
     const result = compileDslToCsv(readResult.content!);
     const endTime = performance.now();
