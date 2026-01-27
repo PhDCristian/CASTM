@@ -91,29 +91,29 @@ export function SelectList<T = string>({
           // Separator - subtle line
           return (
             <Box key={index} paddingX={1} marginY={0}>
-              <Text color={theme.dim}>{option.label}</Text>
+              <Text color={theme.dimmer}>{option.label}</Text>
             </Box>
           );
         }
         
-        // Premium single-line design with consistent alignment:
-        // Selected:     › Label · description
-        // Not selected:   Label · description
+        // Premium single-line design using theme colors:
+        // Selected:     › Label · description (text + dim)
+        // Not selected:   Label · description (textMuted + dimmer)
         return (
           <Box key={index} paddingX={1}>
             {/* Pointer column - fixed width */}
-            <Text color={isSelected ? theme.primary : theme.dim}>
+            <Text color={isSelected ? theme.primary : theme.dimmer}>
               {isSelected ? '› ' : '  '}
             </Text>
             
-            {/* Label */}
-            <Text color={isSelected ? 'white' : '#888888'} bold={isSelected}>
+            {/* Label - uses theme colors */}
+            <Text color={isSelected ? theme.text : theme.textMuted} bold={isSelected}>
               {option.label}
             </Text>
             
-            {/* Description - subtle, dimmer */}
+            {/* Description - subtle, uses theme colors */}
             {option.description && (
-              <Text color={isSelected ? theme.dim : '#555555'}>
+              <Text color={isSelected ? theme.dim : theme.dimmer}>
                 {' · '}{option.description}
               </Text>
             )}

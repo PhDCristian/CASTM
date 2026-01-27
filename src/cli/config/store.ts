@@ -22,6 +22,9 @@ export interface Theme {
   error: string;
   warning: string;
   dim: string;
+  dimmer: string;      // Even more subtle than dim
+  text: string;        // Normal text color
+  textMuted: string;   // Muted text (unselected items)
   background?: string;
 }
 
@@ -34,7 +37,10 @@ export const BUILTIN_THEMES: Record<string, Theme> = {
     success: '#00ff87',
     error: '#ff6b6b',
     warning: '#ffa502',
-    dim: '#666666',
+    dim: '#888888',
+    dimmer: '#555555',
+    text: '#ffffff',
+    textMuted: '#aaaaaa',
   },
   ocean: {
     name: 'Ocean',
@@ -44,7 +50,10 @@ export const BUILTIN_THEMES: Record<string, Theme> = {
     success: '#06d6a0',
     error: '#ef476f',
     warning: '#ffd166',
-    dim: '#5c677d',
+    dim: '#7d8597',
+    dimmer: '#5c677d',
+    text: '#ffffff',
+    textMuted: '#a0a8b8',
   },
   sunset: {
     name: 'Sunset',
@@ -54,7 +63,10 @@ export const BUILTIN_THEMES: Record<string, Theme> = {
     success: '#1dd1a1',
     error: '#ee5a24',
     warning: '#f39c12',
-    dim: '#636e72',
+    dim: '#818a8f',
+    dimmer: '#636e72',
+    text: '#ffffff',
+    textMuted: '#a5acb0',
   },
   nord: {
     name: 'Nord',
@@ -64,7 +76,10 @@ export const BUILTIN_THEMES: Record<string, Theme> = {
     success: '#a3be8c',
     error: '#bf616a',
     warning: '#ebcb8b',
-    dim: '#4c566a',
+    dim: '#6a7384',
+    dimmer: '#4c566a',
+    text: '#eceff4',
+    textMuted: '#9aa5b5',
   },
   dracula: {
     name: 'Dracula',
@@ -74,7 +89,10 @@ export const BUILTIN_THEMES: Record<string, Theme> = {
     success: '#50fa7b',
     error: '#ff5555',
     warning: '#f1fa8c',
-    dim: '#6272a4',
+    dim: '#7a88a8',
+    dimmer: '#6272a4',
+    text: '#f8f8f2',
+    textMuted: '#9aa5c0',
   },
   monokai: {
     name: 'Monokai',
@@ -84,7 +102,10 @@ export const BUILTIN_THEMES: Record<string, Theme> = {
     success: '#a6e22e',
     error: '#f92672',
     warning: '#fd971f',
-    dim: '#75715e',
+    dim: '#90897a',
+    dimmer: '#75715e',
+    text: '#f8f8f2',
+    textMuted: '#a8a28a',
   },
   cyberpunk: {
     name: 'Cyberpunk',
@@ -94,7 +115,10 @@ export const BUILTIN_THEMES: Record<string, Theme> = {
     success: '#00ff00',
     error: '#ff0000',
     warning: '#ff6600',
-    dim: '#666666',
+    dim: '#888888',
+    dimmer: '#555555',
+    text: '#ffffff',
+    textMuted: '#aaaaaa',
   },
   minimal: {
     name: 'Minimal',
@@ -104,7 +128,10 @@ export const BUILTIN_THEMES: Record<string, Theme> = {
     success: '#00ff00',
     error: '#ff0000',
     warning: '#ffff00',
-    dim: '#555555',
+    dim: '#777777',
+    dimmer: '#555555',
+    text: '#ffffff',
+    textMuted: '#999999',
   },
 };
 
