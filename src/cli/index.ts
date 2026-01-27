@@ -14,11 +14,21 @@ import { runInteractiveMode } from './commands/interactive.js';
 import { startWatchMode } from './commands/watch.js';
 import { setTheme, getThemeNames, BUILTIN_THEMES } from './config/store.js';
 import { runTuiMode } from './tui/index.js';
+import { startServer as startLspServer } from './lsp/index.js';
 
 // Package version (will be updated from package.json in build)
 const VERSION = '0.1.0';
 
-const program = new Command();
+// Special handling for LSP command - must be done before Commander parses args
+// because LSP clients pass --stdio which Commander doesn't know about
+if (process.argv[2] === 'lsp') {
+  // Remove 'lsp' from argv so the LSP server can use --stdio etc.
+  // The LSP server reads process.argv directly
+  startLspServer();
+  // Don't continue to Commander
+} else {
+  // Normal CLI flow
+  const program = new Command();
 
 program
   .name('openedge')
@@ -109,14 +119,16 @@ Examples:
   $ openedge interactive                     Launch interactive mode
   $ openedge i                               (shortcut for interactive)
   $ openedge tui                             Launch TUI mode (experimental)
+  $ openedge lsp                             Start LSP server for IDE integration
 
 Documentation:
   https://github.com/PhDCristian/OpenEdgeDSL
 `);
 
-// If no command provided, launch interactive mode
-if (process.argv.length <= 2) {
-  runInteractiveMode();
-} else {
-  program.parse();
-}
+  // If no command provided, launch interactive mode
+  if (process.argv.length <= 2) {
+    runInteractiveMode();
+  } else {
+    program.parse();
+  }
+} // End of else block for non-LSP commands
