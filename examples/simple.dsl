@@ -16,6 +16,7 @@ kernel "SimpleAdd" {
     // Route value from col 1 to col 0
     cycle {
         @0,1: SADD ROUT, R0, ZERO;
+        @0,0: SADD R0, ROUT, ZERO;
     }
     
     // Add the values

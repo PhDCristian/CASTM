@@ -27,6 +27,7 @@ import {
   addRecentFile
 } from '../config/store.js';
 import { readFileSync } from 'fs';
+import { Repl } from '../repl/index.js';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SHARED COMPONENTS - Vercel Style
@@ -98,7 +99,8 @@ type Screen =
   | { type: 'info'; file: string }
   | { type: 'check'; file: string }
   | { type: 'batch' }
-  | { type: 'scaffold' };
+  | { type: 'scaffold' }
+  | { type: 'repl' };
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SUB-SCREENS
@@ -138,6 +140,7 @@ function MainMenu({ selectedFile, onNavigate }: MainMenuProps) {
     { label: '─'.repeat(30), value: '__SEP1__', disabled: true },
     { label: 'Batch compile', value: 'batch', description: 'Compile multiple files at once' },
     { label: 'Create new', value: 'scaffold', description: 'New project or kernel from template' },
+    { label: 'REPL', value: 'repl', description: 'Interactive DSL shell with PE grid' },
     { label: '─'.repeat(30), value: '__SEP2__', disabled: true },
     { label: 'Settings', value: 'settings', description: 'Theme and preferences' },
     { label: 'Exit', value: 'exit', description: 'Close OpenEdge TUI' },
@@ -154,6 +157,7 @@ function MainMenu({ selectedFile, onNavigate }: MainMenuProps) {
       case 'watch': if (selectedFile) onNavigate({ type: 'watch', file: selectedFile }); break;
       case 'batch': onNavigate({ type: 'batch' }); break;
       case 'scaffold': onNavigate({ type: 'scaffold' }); break;
+      case 'repl': onNavigate({ type: 'repl' }); break;
       case 'exit': exit(); break;
     }
   };
@@ -286,6 +290,34 @@ function RecentFiles({ onSelect, onNavigate }: { onSelect: (file: string) => voi
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// REPL LAUNCHER - Exits TUI and launches REPL
+// ═══════════════════════════════════════════════════════════════════════════
+
+function ReplLauncher() {
+  const { exit } = useApp();
+  
+  useEffect(() => {
+    // Restore terminal before launching REPL
+    process.stdout.write('\x1b[?25h');   // Show cursor
+    process.stdout.write('\x1b[?1049l'); // Exit alternate buffer
+    
+    // Small delay to let Ink cleanup, then launch REPL
+    setTimeout(async () => {
+      exit();
+      const repl = new Repl();
+      await repl.run();
+    }, 100);
+  }, [exit]);
+  
+  return (
+    <Box flexDirection="column" padding={2}>
+      <Text color={premiumColors.accentCyan} bold>Launching REPL...</Text>
+      <Text color={premiumColors.textDim}>Interactive DSL shell starting...</Text>
+    </Box>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // MAIN APP COMPONENT
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -326,6 +358,7 @@ function App() {
     case 'check': content = <CheckScreen file={screen.file} onNavigate={handleNavigate} />; break;
     case 'batch': content = <BatchScreen onNavigate={handleNavigate} />; status = 'BATCH'; break;
     case 'scaffold': content = <ScaffoldScreen onNavigate={handleNavigate} />; status = 'CREATE'; break;
+    case 'repl': content = <ReplLauncher />; status = 'REPL'; break;
     default: content = <MainMenu selectedFile={selectedFile} onNavigate={handleNavigate} />;
   }
 
