@@ -99,13 +99,42 @@ function parseOperand(
   const currentToken = stream.peek();
   const nextToken = stream.peekAhead(1);
 
-  // Handle IMM(val) syntax
+  // Handle IMM(val) or IMM(expr) syntax
   if (currentToken.value.toUpperCase() === 'IMM' && nextToken.value === '(') {
     stream.advance(); // IMM
     stream.advance(); // (
-    const val = stream.expect(TokenType.NUMBER).value;
-    stream.expect(TokenType.OPERATOR, ')');
-    return val; // Just return the number, simulator expects immediate value
+
+    // Collect all tokens until closing paren to support expressions like IMM(i * 2 + j)
+    const exprTokens: string[] = [];
+    let parenDepth = 1;
+    while (!stream.isAtEnd() && parenDepth > 0) {
+      const tok = stream.peek();
+      if (tok.value === '(') {
+        parenDepth++;
+        exprTokens.push(tok.value);
+        stream.advance();
+      } else if (tok.value === ')') {
+        parenDepth--;
+        if (parenDepth === 0) {
+          stream.advance(); // consume closing ')'
+          break;
+        }
+        exprTokens.push(tok.value);
+        stream.advance();
+      } else {
+        exprTokens.push(tok.value);
+        stream.advance();
+      }
+    }
+
+    // If single number token, return directly
+    if (exprTokens.length === 1) {
+      return exprTokens[0];
+    }
+
+    // Evaluate expression
+    const val = evaluateSimpleExpression(exprTokens, symbols);
+    return val.toString();
   }
 
   // Handle .CONST
@@ -143,6 +172,48 @@ function parseOperand(
 }
 
 /**
+ * Collects expression tokens from inside brackets, resolving array property
+ * references (e.g., values.len()) inline to their numeric values.
+ */
+function collectBracketExprTokens(
+  stream: TokenStream,
+  symbols: SymbolTable
+): string[] {
+  const exprTokens: string[] = [];
+  while (stream.peek().value !== ']' && !stream.isAtEnd()) {
+    const cur = stream.peek();
+    const next = stream.peekAhead(1);
+
+    // Check for arrayName.property() pattern inside bracket expression
+    if (cur.type === TokenType.IDENTIFIER &&
+        next?.type === TokenType.DIRECTIVE &&
+        next?.value.startsWith('.')) {
+      const arrName = cur.value;
+      const propName = next.value.substring(1).toLowerCase();
+      const namedArray = symbols.namedArrays.get(arrName);
+
+      if (namedArray && isArrayProperty(propName)) {
+        stream.advance(); // array name
+        stream.advance(); // .property directive
+        // Consume optional ()
+        if (stream.peek().value === '(') {
+          stream.advance(); // (
+          if (stream.peek().value === ')') {
+            stream.advance(); // )
+          }
+        }
+        const val = getArrayPropertyValue(namedArray, propName);
+        exprTokens.push(val.toString());
+        continue;
+      }
+    }
+
+    exprTokens.push(stream.advance().value);
+  }
+  return exprTokens;
+}
+
+/**
  * Parses a data[index] reference.
  */
 function parseDataReference(
@@ -152,11 +223,8 @@ function parseDataReference(
   stream.advance(); // data
   stream.advance(); // [
 
-  // Parse arithmetic expression inside brackets
-  const exprTokens: string[] = [];
-  while (stream.peek().value !== ']' && !stream.isAtEnd()) {
-    exprTokens.push(stream.advance().value);
-  }
+  // Parse arithmetic expression inside brackets, resolving array properties
+  const exprTokens = collectBracketExprTokens(stream, symbols);
   stream.expect(TokenType.OPERATOR, ']');
 
   // Evaluate the expression
@@ -187,11 +255,8 @@ function parseNamedArrayIndexAccess(
   stream.advance(); // array name
   stream.advance(); // [
 
-  // Parse first index expression inside brackets
-  const index1Tokens: string[] = [];
-  while (stream.peek().value !== ']' && !stream.isAtEnd()) {
-    index1Tokens.push(stream.advance().value);
-  }
+  // Parse first index expression inside brackets, resolving array properties
+  const index1Tokens = collectBracketExprTokens(stream, symbols);
   stream.expect(TokenType.OPERATOR, ']');
 
   // Evaluate the first index
@@ -201,11 +266,8 @@ function parseNamedArrayIndexAccess(
   if (arrayInfo.is2D && stream.peek()?.value === '[') {
     stream.advance(); // [
 
-    // Parse second index expression
-    const index2Tokens: string[] = [];
-    while (stream.peek().value !== ']' && !stream.isAtEnd()) {
-      index2Tokens.push(stream.advance().value);
-    }
+    // Parse second index expression, resolving array properties
+    const index2Tokens = collectBracketExprTokens(stream, symbols);
     stream.expect(TokenType.OPERATOR, ']');
 
     const index2 = evaluateSimpleExpression(index2Tokens, symbols);

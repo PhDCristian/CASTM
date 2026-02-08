@@ -23,7 +23,9 @@ export const PRAGMA_NAMES = [
   'scan',
   'broadcast',
   'stencil',
-  'route'
+  'route',
+  'rotate',
+  'shift'
 ] as const;
 
 export type PragmaName = typeof PRAGMA_NAMES[number];
@@ -139,6 +141,7 @@ export function parseReducePragmaArgs(stream: TokenStream): {
   operation: string;
   srcReg: string;
   destReg: string;
+  axis?: 'row' | 'col';
 } | null {
   if (!stream.match(TokenType.OPERATOR, '(')) {
     return null;
@@ -146,12 +149,31 @@ export function parseReducePragmaArgs(stream: TokenStream): {
 
   const operation = stream.expect(TokenType.IDENTIFIER).value;
   stream.expect(TokenType.OPERATOR, ',');
-  const srcReg = stream.expect(TokenType.IDENTIFIER).value;
-  stream.expect(TokenType.OPERATOR, ',');
+  // Syntax: #pragma reduce(op, destReg, srcReg)
+  // e.g. reduce(sum, R3, R2) means "reduce R2 into R3"
   const destReg = stream.expect(TokenType.IDENTIFIER).value;
+  stream.expect(TokenType.OPERATOR, ',');
+  const srcReg = stream.expect(TokenType.IDENTIFIER).value;
+
+  // Optional axis parameter: axis=col or axis=row
+  let axis: 'row' | 'col' | undefined;
+  if (stream.check(TokenType.OPERATOR) && stream.peek().value === ',') {
+    stream.advance(); // consume ','
+    const axisKey = stream.expect(TokenType.IDENTIFIER).value.toLowerCase();
+    if (axisKey === 'axis') {
+      stream.expect(TokenType.OPERATOR, '=');
+      // 'col' or 'row' could be IDENTIFIER or KEYWORD
+      if (stream.check(TokenType.IDENTIFIER)) {
+        axis = stream.advance().value.toLowerCase() as 'row' | 'col';
+      } else if (stream.check(TokenType.KEYWORD)) {
+        axis = stream.advance().value.toLowerCase() as 'row' | 'col';
+      }
+    }
+  }
+
   stream.expect(TokenType.OPERATOR, ')');
 
-  return { operation, srcReg, destReg };
+  return { operation, srcReg, destReg, axis };
 }
 
 /**
@@ -241,7 +263,7 @@ export function isLoopPragma(name: string): boolean {
  * Checks if a pragma generates code directly (reduce, stencil, scan, broadcast)
  */
 export function isCodeGeneratingPragma(name: string): boolean {
-  return ['reduce', 'stencil', 'route', 'scan', 'broadcast'].includes(name.toLowerCase());
+  return ['reduce', 'stencil', 'route', 'scan', 'broadcast', 'rotate', 'shift'].includes(name.toLowerCase());
 }
 
 /**
@@ -429,4 +451,66 @@ export function parseBroadcastPragmaArgs(stream: TokenStream): {
   stream.expect(TokenType.OPERATOR, ')');
 
   return { valueReg, fromRow, fromCol, scope };
+}
+
+/**
+ * Parses #pragma rotate or #pragma shift arguments
+ * Syntax: #pragma rotate(reg=R0, direction=left|right, distance=1)
+ * Syntax: #pragma shift(reg=R0, direction=left|right, distance=1, fill=0)
+ */
+export function parseRotateShiftPragmaArgs(stream: TokenStream, isShift: boolean): {
+  reg: string;
+  direction: 'left' | 'right';
+  distance: number;
+  fill?: number;
+} | null {
+  if (!stream.match(TokenType.OPERATOR, '(')) {
+    return null;
+  }
+
+  // Parse reg=REG
+  const regKey = stream.expect(TokenType.IDENTIFIER).value.toLowerCase();
+  if (regKey !== 'reg') {
+    throw new Error(`Expected 'reg' but got '${regKey}'`);
+  }
+  stream.expect(TokenType.OPERATOR, '=');
+  const reg = stream.expect(TokenType.IDENTIFIER).value.toUpperCase();
+
+  stream.expect(TokenType.OPERATOR, ',');
+
+  // Parse direction=left|right
+  const dirKey = stream.expect(TokenType.IDENTIFIER).value.toLowerCase();
+  if (dirKey !== 'direction') {
+    throw new Error(`Expected 'direction' but got '${dirKey}'`);
+  }
+  stream.expect(TokenType.OPERATOR, '=');
+  const direction = stream.expect(TokenType.IDENTIFIER).value.toLowerCase() as 'left' | 'right';
+
+  // Optional distance
+  let distance = 1;
+  if (stream.check(TokenType.OPERATOR) && stream.peek().value === ',') {
+    stream.advance(); // consume ','
+
+    const nextKey = stream.expect(TokenType.IDENTIFIER).value.toLowerCase();
+    if (nextKey === 'distance') {
+      stream.expect(TokenType.OPERATOR, '=');
+      distance = parseInt(stream.expect(TokenType.NUMBER).value, 10);
+    }
+  }
+
+  // Optional fill (for shift only)
+  let fill: number | undefined;
+  if (isShift && stream.check(TokenType.OPERATOR) && stream.peek().value === ',') {
+    stream.advance(); // consume ','
+
+    const fillKey = stream.expect(TokenType.IDENTIFIER).value.toLowerCase();
+    if (fillKey === 'fill') {
+      stream.expect(TokenType.OPERATOR, '=');
+      fill = parseInt(stream.expect(TokenType.NUMBER).value, 10);
+    }
+  }
+
+  stream.expect(TokenType.OPERATOR, ')');
+
+  return { reg, direction, distance, fill };
 }

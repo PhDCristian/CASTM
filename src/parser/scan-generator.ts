@@ -18,7 +18,7 @@ interface ScanParams {
 }
 
 /**
- * Maps operation to instruction
+ * Maps operation to instruction (for single-instruction operations)
  */
 function getInstructionForOp(operation: string): string {
     switch (operation.toLowerCase()) {
@@ -26,14 +26,17 @@ function getInstructionForOp(operation: string): string {
         case 'and': return 'LAND';
         case 'or': return 'LOR';
         case 'xor': return 'LXOR';
-        case 'max':
-        case 'min':
-            // For max/min, we need BSFA pattern - for now use SADD as placeholder
-            // TODO: Implement proper max/min with BSFA
-            return 'SADD';
         default:
             return 'SADD';
     }
+}
+
+/**
+ * Whether operation requires a 2-cycle BSFA compare-and-select pattern
+ */
+function isCompareOp(operation: string): boolean {
+    const op = operation.toLowerCase();
+    return op === 'max' || op === 'min';
 }
 
 /**
@@ -98,21 +101,31 @@ export function generateScanTokens(params: ScanParams): Token[] {
         return size - 1 - i;
     };
 
+    const isCompare = isCompareOp(operation);
+
+    // For max: when S=1 (A<B), BSFA selects rs1. So for max, rs1=incoming (the bigger one)
+    // For min: when S=1 (A<B), BSFA selects rs1. So for min, rs1=dstReg (the smaller one)
+    const bsfaFirst = operation.toLowerCase() === 'max' ? incoming : dstReg;
+    const bsfaSecond = operation.toLowerCase() === 'max' ? dstReg : incoming;
+
     for (let i = 0; i < size; i++) {
         const idx = getIdx(i);
         const isFirst = i === 0;
         const posRow = isHorizontal ? row : idx;
         const posCol = isHorizontal ? idx : col;
 
+        // Helper to emit @row,col: prefix
+        const emitPePrefix = () => {
+            tokens.push(createToken(TokenType.AT_SYMBOL, '@', line));
+            tokens.push(createToken(TokenType.NUMBER, posRow.toString(), line));
+            tokens.push(createToken(TokenType.OPERATOR, ',', line));
+            tokens.push(createToken(TokenType.NUMBER, posCol.toString(), line));
+            tokens.push(createToken(TokenType.OPERATOR, ':', line));
+        };
+
         // Cycle 1 for this PE: compute dstReg
         tokens.push(...createCycleHeader(line));
-
-        // @row,col:
-        tokens.push(createToken(TokenType.AT_SYMBOL, '@', line));
-        tokens.push(createToken(TokenType.NUMBER, posRow.toString(), line));
-        tokens.push(createToken(TokenType.OPERATOR, ',', line));
-        tokens.push(createToken(TokenType.NUMBER, posCol.toString(), line));
-        tokens.push(createToken(TokenType.OPERATOR, ':', line));
+        emitPePrefix();
 
         if (isFirst) {
             if (mode === 'inclusive') {
@@ -125,19 +138,28 @@ export function generateScanTokens(params: ScanParams): Token[] {
                 tokens.push(createToken(TokenType.IDENTIFIER, 'ZERO', line));
             } else {
                 // Exclusive: dstReg = identity
+                const identity = getIdentityForOp(operation);
                 tokens.push(createToken(TokenType.IDENTIFIER, 'SADD', line));
                 tokens.push(createToken(TokenType.IDENTIFIER, dstReg, line));
                 tokens.push(createToken(TokenType.OPERATOR, ',', line));
                 tokens.push(createToken(TokenType.IDENTIFIER, 'ZERO', line));
                 tokens.push(createToken(TokenType.OPERATOR, ',', line));
-                tokens.push(createToken(TokenType.IDENTIFIER, 'ZERO', line));
+                tokens.push(createToken(TokenType.IDENTIFIER, `IMM(${identity})`, line));
             }
-        } else {
-            // Other PEs: dstReg = srcReg op incoming
+        } else if (!isCompare) {
+            // Simple ops: dstReg = dstReg op incoming
             tokens.push(createToken(TokenType.IDENTIFIER, instr, line));
             tokens.push(createToken(TokenType.IDENTIFIER, dstReg, line));
             tokens.push(createToken(TokenType.OPERATOR, ',', line));
-            tokens.push(createToken(TokenType.IDENTIFIER, srcReg, line));
+            tokens.push(createToken(TokenType.IDENTIFIER, dstReg, line));
+            tokens.push(createToken(TokenType.OPERATOR, ',', line));
+            tokens.push(createToken(TokenType.IDENTIFIER, incoming, line));
+        } else {
+            // Compare ops (max/min): SSUB R2, dstReg, incoming (sets Sign flag)
+            tokens.push(createToken(TokenType.IDENTIFIER, 'SSUB', line));
+            tokens.push(createToken(TokenType.IDENTIFIER, 'R2', line));
+            tokens.push(createToken(TokenType.OPERATOR, ',', line));
+            tokens.push(createToken(TokenType.IDENTIFIER, dstReg, line));
             tokens.push(createToken(TokenType.OPERATOR, ',', line));
             tokens.push(createToken(TokenType.IDENTIFIER, incoming, line));
         }
@@ -145,15 +167,27 @@ export function generateScanTokens(params: ScanParams): Token[] {
         tokens.push(createToken(TokenType.SEMICOLON, ';', line));
         tokens.push(...createCycleFooter(line));
 
-        // Cycle 2 for this PE (except last): send to ROUT
+        // For compare ops (non-first PE): extra cycle for BSFA select
+        if (!isFirst && isCompare) {
+            tokens.push(...createCycleHeader(line));
+            emitPePrefix();
+
+            // BSFA dstReg, bsfaFirst, bsfaSecond
+            tokens.push(createToken(TokenType.IDENTIFIER, 'BSFA', line));
+            tokens.push(createToken(TokenType.IDENTIFIER, dstReg, line));
+            tokens.push(createToken(TokenType.OPERATOR, ',', line));
+            tokens.push(createToken(TokenType.IDENTIFIER, bsfaFirst, line));
+            tokens.push(createToken(TokenType.OPERATOR, ',', line));
+            tokens.push(createToken(TokenType.IDENTIFIER, bsfaSecond, line));
+
+            tokens.push(createToken(TokenType.SEMICOLON, ';', line));
+            tokens.push(...createCycleFooter(line));
+        }
+
+        // Relay cycle (except last): send to ROUT
         if (i < size - 1) {
             tokens.push(...createCycleHeader(line));
-
-            tokens.push(createToken(TokenType.AT_SYMBOL, '@', line));
-            tokens.push(createToken(TokenType.NUMBER, posRow.toString(), line));
-            tokens.push(createToken(TokenType.OPERATOR, ',', line));
-            tokens.push(createToken(TokenType.NUMBER, posCol.toString(), line));
-            tokens.push(createToken(TokenType.OPERATOR, ':', line));
+            emitPePrefix();
 
             // SADD ROUT, (inclusive: dstReg, exclusive for first: srcReg), ZERO
             tokens.push(createToken(TokenType.IDENTIFIER, 'SADD', line));

@@ -93,7 +93,12 @@ export const DSL_PRAGMAS = [
   'no_fuse',
   'parallel',
   'reduce',
-  'stencil'
+  'stencil',
+  'route',
+  'scan',
+  'broadcast',
+  'rotate',
+  'shift'
 ] as const;
 
 export type DslKeyword = typeof DSL_KEYWORDS[number];

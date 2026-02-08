@@ -102,6 +102,7 @@ export {
   generateRouteTokens,
   generateScanTokens,
   generateBroadcastTokens,
+  generateRotateTokens,
   // Instruction parsing
   parseInstruction,
   extractNumericValue,
@@ -117,6 +118,7 @@ export {
   parseRoutePragmaArgs,
   parseScanPragmaArgs,
   parseBroadcastPragmaArgs,
+  parseRotateShiftPragmaArgs,
   isCodeGeneratingPragma,
   isLoopPragma,
   PRAGMA_NAMES,

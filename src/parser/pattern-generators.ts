@@ -77,8 +77,8 @@ const REDUCE_OP_TO_INSTR: Record<string, string> = {
   'and': 'LAND',
   'or': 'LOR',
   'xor': 'LXOR',
-  'max': 'MAX_REDUCE',
-  'min': 'MIN_REDUCE'
+  'max': 'SSUB',  // Compare step; selection done via BSFA
+  'min': 'SSUB'   // Compare step; selection done via BSFA
 };
 
 /**
@@ -98,18 +98,27 @@ export function generateReduceTokens(
   operation: string,
   srcReg: string,
   destReg: string,
-  line: number
+  line: number,
+  axis: 'row' | 'col' = 'row'
 ): Token[] {
   const tokens: Token[] = [];
   const instr = REDUCE_OP_TO_INSTR[operation.toLowerCase()] || 'SADD';
   const isCompare = operation === 'max' || operation === 'min';
 
-  if (!isCompare) {
-    // Simple operations (sum, and, or) - direct tree reduction
-    tokens.push(...generateSimpleReduceTokens(instr, srcReg, destReg, line));
+  if (axis === 'col') {
+    // Vertical (column) reduce - across rows in column 0
+    if (!isCompare) {
+      tokens.push(...generateVerticalSimpleReduceTokens(instr, srcReg, destReg, line));
+    } else {
+      tokens.push(...generateVerticalCompareReduceTokens(operation, srcReg, destReg, line));
+    }
   } else {
-    // Compare operations (max, min) - BSFA-based pattern
-    tokens.push(...generateCompareReduceTokens(operation, srcReg, destReg, line));
+    // Horizontal (row) reduce - across columns in row 0
+    if (!isCompare) {
+      tokens.push(...generateSimpleReduceTokens(instr, srcReg, destReg, line));
+    } else {
+      tokens.push(...generateCompareReduceTokens(operation, srcReg, destReg, line));
+    }
   }
 
   return tokens;
@@ -117,6 +126,9 @@ export function generateReduceTokens(
 
 /**
  * Generates simple tree reduction (sum, and, or)
+ *
+ * IMPORTANT: RCR/RCL reads the neighbor's ROUT from the previous cycle.
+ * We must first broadcast srcReg to ROUT on all PEs before pairwise reduction.
  */
 function generateSimpleReduceTokens(
   instr: string,
@@ -126,8 +138,26 @@ function generateSimpleReduceTokens(
 ): Token[] {
   const tokens: Token[] = [];
 
+  // Cycle 0: Broadcast srcReg → ROUT on all PEs
+  // Any instruction writes its result to ROUT automatically.
+  tokens.push(...wrapInCycle([
+    tok(TokenType.KEYWORD, 'row', line),
+    tok(TokenType.NUMBER, '0', line),
+    tok(TokenType.OPERATOR, ':', line),
+    ...[0, 1, 2, 3].flatMap((c, i) => [
+      ...(i > 0 ? [tok(TokenType.OPERATOR, '|', line)] : []),
+      tok(TokenType.IDENTIFIER, 'SADD', line),
+      tok(TokenType.IDENTIFIER, 'R2', line),
+      tok(TokenType.OPERATOR, ',', line),
+      tok(TokenType.IDENTIFIER, srcReg, line),
+      tok(TokenType.OPERATOR, ',', line),
+      tok(TokenType.IDENTIFIER, 'ZERO', line)
+    ]),
+    tok(TokenType.SEMICOLON, ';', line)
+  ], line));
+
   // Cycle 1: Pairwise reduction
-  // Col 0: R2 = srcReg + Col1.srcReg (via RCR)
+  // Col 0: R2 = srcReg + Col1.srcReg (via RCR — now valid since Cycle 0 set ROUT)
   // Col 2: R2 = srcReg + Col3.srcReg (via RCR)
   tokens.push(...wrapInCycle([
     tok(TokenType.KEYWORD, 'row', line),
@@ -212,6 +242,9 @@ function generateSimpleReduceTokens(
 
 /**
  * Generates compare-based reduction (max, min) using BSFA
+ *
+ * IMPORTANT: RCR reads neighbor's ROUT from previous cycle.
+ * Must broadcast srcReg → ROUT first.
  */
 function generateCompareReduceTokens(
   operation: string,
@@ -221,10 +254,29 @@ function generateCompareReduceTokens(
 ): Token[] {
   const tokens: Token[] = [];
 
-  // For max: select larger (SSUB A-B, if S=0 then A>=B)
-  // For min: select smaller (SSUB A-B, if S=1 then A<B)
-  const bselectFirst = operation === 'max' ? srcReg : 'RCR';
-  const bselectSecond = operation === 'max' ? 'RCR' : srcReg;
+  // BSFA selects rs1 when S=1, rs2 when S=0.
+  // SSUB srcReg, RCR sets S=1 when srcReg < RCR.
+  // For max: when S=1 (srcReg < RCR), want RCR (larger) → rs1=RCR, rs2=srcReg
+  // For min: when S=1 (srcReg < RCR), want srcReg (smaller) → rs1=srcReg, rs2=RCR
+  const bselectFirst = operation === 'max' ? 'RCR' : srcReg;
+  const bselectSecond = operation === 'max' ? srcReg : 'RCR';
+
+  // Cycle 0: Broadcast srcReg → ROUT on all PEs
+  tokens.push(...wrapInCycle([
+    tok(TokenType.KEYWORD, 'row', line),
+    tok(TokenType.NUMBER, '0', line),
+    tok(TokenType.OPERATOR, ':', line),
+    ...[0, 1, 2, 3].flatMap((c, i) => [
+      ...(i > 0 ? [tok(TokenType.OPERATOR, '|', line)] : []),
+      tok(TokenType.IDENTIFIER, 'SADD', line),
+      tok(TokenType.IDENTIFIER, 'R2', line),
+      tok(TokenType.OPERATOR, ',', line),
+      tok(TokenType.IDENTIFIER, srcReg, line),
+      tok(TokenType.OPERATOR, ',', line),
+      tok(TokenType.IDENTIFIER, 'ZERO', line)
+    ]),
+    tok(TokenType.SEMICOLON, ';', line)
+  ], line));
 
   // Step 1a: Compare (sets flags)
   tokens.push(...wrapInCycle([
@@ -318,6 +370,11 @@ function generateCompareReduceTokens(
   ], line));
 
   // Cycle 4: Final select
+  // SSUB R3, R2, RCR → S=1 when R2 < RCR
+  // For max: when S=1 (R2 < RCR), want RCR → rs1=RCR, rs2=R2
+  // For min: when S=1 (R2 < RCR), want R2 → rs1=R2, rs2=RCR
+  const finalFirst = operation === 'max' ? 'RCR' : 'R2';
+  const finalSecond = operation === 'max' ? 'R2' : 'RCR';
   tokens.push(...wrapInCycle([
     tok(TokenType.KEYWORD, 'row', line),
     tok(TokenType.NUMBER, '0', line),
@@ -325,9 +382,9 @@ function generateCompareReduceTokens(
     tok(TokenType.IDENTIFIER, 'BSFA', line),
     tok(TokenType.IDENTIFIER, destReg, line),
     tok(TokenType.OPERATOR, ',', line),
-    tok(TokenType.IDENTIFIER, 'R2', line),
+    tok(TokenType.IDENTIFIER, finalFirst, line),
     tok(TokenType.OPERATOR, ',', line),
-    tok(TokenType.IDENTIFIER, 'RCR', line),
+    tok(TokenType.IDENTIFIER, finalSecond, line),
     tok(TokenType.OPERATOR, ',', line),
     tok(TokenType.IDENTIFIER, 'SELF', line),
     tok(TokenType.OPERATOR, '|', line),
@@ -337,6 +394,141 @@ function generateCompareReduceTokens(
     tok(TokenType.OPERATOR, '|', line),
     tok(TokenType.IDENTIFIER, 'NOP', line),
     tok(TokenType.SEMICOLON, ';', line)
+  ], line));
+
+  return tokens;
+}
+
+// ==========================================
+// Vertical (Column) Reduce
+// ==========================================
+
+/**
+ * Creates tokens for a vertical column instruction
+ * Format: @row,0: instruction;  (one PE per cycle, column 0)
+ */
+function createVerticalPeInstr(
+  row: number,
+  col: number,
+  opcode: string,
+  operands: string[],
+  line: number
+): Token[] {
+  const tokens: Token[] = [
+    tok(TokenType.AT_SYMBOL, '@', line),
+    tok(TokenType.NUMBER, row.toString(), line),
+    tok(TokenType.OPERATOR, ',', line),
+    tok(TokenType.NUMBER, col.toString(), line),
+    tok(TokenType.OPERATOR, ':', line),
+    tok(TokenType.IDENTIFIER, opcode, line)
+  ];
+  operands.forEach((op, i) => {
+    if (i > 0) tokens.push(tok(TokenType.OPERATOR, ',', line));
+    tokens.push(tok(TokenType.IDENTIFIER, op, line));
+  });
+  tokens.push(tok(TokenType.SEMICOLON, ';', line));
+  return tokens;
+}
+
+/**
+ * Generates vertical simple tree reduction (sum, and, or) across rows in column 0
+ * Uses RCB (bottom neighbor) for vertical relay.
+ *
+ * Tree reduction for 4-row grid (column 0):
+ * - Step 1: Row 0 += Row 1 (via RCB), Row 2 += Row 3 (via RCB)
+ * - Step 2: Relay Row 2's result through Row 1
+ * - Step 3: Final reduction Row 0 += relayed value
+ */
+function generateVerticalSimpleReduceTokens(
+  instr: string,
+  srcReg: string,
+  destReg: string,
+  line: number
+): Token[] {
+  const tokens: Token[] = [];
+
+  // Cycle 0: Broadcast srcReg → ROUT on all participating rows
+  tokens.push(...wrapInCycle([
+    ...createVerticalPeInstr(0, 0, 'SADD', ['R2', srcReg, 'ZERO'], line),
+    ...createVerticalPeInstr(1, 0, 'SADD', ['R2', srcReg, 'ZERO'], line),
+    ...createVerticalPeInstr(2, 0, 'SADD', ['R2', srcReg, 'ZERO'], line),
+    ...createVerticalPeInstr(3, 0, 'SADD', ['R2', srcReg, 'ZERO'], line)
+  ], line));
+
+  // Cycle 1: Pairwise reduction
+  // Row 0: R2 = srcReg + Row1.srcReg (via RCB — now valid since Cycle 0 set ROUT)
+  // Row 2: R2 = srcReg + Row3.srcReg (via RCB)
+  tokens.push(...wrapInCycle([
+    ...createVerticalPeInstr(0, 0, instr, ['R2', srcReg, 'RCB'], line),
+    ...createVerticalPeInstr(2, 0, instr, ['R2', srcReg, 'RCB'], line)
+  ], line));
+
+  // Cycle 2: Relay Row 2's result through Row 1
+  // Row 1: R3 = Row2.R2 (via RCB)
+  tokens.push(...wrapInCycle([
+    ...createVerticalPeInstr(1, 0, 'SADD', ['R3', 'RCB', 'ZERO'], line)
+  ], line));
+
+  // Cycle 3: Final reduction
+  // Row 0: destReg = R2 + Row1.R3 (via RCB)
+  tokens.push(...wrapInCycle([
+    ...createVerticalPeInstr(0, 0, instr, [destReg, 'R2', 'RCB'], line)
+  ], line));
+
+  return tokens;
+}
+
+/**
+ * Generates vertical compare-based reduction (max, min) using BSFA across rows
+ */
+function generateVerticalCompareReduceTokens(
+  operation: string,
+  srcReg: string,
+  destReg: string,
+  line: number
+): Token[] {
+  const tokens: Token[] = [];
+
+  // BSFA selects rs1 when S=1, rs2 when S=0.
+  // SSUB srcReg, RCB sets S=1 when srcReg < RCB.
+  const bselectFirst = operation === 'max' ? 'RCB' : srcReg;
+  const bselectSecond = operation === 'max' ? srcReg : 'RCB';
+
+  // Cycle 0: Broadcast srcReg → ROUT on all rows
+  tokens.push(...wrapInCycle([
+    ...createVerticalPeInstr(0, 0, 'SADD', ['R2', srcReg, 'ZERO'], line),
+    ...createVerticalPeInstr(1, 0, 'SADD', ['R2', srcReg, 'ZERO'], line),
+    ...createVerticalPeInstr(2, 0, 'SADD', ['R2', srcReg, 'ZERO'], line),
+    ...createVerticalPeInstr(3, 0, 'SADD', ['R2', srcReg, 'ZERO'], line)
+  ], line));
+
+  // Cycle 1: Compare (all participating rows)
+  tokens.push(...wrapInCycle([
+    ...createVerticalPeInstr(0, 0, 'SSUB', ['R2', srcReg, 'RCB'], line),
+    ...createVerticalPeInstr(2, 0, 'SSUB', ['R2', srcReg, 'RCB'], line)
+  ], line));
+
+  // Cycle 2: Select (Row 0 and Row 2)
+  tokens.push(...wrapInCycle([
+    ...createVerticalPeInstr(0, 0, 'BSFA', ['R2', bselectFirst, bselectSecond], line),
+    ...createVerticalPeInstr(2, 0, 'BSFA', ['R2', bselectFirst, bselectSecond], line)
+  ], line));
+
+  // Cycle 3: Relay Row 2's result through Row 1
+  tokens.push(...wrapInCycle([
+    ...createVerticalPeInstr(1, 0, 'SADD', ['R3', 'RCB', 'ZERO'], line)
+  ], line));
+
+  // Cycle 4: Compare Row 0's R2 with relayed value
+  tokens.push(...wrapInCycle([
+    ...createVerticalPeInstr(0, 0, 'SSUB', ['R3', 'R2', 'RCB'], line)
+  ], line));
+
+  // Cycle 5: Final select
+  const finalFirst = operation === 'max' ? 'RCB' : 'R2';
+  const finalSecond = operation === 'max' ? 'R2' : 'RCB';
+  tokens.push(...wrapInCycle([
+    ...createVerticalPeInstr(0, 0, 'BSFA', [destReg, finalFirst, finalSecond], line)
   ], line));
 
   return tokens;

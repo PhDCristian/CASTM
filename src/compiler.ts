@@ -35,10 +35,12 @@ import {
   parseRoutePragmaArgs,
   parseScanPragmaArgs,
   parseBroadcastPragmaArgs,
+  parseRotateShiftPragmaArgs,
   isCodeGeneratingPragma,
   generateRouteTokens,
   generateScanTokens,
   generateBroadcastTokens,
+  generateRotateTokens,
   // Cycle parsing
   type CycleParserContext,
   parseCycleBlock,
@@ -378,9 +380,9 @@ function parse(tokens: Token[]): { ast: KernelAst, symbols: SymbolTable } {
           if (pragmaName === 'reduce') {
             const args = parseReducePragmaArgs(stream);
             if (!args) {
-              throw { message: `#pragma reduce requires arguments: (operation, srcReg, destReg)`, line: pragmaToken.line };
+              throw { message: `#pragma reduce requires arguments: (operation, destReg, srcReg)`, line: pragmaToken.line };
             }
-            const reduceTokens = generateReduceTokens(args.operation, args.srcReg, args.destReg, pragmaToken.line);
+            const reduceTokens = generateReduceTokens(args.operation, args.srcReg, args.destReg, pragmaToken.line, args.axis);
             stream.insertTokens(reduceTokens);
           } else if (pragmaName === 'stencil') {
             const args = parseStencilPragmaArgs(stream);
@@ -431,6 +433,21 @@ function parse(tokens: Token[]): { ast: KernelAst, symbols: SymbolTable } {
               line: pragmaToken.line
             });
             stream.insertTokens(broadcastTokens);
+          } else if (pragmaName === 'rotate' || pragmaName === 'shift') {
+            const isShift = pragmaName === 'shift';
+            const args = parseRotateShiftPragmaArgs(stream, isShift);
+            if (!args) {
+              throw { message: `#pragma ${pragmaName} requires arguments: (reg=REG, direction=left|right[, distance=N]${isShift ? '[, fill=N]' : ''})`, line: pragmaToken.line };
+            }
+            const rotateTokens = generateRotateTokens({
+              reg: args.reg,
+              direction: args.direction,
+              distance: args.distance,
+              fill: args.fill,
+              isShift,
+              line: pragmaToken.line
+            });
+            stream.insertTokens(rotateTokens);
           }
           syncFromStream();
           continue;

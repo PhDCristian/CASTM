@@ -66,6 +66,7 @@ export {
   parseRoutePragmaArgs,
   parseScanPragmaArgs,
   parseBroadcastPragmaArgs,
+  parseRotateShiftPragmaArgs,
   getPragmaDescription,
   validatePragma,
   isLoopPragma,
@@ -100,6 +101,11 @@ export {
 export {
   generateBroadcastTokens
 } from './broadcast-generator';
+
+// Rotate/Shift generator
+export {
+  generateRotateTokens
+} from './rotate-generator';
 
 // Cycle parsing
 export {
