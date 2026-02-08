@@ -160,6 +160,115 @@ kernel "FlowControl" {
 
 ---
 
+## Debug & Verification
+
+These instructions are **simulator-only** and assist with debugging, testing, and verification during development.
+
+| Instruction | Syntax | Description |
+|-------------|--------|-------------|
+| `ASSERT` | `ASSERT reg, value` or `ASSERT reg: value` | Runtime assertion - halts if condition fails |
+| `CHECK` | `CHECK reg, value` or `CHECK reg: value` | Value verification - logs mismatch without halting |
+| `PRINT` | `PRINT reg, label` | Print register value with optional label |
+| `OUTPUT` | `OUTPUT reg` | Mark register value as output for analysis |
+| `CHECKPOINT` | `CHECKPOINT` or `CHECKPOINT label` | Create execution checkpoint for debugging |
+
+### ASSERT
+
+Verifies that a register holds an expected value at runtime. Halts execution if the assertion fails.
+
+**Operands:** 1-2
+
+**Formats:**
+```c
+ASSERT reg, value           // Standard format
+ASSERT reg: value           // Colon format (preferred)
+ASSERT reg: val1, reg2: val2  // Multiple assertions
+```
+
+**Examples:**
+```c
+cycle {
+    @0,0: ASSERT R0, 42;       // Halts if R0 != 42
+    @0,1: ASSERT R1: 120;      // Halts if R1 != 120
+    @1,0: ASSERT R0: 120, R1: 1;  // Multiple checks
+}
+```
+
+**Use Cases:**
+- Post-condition verification
+- Unit testing within kernels
+- Regression test validation
+- Debug sanity checks
+
+### CHECK
+
+Similar to ASSERT but logs verification results without halting execution. Useful for non-critical checks.
+
+**Operands:** 1-2
+
+**Formats:**
+```c
+CHECK reg, value           // Standard format
+CHECK reg: value           // Colon format
+```
+
+**Examples:**
+```c
+cycle {
+    @0,0: CHECK R2, 100;      // Log if R2 != 100, continue
+    @0,1: CHECK R0: 0;        // Verify R0 is zero
+}
+```
+
+### PRINT
+
+Outputs register value during simulation for debugging.
+
+**Operands:** 1 (register) or 2 (register, label)
+
+**Examples:**
+```c
+cycle {
+    row 0: PRINT ROUT;           // Print ROUT value
+    row 1: PRINT R0, "counter";  // Print R0 with label "counter"
+    row 2: PRINT R2, "temp";     // Print R2 with label "temp"
+}
+```
+
+**Output format:** `[Cycle N] PE(row,col) label: value`
+
+### OUTPUT
+
+Marks a register value as significant output for post-simulation analysis or benchmarking.
+
+**Operands:** 1 (register)
+
+**Examples:**
+```c
+cycle {
+    @0,0: OUTPUT R0;    // Mark R0 as output
+    @1,0: OUTPUT ROUT;  // Mark ROUT as output
+}
+```
+
+### CHECKPOINT
+
+Creates an execution checkpoint for debugging. Logs current state without affecting execution.
+
+**Operands:** 0-1 (optional label)
+
+**Examples:**
+```c
+cycle {
+    @0,0: CHECKPOINT;              // Anonymous checkpoint
+    @0,1: CHECKPOINT "loop_start"; // Named checkpoint
+}
+```
+
+**Note:** Checkpoints are useful for tracking execution flow and identifying bottlenecks during simulation.
+
+---
+
 ## Navigation
 
 - [← Spatial-Temporal](03-spatial-temporal.md)

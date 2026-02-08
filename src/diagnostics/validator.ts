@@ -271,6 +271,90 @@ function calculateSimilarity(a: string, b: string): number {
 }
 
 /**
+ * Expected operand counts per instruction.
+ * Format: [min, max] operands (excluding the opcode itself).
+ */
+export const INSTRUCTION_OPERANDS: Record<string, [number, number]> = {
+  // Control
+  NOP:        [0, 0],
+  EXIT:       [0, 0],
+  // ALU
+  SADD:       [3, 3],
+  SSUB:       [3, 3],
+  SMUL:       [3, 3],
+  FXPMUL:     [3, 3],
+  // Logic
+  LAND:       [3, 3],
+  LOR:        [3, 3],
+  LXOR:       [3, 3],
+  LNAND:      [3, 3],
+  LNOR:       [3, 3],
+  LXNOR:      [3, 3],
+  // Shift
+  SLT:        [3, 3],
+  SRT:        [3, 3],
+  SRA:        [3, 3],
+  // Memory
+  LWD:        [1, 1],
+  SWD:        [1, 1],
+  LWI:        [2, 2],
+  SWI:        [2, 2],
+  // Select
+  BSFA:       [4, 4],
+  BZFA:       [4, 4],
+  // Branch
+  BEQ:        [3, 3],
+  BNE:        [3, 3],
+  BLT:        [3, 3],
+  BGE:        [3, 3],
+  JUMP:       [3, 3],
+  // Debug
+  PRINT:      [1, 1],
+  CHECK:      [1, 2],
+  ASSERT:     [1, 2],
+  CHECKPOINT: [0, 1],
+  OUTPUT:     [1, 1],
+  // Immediate (wraps a value)
+  IMM:        [1, 1],
+};
+
+/**
+ * Validates instruction operand counts in parsed cycle blocks.
+ * Detects wrong operand count at compile time.
+ */
+export function validateInstructionOperands(
+  instructions: Map<string, { opcode: string; operands: string[]; originalLine: number }>
+): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+
+  for (const [, instr] of instructions) {
+    const upper = instr.opcode.toUpperCase();
+    const expected = INSTRUCTION_OPERANDS[upper];
+    if (!expected) continue;
+
+    const [min, max] = expected;
+    const count = instr.operands.length;
+
+    if (count < min || count > max) {
+      const expectedStr = min === max
+        ? `${min}`
+        : `${min}-${max}`;
+      diagnostics.push(createDiagnostic(
+        `${instr.opcode} expects ${expectedStr} operand(s), but got ${count}`,
+        instr.originalLine || 1,
+        1,
+        instr.originalLine || 1,
+        1,
+        DiagnosticSeverity.Error,
+        ErrorCodes.INVALID_OPERAND_COUNT
+      ));
+    }
+  }
+
+  return diagnostics;
+}
+
+/**
  * Represents a PE location within a cycle
  */
 interface PELocation {

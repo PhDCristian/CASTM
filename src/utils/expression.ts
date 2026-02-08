@@ -51,6 +51,14 @@ export function evaluateSimpleExpression(tokens: string[], symbols?: SymbolTable
   // Filter out parentheses from IMM() wrappers and reconstruct
   const cleanedTokens = cleanImmTokens(tokens);
 
+  // Check if any parentheses remain after IMM() cleaning
+  const hasParens = cleanedTokens.some(t => t === '(' || t === ')');
+
+  if (hasParens) {
+    // Use recursive descent parser for parenthesized expressions
+    return parseExpression(cleanedTokens, { pos: 0 }, symbols);
+  }
+
   // Single token case
   if (cleanedTokens.length === 1) {
     const token = cleanedTokens[0];
@@ -119,6 +127,80 @@ export function evaluateSimpleExpression(tokens: string[], symbols?: SymbolTable
   }
 
   return result;
+}
+
+/**
+ * Recursive descent parser for expressions with parentheses.
+ * Grammar:
+ *   expr   → term (('+' | '-') term)*
+ *   term   → factor (('*' | '/' | '%') factor)*
+ *   factor → '(' expr ')' | number | constant
+ */
+interface ParseState {
+  pos: number;
+}
+
+function parseExpression(tokens: string[], state: ParseState, symbols?: SymbolTable): number {
+  let left = parseTerm(tokens, state, symbols);
+
+  while (state.pos < tokens.length) {
+    const op = tokens[state.pos];
+    if (op !== '+' && op !== '-') break;
+    state.pos++;
+    const right = parseTerm(tokens, state, symbols);
+    if (op === '+') left += right;
+    else left -= right;
+  }
+
+  return left;
+}
+
+function parseTerm(tokens: string[], state: ParseState, symbols?: SymbolTable): number {
+  let left = parseFactor(tokens, state, symbols);
+
+  while (state.pos < tokens.length) {
+    const op = tokens[state.pos];
+    if (op !== '*' && op !== '/' && op !== '%') break;
+    state.pos++;
+    const right = parseFactor(tokens, state, symbols);
+    if ((op === '/' || op === '%') && right === 0) {
+      throw new Error('Division by zero');
+    }
+    if (op === '*') left *= right;
+    else if (op === '/') left = Math.floor(left / right);
+    else left %= right;
+  }
+
+  return left;
+}
+
+function parseFactor(tokens: string[], state: ParseState, symbols?: SymbolTable): number {
+  if (state.pos >= tokens.length) {
+    throw new Error('Unexpected end of expression');
+  }
+
+  const token = tokens[state.pos];
+
+  // Parenthesized sub-expression
+  if (token === '(') {
+    state.pos++; // skip '('
+    const value = parseExpression(tokens, state, symbols);
+    if (state.pos >= tokens.length || tokens[state.pos] !== ')') {
+      throw new Error('Missing closing parenthesis');
+    }
+    state.pos++; // skip ')'
+    return value;
+  }
+
+  // Constant lookup
+  if (symbols && symbols.constants.has(token)) {
+    state.pos++;
+    return parseInt(symbols.constants.get(token)!, 10);
+  }
+
+  // Numeric value
+  state.pos++;
+  return extractNumericValue(token);
 }
 
 /**

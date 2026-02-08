@@ -206,6 +206,8 @@ export {
   validateTokens,
   validateStructure,
   validateDuplicatePEInstructions,
+  validateInstructionOperands,
+  INSTRUCTION_OPERANDS,
   isValidOpcode,
   isValidRegister,
   isValidNeighbor,
