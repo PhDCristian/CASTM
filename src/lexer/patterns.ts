@@ -39,18 +39,23 @@ export const HEX_DIGIT_PATTERN = /[0-9a-fA-F]/;
  */
 export const SINGLE_CHAR_OPERATORS = new Set([
   '{', '}', '(', ')', '[', ']', ';', ':', '|', ',', '@',
-  '+', '-', '*', '/', '%'
+  '+', '-', '*', '/', '%', '&', '^', '~'
 ]);
 
 /**
  * Characters that can start a multi-character operator
  */
-export const MULTI_CHAR_OPERATOR_STARTS = new Set(['=', '!', '<', '>']);
+export const MULTI_CHAR_OPERATOR_STARTS = new Set(['=', '!', '<', '>', '~', '*']);
 
 /**
  * Two-character operators
  */
-export const TWO_CHAR_OPERATORS = new Set(['==', '!=', '<=', '>=']);
+export const TWO_CHAR_OPERATORS = new Set(['==', '!=', '<=', '>=', '<<', '>>', '**', '~&', '~|', '~^']);
+
+/**
+ * Three-character operators
+ */
+export const THREE_CHAR_OPERATORS = new Set(['>>>']);
 
 /**
  * DSL keywords (case-insensitive matching)
@@ -140,6 +145,13 @@ export function canStartMultiCharOperator(char: string): boolean {
  */
 export function isTwoCharOperator(chars: string): boolean {
   return TWO_CHAR_OPERATORS.has(chars);
+}
+
+/**
+ * Checks if three characters form a three-char operator
+ */
+export function isThreeCharOperator(chars: string): boolean {
+  return THREE_CHAR_OPERATORS.has(chars);
 }
 
 /**

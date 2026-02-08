@@ -1,6 +1,6 @@
 # Pragma Route
 
-[← Stencil](stencil.md) | [Main Index](../../README.md)
+[← Stencil](stencil.md) | [Main Index](../../README.md) | [Next: Rotate →](rotate.md)
 
 ---
 
@@ -202,3 +202,4 @@ cycle { @0,0: SWI R0, 400; }  // Store product
 
 - [← Stencil](stencil.md)
 - [Main Index](../../README.md)
+- [Next: Rotate →](rotate.md)

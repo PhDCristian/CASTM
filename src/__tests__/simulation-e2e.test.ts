@@ -143,6 +143,57 @@ describe('E2E Simulation: Parallel Pragmas', () => {
   });
 });
 
+describe('E2E Simulation: Reduce max/min', () => {
+  it('reduce max should find the maximum value', () => {
+    const dsl = `
+kernel "ReduceMax" {
+    config(0xF, 0);
+    cycle {
+        @0,0: SADD R0, ZERO, IMM(3);
+        @0,1: SADD R0, ZERO, IMM(7);
+        @0,2: SADD R0, ZERO, IMM(1);
+        @0,3: SADD R0, ZERO, IMM(5);
+    }
+    #pragma reduce(max, R1, R0)
+    cycle { @0,0: EXIT; }
+}
+`;
+    const result = compileAndSimulate(dsl);
+    // max(3, 7, 1, 5) = 7
+    expect(getRegister(result, 0, 0, 'R1')).toBe(7);
+  });
+
+  it('reduce min should find the minimum value', () => {
+    const dsl = `
+kernel "ReduceMin" {
+    config(0xF, 0);
+    cycle {
+        @0,0: SADD R0, ZERO, IMM(3);
+        @0,1: SADD R0, ZERO, IMM(7);
+        @0,2: SADD R0, ZERO, IMM(1);
+        @0,3: SADD R0, ZERO, IMM(5);
+    }
+    #pragma reduce(min, R1, R0)
+    cycle { @0,0: EXIT; }
+}
+`;
+    const result = compileAndSimulate(dsl);
+    // min(3, 7, 1, 5) = 1
+    expect(getRegister(result, 0, 0, 'R1')).toBe(1);
+  });
+});
+
+describe('E2E Simulation: Vertical Reduce', () => {
+  it('vertical sum should reduce across rows', () => {
+    const dsl = readExample('parallel/reduce-vertical.dsl');
+    const result = compileAndSimulate(dsl);
+
+    // PE(0,0)=10, PE(1,0)=20, PE(2,0)=30, PE(3,0)=40
+    // sum = 100
+    expect(getRegister(result, 0, 0, 'R1')).toBe(100);
+  });
+});
+
 describe('E2E Simulation: Functions', () => {
   it('basic-function.dsl: function expansion should work', () => {
     const dsl = readExample('functions/basic-function.dsl');

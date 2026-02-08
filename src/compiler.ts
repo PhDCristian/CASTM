@@ -41,6 +41,15 @@ import {
   generateScanTokens,
   generateBroadcastTokens,
   generateRotateTokens,
+  generateAllreduceTokens,
+  generateTransposeTokens,
+  parseTransposePragmaArgs,
+  generateGatherTokens,
+  parseGatherPragmaArgs,
+  generateStreamLoadTokens,
+  generateStreamStoreTokens,
+  parseStreamLoadArgs,
+  parseStreamStoreArgs,
   // Cycle parsing
   type CycleParserContext,
   parseCycleBlock,
@@ -53,7 +62,9 @@ import {
   type WhileLoopParseContext,
   parseWhileLoop,
   type IfElseParseContext,
-  parseIfElse
+  parseIfElse,
+  desugarExpressions,
+  desugarAutoCycle
 } from './index';
 
 // Re-export types for backwards compatibility
@@ -122,9 +133,15 @@ function calculateSuggestedGridSize(symbols: SymbolTable): { width: number; heig
 export function compileDslToCsv(dslCode: string): CompilationResult {
   try {
     // 1. Tokenize (using modular lexer)
-    const tokens = tokenize(dslCode);
+    const rawTokens = tokenize(dslCode);
 
-    // 2. Parse & Build AST (Pass 1 - Structure)
+    // 2. Desugar C-like expressions → ISA tokens
+    const desugaredTokens = desugarExpressions(rawTokens);
+
+    // 3. Desugar auto_cycle regions → insert cycle { } wrappers
+    const tokens = desugarAutoCycle(desugaredTokens);
+
+    // 4. Parse & Build AST (Pass 1 - Structure)
     const { ast, symbols } = parse(tokens);
 
     // 3. Resolve Symbols & Generate Code (Pass 2 - Emission)
@@ -176,7 +193,9 @@ export function compileDslToCsv(dslCode: string): CompilationResult {
  */
 export function analyzeDsl(dslCode: string): { success: boolean; ast?: KernelAst; error?: string } {
   try {
-    const tokens = tokenize(dslCode);
+    const rawTokens = tokenize(dslCode);
+    const desugaredTokens = desugarExpressions(rawTokens);
+    const tokens = desugarAutoCycle(desugaredTokens);
     const { ast } = parse(tokens);
     return { success: true, ast };
   } catch (e: any) {
@@ -448,6 +467,67 @@ function parse(tokens: Token[]): { ast: KernelAst, symbols: SymbolTable } {
               line: pragmaToken.line
             });
             stream.insertTokens(rotateTokens);
+          } else if (pragmaName === 'allreduce') {
+            const args = parseReducePragmaArgs(stream);
+            if (!args) {
+              throw { message: `#pragma allreduce requires arguments: (operation, destReg, srcReg)`, line: pragmaToken.line };
+            }
+            const allreduceTokens = generateAllreduceTokens({
+              operation: args.operation,
+              srcReg: args.srcReg,
+              destReg: args.destReg,
+              axis: args.axis,
+              line: pragmaToken.line
+            });
+            stream.insertTokens(allreduceTokens);
+          } else if (pragmaName === 'transpose') {
+            const args = parseTransposePragmaArgs(stream);
+            if (!args) {
+              throw { message: `#pragma transpose requires arguments: (reg=REG)`, line: pragmaToken.line };
+            }
+            const transposeTokens = generateTransposeTokens({
+              reg: args.reg,
+              line: pragmaToken.line
+            });
+            stream.insertTokens(transposeTokens);
+          } else if (pragmaName === 'gather') {
+            const args = parseGatherPragmaArgs(stream);
+            if (!args) {
+              throw { message: `#pragma gather requires arguments: (src=REG, dest=@row,col, destReg=REG, op=OP)`, line: pragmaToken.line };
+            }
+            const gatherTokens = generateGatherTokens({
+              srcReg: args.srcReg,
+              destRow: args.destRow,
+              destCol: args.destCol,
+              destReg: args.destReg,
+              operation: args.operation,
+              line: pragmaToken.line
+            });
+            stream.insertTokens(gatherTokens);
+          } else if (pragmaName === 'stream_load') {
+            const args = parseStreamLoadArgs(stream);
+            if (!args) {
+              throw { message: `#pragma stream_load requires arguments: (dest=REG[, row=N][, count=N])`, line: pragmaToken.line };
+            }
+            const streamTokens = generateStreamLoadTokens({
+              destReg: args.destReg,
+              row: args.row,
+              count: args.count,
+              line: pragmaToken.line
+            });
+            stream.insertTokens(streamTokens);
+          } else if (pragmaName === 'stream_store') {
+            const args = parseStreamStoreArgs(stream);
+            if (!args) {
+              throw { message: `#pragma stream_store requires arguments: (src=REG[, row=N][, count=N])`, line: pragmaToken.line };
+            }
+            const streamTokens = generateStreamStoreTokens({
+              srcReg: args.srcReg,
+              row: args.row,
+              count: args.count,
+              line: pragmaToken.line
+            });
+            stream.insertTokens(streamTokens);
           }
           syncFromStream();
           continue;

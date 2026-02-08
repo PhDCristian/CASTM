@@ -103,6 +103,15 @@ export {
   generateScanTokens,
   generateBroadcastTokens,
   generateRotateTokens,
+  generateAllreduceTokens,
+  generateTransposeTokens,
+  parseTransposePragmaArgs,
+  generateGatherTokens,
+  parseGatherPragmaArgs,
+  generateStreamLoadTokens,
+  generateStreamStoreTokens,
+  parseStreamLoadArgs,
+  parseStreamStoreArgs,
   // Instruction parsing
   parseInstruction,
   extractNumericValue,
@@ -165,7 +174,11 @@ export {
   // Function parsing
   parseFunctionArgs,
   expandFunctionTokens,
-  expandFunctionCall
+  expandFunctionCall,
+  // Expression desugaring
+  desugarExpressions,
+  // Auto-cycle desugaring
+  desugarAutoCycle
 } from './parser';
 
 // ==========================================

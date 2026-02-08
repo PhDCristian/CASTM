@@ -4,19 +4,21 @@
 
 ---
 
-The `#pragma reduce` directive performs **tree reduction** across all PE columns, combining values using an associative operation. The final result is stored in **column 0**.
+The `#pragma reduce` directive performs **tree reduction** across all PE columns (or rows), combining values using an associative operation. The final result is stored in **column 0** (or **row 0** for vertical reduce).
 
 ## Syntax
 
 ```c
-#pragma reduce(operation, srcReg, destReg)
+#pragma reduce(operation, destReg, srcReg)
+#pragma reduce(operation, destReg, srcReg, axis=col)
 ```
 
 | Parameter | Values | Description |
 |-----------|--------|-------------|
-| `operation` | `sum`, `max`, `min`, `and`, `or` | Reduction operation |
+| `operation` | `sum`, `max`, `min`, `and`, `or`, `xor`, `mul` | Reduction operation |
+| `destReg` | R0-R3, ROUT | Destination register |
 | `srcReg` | R0-R3, ROUT | Source register |
-| `destReg` | R0-R3, ROUT | Destination register (column 0) |
+| `axis` | `row` (default), `col` | Reduction direction |
 
 ---
 
@@ -29,6 +31,8 @@ The `#pragma reduce` directive performs **tree reduction** across all PE columns
 | `min` | BSFA pattern | Minimum value |
 | `and` | LAND | Bitwise AND |
 | `or` | LOR | Bitwise OR |
+| `xor` | LXOR | Bitwise XOR |
+| `mul` | SMUL | Product |
 
 ---
 
@@ -37,9 +41,11 @@ The `#pragma reduce` directive performs **tree reduction** across all PE columns
 For a 4-column grid (log₂(4) = 2 levels):
 
 ```
+Step 0: Broadcast srcReg → ROUT (all PEs)
+
 Step 1: Pairwise reduction
-  Col 0: R2 = R0 + Col1.R0 (via RCR)
-  Col 2: R2 = R0 + Col3.R0 (via RCR)
+  Col 0: R2 = srcReg + Col1.srcReg (via RCR)
+  Col 2: R2 = srcReg + Col3.srcReg (via RCR)
 
 Step 2: Relay Col 2's result through Col 1
   Col 1: R3 = Col2.R2 (via RCR)
@@ -48,7 +54,7 @@ Step 3: Final reduction
   Col 0: destReg = R2 + Col1.R3 (via RCR)
 ```
 
-**Cycles:** 3 for sum/and/or, 4 for max/min (extra BSFA comparison)
+**Cycles:** 4 for sum/and/or, 6 for max/min (SSUB+BSFA comparison)
 
 ---
 
@@ -67,38 +73,12 @@ kernel "ParallelSum" {
     }
 
     // Reduce: 10 + 20 + 30 + 40 = 100
-    #pragma reduce(sum, R0, ROUT)
+    #pragma reduce(sum, ROUT, R0)
 
     // Store result from column 0
     cycle { @0,0: SWD ROUT; }
     cycle { @0,0: EXIT; }
 }
-```
-
-**Compiled (6 cycles):**
-
-```c
-// Cycle 0: Parallel load
-row 0: LWI R0, 0 | LWI R0, 4 | LWI R0, 8 | LWI R0, 12;
-
-// Cycle 1: Pairwise sum
-row 0: SADD R2, R0, RCR | NOP | SADD R2, R0, RCR | NOP;
-// Col 0: R2 = 10 + 20 = 30
-// Col 2: R2 = 30 + 40 = 70
-
-// Cycle 2: Relay
-row 0: NOP | SADD R3, RCR, ZERO | NOP | NOP;
-// Col 1: R3 = 70
-
-// Cycle 3: Final sum
-row 0: SADD ROUT, R2, RCR | NOP | NOP | NOP;
-// Col 0: ROUT = 30 + 70 = 100
-
-// Cycle 4: Store
-@0,0: SWD ROUT;
-
-// Cycle 5: Exit
-@0,0: EXIT;
 ```
 
 **Result:** `output[0] = 100`
@@ -118,7 +98,7 @@ kernel "FindMax" {
         cycle { @0,0: LWI R0, data[i]; }
     }
 
-    #pragma reduce(max, R0, ROUT)
+    #pragma reduce(max, ROUT, R0)
 
     cycle { @0,0: SWD ROUT; }
     cycle { @0,0: EXIT; }
@@ -126,6 +106,34 @@ kernel "FindMax" {
 ```
 
 **Result:** `output[0] = 42`
+
+---
+
+## Vertical Reduce (`axis=col`)
+
+By default, reduce operates across **columns** in row 0. With `axis=col`, it reduces across **rows** in column 0:
+
+```c
+kernel "VerticalSum" {
+    config(0xF, 0);
+
+    // Load values into column 0, each row
+    cycle {
+        @0,0: SADD R0, ZERO, IMM(10);
+        @1,0: SADD R0, ZERO, IMM(20);
+        @2,0: SADD R0, ZERO, IMM(30);
+        @3,0: SADD R0, ZERO, IMM(40);
+    }
+
+    // Vertical reduce: 10 + 20 + 30 + 40 = 100
+    #pragma reduce(sum, R1, R0, axis=col)
+
+    // Result in R1 at PE(0,0)
+    cycle { @0,0: EXIT; }
+}
+```
+
+The vertical reduce uses `RCB` (bottom neighbor) instead of `RCR` (right neighbor) for PE-to-PE communication.
 
 ---
 
@@ -145,20 +153,22 @@ for i in range(8) {
     cycle { @0,0: SADD R1, R1, R0; }  // Accumulate locally
 }
 
-#pragma reduce(sum, R1, ROUT)  // Combine column totals
+#pragma reduce(sum, ROUT, R1)  // Combine column totals
 ```
 
 ---
 
 ## Cycle Count
 
-| Operation | Cycles |
-|-----------|--------|
-| sum | 3 |
-| and | 3 |
-| or | 3 |
-| max | 4 |
-| min | 4 |
+| Operation | Horizontal (row) | Vertical (col) |
+|-----------|------------------|----------------|
+| sum | 4 | 4 |
+| and | 4 | 4 |
+| or | 4 | 4 |
+| xor | 4 | 4 |
+| mul | 4 | 4 |
+| max | 6 | 6 |
+| min | 6 | 6 |
 
 ---
 
@@ -167,18 +177,19 @@ for i in range(8) {
 | Register | Purpose |
 |----------|---------|
 | R2 | Intermediate pairwise result |
-| R3 | Relay register (Col 1 only) |
-| srcReg | Preserved in columns 1, 2, 3 |
-| destReg | Final result in **column 0 only** |
+| R3 | Relay register |
+| srcReg | Preserved in non-participating PEs |
+| destReg | Final result in **column 0** (or **row 0**) |
 
 ---
 
 ## Limitations
 
-1. **Grid width fixed at 4**: Algorithm assumes 4-column grid
-2. **Result only in column 0**: Other columns have intermediate values
+1. **Grid size fixed at 4**: Algorithm assumes 4-column/4-row grid
+2. **Result only in PE(0,0) column/row**: Other PEs have intermediate values
 3. **Uses R2, R3**: These registers are overwritten
-4. **Row 0 only**: Reduction operates on row 0 PEs
+4. **Row 0 only** (horizontal): Reduction operates on row 0 PEs
+5. **Column 0 only** (vertical): Reduction operates on column 0 PEs
 
 ---
 

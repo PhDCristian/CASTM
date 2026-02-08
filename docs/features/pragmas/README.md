@@ -23,10 +23,18 @@ Pragma directives provide fine-grained control over compiler behavior. They are 
 | [`#pragma no_unroll`](unroll.md) | for loop | Generate runtime loop with branches |
 | [`#pragma parallel`](parallel.md) | for loop | Distribute iterations across columns |
 | [`#pragma reduce`](reduce.md) | standalone | Tree reduction across columns |
+| [`#pragma allreduce`](allreduce.md) | standalone | Reduce + broadcast (all PEs get result) |
 | [`#pragma scan`](scan.md) | standalone | Prefix operations (scan) across PEs |
 | [`#pragma broadcast`](broadcast.md) | standalone | Distribute value from one PE to many |
 | [`#pragma stencil`](stencil.md) | standalone | Neighbor communication patterns |
 | [`#pragma route`](route.md) | standalone | Toroidal PE-to-PE routing |
+| [`#pragma rotate`](rotate.md) | standalone | Circular rotation across PEs |
+| [`#pragma shift`](shift.md) | standalone | Linear shift with fill value |
+| [`#pragma transpose`](transpose.md) | standalone | Grid transposition (PE(i,j) ↔ PE(j,i)) |
+| [`#pragma gather`](gather.md) | standalone | Collect values to a destination PE |
+| [`#pragma stream_load`](stream.md) | standalone | Streaming memory load (LWD) |
+| [`#pragma stream_store`](stream.md) | standalone | Streaming memory store (SWD) |
+| [`#pragma auto_cycle`](auto-cycle.md) | region | Automatic cycle boundary inference |
 | `#pragma inline` | function | Force inlining (default) |
 | `#pragma no_fuse` | while loop | Disable body+jump fusion |
 
@@ -100,11 +108,18 @@ for j in range(4) {
 |----------|----------|
 | [Unroll](unroll.md) | `unroll`, `unroll(N)`, `no_unroll` |
 | [Parallel](parallel.md) | SIMD-like column distribution |
-| [Reduce](reduce.md) | Tree reduction (sum, max, min, and, or) |
+| [Reduce](reduce.md) | Tree reduction (sum, max, min, and, or, xor, mul) |
+| [Allreduce](allreduce.md) | Reduce + broadcast to all PEs |
 | [Scan](scan.md) | Prefix operations (add, max, min, and, or, xor) |
 | [Broadcast](broadcast.md) | Value distribution (row, column, all) |
 | [Stencil](stencil.md) | Neighbor patterns (cross, horizontal, vertical) |
 | [Route](route.md) | Toroidal routing between arbitrary PEs |
+| [Rotate](rotate.md) | Circular rotation of values across PEs |
+| [Shift](shift.md) | Linear shift with fill value |
+| [Transpose](transpose.md) | Grid transposition |
+| [Gather](gather.md) | Value collection to destination PE |
+| [Stream](stream.md) | Streaming memory load/store (LWD/SWD) |
+| [Auto Cycle](auto-cycle.md) | Automatic cycle boundary inference |
 
 ---
 

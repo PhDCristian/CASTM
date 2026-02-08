@@ -55,6 +55,7 @@ v1.1 language extensions:
 | [While Loops](features/loops/while-loops.md) | Runtime loops with branch instructions |
 | [Control Flow](features/control-flow.md) | Structured `if-else` statements |
 | [Assertions](features/assertions.md) | `.assert` for testing and verification |
+| [C-like Expressions](features/clike-expressions.md) | `R1 = R2 + R3;` register expression syntax |
 
 #### [Pragma Directives](features/pragmas/)
 
@@ -65,6 +66,8 @@ v1.1 language extensions:
 | [Reduce](features/pragmas/reduce.md) | `#pragma reduce` for tree reductions |
 | [Stencil](features/pragmas/stencil.md) | `#pragma stencil` for neighbor patterns |
 | [Route](features/pragmas/route.md) | `#pragma route` for toroidal PE-to-PE routing |
+| [Rotate](features/pragmas/rotate.md) | `#pragma rotate` for circular rotation across PEs |
+| [Shift](features/pragmas/shift.md) | `#pragma shift` for linear shift with fill value |
 
 ### [Examples](examples/)
 

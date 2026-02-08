@@ -64,6 +64,81 @@ describe('pragma-scan', () => {
         });
     });
 
+    describe('generateScanTokens for max/min', () => {
+        it('should generate SSUB+BSFA pattern for max scan', () => {
+            const tokens = generateScanTokens({
+                operation: 'max',
+                srcReg: 'R0',
+                dstReg: 'R1',
+                direction: 'right',
+                mode: 'inclusive',
+                line: 1
+            });
+
+            const tokenStr = tokens.map(t => t.value).join(' ');
+            // Max scan should use SSUB for comparison and BSFA for selection
+            expect(tokenStr).toContain('SSUB');
+            expect(tokenStr).toContain('BSFA');
+        });
+
+        it('should generate SSUB+BSFA pattern for min scan', () => {
+            const tokens = generateScanTokens({
+                operation: 'min',
+                srcReg: 'R0',
+                dstReg: 'R1',
+                direction: 'right',
+                mode: 'inclusive',
+                line: 1
+            });
+
+            const tokenStr = tokens.map(t => t.value).join(' ');
+            expect(tokenStr).toContain('SSUB');
+            expect(tokenStr).toContain('BSFA');
+        });
+    });
+
+    describe('compilation of scan max/min', () => {
+        it('should compile #pragma scan with max operation', () => {
+            const code = `
+kernel "ScanMaxTest" {
+    config(0xF, 0);
+    cycle {
+        @0,0: SADD R0, ZERO, IMM(3);
+        @0,1: SADD R0, ZERO, IMM(7);
+        @0,2: SADD R0, ZERO, IMM(1);
+        @0,3: SADD R0, ZERO, IMM(5);
+    }
+    #pragma scan(max, R0, R1, right)
+    cycle { @0,0: EXIT; }
+}
+            `;
+            const result = compileDslToCsv(code);
+            expect(result.success).toBe(true);
+            expect(result.csv).toContain('SSUB');
+            expect(result.csv).toContain('BSFA');
+        });
+
+        it('should compile #pragma scan with min operation', () => {
+            const code = `
+kernel "ScanMinTest" {
+    config(0xF, 0);
+    cycle {
+        @0,0: SADD R0, ZERO, IMM(3);
+        @0,1: SADD R0, ZERO, IMM(7);
+        @0,2: SADD R0, ZERO, IMM(1);
+        @0,3: SADD R0, ZERO, IMM(5);
+    }
+    #pragma scan(min, R0, R1, right)
+    cycle { @0,0: EXIT; }
+}
+            `;
+            const result = compileDslToCsv(code);
+            expect(result.success).toBe(true);
+            expect(result.csv).toContain('SSUB');
+            expect(result.csv).toContain('BSFA');
+        });
+    });
+
     describe('compilation integration', () => {
         it('should compile #pragma scan in a kernel', () => {
             const code = `

@@ -19,6 +19,7 @@ This section documents the advanced language features introduced in OpenEdge-DSL
 | [Assertions](assertions.md) | `.assert` directive | Testing & verification |
 | [Computed Constants](computed-constants.md) | Expressions in `.const` | Relative addresses |
 | [Coordinate Expressions](coordinate-expressions.md) | `@i+1,j:` syntax | Dynamic PE selection |
+| [C-like Expressions](clike-expressions.md) | `R1 = R2 + R3;` syntax | Readable arithmetic |
 
 ## Pragma Directives
 
@@ -29,6 +30,8 @@ This section documents the advanced language features introduced in OpenEdge-DSL
 | [#pragma reduce](pragmas/reduce.md) | Tree reduction | Sum, max, min |
 | [#pragma stencil](pragmas/stencil.md) | Neighbor patterns | Filtering, convolution |
 | [#pragma route](pragmas/route.md) | Point-to-point routing | Cross-PE communication |
+| [#pragma rotate](pragmas/rotate.md) | Circular rotation | Cyclic permutations |
+| [#pragma shift](pragmas/shift.md) | Linear shift with fill | Sliding windows |
 
 ---
 
@@ -91,6 +94,17 @@ if (R0 < IMM(10)) @0,0 {
     cycle { @0,0: SADD R0, R0, IMM(1); }
 } else {
     cycle { @0,0: SADD R0, R0, IMM(2); }
+}
+```
+
+### C-like Expressions
+
+```c
+cycle {
+    @0,0: R1 = R2 + R3;       // SADD R1, R2, R3
+    @0,1: R0 = R1 - 5;        // SSUB R0, R1, 5
+    @0,2: ROUT = R0 * R2;     // SMUL ROUT, R0, R2
+    @0,3: R1 = R0 & 0xFF;     // LAND R1, R0, 0xFF
 }
 ```
 

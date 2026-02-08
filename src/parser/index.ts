@@ -107,6 +107,31 @@ export {
   generateRotateTokens
 } from './rotate-generator';
 
+// Allreduce generator
+export {
+  generateAllreduceTokens
+} from './allreduce-generator';
+
+// Transpose generator
+export {
+  generateTransposeTokens,
+  parseTransposePragmaArgs
+} from './transpose-generator';
+
+// Gather generator
+export {
+  generateGatherTokens,
+  parseGatherPragmaArgs
+} from './gather-generator';
+
+// Stream generator
+export {
+  generateStreamLoadTokens,
+  generateStreamStoreTokens,
+  parseStreamLoadArgs,
+  parseStreamStoreArgs
+} from './stream-generator';
+
 // Cycle parsing
 export {
   type CycleParserContext,
@@ -177,3 +202,13 @@ export {
   expandFunctionTokens,
   expandFunctionCall
 } from './function-parser';
+
+// Expression desugaring (C-like syntax → ISA tokens)
+export {
+  desugarExpressions
+} from './expression-desugar';
+
+// Auto-cycle desugaring
+export {
+  desugarAutoCycle
+} from './auto-cycle-desugar';

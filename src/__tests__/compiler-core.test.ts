@@ -331,6 +331,22 @@ kernel "ArrayLenTest" {
     // values.len() = 5
     expect(result.csv).toContain('5');
   });
+
+  it('should resolve array .len() inside index expressions', () => {
+    const code = `
+.data values { 10, 20, 30, 40, 50 }
+
+kernel "ArrayLenIndexTest" {
+    config(0xF, 0);
+    cycle { @0,0: LWI R0, values[values.len() - 1]; }
+    cycle { @0,0: EXIT; }
+}
+`;
+    const result = compileDslToCsv(code);
+    expect(result.success).toBe(true);
+    // values.len() = 5, index = 5-1 = 4, address = 4*4 = 16
+    expect(result.csv).toContain('LWI R0, 16');
+  });
 });
 
 // ============================================
@@ -411,6 +427,27 @@ kernel "ForBasic" {
     expect(result.csv).toContain('SADD R0, ZERO, 0');
     expect(result.csv).toContain('SADD R0, ZERO, 1');
     expect(result.csv).toContain('SADD R0, ZERO, 2');
+  });
+
+  it('should evaluate IMM() with complex expressions', () => {
+    const code = `
+kernel "IMMExpr" {
+    config(0xF, 0);
+    for i in range(2) {
+        for j in range(2) {
+            cycle { @0,0: SADD R0, ZERO, IMM(i * 2 + j); }
+        }
+    }
+    cycle { @0,0: EXIT; }
+}
+`;
+    const result = compileDslToCsv(code);
+    expect(result.success).toBe(true);
+    // i=0,j=0 → 0; i=0,j=1 → 1; i=1,j=0 → 2; i=1,j=1 → 3
+    expect(result.csv).toContain('SADD R0, ZERO, 0');
+    expect(result.csv).toContain('SADD R0, ZERO, 1');
+    expect(result.csv).toContain('SADD R0, ZERO, 2');
+    expect(result.csv).toContain('SADD R0, ZERO, 3');
   });
 
   it('should unroll for loop with range(start, end)', () => {
@@ -571,6 +608,107 @@ kernel "StencilTest" {
 `;
     const result = compileDslToCsv(code);
     expect(result.success).toBe(true);
+  });
+
+  it('should compile #pragma reduce max with SSUB+BSFA', () => {
+    const code = `
+kernel "ReduceMax" {
+    config(0xF, 0);
+    cycle {
+        @0,0: SADD R0, ZERO, IMM(3);
+        @0,1: SADD R0, ZERO, IMM(7);
+        @0,2: SADD R0, ZERO, IMM(1);
+        @0,3: SADD R0, ZERO, IMM(5);
+    }
+    #pragma reduce(max, R1, R0)
+    cycle { @0,0: EXIT; }
+}
+`;
+    const result = compileDslToCsv(code);
+    expect(result.success).toBe(true);
+    // Max reduction uses SSUB for comparison and BSFA for selection
+    expect(result.csv).toContain('SSUB');
+    expect(result.csv).toContain('BSFA');
+  });
+
+  it('should compile #pragma reduce min with SSUB+BSFA', () => {
+    const code = `
+kernel "ReduceMin" {
+    config(0xF, 0);
+    cycle {
+        @0,0: SADD R0, ZERO, IMM(3);
+        @0,1: SADD R0, ZERO, IMM(7);
+        @0,2: SADD R0, ZERO, IMM(1);
+        @0,3: SADD R0, ZERO, IMM(5);
+    }
+    #pragma reduce(min, R1, R0)
+    cycle { @0,0: EXIT; }
+}
+`;
+    const result = compileDslToCsv(code);
+    expect(result.success).toBe(true);
+    expect(result.csv).toContain('SSUB');
+    expect(result.csv).toContain('BSFA');
+  });
+
+  it('should compile #pragma reduce with axis=col', () => {
+    const code = `
+kernel "ReduceVertical" {
+    config(0xF, 0);
+    cycle {
+        @0,0: SADD R0, ZERO, IMM(10);
+        @1,0: SADD R0, ZERO, IMM(20);
+        @2,0: SADD R0, ZERO, IMM(30);
+        @3,0: SADD R0, ZERO, IMM(40);
+    }
+    #pragma reduce(sum, R1, R0, axis=col)
+    cycle { @0,0: EXIT; }
+}
+`;
+    const result = compileDslToCsv(code);
+    expect(result.success).toBe(true);
+    // Vertical reduce uses RCB for vertical neighbor access
+    expect(result.csv).toContain('RCB');
+  });
+
+  it('should compile #pragma rotate', () => {
+    const code = `
+kernel "RotateTest" {
+    config(0xF, 0);
+    cycle {
+        @0,0: SADD R0, ZERO, IMM(10);
+        @0,1: SADD R0, ZERO, IMM(20);
+        @0,2: SADD R0, ZERO, IMM(30);
+        @0,3: SADD R0, ZERO, IMM(40);
+    }
+    #pragma rotate(reg=R0, direction=left, distance=1)
+    cycle { @0,0: EXIT; }
+}
+`;
+    const result = compileDslToCsv(code);
+    expect(result.success).toBe(true);
+    // Rotate emits ROUT broadcast + RCR/RCL read cycle
+    expect(result.csv).toContain('ROUT');
+  });
+
+  it('should compile #pragma shift', () => {
+    const code = `
+kernel "ShiftTest" {
+    config(0xF, 0);
+    cycle {
+        @0,0: SADD R0, ZERO, IMM(10);
+        @0,1: SADD R0, ZERO, IMM(20);
+        @0,2: SADD R0, ZERO, IMM(30);
+        @0,3: SADD R0, ZERO, IMM(40);
+    }
+    #pragma shift(reg=R0, direction=right, distance=1, fill=0)
+    cycle { @0,0: EXIT; }
+}
+`;
+    const result = compileDslToCsv(code);
+    expect(result.success).toBe(true);
+    // Shift emits ROUT broadcast + RCL read cycle with fill for edge PE
+    expect(result.csv).toContain('ROUT');
   });
 
   it('should compile #pragma route', () => {

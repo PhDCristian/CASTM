@@ -77,6 +77,7 @@ const REDUCE_OP_TO_INSTR: Record<string, string> = {
   'and': 'LAND',
   'or': 'LOR',
   'xor': 'LXOR',
+  'mul': 'SMUL',
   'max': 'SSUB',  // Compare step; selection done via BSFA
   'min': 'SSUB'   // Compare step; selection done via BSFA
 };
@@ -278,21 +279,33 @@ function generateCompareReduceTokens(
     tok(TokenType.SEMICOLON, ';', line)
   ], line));
 
-  // Step 1a: Compare (sets flags)
+  // Step 1a: Compare (sets flags) — only Col 0 and Col 2
+  // Col 1 and Col 3 must NOP to preserve their ROUT for the BSFA step
   tokens.push(...wrapInCycle([
     tok(TokenType.KEYWORD, 'row', line),
     tok(TokenType.NUMBER, '0', line),
     tok(TokenType.OPERATOR, ':', line),
-    // All columns: SSUB R2, srcReg, RCR
-    ...[0, 1, 2, 3].flatMap((c, i) => [
-      ...(i > 0 ? [tok(TokenType.OPERATOR, '|', line)] : []),
-      tok(TokenType.IDENTIFIER, 'SSUB', line),
-      tok(TokenType.IDENTIFIER, 'R2', line),
-      tok(TokenType.OPERATOR, ',', line),
-      tok(TokenType.IDENTIFIER, srcReg, line),
-      tok(TokenType.OPERATOR, ',', line),
-      tok(TokenType.IDENTIFIER, 'RCR', line)
-    ]),
+    // Col 0: SSUB
+    tok(TokenType.IDENTIFIER, 'SSUB', line),
+    tok(TokenType.IDENTIFIER, 'R2', line),
+    tok(TokenType.OPERATOR, ',', line),
+    tok(TokenType.IDENTIFIER, srcReg, line),
+    tok(TokenType.OPERATOR, ',', line),
+    tok(TokenType.IDENTIFIER, 'RCR', line),
+    tok(TokenType.OPERATOR, '|', line),
+    // Col 1: NOP (preserve ROUT)
+    tok(TokenType.IDENTIFIER, 'NOP', line),
+    tok(TokenType.OPERATOR, '|', line),
+    // Col 2: SSUB
+    tok(TokenType.IDENTIFIER, 'SSUB', line),
+    tok(TokenType.IDENTIFIER, 'R2', line),
+    tok(TokenType.OPERATOR, ',', line),
+    tok(TokenType.IDENTIFIER, srcReg, line),
+    tok(TokenType.OPERATOR, ',', line),
+    tok(TokenType.IDENTIFIER, 'RCR', line),
+    tok(TokenType.OPERATOR, '|', line),
+    // Col 3: NOP (preserve ROUT)
+    tok(TokenType.IDENTIFIER, 'NOP', line),
     tok(TokenType.SEMICOLON, ';', line)
   ], line));
 

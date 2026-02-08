@@ -286,12 +286,28 @@ for i in range(0, 4) {
 }
 ```
 
+### C-like Expression Syntax
+
+```dsl
+cycle {
+    @0,0: R1 = R2 + R3;       // desugars to SADD R1, R2, R3
+    @0,1: R0 = R1 - 5;        // desugars to SSUB R0, R1, 5
+    @0,2: ROUT = R0 * R2;     // desugars to SMUL ROUT, R0, R2
+    @0,3: R1 = R0 & 0xFF;     // desugars to LAND R1, R0, 0xFF
+}
+```
+
+Supports: `+` `-` `*` `**` `<<` `>>` `>>>` `&` `|` `^` `~&` `~|` `~^`
+
 ### Pragmas
 
 ```dsl
-#pragma reduce(add, R0, R1)
+#pragma reduce(sum, R1, R0)
+#pragma reduce(sum, R1, R0, axis=col)
 #pragma stencil(cross, add, R0, R1)
 #pragma route (0,0) -> (3,3) payload(R0) accum(R1)
+#pragma rotate(reg=R0, direction=left, distance=1)
+#pragma shift(reg=R0, direction=right, distance=1, fill=0)
 ```
 
 ---

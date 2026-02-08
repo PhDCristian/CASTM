@@ -56,31 +56,13 @@ export function generateBroadcastTokens(params: BroadcastParams): Token[] {
                 tokens.push(createToken(TokenType.IDENTIFIER, 'ZERO', line));
             } else {
                 // Receiving PE: valueReg = RCL
+                // Note: SADD also writes result to ROUT, so next PE can read it
                 tokens.push(createToken(TokenType.IDENTIFIER, 'SADD', line));
                 tokens.push(createToken(TokenType.IDENTIFIER, valueReg, line));
                 tokens.push(createToken(TokenType.OPERATOR, ',', line));
                 tokens.push(createToken(TokenType.IDENTIFIER, 'RCL', line));
                 tokens.push(createToken(TokenType.OPERATOR, ',', line));
                 tokens.push(createToken(TokenType.IDENTIFIER, 'ZERO', line));
-
-                // Forward to next (except last)
-                if (!isLast) {
-                    tokens.push(createToken(TokenType.SEMICOLON, ';', line));
-
-                    // Another instruction in same cycle: SADD ROUT, valueReg, ZERO
-                    tokens.push(createToken(TokenType.AT_SYMBOL, '@', line));
-                    tokens.push(createToken(TokenType.NUMBER, fromRow.toString(), line));
-                    tokens.push(createToken(TokenType.OPERATOR, ',', line));
-                    tokens.push(createToken(TokenType.NUMBER, col.toString(), line));
-                    tokens.push(createToken(TokenType.OPERATOR, ':', line));
-
-                    tokens.push(createToken(TokenType.IDENTIFIER, 'SADD', line));
-                    tokens.push(createToken(TokenType.IDENTIFIER, 'ROUT', line));
-                    tokens.push(createToken(TokenType.OPERATOR, ',', line));
-                    tokens.push(createToken(TokenType.IDENTIFIER, valueReg, line));
-                    tokens.push(createToken(TokenType.OPERATOR, ',', line));
-                    tokens.push(createToken(TokenType.IDENTIFIER, 'ZERO', line));
-                }
             }
 
             tokens.push(createToken(TokenType.SEMICOLON, ';', line));
@@ -109,29 +91,14 @@ export function generateBroadcastTokens(params: BroadcastParams): Token[] {
                 tokens.push(createToken(TokenType.OPERATOR, ',', line));
                 tokens.push(createToken(TokenType.IDENTIFIER, 'ZERO', line));
             } else {
+                // Receiving PE: valueReg = RCT
+                // Note: SADD also writes result to ROUT, so next PE can read it
                 tokens.push(createToken(TokenType.IDENTIFIER, 'SADD', line));
                 tokens.push(createToken(TokenType.IDENTIFIER, valueReg, line));
                 tokens.push(createToken(TokenType.OPERATOR, ',', line));
                 tokens.push(createToken(TokenType.IDENTIFIER, 'RCT', line));
                 tokens.push(createToken(TokenType.OPERATOR, ',', line));
                 tokens.push(createToken(TokenType.IDENTIFIER, 'ZERO', line));
-
-                if (!isLast) {
-                    tokens.push(createToken(TokenType.SEMICOLON, ';', line));
-
-                    tokens.push(createToken(TokenType.AT_SYMBOL, '@', line));
-                    tokens.push(createToken(TokenType.NUMBER, row.toString(), line));
-                    tokens.push(createToken(TokenType.OPERATOR, ',', line));
-                    tokens.push(createToken(TokenType.NUMBER, fromCol.toString(), line));
-                    tokens.push(createToken(TokenType.OPERATOR, ':', line));
-
-                    tokens.push(createToken(TokenType.IDENTIFIER, 'SADD', line));
-                    tokens.push(createToken(TokenType.IDENTIFIER, 'ROUT', line));
-                    tokens.push(createToken(TokenType.OPERATOR, ',', line));
-                    tokens.push(createToken(TokenType.IDENTIFIER, valueReg, line));
-                    tokens.push(createToken(TokenType.OPERATOR, ',', line));
-                    tokens.push(createToken(TokenType.IDENTIFIER, 'ZERO', line));
-                }
             }
 
             tokens.push(createToken(TokenType.SEMICOLON, ';', line));

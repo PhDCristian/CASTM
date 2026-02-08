@@ -16,6 +16,7 @@ import {
   isSingleCharOperator,
   canStartMultiCharOperator,
   isTwoCharOperator,
+  isThreeCharOperator,
   isCommentStart,
   isDirectiveStart,
   isPragmaStart,
@@ -61,6 +62,13 @@ function peek(state: LexerState): string {
  */
 function peekNext(state: LexerState): string {
   return state.source[state.cursor + 1] || '';
+}
+
+/**
+ * Gets a character at a given offset without advancing
+ */
+function peekAt(state: LexerState, offset: number): string {
+  return state.source[state.cursor + offset] || '';
 }
 
 /**
@@ -280,8 +288,17 @@ function readOperator(state: LexerState): Token {
   const startColumn = state.column;
   const char = peek(state);
 
-  // Check for potential two-char operators
+  // Check for potential three-char operators (e.g., >>>)
   if (canStartMultiCharOperator(char)) {
+    const threeChar = char + peekNext(state) + peekAt(state, 2);
+    if (isThreeCharOperator(threeChar)) {
+      advance(state);
+      advance(state);
+      advance(state);
+      return makeToken(state, TokenType.OPERATOR, threeChar, startLine, startColumn);
+    }
+
+    // Check for potential two-char operators
     const twoChar = char + peekNext(state);
     if (isTwoCharOperator(twoChar)) {
       advance(state);

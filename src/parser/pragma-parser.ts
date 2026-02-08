@@ -25,7 +25,14 @@ export const PRAGMA_NAMES = [
   'stencil',
   'route',
   'rotate',
-  'shift'
+  'shift',
+  'allreduce',
+  'transpose',
+  'gather',
+  'stream_load',
+  'stream_store',
+  'auto_cycle',
+  'end_auto_cycle'
 ] as const;
 
 export type PragmaName = typeof PRAGMA_NAMES[number];
@@ -263,7 +270,7 @@ export function isLoopPragma(name: string): boolean {
  * Checks if a pragma generates code directly (reduce, stencil, scan, broadcast)
  */
 export function isCodeGeneratingPragma(name: string): boolean {
-  return ['reduce', 'stencil', 'route', 'scan', 'broadcast', 'rotate', 'shift'].includes(name.toLowerCase());
+  return ['reduce', 'stencil', 'route', 'scan', 'broadcast', 'rotate', 'shift', 'allreduce', 'transpose', 'gather', 'stream_load', 'stream_store'].includes(name.toLowerCase());
 }
 
 /**

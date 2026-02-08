@@ -4,8 +4,11 @@
  * Handles parsing of cycle blocks in the DSL.
  * Supports three instruction placement styles:
  * - Style A: Visual pipe syntax (row N: instr | instr | instr;)
+ * - Style A': Broadcast syntax (row N: instr;) - replicates to all columns
  * - Style B: Structural block syntax (row N { col 0: instr; col 1: instr; })
  * - Style C: Direct coordinate syntax (@row,col: instr;) - follows C convention [row][col]
+ * - Style D: all: instr; - replicates to all 16 PEs
+ * - Style E: col N: instr; - replicates to all rows in column N
  */
 
 import { Token, TokenType } from '../types/tokens';
@@ -79,6 +82,29 @@ export function parseCycleBlock(
         cycleBlock.instructions.set(key, instr);
       }
     }
+    // Style D: all: instr; — replicate to all 16 PEs
+    else if (stream.peek().type === TokenType.IDENTIFIER &&
+      stream.peek().value.toLowerCase() === 'all') {
+      stream.advance(); // consume 'all'
+      stream.expect(TokenType.OPERATOR, ':');
+      const instr = parseInstructionFromStream(stream, context.symbols);
+      stream.expect(TokenType.SEMICOLON);
+      for (let r = 0; r < 4; r++) {
+        for (let c = 0; c < 4; c++) {
+          cycleBlock.instructions.set(`${r},${c}`, { ...instr });
+        }
+      }
+    }
+    // Style E: col N: instr; — replicate to all rows in column N
+    else if (stream.match(TokenType.KEYWORD, 'col')) {
+      const col = parseInt(stream.expect(TokenType.NUMBER).value);
+      stream.expect(TokenType.OPERATOR, ':');
+      const instr = parseInstructionFromStream(stream, context.symbols);
+      stream.expect(TokenType.SEMICOLON);
+      for (let r = 0; r < 4; r++) {
+        cycleBlock.instructions.set(`${r},${col}`, { ...instr });
+      }
+    }
     // Function call inside cycle
     else if (stream.peek().type === TokenType.IDENTIFIER &&
       context.symbols.functions.has(stream.peek().value)) {
@@ -125,10 +151,11 @@ function parseDirectCoordinateInstruction(
 }
 
 /**
- * Parses row-based instructions in either Style A (visual) or Style B (structural).
+ * Parses row-based instructions in Style A (visual), A' (broadcast), or B (structural).
  *
- * Style A: row N: instr | instr | instr;
- * Style B: row N { col 0: instr; col 1: instr; }
+ * Style A:  row N: instr | instr | instr;   (pipe-separated, one per column)
+ * Style A': row N: instr;                   (no pipes = broadcast to all 4 columns)
+ * Style B:  row N { col 0: instr; col 1: instr; }
  */
 function parseRowInstructions(
   stream: TokenStream,
@@ -149,22 +176,55 @@ function parseRowInstructions(
     }
     stream.expect(TokenType.BRACE_CLOSE);
   }
-  // Style A: Visual Pipe : ... | ...
+  // Style A / A': Visual Pipe or Broadcast
   else if (stream.match(TokenType.OPERATOR, ':')) {
-    let col = 0;
-    do {
-      if (col > 3) {
-        throw { message: `Too many columns in row ${row}`, line: stream.peek().line };
+    // Parse first instruction (or underscore)
+    if (stream.match(TokenType.UNDERSCORE)) {
+      // First column is NOP — check for pipe continuation
+      if (stream.check(TokenType.OPERATOR, '|')) {
+        // Pipe style — continue with remaining columns
+        let col = 1;
+        while (stream.match(TokenType.OPERATOR, '|')) {
+          if (col > 3) {
+            throw { message: `Too many columns in row ${row}`, line: stream.peek().line };
+          }
+          if (stream.match(TokenType.UNDERSCORE)) {
+            // NOP
+          } else {
+            const instr = parseInstructionFromStream(stream, symbols);
+            instructions.set(`${row},${col}`, instr);
+          }
+          col++;
+        }
       }
+      // If no pipe, underscore alone = NOP for all (no instructions)
+    } else {
+      const firstInstr = parseInstructionFromStream(stream, symbols);
 
-      if (stream.match(TokenType.UNDERSCORE)) {
-        // NOP (Implicit) - skip column
+      // Check if this is pipe style (Style A) or broadcast (Style A')
+      if (stream.check(TokenType.OPERATOR, '|')) {
+        // Style A: Pipe-separated — first instr goes to col 0
+        instructions.set(`${row},0`, firstInstr);
+        let col = 1;
+        while (stream.match(TokenType.OPERATOR, '|')) {
+          if (col > 3) {
+            throw { message: `Too many columns in row ${row}`, line: stream.peek().line };
+          }
+          if (stream.match(TokenType.UNDERSCORE)) {
+            // NOP
+          } else {
+            const instr = parseInstructionFromStream(stream, symbols);
+            instructions.set(`${row},${col}`, instr);
+          }
+          col++;
+        }
       } else {
-        const instr = parseInstructionFromStream(stream, symbols);
-        instructions.set(`${row},${col}`, instr);
+        // Style A': No pipes — broadcast to all 4 columns
+        for (let col = 0; col < 4; col++) {
+          instructions.set(`${row},${col}`, { ...firstInstr });
+        }
       }
-      col++;
-    } while (stream.match(TokenType.OPERATOR, '|'));
+    }
     stream.expect(TokenType.SEMICOLON);
   }
   else {
