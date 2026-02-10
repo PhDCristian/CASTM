@@ -270,6 +270,13 @@ interface CollectedBlock {
   endIndex: number | null;
 }
 
+interface FunctionDefinitionLite {
+  name: string;
+  params: string[];
+  body: SourceLineEntry[];
+  span: SourceSpan;
+}
+
 function parseForHeader(
   cleanLine: string,
   lineNo: number,
@@ -489,6 +496,224 @@ function buildConstantMap(directives: DirectiveAst[], diagnostics: Diagnostic[])
   return constants;
 }
 
+function parseFunctionHeader(cleanLine: string): { name: string; paramsText: string } | null {
+  const match = cleanLine.match(/^function\s+([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*\{\s*$/i);
+  if (!match) return null;
+  return {
+    name: match[1],
+    paramsText: match[2].trim()
+  };
+}
+
+function parseFunctionParams(
+  paramsText: string,
+  lineNo: number,
+  diagnostics: Diagnostic[]
+): string[] | null {
+  if (!paramsText) return [];
+  const parts = splitTopLevel(paramsText, ',').map((p) => p.trim()).filter(Boolean);
+  const params: string[] = [];
+
+  for (const part of parts) {
+    const match = part.match(/^([A-Za-z_][A-Za-z0-9_]*)(?:\s*:\s*.+)?$/);
+    if (!match) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(lineNo, 1, Math.max(1, paramsText.length)),
+        `Invalid function parameter '${part}'.`,
+        'Use parameter syntax: name or name: type.'
+      ));
+      return null;
+    }
+
+    const name = match[1];
+    if (params.includes(name)) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(lineNo, 1, Math.max(1, paramsText.length)),
+        `Duplicate function parameter '${name}'.`,
+        'Each function parameter must be unique.'
+      ));
+      return null;
+    }
+
+    params.push(name);
+  }
+
+  return params;
+}
+
+function parseFunctionCallLine(cleanLine: string): { name: string; args: string[] } | null {
+  const match = cleanLine.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*;?\s*$/);
+  if (!match) return null;
+
+  const argsText = match[2].trim();
+  const args = argsText.length === 0
+    ? []
+    : splitTopLevel(argsText, ',').map((arg) => arg.trim());
+
+  return {
+    name: match[1],
+    args
+  };
+}
+
+function applyFunctionArgs(input: string, argsByParam: ReadonlyMap<string, string>): string {
+  let out = input;
+  for (const [name, value] of argsByParam.entries()) {
+    const regex = new RegExp(`\\b${escapeRegExp(name)}\\b`, 'g');
+    out = out.replace(regex, value);
+  }
+  return out;
+}
+
+function instantiateFunctionBody(
+  def: FunctionDefinitionLite,
+  args: string[],
+  callLineNo: number,
+  diagnostics: Diagnostic[]
+): SourceLineEntry[] | null {
+  if (args.length !== def.params.length) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(callLineNo, 1, 1),
+      `Function '${def.name}' expects ${def.params.length} argument(s), got ${args.length}.`,
+      `Call it as: ${def.name}(${def.params.join(', ')})`
+    ));
+    return null;
+  }
+
+  const argsByParam = new Map<string, string>();
+  for (let i = 0; i < def.params.length; i++) {
+    argsByParam.set(def.params[i], args[i]);
+  }
+
+  return def.body.map((entry) => {
+    const raw = applyFunctionArgs(entry.rawLine, argsByParam);
+    const clean = applyFunctionArgs(entry.cleanLine, argsByParam);
+    return {
+      lineNo: callLineNo,
+      rawLine: raw,
+      cleanLine: clean
+    };
+  });
+}
+
+function parseInlineCycleStatements(
+  payload: string,
+  lineNo: number,
+  constants: ReadonlyMap<string, number>,
+  diagnostics: Diagnostic[]
+): CycleStatementAst[] {
+  const statements: CycleStatementAst[] = [];
+  const parts = splitTopLevel(payload, ';').map((p) => p.trim()).filter(Boolean);
+  for (const part of parts) {
+    const cleanStmt = `${part};`;
+    const parsed = parseCycleStatement(cleanStmt, lineNo, cleanStmt, constants, new Map());
+    if (!parsed) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(lineNo, 1, cleanStmt.length),
+        `Invalid inline cycle statement: '${part}'.`,
+        'Use valid cycle placement syntax like @r,c:, row:, col:, or all:.'
+      ));
+      continue;
+    }
+    statements.push(parsed);
+  }
+  return statements;
+}
+
+function expandFunctionBodyIntoKernel(
+  body: SourceLineEntry[],
+  kernel: KernelAst,
+  functions: ReadonlyMap<string, FunctionDefinitionLite>,
+  constants: ReadonlyMap<string, number>,
+  diagnostics: Diagnostic[],
+  cycleCounter: { value: number },
+  callStack: string[]
+): void {
+  for (let i = 0; i < body.length; i++) {
+    const entry = body[i];
+    const clean = entry.cleanLine.trim();
+    if (!clean) continue;
+
+    const inlineCycleMatch = clean.match(/^cycle\s*\{\s*(.+)\s*\}\s*$/i);
+    if (inlineCycleMatch) {
+      const cycle: CycleAst = {
+        index: cycleCounter.value++,
+        statements: parseInlineCycleStatements(inlineCycleMatch[1], entry.lineNo, constants, diagnostics),
+        span: spanAt(entry.lineNo, 1, clean.length)
+      };
+      kernel.cycles.push(cycle);
+      continue;
+    }
+
+    if (/^cycle\s*\{\s*$/i.test(clean)) {
+      const block = collectBlockFromEntries(body, i);
+      if (block.endIndex === null) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(entry.lineNo, 1, clean.length),
+          'Unterminated cycle block inside function body.',
+          'Add a closing brace for cycle { ... }.'
+        ));
+        break;
+      }
+
+      kernel.cycles.push({
+        index: cycleCounter.value++,
+        statements: expandLoopBody(block.body, constants, new Map(), diagnostics),
+        span: spanAt(entry.lineNo, 1, clean.length)
+      });
+      i = block.endIndex;
+      continue;
+    }
+
+    const nestedCall = parseFunctionCallLine(clean);
+    if (nestedCall && functions.has(nestedCall.name)) {
+      if (callStack.includes(nestedCall.name)) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(entry.lineNo, 1, clean.length),
+          `Recursive function call detected: ${[...callStack, nestedCall.name].join(' -> ')}.`,
+          'Recursive function expansion is not supported.'
+        ));
+        continue;
+      }
+
+      const def = functions.get(nestedCall.name)!;
+      const instantiated = instantiateFunctionBody(def, nestedCall.args, entry.lineNo, diagnostics);
+      if (!instantiated) continue;
+
+      expandFunctionBodyIntoKernel(
+        instantiated,
+        kernel,
+        functions,
+        constants,
+        diagnostics,
+        cycleCounter,
+        [...callStack, nestedCall.name]
+      );
+      continue;
+    }
+
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(entry.lineNo, 1, clean.length),
+      `Unsupported function body statement: '${clean}'.`,
+      'Function bodies currently support cycle blocks and function calls.'
+    ));
+  }
+}
+
 export function parseSource(source: string): ParseResult {
   const diagnostics: Diagnostic[] = [];
   const lines = source.split(/\r?\n/);
@@ -514,6 +739,7 @@ export function parseSource(source: string): ParseResult {
   let cycleConstants = new Map<string, number>();
   let cycleIndex = 0;
   const pendingDirectives: DirectiveAst[] = [];
+  const functions = new Map<string, FunctionDefinitionLite>();
 
   for (let i = 0; i < lines.length; i++) {
     const lineNo = i + 1;
@@ -523,6 +749,42 @@ export function parseSource(source: string): ParseResult {
     if (!clean) continue;
 
     if (!inKernel) {
+      const functionHeader = parseFunctionHeader(clean);
+      if (functionHeader) {
+        const params = parseFunctionParams(functionHeader.paramsText, lineNo, diagnostics);
+        const block = collectBlockFromSource(lines, i);
+        if (block.endIndex === null) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            `Unterminated function '${functionHeader.name}'.`,
+            'Add a closing brace for function { ... }.'
+          ));
+          break;
+        }
+
+        if (params && !functions.has(functionHeader.name)) {
+          functions.set(functionHeader.name, {
+            name: functionHeader.name,
+            params,
+            body: block.body,
+            span: spanAt(lineNo, 1, clean.length)
+          });
+        } else if (params) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            `Duplicate function definition '${functionHeader.name}'.`,
+            'Use unique function names.'
+          ));
+        }
+
+        i = block.endIndex;
+        continue;
+      }
+
       const targetMatch = clean.match(/^target\s+"([^"]+)"\s*;?\s*$/i);
       if (targetMatch) {
         ast.targetProfileId = targetMatch[1];
@@ -618,6 +880,22 @@ export function parseSource(source: string): ParseResult {
         continue;
       }
 
+      const inlineCycleMatch = clean.match(/^cycle\s*\{\s*(.+)\s*\}\s*$/i);
+      if (inlineCycleMatch && kernel) {
+        const statements = parseInlineCycleStatements(
+          inlineCycleMatch[1],
+          lineNo,
+          kernelConstants,
+          diagnostics
+        );
+        kernel.cycles.push({
+          index: cycleIndex++,
+          statements,
+          span: spanAt(lineNo, 1, clean.length)
+        });
+        continue;
+      }
+
       if (/^cycle\s*\{\s*$/i.test(clean)) {
         inCycle = true;
         cycleConstants = new Map(kernelConstants);
@@ -626,6 +904,26 @@ export function parseSource(source: string): ParseResult {
           statements: [],
           span: spanAt(lineNo, 1, clean.length)
         };
+        continue;
+      }
+
+      const functionCall = parseFunctionCallLine(clean);
+      if (functionCall && functions.has(functionCall.name) && kernel) {
+        const def = functions.get(functionCall.name)!;
+        const instantiated = instantiateFunctionBody(def, functionCall.args, lineNo, diagnostics);
+        if (instantiated) {
+          const cycleCounter = { value: cycleIndex };
+          expandFunctionBodyIntoKernel(
+            instantiated,
+            kernel,
+            functions,
+            kernelConstants,
+            diagnostics,
+            cycleCounter,
+            [functionCall.name]
+          );
+          cycleIndex = cycleCounter.value;
+        }
         continue;
       }
 

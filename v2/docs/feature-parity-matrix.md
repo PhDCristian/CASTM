@@ -16,7 +16,8 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 | `kernel` + `cycle` blocks | done | `tests/compiler-api.contract.test.ts` | Basic AST and lowering in place. |
 | `@row,col`, `row`, `col`, `all` placement | done | `tests/compiler-api.contract.test.ts` | NxM grid override supported. |
 | C-like assignment desugar | partial | `tests/compiler-api.contract.test.ts` | Baseline arithmetic only. |
-| Function / while / if / labels | pending | - | Planned in v2 frontend/lowering phases. |
+| `function` (definition + call expansion) | partial | `tests/compiler-api.contract.test.ts` | Supports pre-kernel definitions, parameter substitution, nested non-recursive calls, and cycle-based bodies. |
+| `while` / `if` / labels | pending | - | Planned in v2 frontend/lowering phases. |
 | `for ... in range(...)` inside `cycle` | partial | `tests/compiler-api.contract.test.ts` | Compile-time unroll with nested loops and collision detection; advanced pragmas/runtime loops pending. |
 
 ## Directives

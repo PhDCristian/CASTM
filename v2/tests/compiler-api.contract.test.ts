@@ -215,6 +215,64 @@ kernel "for_invalid_range" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
+  it('expands function calls with parameter substitution into kernel cycles', () => {
+    const source = `
+target "uma-cgra-v1";
+function extract(dst, src) {
+  cycle { @0,0: dst = src >> 16; }
+}
+kernel "fn_param_expr" {
+  cycle { @0,0: SADD R0, ZERO, IMM(65536); }
+  extract(R1, R0);
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('1,0,0,SRT R1 R0 16');
+  });
+
+  it('expands nested function calls (non-recursive)', () => {
+    const source = `
+target "uma-cgra-v1";
+function load(dst, v) {
+  cycle { @0,0: SADD dst, ZERO, IMM(v); }
+}
+function load_twice(a, b) {
+  load(R1, a);
+  load(R2, b);
+}
+kernel "nested_fn_call" {
+  load_twice(7, 9);
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 ZERO IMM(7)');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R2 ZERO IMM(9)');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('rejects recursive function expansion', () => {
+    const source = `
+target "uma-cgra-v1";
+function recurse(x) {
+  recurse(x);
+}
+kernel "recursive_fn" {
+  recurse(R0);
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.message.includes('Recursive function call detected'))).toBe(true);
+  });
+
   it('rejects memory-to-memory assignment in memory sugar', () => {
     const source = `
 target "uma-cgra-v1";
