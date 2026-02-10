@@ -1302,13 +1302,13 @@ Or better: import and use OpenEdgeDSL's own `compileDslToCsv` directly instead o
 
 ---
 
-## BUG-4: Simulator Pipeline Missing 7 Code-Generating Pragmas — ⚠️ PARTIALLY RESOLVED
+## BUG-4: Simulator Pipeline Missing 7 Code-Generating Pragmas — ✅ RESOLVED
 
-**Severity:** Medium — these pragmas exist and work in OpenEdgeDSL's `compiler.ts` but are absent from the simulator's `dsl-compiler.ts`.
+**Severity:** Medium — these pragmas exist and work in OpenEdgeDSL's `compiler.ts` but were absent from the simulator's `dsl-compiler.ts`.
 
-**Status:** ⚠️ **PARTIALLY RESOLVED** (commit `62b0f8e` in UMA-CGRA-Simulator)
+**Status:** ✅ **RESOLVED** (commit `571da03` in UMA-CGRA-Simulator)
 
-**Resolution:** The submodule path fix (BUG-5) makes the updated OpenEdgeDSL lexer and types available, and the desugar passes were added (BUG-3). However, the simulator's `dsl-compiler.ts` still maintains its own `parse()` function that only handles 5 of the 12 code-generating pragmas. The 7 missing pragmas (`rotate`, `shift`, `allreduce`, `transpose`, `gather`, `stream_load`, `stream_store`) still need to be added to the simulator's `parseBlock()` function, or the whole pipeline should be replaced with OpenEdgeDSL's `compileDslToCsv()` directly.
+**Resolution:** The simulator's 660-line reimplemented `dsl-compiler.ts` was replaced with a thin re-export wrapper that delegates to OpenEdgeDSL's canonical `compiler.ts`. All 12 code-generating pragmas are now available in the simulator.
 
 **Description:** The UMA-CGRA-Simulator's `dsl-compiler.ts` is a **partial copy** of OpenEdgeDSL's `compiler.ts`. The simulator copy has fallen behind and is missing 7 code-generating pragmas that were added to OpenEdgeDSL.
 
