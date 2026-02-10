@@ -38,7 +38,7 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 |---|---|---|---|
 | Pragma parsing (`#pragma ...`) | done | `tests/compiler-api.contract.test.ts` | Preserves text + span in AST. |
 | Strict unsupported validation | done | `tests/compiler-api.contract.test.ts` | `strictUnsupported` default is `true` (`E3008`). |
-| `route` lowering | pending | - | Transitional behavior: allowed only with `strictUnsupported: false`. |
+| `route` lowering | partial | `tests/compiler-api.contract.test.ts` | Compact `@r,c` and legacy `(r,c)` lower to route cycles with topology-aware paths; advanced pragma families remain pending. |
 | `auto_cycle` lowering | pending | - | Pass currently no-op. |
 | Advanced codegen pragmas (`reduce`, `scan`, etc.) | pending | - | Tracked for v2 completion phases. |
 

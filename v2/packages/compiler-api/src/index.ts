@@ -316,7 +316,7 @@ export function analyze(ast: AstProgram, options: CompileOptions = {}): Analysis
     createDesugarMemoryPass(memory.baseByName),
     desugarExpressionsPass,
     desugarAutoCyclePass,
-    createExpandPragmasPass(strictUnsupported)
+    createExpandPragmasPass(strictUnsupported, target.grid)
   ];
 
   const astPipeline = runPassPipeline(ast, astPasses, diagnostics);

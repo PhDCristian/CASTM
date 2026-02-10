@@ -417,11 +417,91 @@ kernel "mem2mem" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.InvalidAssignment)).toBe(true);
   });
 
+  it('lowers route pragma and keeps compact/legacy syntax equivalent', () => {
+    const compactSource = `
+target "uma-cgra-v1";
+kernel "route_compact" {
+  #pragma route @0,1 -> @0,0 payload(R3) accum(R1)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+    const legacySource = `
+target "uma-cgra-v1";
+kernel "route_legacy" {
+  #pragma route (0,1) -> (0,0) payload(R3) accum(R1)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const compactResult = compile(compactSource);
+    const legacyResult = compile(legacySource);
+    expect(compactResult.success).toBe(true);
+    expect(legacyResult.success).toBe(true);
+
+    const compactLines = compactResult.artifacts.csv!.trim().split('\n').slice(1, 3);
+    const legacyLines = legacyResult.artifacts.csv!.trim().split('\n').slice(1, 3);
+    expect(compactLines).toEqual(legacyLines);
+    expect(compactResult.artifacts.csv).toContain('0,0,1,SADD ROUT R3 ZERO');
+    expect(compactResult.artifacts.csv).toContain('1,0,0,SADD R1 R1 RCR');
+    expect(compactResult.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('supports route custom op lowering with INCOMING operand resolution', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "route_custom_op" {
+  #pragma route @0,0 -> @1,1 payload(R3) dest(R1) op(SMUL R1, R0, INCOMING)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD ROUT R3 ZERO');
+    expect(result.artifacts.csv).toContain('1,0,1,SADD ROUT RCL ZERO');
+    expect(result.artifacts.csv).toContain('2,1,1,SMUL R1 R0 RCT');
+    expect(result.artifacts.csv).toContain('3,0,0,EXIT');
+  });
+
+  it('uses topology-aware route path (torus wrap vs mesh no-wrap)', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "route_topology" {
+  #pragma route @0,0 -> @0,3 payload(R3) accum(R1)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const torusResult = compile(source);
+    expect(torusResult.success).toBe(true);
+    expect(torusResult.artifacts.csv).toContain('0,0,0,SADD ROUT R3 ZERO');
+    expect(torusResult.artifacts.csv).toContain('1,0,3,SADD R1 R1 RCR');
+    expect(torusResult.artifacts.csv).toContain('2,0,0,EXIT');
+
+    const meshResult = compile(source, {
+      grid: { rows: 4, cols: 4, topology: 'mesh' }
+    });
+    expect(meshResult.success).toBe(true);
+    expect(meshResult.artifacts.csv).toContain('0,0,0,SADD ROUT R3 ZERO');
+    expect(meshResult.artifacts.csv).toContain('1,0,1,SADD ROUT RCL ZERO');
+    expect(meshResult.artifacts.csv).toContain('2,0,2,SADD ROUT RCL ZERO');
+    expect(meshResult.artifacts.csv).toContain('3,0,3,SADD R1 R1 RCL');
+    expect(meshResult.artifacts.csv).toContain('4,0,0,EXIT');
+  });
+
   it('rejects unsupported pragmas by default in strict mode', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "route_pragma" {
-  #pragma route @0,1 -> @0,0 payload(R3) accum(R1)
+kernel "reduce_pragma" {
+  #pragma reduce(op=add, axis=row)
   cycle {
     @0,0: EXIT;
   }
@@ -436,8 +516,8 @@ kernel "route_pragma" {
   it('allows unsupported pragmas in transitional mode and emits simulator matrix CSV', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "route_pragma_relaxed" {
-  #pragma route @0,1 -> @0,0 payload(R3) accum(R1)
+kernel "reduce_pragma_relaxed" {
+  #pragma reduce(op=add, axis=row)
   cycle {
     @0,0: EXIT;
   }

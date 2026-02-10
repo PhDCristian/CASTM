@@ -1,6 +1,7 @@
 import { getInstructionSet } from '@openedge/lang-spec';
 import {
   AstProgram,
+  CycleAst,
   CompilerPass,
   Diagnostic,
   ErrorCodes,
@@ -27,7 +28,7 @@ const BINARY_OPCODES: Record<string, string> = {
 };
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
-const SUPPORTED_PRAGMAS = new Set<string>();
+const SUPPORTED_PRAGMAS = new Set<string>(['route']);
 const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
   BEQ: 2,
   BNE: 2,
@@ -35,6 +36,27 @@ const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
   BGE: 2,
   JUMP: 0
 };
+
+interface RoutePoint {
+  row: number;
+  col: number;
+}
+
+interface RouteCustomOp {
+  opcode: string;
+  dest: string;
+  srcA: string;
+  srcB: string;
+}
+
+interface RoutePragmaArgs {
+  src: RoutePoint;
+  dst: RoutePoint;
+  payload: string;
+  accum: string;
+  destReg?: string;
+  customOp?: RouteCustomOp;
+}
 
 function cloneInstruction(instruction: InstructionAst): InstructionAst {
   return {
@@ -132,6 +154,412 @@ function resolveLabelOperand(
   const resolved = [...operands];
   resolved[index] = String(targetCycle);
   return resolved;
+}
+
+function cloneSpan(span: SourceSpan): SourceSpan {
+  return { ...span };
+}
+
+function skipWhitespace(text: string, index: number): number {
+  let pos = index;
+  while (pos < text.length && /\s/.test(text[pos])) pos++;
+  return pos;
+}
+
+function readIdentifier(text: string, index: number): { value: string; next: number } | null {
+  const match = text.slice(index).match(/^[A-Za-z_][A-Za-z0-9_]*/);
+  if (!match) return null;
+  return {
+    value: match[0],
+    next: index + match[0].length
+  };
+}
+
+function readInteger(text: string, index: number): { value: number; next: number } | null {
+  const match = text.slice(index).match(/^-?\d+/);
+  if (!match) return null;
+  return {
+    value: parseInt(match[0], 10),
+    next: index + match[0].length
+  };
+}
+
+function parseRouteCoordinate(text: string, index: number): { point: RoutePoint; next: number } | null {
+  let pos = skipWhitespace(text, index);
+  if (pos >= text.length) return null;
+
+  if (text[pos] === '@') {
+    pos++;
+    pos = skipWhitespace(text, pos);
+    const row = readInteger(text, pos);
+    if (!row) return null;
+    pos = skipWhitespace(text, row.next);
+    if (text[pos] !== ',') return null;
+    pos++;
+    pos = skipWhitespace(text, pos);
+    const col = readInteger(text, pos);
+    if (!col) return null;
+    return {
+      point: { row: row.value, col: col.value },
+      next: col.next
+    };
+  }
+
+  if (text[pos] === '(') {
+    pos++;
+    pos = skipWhitespace(text, pos);
+    const row = readInteger(text, pos);
+    if (!row) return null;
+    pos = skipWhitespace(text, row.next);
+    if (text[pos] !== ',') return null;
+    pos++;
+    pos = skipWhitespace(text, pos);
+    const col = readInteger(text, pos);
+    if (!col) return null;
+    pos = skipWhitespace(text, col.next);
+    if (text[pos] !== ')') return null;
+    return {
+      point: { row: row.value, col: col.value },
+      next: pos + 1
+    };
+  }
+
+  return null;
+}
+
+function parseNamedRegisterArg(
+  text: string,
+  index: number,
+  expectedName: string
+): { value: string; next: number } | null {
+  let pos = skipWhitespace(text, index);
+  const key = readIdentifier(text, pos);
+  if (!key || key.value.toLowerCase() !== expectedName.toLowerCase()) return null;
+  pos = skipWhitespace(text, key.next);
+  if (text[pos] !== '(') return null;
+  pos++;
+  pos = skipWhitespace(text, pos);
+  const reg = readIdentifier(text, pos);
+  if (!reg) return null;
+  pos = skipWhitespace(text, reg.next);
+  if (text[pos] !== ')') return null;
+  return {
+    value: reg.value,
+    next: pos + 1
+  };
+}
+
+function parseNamedParenthesizedValue(
+  text: string,
+  index: number,
+  expectedName: string
+): { value: string; next: number } | null {
+  let pos = skipWhitespace(text, index);
+  const key = readIdentifier(text, pos);
+  if (!key || key.value.toLowerCase() !== expectedName.toLowerCase()) return null;
+  pos = skipWhitespace(text, key.next);
+  if (text[pos] !== '(') return null;
+  pos++;
+
+  const start = pos;
+  let depth = 1;
+  while (pos < text.length) {
+    const ch = text[pos];
+    if (ch === '(') depth++;
+    if (ch === ')') depth--;
+    if (depth === 0) {
+      return {
+        value: text.slice(start, pos).trim(),
+        next: pos + 1
+      };
+    }
+    pos++;
+  }
+
+  return null;
+}
+
+function parseRouteCustomOp(text: string): RouteCustomOp | null {
+  const match = text.trim().match(/^([A-Za-z_][A-Za-z0-9_]*)\s+([^,]+)\s*,\s*([^,]+)\s*,\s*(.+)$/);
+  if (!match) return null;
+  const opcode = match[1].trim().toUpperCase();
+  const dest = match[2].trim();
+  const srcA = match[3].trim();
+  const srcB = match[4].trim();
+  if (!dest || !srcA || !srcB) return null;
+  return { opcode, dest, srcA, srcB };
+}
+
+function parseRoutePragmaArgs(text: string): RoutePragmaArgs | null {
+  const match = text.trim().match(/^#pragma\s+route\s+(.+)$/i);
+  if (!match) return null;
+
+  const body = match[1].trim();
+  let pos = 0;
+
+  const src = parseRouteCoordinate(body, pos);
+  if (!src) return null;
+  pos = skipWhitespace(body, src.next);
+
+  if (!body.startsWith('->', pos)) return null;
+  pos += 2;
+
+  const dst = parseRouteCoordinate(body, pos);
+  if (!dst) return null;
+  pos = skipWhitespace(body, dst.next);
+
+  const payload = parseNamedRegisterArg(body, pos, 'payload');
+  if (!payload) return null;
+  pos = skipWhitespace(body, payload.next);
+
+  const maybeAccum = parseNamedRegisterArg(body, pos, 'accum');
+  if (maybeAccum) {
+    const tail = body.slice(skipWhitespace(body, maybeAccum.next)).trim();
+    if (tail.length > 0) return null;
+    return {
+      src: src.point,
+      dst: dst.point,
+      payload: payload.value,
+      accum: maybeAccum.value
+    };
+  }
+
+  const destReg = parseNamedRegisterArg(body, pos, 'dest');
+  if (!destReg) return null;
+  pos = skipWhitespace(body, destReg.next);
+
+  const opExpr = parseNamedParenthesizedValue(body, pos, 'op');
+  if (!opExpr) return null;
+  const tail = body.slice(skipWhitespace(body, opExpr.next)).trim();
+  if (tail.length > 0) return null;
+
+  const customOp = parseRouteCustomOp(opExpr.value);
+  if (!customOp) return null;
+
+  return {
+    src: src.point,
+    dst: dst.point,
+    payload: payload.value,
+    accum: destReg.value,
+    destReg: destReg.value,
+    customOp
+  };
+}
+
+function wrap(value: number, size: number): number {
+  return ((value % size) + size) % size;
+}
+
+function isSamePoint(a: RoutePoint, b: RoutePoint): boolean {
+  return a.row === b.row && a.col === b.col;
+}
+
+function computeRoutePath(src: RoutePoint, dst: RoutePoint, grid: GridSpec): RoutePoint[] {
+  if (isSamePoint(src, dst)) {
+    return [{ ...src }];
+  }
+
+  const path: RoutePoint[] = [{ ...src }];
+  let current: RoutePoint = { ...src };
+
+  if (grid.topology === 'torus') {
+    const rightDist = (dst.col - current.col + grid.cols) % grid.cols;
+    const leftDist = (current.col - dst.col + grid.cols) % grid.cols;
+    const hStep = rightDist <= leftDist ? 1 : -1;
+    const hCount = rightDist <= leftDist ? rightDist : leftDist;
+
+    for (let i = 0; i < hCount; i++) {
+      current = { row: current.row, col: wrap(current.col + hStep, grid.cols) };
+      path.push(current);
+    }
+
+    const downDist = (dst.row - current.row + grid.rows) % grid.rows;
+    const upDist = (current.row - dst.row + grid.rows) % grid.rows;
+    const vStep = downDist <= upDist ? 1 : -1;
+    const vCount = downDist <= upDist ? downDist : upDist;
+
+    for (let i = 0; i < vCount; i++) {
+      current = { row: wrap(current.row + vStep, grid.rows), col: current.col };
+      path.push(current);
+    }
+    return path;
+  }
+
+  const hStep = dst.col >= current.col ? 1 : -1;
+  while (current.col !== dst.col) {
+    current = { row: current.row, col: current.col + hStep };
+    path.push(current);
+  }
+
+  const vStep = dst.row >= current.row ? 1 : -1;
+  while (current.row !== dst.row) {
+    current = { row: current.row + vStep, col: current.col };
+    path.push(current);
+  }
+
+  return path;
+}
+
+function isStep(
+  prev: RoutePoint,
+  curr: RoutePoint,
+  deltaRow: number,
+  deltaCol: number,
+  grid: GridSpec
+): boolean {
+  if (grid.topology === 'torus') {
+    return (
+      wrap(prev.row + deltaRow, grid.rows) === curr.row &&
+      wrap(prev.col + deltaCol, grid.cols) === curr.col
+    );
+  }
+
+  return prev.row + deltaRow === curr.row && prev.col + deltaCol === curr.col;
+}
+
+function getIncomingRegister(prev: RoutePoint, curr: RoutePoint, grid: GridSpec): string | null {
+  if (prev.row === curr.row) {
+    if (isStep(prev, curr, 0, 1, grid)) return 'RCL';
+    if (isStep(prev, curr, 0, -1, grid)) return 'RCR';
+  }
+
+  if (prev.col === curr.col) {
+    if (isStep(prev, curr, 1, 0, grid)) return 'RCT';
+    if (isStep(prev, curr, -1, 0, grid)) return 'RCB';
+  }
+
+  return null;
+}
+
+function createInstruction(opcode: string, operands: string[], span: SourceSpan): InstructionAst {
+  const normalizedOpcode = opcode.toUpperCase();
+  return {
+    text: operands.length > 0
+      ? `${normalizedOpcode} ${operands.join(', ')}`
+      : normalizedOpcode,
+    opcode: normalizedOpcode,
+    operands: [...operands],
+    span: cloneSpan(span)
+  };
+}
+
+function createAtCycle(
+  index: number,
+  row: number,
+  col: number,
+  instruction: InstructionAst,
+  span: SourceSpan,
+  label?: string
+): CycleAst {
+  return {
+    index,
+    label,
+    statements: [{
+      kind: 'at',
+      row,
+      col,
+      instruction,
+      span: cloneSpan(span)
+    }],
+    span: cloneSpan(span)
+  };
+}
+
+function replaceIncoming(token: string, incoming: string): string {
+  return token.trim().toUpperCase() === 'INCOMING' ? incoming : token.trim();
+}
+
+function buildRouteCycles(
+  route: RoutePragmaArgs,
+  startIndex: number,
+  grid: GridSpec,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): CycleAst[] {
+  const path = computeRoutePath(route.src, route.dst, grid);
+  const cycles: CycleAst[] = [];
+
+  if (path.length === 1) {
+    cycles.push(createAtCycle(
+      startIndex,
+      route.src.row,
+      route.src.col,
+      createInstruction('SADD', [route.accum, route.accum, route.payload], span),
+      span
+    ));
+    return cycles;
+  }
+
+  for (let i = 0; i < path.length; i++) {
+    const point = path[i];
+    const isFirst = i === 0;
+    const isLast = i === path.length - 1;
+
+    if (isFirst) {
+      cycles.push(createAtCycle(
+        startIndex + i,
+        point.row,
+        point.col,
+        createInstruction('SADD', ['ROUT', route.payload, 'ZERO'], span),
+        span
+      ));
+      continue;
+    }
+
+    const incoming = getIncomingRegister(path[i - 1], point, grid);
+    if (!incoming) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Internal.UnexpectedState,
+        'error',
+        span,
+        `Could not resolve route direction for step (${path[i - 1].row},${path[i - 1].col}) -> (${point.row},${point.col}).`
+      ));
+      continue;
+    }
+
+    if (!isLast) {
+      cycles.push(createAtCycle(
+        startIndex + i,
+        point.row,
+        point.col,
+        createInstruction('SADD', ['ROUT', incoming, 'ZERO'], span),
+        span
+      ));
+      continue;
+    }
+
+    if (route.customOp) {
+      const srcA = replaceIncoming(route.customOp.srcA, incoming);
+      const srcB = replaceIncoming(route.customOp.srcB, incoming);
+      cycles.push(createAtCycle(
+        startIndex + i,
+        point.row,
+        point.col,
+        createInstruction(route.customOp.opcode, [route.customOp.dest, srcA, srcB], span),
+        span
+      ));
+      continue;
+    }
+
+    cycles.push(createAtCycle(
+      startIndex + i,
+      point.row,
+      point.col,
+      createInstruction('SADD', [route.accum, route.accum, incoming], span),
+      span
+    ));
+  }
+
+  return cycles;
+}
+
+function isPointInGrid(point: RoutePoint, grid: GridSpec): boolean {
+  return (
+    point.row >= 0 &&
+    point.row < grid.rows &&
+    point.col >= 0 &&
+    point.col < grid.cols
+  );
 }
 
 function isIdentifier(token: string): boolean {
@@ -499,20 +927,58 @@ export const desugarAutoCyclePass: CompilerPass<AstProgram, AstProgram> = {
   }
 };
 
-export function createExpandPragmasPass(strictUnsupported: boolean): CompilerPass<AstProgram, AstProgram> {
+export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSpec): CompilerPass<AstProgram, AstProgram> {
   return {
     name: 'expand-pragmas',
     run(input) {
       const output = cloneAst(input);
       const diagnostics: Diagnostic[] = [];
 
-      if (!strictUnsupported || !output.kernel) {
+      if (!output.kernel) {
         return { output, diagnostics };
       }
 
+      const generatedCycles: CycleAst[] = [];
+
       for (const pragma of output.kernel.pragmas) {
         const name = extractPragmaName(pragma.text);
+        if (name === 'route') {
+          const parsed = parseRoutePragmaArgs(pragma.text);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid route pragma syntax: '${pragma.text}'.`,
+              'Use #pragma route @r1,c1 -> @r2,c2 payload(Rx) accum(Ry) or dest(Rz) op(OP Rd, Ra, Rb).'
+            ));
+            continue;
+          }
+
+          if (!isPointInGrid(parsed.src, grid) || !isPointInGrid(parsed.dst, grid)) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Semantic.CoordinateOutOfBounds,
+              'error',
+              pragma.span,
+              `Route pragma coordinates @${parsed.src.row},${parsed.src.col} -> @${parsed.dst.row},${parsed.dst.col} are outside ${grid.rows}x${grid.cols}.`,
+              'Adjust coordinates or change CompileOptions.grid.'
+            ));
+            continue;
+          }
+
+          const cycles = buildRouteCycles(
+            parsed,
+            generatedCycles.length,
+            grid,
+            pragma.span,
+            diagnostics
+          );
+          generatedCycles.push(...cycles);
+          continue;
+        }
+
         if (SUPPORTED_PRAGMAS.has(name)) continue;
+        if (!strictUnsupported) continue;
 
         diagnostics.push(makeDiagnostic(
           ErrorCodes.Semantic.UnsupportedPragma,
@@ -523,12 +989,25 @@ export function createExpandPragmasPass(strictUnsupported: boolean): CompilerPas
         ));
       }
 
+      if (generatedCycles.length > 0) {
+        const merged = [...generatedCycles, ...output.kernel.cycles];
+        output.kernel.cycles = merged.map((cycle, index) => ({
+          ...cycle,
+          index
+        }));
+      }
+
       return { output, diagnostics };
     }
   };
 }
 
-export const expandPragmasPass = createExpandPragmasPass(false);
+export const expandPragmasPass = createExpandPragmasPass(false, {
+  rows: 4,
+  cols: 4,
+  topology: 'torus',
+  wrapPolicy: 'wrap'
+});
 
 function addOperation(
   operations: HirOperation[],
