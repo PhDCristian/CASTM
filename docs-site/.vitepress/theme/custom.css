@@ -1,0 +1,175 @@
+/**
+ * OpenEdge DSL — Custom Theme
+ * Premium documentation aesthetics with academic tone
+ */
+
+/* ─── Typography ─── */
+:root {
+  --vp-font-family-base: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --vp-font-family-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+}
+
+/* ─── Brand Colors (Light Mode) ─── */
+:root {
+  /* Primary — Deep Electric Blue */
+  --vp-c-brand-1: #2563EB;
+  --vp-c-brand-2: #3B82F6;
+  --vp-c-brand-3: #1D4ED8;
+  --vp-c-brand-soft: rgba(37, 99, 235, 0.12);
+
+  /* Accent */
+  --vp-c-tip-1: #10B981;
+  --vp-c-tip-2: #059669;
+  --vp-c-tip-soft: rgba(16, 185, 129, 0.12);
+
+  /* Backgrounds */
+  --vp-c-bg-alt: #F8FAFC;
+  --vp-c-bg-soft: #F1F5F9;
+  --vp-c-bg-mute: #E2E8F0;
+}
+
+/* ─── Dark Mode ─── */
+.dark {
+  --vp-c-brand-1: #60A5FA;
+  --vp-c-brand-2: #93C5FD;
+  --vp-c-brand-3: #3B82F6;
+  --vp-c-brand-soft: rgba(96, 165, 250, 0.12);
+
+  --vp-c-tip-1: #34D399;
+  --vp-c-tip-2: #6EE7B7;
+  --vp-c-tip-soft: rgba(52, 211, 153, 0.12);
+
+  --vp-c-bg: #0F172A;
+  --vp-c-bg-alt: #1E293B;
+  --vp-c-bg-soft: #1E293B;
+  --vp-c-bg-mute: #334155;
+}
+
+/* ─── Hero Section ─── */
+.VPHero .name {
+  background: linear-gradient(135deg, #2563EB 0%, #7C3AED 50%, #EC4899 100%);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.VPHero .tagline {
+  font-size: 1.25rem !important;
+  color: var(--vp-c-text-2);
+  max-width: 560px;
+}
+
+.VPHero .text {
+  font-size: 2.75rem !important;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* ─── Feature Cards ─── */
+.VPFeature {
+  border: 1px solid var(--vp-c-bg-soft) !important;
+  border-radius: 12px !important;
+  transition: all 0.3s ease;
+}
+
+.VPFeature:hover {
+  border-color: var(--vp-c-brand-1) !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.08);
+}
+
+.dark .VPFeature:hover {
+  box-shadow: 0 8px 24px rgba(96, 165, 250, 0.06);
+}
+
+/* ─── Code Blocks ─── */
+.vp-doc div[class*='language-'] {
+  border-radius: 10px;
+  border: 1px solid var(--vp-c-bg-mute);
+}
+
+.vp-doc div[class*='language-'] code {
+  font-size: 0.875rem;
+  line-height: 1.7;
+}
+
+/* ─── Sidebar Polish ─── */
+.VPSidebar .group .title {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ─── Custom Badge for DSL / Hardware ─── */
+.badge-dsl {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+}
+
+.badge-hw {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--vp-c-tip-soft);
+  color: var(--vp-c-tip-1);
+}
+
+/* ─── Content Width Override ─── */
+.vp-doc {
+  max-width: 780px;
+}
+
+/* ─── Table improvements ─── */
+.vp-doc table {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.vp-doc table th {
+  background: var(--vp-c-bg-soft);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* ─── Scrollbar (dark mode) ─── */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--vp-c-bg);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--vp-c-bg-mute);
+  border-radius: 4px;
+}
+
+/* ─── Button Style Override ─── */
+.VPButton.brand {
+  border-radius: 8px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  transition: all 0.25s ease;
+}
+
+.VPButton.brand:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.25);
+}
+
+.dark .VPButton.brand:hover {
+  box-shadow: 0 4px 16px rgba(96, 165, 250, 0.2);
+}
+
+/* ─── Home Page Action Buttons ─── */
+.VPHero .actions .VPButton.alt {
+  border-radius: 8px;
+}

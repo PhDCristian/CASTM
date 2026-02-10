@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <defs>
+    <linearGradient id="grad" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2563EB"/>
+      <stop offset="50%" stop-color="#7C3AED"/>
+      <stop offset="100%" stop-color="#EC4899"/>
+    </linearGradient>
+  </defs>
+  <!-- 4x4 CGRA Grid -->
+  <rect x="8" y="8" width="112" height="112" rx="16" fill="url(#grad)" opacity="0.1"/>
+  <!-- Grid cells -->
+  <g fill="url(#grad)" opacity="0.85">
+    <!-- Row 0 -->
+    <rect x="16" y="16" width="20" height="20" rx="4"/>
+    <rect x="42" y="16" width="20" height="20" rx="4"/>
+    <rect x="68" y="16" width="20" height="20" rx="4"/>
+    <rect x="94" y="16" width="20" height="20" rx="4"/>
+    <!-- Row 1 -->
+    <rect x="16" y="42" width="20" height="20" rx="4"/>
+    <rect x="42" y="42" width="20" height="20" rx="4"/>
+    <rect x="68" y="42" width="20" height="20" rx="4"/>
+    <rect x="94" y="42" width="20" height="20" rx="4"/>
+    <!-- Row 2 -->
+    <rect x="16" y="68" width="20" height="20" rx="4"/>
+    <rect x="42" y="68" width="20" height="20" rx="4"/>
+    <rect x="68" y="68" width="20" height="20" rx="4"/>
+    <rect x="94" y="68" width="20" height="20" rx="4"/>
+    <!-- Row 3 -->
+    <rect x="16" y="94" width="20" height="20" rx="4"/>
+    <rect x="42" y="94" width="20" height="20" rx="4"/>
+    <rect x="68" y="94" width="20" height="20" rx="4"/>
+    <rect x="94" y="94" width="20" height="20" rx="4"/>
+  </g>
+  <!-- Connection lines (horizontal) -->
+  <g stroke="url(#grad)" stroke-width="2" opacity="0.5">
+    <line x1="36" y1="26" x2="42" y2="26"/>
+    <line x1="62" y1="26" x2="68" y2="26"/>
+    <line x1="88" y1="26" x2="94" y2="26"/>
+    <line x1="36" y1="52" x2="42" y2="52"/>
+    <line x1="62" y1="52" x2="68" y2="52"/>
+    <line x1="88" y1="52" x2="94" y2="52"/>
+    <line x1="36" y1="78" x2="42" y2="78"/>
+    <line x1="62" y1="78" x2="68" y2="78"/>
+    <line x1="88" y1="78" x2="94" y2="78"/>
+    <line x1="36" y1="104" x2="42" y2="104"/>
+    <line x1="62" y1="104" x2="68" y2="104"/>
+    <line x1="88" y1="104" x2="94" y2="104"/>
+    <!-- Vertical -->
+    <line x1="26" y1="36" x2="26" y2="42"/>
+    <line x1="52" y1="36" x2="52" y2="42"/>
+    <line x1="78" y1="36" x2="78" y2="42"/>
+    <line x1="104" y1="36" x2="104" y2="42"/>
+    <line x1="26" y1="62" x2="26" y2="68"/>
+    <line x1="52" y1="62" x2="52" y2="68"/>
+    <line x1="78" y1="62" x2="78" y2="68"/>
+    <line x1="104" y1="62" x2="104" y2="68"/>
+    <line x1="26" y1="88" x2="26" y2="94"/>
+    <line x1="52" y1="88" x2="52" y2="94"/>
+    <line x1="78" y1="88" x2="78" y2="94"/>
+    <line x1="104" y1="88" x2="104" y2="94"/>
+  </g>
+</svg>
