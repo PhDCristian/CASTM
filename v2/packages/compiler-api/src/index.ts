@@ -281,6 +281,26 @@ function collectRuntimeArtifacts(
         ));
         continue;
       }
+      if (parsed.length === 0) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          directive.span,
+          `Invalid ${directive.name} directive payload '${payload}'.`,
+          'Expected at least one address: .io_load 100, 104'
+        ));
+        continue;
+      }
+      if (parsed.some((value) => value < 0)) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          directive.span,
+          `Invalid ${directive.name} directive payload '${payload}'.`,
+          'I/O addresses must be non-negative integers.'
+        ));
+        continue;
+      }
 
       if (directive.name === 'io_load') {
         ioConfig.loadAddrs.push(...parsed);

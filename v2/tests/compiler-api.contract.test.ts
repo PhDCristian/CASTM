@@ -122,6 +122,42 @@ kernel "assert_object_form" {
     ]);
   });
 
+  it('parses .io_load/.io_store payloads in brace form', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "io_brace_form" {
+  .io_load { 300, 304, 308 }
+  .io_store { 400, 404 }
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.ioConfig).toEqual({
+      loadAddrs: [300, 304, 308],
+      storeAddrs: [400, 404]
+    });
+  });
+
+  it('rejects negative addresses in .io_load/.io_store directives', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "io_negative_addr" {
+  .io_load -1, 100
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
+  });
+
   it('rejects invalid .assert payloads with parse diagnostics', () => {
     const source = `
 target "uma-cgra-v1";
