@@ -28,7 +28,7 @@ const BINARY_OPCODES: Record<string, string> = {
 };
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
-const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift']);
+const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan']);
 const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
   BEQ: 2,
   BNE: 2,
@@ -69,6 +69,14 @@ interface RotateShiftPragmaArgs {
   direction: 'left' | 'right';
   distance: number;
   fill?: number;
+}
+
+interface ScanPragmaArgs {
+  operation: string;
+  srcReg: string;
+  dstReg: string;
+  direction: 'left' | 'right' | 'up' | 'down';
+  mode: 'inclusive' | 'exclusive';
 }
 
 function cloneInstruction(instruction: InstructionAst): InstructionAst {
@@ -423,6 +431,87 @@ function parseRotateShiftPragmaArgs(text: string, pragmaName: 'rotate' | 'shift'
     distance,
     fill: fill === undefined ? undefined : fill
   };
+}
+
+function parseScanPragmaArgs(text: string): ScanPragmaArgs | null {
+  const match = text.trim().match(/^#pragma\s+scan\s*\((.+)\)\s*$/i);
+  if (!match) return null;
+
+  const parts = match[1].split(',').map((part) => part.trim()).filter(Boolean);
+  if (parts.length < 4 || parts.length > 5) {
+    return null;
+  }
+
+  const operation = parts[0].toLowerCase();
+  const srcReg = parts[1];
+  const dstReg = parts[2];
+  const direction = parts[3].toLowerCase();
+  const mode = (parts[4] ?? 'inclusive').toLowerCase();
+
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(srcReg) || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(dstReg)) {
+    return null;
+  }
+
+  if (!['left', 'right', 'up', 'down'].includes(direction)) {
+    return null;
+  }
+
+  if (mode !== 'inclusive' && mode !== 'exclusive') {
+    return null;
+  }
+
+  return {
+    operation,
+    srcReg,
+    dstReg,
+    direction: direction as 'left' | 'right' | 'up' | 'down',
+    mode: mode as 'inclusive' | 'exclusive'
+  };
+}
+
+function getScanIncomingRegister(direction: 'left' | 'right' | 'up' | 'down'): string {
+  switch (direction) {
+    case 'right':
+      return 'RCL';
+    case 'left':
+      return 'RCR';
+    case 'down':
+      return 'RCT';
+    case 'up':
+      return 'RCB';
+  }
+}
+
+function getScanIdentity(operation: string): string {
+  switch (operation) {
+    case 'add':
+    case 'or':
+    case 'xor':
+      return '0';
+    case 'and':
+      return '4294967295';
+    case 'max':
+      return '-2147483648';
+    case 'min':
+      return '2147483647';
+    default:
+      return '0';
+  }
+}
+
+function getScanOpcode(operation: string): string | null {
+  switch (operation) {
+    case 'add':
+      return 'SADD';
+    case 'and':
+      return 'LAND';
+    case 'or':
+      return 'LOR';
+    case 'xor':
+      return 'LXOR';
+    default:
+      return null;
+  }
 }
 
 function wrap(value: number, size: number): number {
@@ -836,6 +925,107 @@ function buildRouteCycles(
       createInstruction('SADD', [route.accum, route.accum, incoming], span),
       span
     ));
+  }
+
+  return cycles;
+}
+
+function buildScanCycles(
+  pragma: ScanPragmaArgs,
+  startIndex: number,
+  grid: GridSpec,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): CycleAst[] {
+  const compareOp = pragma.operation === 'max' || pragma.operation === 'min';
+  const simpleOpcode = getScanOpcode(pragma.operation);
+  if (!compareOp && !simpleOpcode) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `Unsupported scan operation '${pragma.operation}'.`,
+      'Supported operations: add, and, or, xor, max, min.'
+    ));
+    return [];
+  }
+
+  const horizontal = pragma.direction === 'left' || pragma.direction === 'right';
+  const laneLength = horizontal ? grid.cols : grid.rows;
+  if (laneLength <= 0) {
+    return [];
+  }
+
+  const forward = pragma.direction === 'right' || pragma.direction === 'down';
+  const incoming = getScanIncomingRegister(pragma.direction);
+  const identity = getScanIdentity(pragma.operation);
+  const bsfaFirst = pragma.operation === 'max' ? incoming : pragma.dstReg;
+  const bsfaSecond = pragma.operation === 'max' ? pragma.dstReg : incoming;
+
+  const cycles: CycleAst[] = [];
+
+  for (let i = 0; i < laneLength; i++) {
+    const laneIndex = forward ? i : laneLength - 1 - i;
+    const row = horizontal ? 0 : laneIndex;
+    const col = horizontal ? laneIndex : 0;
+    const first = i === 0;
+
+    if (first) {
+      if (pragma.mode === 'inclusive') {
+        cycles.push(createAtCycle(
+          startIndex + cycles.length,
+          row,
+          col,
+          createInstruction('SADD', [pragma.dstReg, pragma.srcReg, 'ZERO'], span),
+          span
+        ));
+      } else {
+        cycles.push(createAtCycle(
+          startIndex + cycles.length,
+          row,
+          col,
+          createInstruction('SADD', [pragma.dstReg, 'ZERO', `IMM(${identity})`], span),
+          span
+        ));
+      }
+    } else if (!compareOp && simpleOpcode) {
+      cycles.push(createAtCycle(
+        startIndex + cycles.length,
+        row,
+        col,
+        createInstruction(simpleOpcode, [pragma.dstReg, pragma.dstReg, incoming], span),
+        span
+      ));
+    } else {
+      cycles.push(createAtCycle(
+        startIndex + cycles.length,
+        row,
+        col,
+        createInstruction('SSUB', ['R2', pragma.dstReg, incoming], span),
+        span
+      ));
+
+      cycles.push(createAtCycle(
+        startIndex + cycles.length,
+        row,
+        col,
+        createInstruction('BSFA', [pragma.dstReg, bsfaFirst, bsfaSecond], span),
+        span
+      ));
+    }
+
+    if (i < laneLength - 1) {
+      const relaySource = first && pragma.mode === 'exclusive'
+        ? pragma.srcReg
+        : pragma.dstReg;
+      cycles.push(createAtCycle(
+        startIndex + cycles.length,
+        row,
+        col,
+        createInstruction('SADD', ['ROUT', relaySource, 'ZERO'], span),
+        span
+      ));
+    }
   }
 
   return cycles;
@@ -1318,6 +1508,30 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
           const cycles = buildRotateShiftCycles(
             parsed,
             name === 'shift',
+            generatedCycles.length,
+            grid,
+            pragma.span,
+            diagnostics
+          );
+          generatedCycles.push(...cycles);
+          continue;
+        }
+
+        if (name === 'scan') {
+          const parsed = parseScanPragmaArgs(pragma.text);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid scan pragma syntax: '${pragma.text}'.`,
+              'Use #pragma scan(operation, srcReg, dstReg, direction[, mode]).'
+            ));
+            continue;
+          }
+
+          const cycles = buildScanCycles(
+            parsed,
             generatedCycles.length,
             grid,
             pragma.span,

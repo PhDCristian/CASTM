@@ -575,6 +575,104 @@ kernel "shift_row0" {
     expect(result.artifacts.csv).toContain('2,0,0,EXIT');
   });
 
+  it('lowers scan pragma (add, inclusive) across row 0', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "scan_add_inclusive" {
+  #pragma scan(add, R0, R1, right)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD ROUT R1 ZERO');
+    expect(result.artifacts.csv).toContain('2,0,1,SADD R1 R1 RCL');
+    expect(result.artifacts.csv).toContain('5,0,2,SADD ROUT R1 ZERO');
+    expect(result.artifacts.csv).toContain('6,0,3,SADD R1 R1 RCL');
+    expect(result.artifacts.csv).toContain('7,0,0,EXIT');
+  });
+
+  it('lowers scan pragma (add, exclusive) using identity and source relay', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "scan_add_exclusive" {
+  #pragma scan(add, R0, R2, right, exclusive)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R2 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD ROUT R0 ZERO');
+    expect(result.artifacts.csv).toContain('2,0,1,SADD R2 R2 RCL');
+    expect(result.artifacts.csv).toContain('6,0,3,SADD R2 R2 RCL');
+    expect(result.artifacts.csv).toContain('7,0,0,EXIT');
+  });
+
+  it('lowers scan pragma max operation using SSUB+BSFA pattern', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "scan_max" {
+  #pragma scan(max, R0, R1, right)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
+    expect(result.artifacts.csv).toContain('2,0,1,SSUB R2 R1 RCL');
+    expect(result.artifacts.csv).toContain('3,0,1,BSFA R1 RCL R1');
+    expect(result.artifacts.csv).toContain('8,0,3,SSUB R2 R1 RCL');
+    expect(result.artifacts.csv).toContain('9,0,3,BSFA R1 RCL R1');
+    expect(result.artifacts.csv).toContain('10,0,0,EXIT');
+  });
+
+  it('lowers scan pragma on vertical direction (down)', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "scan_down" {
+  #pragma scan(add, R0, R1, down)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
+    expect(result.artifacts.csv).toContain('2,1,0,SADD R1 R1 RCT');
+    expect(result.artifacts.csv).toContain('4,2,0,SADD R1 R1 RCT');
+    expect(result.artifacts.csv).toContain('6,3,0,SADD R1 R1 RCT');
+    expect(result.artifacts.csv).toContain('7,0,0,EXIT');
+  });
+
+  it('rejects unsupported scan operations', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "scan_bad_op" {
+  #pragma scan(median, R0, R1, right)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
   it('rejects unsupported pragmas by default in strict mode', () => {
     const source = `
 target "uma-cgra-v1";
