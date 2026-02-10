@@ -1297,3 +1297,84 @@ ROUT = RCR;       // copy via neighbor
 ```
 
 Or better: import and use OpenEdgeDSL's own `compileDslToCsv` directly instead of reimplementing the pipeline.
+
+---
+
+## BUG-4: Simulator Pipeline Missing 7 Code-Generating Pragmas
+
+**Severity:** Medium — these pragmas exist and work in OpenEdgeDSL's `compiler.ts` but are absent from the simulator's `dsl-compiler.ts`.
+
+**Description:** The UMA-CGRA-Simulator's `dsl-compiler.ts` is a **partial copy** of OpenEdgeDSL's `compiler.ts`. The simulator copy has fallen behind and is missing 7 code-generating pragmas that were added to OpenEdgeDSL.
+
+**Feature Parity Table:**
+
+| Pragma | OpenEdgeDSL | Simulator | Status |
+|--------|------------|-----------|--------|
+| `#pragma reduce` | ✅ | ✅ | In sync |
+| `#pragma stencil` | ✅ | ✅ | In sync |
+| `#pragma route` | ✅ | ✅ | In sync |
+| `#pragma scan` | ✅ | ✅ | In sync |
+| `#pragma broadcast` | ✅ | ✅ | In sync |
+| `#pragma rotate` | ✅ | ❌ | **Missing** |
+| `#pragma shift` | ✅ | ❌ | **Missing** |
+| `#pragma allreduce` | ✅ | ❌ | **Missing** |
+| `#pragma transpose` | ✅ | ❌ | **Missing** |
+| `#pragma gather` | ✅ | ❌ | **Missing** |
+| `#pragma stream_load` | ✅ | ❌ | **Missing** |
+| `#pragma stream_store` | ✅ | ❌ | **Missing** |
+| `desugarExpressions()` | ✅ | ❌ | **BUG-3** |
+| `desugarAutoCycle()` | ✅ | ❌ | **BUG-3** |
+
+**Non-code-generating features (in sync):** `#pragma parallel collapse`, `#pragma unroll`, `#pragma no_unroll`, `#pragma no_fuse`, `for`/`while`/`if-else` loops, functions, directives, labels, `.assert`.
+
+**Root cause:** The simulator maintains a duplicated parser (`parse()` function) instead of importing OpenEdgeDSL's `compileDslToCsv()` directly. As new features are added to OpenEdgeDSL, the simulator copy falls behind.
+
+**Fix:** Same as BUG-3 — replace the simulator's reimplemented pipeline with a direct import of OpenEdgeDSL's `compileDslToCsv()`. This would permanently eliminate the synchronization gap.
+
+---
+
+## BUG-5: Stale `libs/OpenEdgeDSL/` Copy — Unified Root Cause of BUG-2, BUG-3, BUG-4
+
+**Severity:** Critical — this is the **single root cause** underlying bugs 2, 3, and 4.
+
+**Description:** The UMA-CGRA-Simulator imports OpenEdgeDSL via:
+
+```typescript
+// vite.config.ts:16
+'@core/dsl': path.resolve(__dirname, './libs/OpenEdgeDSL/src')
+```
+
+This `libs/OpenEdgeDSL/` directory is a **manual copy** of the OpenEdgeDSL source, NOT a symlink or git submodule reference. It has fallen massively behind the current OpenEdgeDSL codebase:
+
+| Metric | Count |
+|--------|-------|
+| Modified files | 28 |
+| New files (only in OpenEdgeDSL) | 27 |
+| Total divergences | **55** |
+
+**Specific lexer operator drift (`patterns.ts`):**
+
+| Feature | `libs/` copy (stale) | OpenEdgeDSL (current) |
+|---------|---------------------|----------------------|
+| `SINGLE_CHAR_OPERATORS` | `+ - * / %` | `+ - * / % & ^ ~` |
+| `MULTI_CHAR_OPERATOR_STARTS` | `= ! < >` | `= ! < > ~ *` |
+| `TWO_CHAR_OPERATORS` | `== != <= >=` | `== != <= >= << >> ** ~& ~\| ~^` |
+| `THREE_CHAR_OPERATORS` | ❌ doesn't exist | `>>>` |
+
+**Missing files in `libs/` copy (critical subset):**
+
+| File | Function |
+|------|----------|
+| `parser/auto-cycle-desugar.ts` | `#pragma auto_cycle` support (BUG-3) |
+| `parser/expression-desugar.ts` | C-style expression syntax (BUG-3) |
+| `parser/allreduce-generator.ts` | `#pragma allreduce` (BUG-4) |
+| + 4 more code-gen pragmas | BUG-4 |
+
+**Fix (recommended):** Replace `libs/OpenEdgeDSL/` with a symlink to `../../submodules/OpenEdgeDSL/src/`, or change `vite.config.ts` to point to the submodule directly:
+
+```diff
+-'@core/dsl': path.resolve(__dirname, './libs/OpenEdgeDSL/src'),
++'@core/dsl': path.resolve(__dirname, '../../submodules/OpenEdgeDSL/src'),
+```
+
+This would permanently eliminate all synchronization issues and resolve BUG-2, BUG-3, and BUG-4 in a single change.
