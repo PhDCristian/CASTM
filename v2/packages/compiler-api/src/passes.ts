@@ -28,7 +28,7 @@ const BINARY_OPCODES: Record<string, string> = {
 };
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
-const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce', 'stencil', 'allreduce']);
+const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce', 'stencil', 'allreduce', 'transpose']);
 const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
   BEQ: 2,
   BNE: 2,
@@ -98,6 +98,10 @@ interface AllreducePragmaArgs {
   destReg: string;
   srcReg: string;
   axis: 'row' | 'col';
+}
+
+interface TransposePragmaArgs {
+  reg: string;
 }
 
 function cloneInstruction(instruction: InstructionAst): InstructionAst {
@@ -563,6 +567,18 @@ function parseAllreducePragmaArgs(text: string): AllreducePragmaArgs | null {
     srcReg: match[3],
     axis: (match[4]?.toLowerCase() as 'row' | 'col' | undefined) ?? 'row'
   };
+}
+
+function parseTransposePragmaArgs(text: string): TransposePragmaArgs | null {
+  const match = text.trim().match(/^#pragma\s+transpose\s*\((.+)\)\s*$/i);
+  if (!match) return null;
+
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+  const reg = args.get('reg');
+  if (!reg || !isIdentifier(reg)) return null;
+  if (args.size !== 1) return null;
+  return { reg };
 }
 
 function getScanIncomingRegister(direction: 'left' | 'right' | 'up' | 'down'): string {
@@ -1482,6 +1498,90 @@ function buildAllreduceCycles(
   return [...reduceCycles, ...broadcastCycles];
 }
 
+function pickScratchRegisters(exclude: string): [string, string] | null {
+  const candidates = ['R7', 'R6', 'R5', 'R4', 'R3', 'R2', 'R1', 'R0'];
+  const filtered = candidates.filter((reg) => reg !== exclude.toUpperCase());
+  if (filtered.length < 2) return null;
+  return [filtered[0], filtered[1]];
+}
+
+function buildTransposeCycles(
+  pragma: TransposePragmaArgs,
+  startIndex: number,
+  grid: GridSpec,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): CycleAst[] {
+  if (grid.rows !== grid.cols) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `#pragma transpose requires a square grid, got ${grid.rows}x${grid.cols}.`,
+      'Use a square grid (e.g. 4x4) for transpose lowering.'
+    ));
+    return [];
+  }
+
+  const scratch = pickScratchRegisters(pragma.reg);
+  if (!scratch) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `Could not allocate scratch registers for transpose on '${pragma.reg}'.`,
+      'Use a target profile with at least two general-purpose registers besides the transposed register.'
+    ));
+    return [];
+  }
+
+  const [tmpA, tmpB] = scratch;
+  const cycles: CycleAst[] = [];
+  const n = grid.rows;
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      const a: RoutePoint = { row: i, col: j };
+      const b: RoutePoint = { row: j, col: i };
+
+      const forwardCycles = buildRouteTransferCycles(
+        a,
+        b,
+        pragma.reg,
+        tmpA,
+        startIndex + cycles.length,
+        grid,
+        span,
+        diagnostics
+      );
+      cycles.push(...forwardCycles);
+
+      const backwardCycles = buildRouteTransferCycles(
+        b,
+        a,
+        pragma.reg,
+        tmpB,
+        startIndex + cycles.length,
+        grid,
+        span,
+        diagnostics
+      );
+      cycles.push(...backwardCycles);
+
+      cycles.push(createMultiAtCycle(
+        startIndex + cycles.length,
+        [
+          { row: b.row, col: b.col, instruction: createInstruction('SADD', [pragma.reg, tmpA, 'ZERO'], span) },
+          { row: a.row, col: a.col, instruction: createInstruction('SADD', [pragma.reg, tmpB, 'ZERO'], span) }
+        ],
+        span
+      ));
+    }
+  }
+
+  return cycles;
+}
+
 function isPointInGrid(point: RoutePoint, grid: GridSpec): boolean {
   return (
     point.row >= 0 &&
@@ -2054,6 +2154,30 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
           }
 
           const cycles = buildAllreduceCycles(
+            parsed,
+            generatedCycles.length,
+            grid,
+            pragma.span,
+            diagnostics
+          );
+          generatedCycles.push(...cycles);
+          continue;
+        }
+
+        if (name === 'transpose') {
+          const parsed = parseTransposePragmaArgs(pragma.text);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid transpose pragma syntax: '${pragma.text}'.`,
+              'Use #pragma transpose(reg=R0).'
+            ));
+            continue;
+          }
+
+          const cycles = buildTransposeCycles(
             parsed,
             generatedCycles.length,
             grid,

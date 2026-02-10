@@ -884,11 +884,50 @@ kernel "allreduce_grid_unsupported" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 
+  it('lowers transpose pragma for square grids', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "transpose_row_col_swap" {
+  #pragma transpose(reg=R0)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('SADD ROUT R0 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R7');
+    expect(result.artifacts.csv).toContain('SADD R6');
+    expect(result.artifacts.csv).toContain('SADD R0 R7 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R0 R6 ZERO');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
+  });
+
+  it('rejects transpose on non-square grids', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "transpose_non_square" {
+  #pragma transpose(reg=R0)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source, {
+      grid: { rows: 4, cols: 8, topology: 'mesh' }
+    });
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
   it('rejects unsupported pragmas by default in strict mode', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "transpose_pragma" {
-  #pragma transpose(reg=R0)
+kernel "gather_pragma" {
+  #pragma gather(src=R0, dest=@0,0, destReg=R1, op=add)
   cycle {
     @0,0: EXIT;
   }
@@ -903,8 +942,8 @@ kernel "transpose_pragma" {
   it('allows unsupported pragmas in transitional mode and emits simulator matrix CSV', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "transpose_pragma_relaxed" {
-  #pragma transpose(reg=R0)
+kernel "gather_pragma_relaxed" {
+  #pragma gather(src=R0, dest=@0,0, destReg=R1, op=add)
   cycle {
     @0,0: EXIT;
   }
