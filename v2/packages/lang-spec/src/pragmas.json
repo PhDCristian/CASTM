@@ -1,0 +1,12 @@
+[
+  { "name": "unroll", "kind": "loop" },
+  { "name": "no_unroll", "kind": "loop" },
+  { "name": "parallel", "kind": "loop" },
+  { "name": "reduce", "kind": "codegen" },
+  { "name": "stencil", "kind": "codegen" },
+  { "name": "route", "kind": "codegen" },
+  { "name": "scan", "kind": "codegen" },
+  { "name": "broadcast", "kind": "codegen" },
+  { "name": "auto_cycle", "kind": "codegen" },
+  { "name": "end_auto_cycle", "kind": "codegen" }
+]

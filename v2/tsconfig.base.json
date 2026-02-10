@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@openedge/lang-spec": ["./packages/lang-spec/src/index.ts"],
+      "@openedge/compiler-ir": ["./packages/compiler-ir/src/index.ts"],
+      "@openedge/compiler-front": ["./packages/compiler-front/src/index.ts"],
+      "@openedge/compiler-backend-csv": ["./packages/compiler-backend-csv/src/index.ts"],
+      "@openedge/compiler-api": ["./packages/compiler-api/src/index.ts"],
+      "@openedge/lsp-server": ["./packages/lsp-server/src/index.ts"],
+      "@openedge/testkit": ["./packages/testkit/src/index.ts"]
+    }
+  }
+}
