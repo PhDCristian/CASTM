@@ -1388,3 +1388,56 @@ This `libs/OpenEdgeDSL/` directory is a **manual copy** of the OpenEdgeDSL sourc
 ```
 
 This would permanently eliminate all synchronization issues and resolve BUG-2, BUG-3, and BUG-4 in a single change.
+
+---
+
+## BUG-6: Expression Desugarer Does Not Recognize Function Parameter Names
+
+**Severity:** Medium — limits expression syntax adoption in parameterized functions.
+
+**Status:** 🟡 **OPEN**
+
+**Description:** The expression desugarer (`parser/expression-desugar.ts`) uses a hardcoded `VALID_OPERAND_IDENTIFIERS` set to determine which tokens are valid expression operands:
+
+```typescript
+const VALID_OPERAND_IDENTIFIERS = new Set([
+  'R0', 'R1', 'R2', 'R3', 'ROUT', 'ZERO',
+  'SELF', 'RCL', 'RCR', 'RCT', 'RCB', 'PREV',
+]);
+```
+
+This means **function parameter names** (e.g., `src`, `dst`, `reg`, `addr`) are not recognized as valid operands. Expression syntax only works with literal register names.
+
+**Reproduction:**
+
+```c
+// FAILS — 'dst' and 'src' not in VALID_OPERAND_IDENTIFIERS
+function extract_bytes(src, dst) {
+    cycle { @0,0: dst = src >> 16; }   // Error: Expected SEMICOLON, found IDENTIFIER('src')
+    cycle { @0,0: dst = dst & 255; }   // Error: same
+}
+
+// WORKS — literal register names
+function compute() {
+    cycle { @0,0: R1 = R0 >> 16; }    // OK — R0, R1 are in the set
+    cycle { @0,0: R1 = R1 & 255; }    // OK
+}
+```
+
+**Impact:** In the SBOX K7 v8 kernel, `extract_bytes_col` and `extract_bytes_row` cannot use expression syntax because they use function parameters `src` and `dst`. They must remain as native ISA:
+
+```c
+// Must use native ISA (SRT/LAND) instead of expression syntax
+function extract_bytes_col(src, dst) {
+    cycle { @k/4,k%4: SRT dst, src, k%4*8; }   // Can't write: dst = src >> k%4*8;
+    cycle { @k/4,k%4: LAND dst, dst, 255; }     // Can't write: dst = dst & 255;
+}
+```
+
+**Root cause:** The desugarer runs as a **token-level transform** (before parsing/function expansion). At this stage, function parameters have not been substituted yet — `src` and `dst` are still generic identifiers, not register names.
+
+**Fix options:**
+
+1. **Move desugaring after function expansion** — desugarer would see `R0`, `R1` etc. after parameter substitution. Requires pipeline restructuring.
+2. **Add function parameter names to `VALID_OPERAND_IDENTIFIERS`** — quick but fragile; would need to dynamically detect parameter names from function definitions.
+3. **Accept any identifier as a valid operand in expressions** — broadest fix, but risks false-positive matching on non-register identifiers (array names, constants, etc.).
