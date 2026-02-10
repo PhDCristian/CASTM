@@ -103,6 +103,15 @@ The grammar uses the following EBNF conventions:
                | <pragma-keyword-arg>
 
 <pragma-keyword-arg> ::= <identifier> "=" <pragma-arg>
+
+<route-pragma-args> ::= <route-point> "->" <route-point> "payload" "(" <register> ")" ( <route-accum> | <route-custom-op> )
+
+<route-point> ::= "@" <number> "," <number>
+                | "(" <number> "," <number> ")"
+
+<route-accum> ::= "accum" "(" <register> ")"
+
+<route-custom-op> ::= "dest" "(" <register> ")" "op" "(" <identifier> <register> "," <operand> "," <operand> ")"
 ```
 
 ---
@@ -119,11 +128,15 @@ The grammar uses the following EBNF conventions:
 <cycle-body> ::= <instruction-row>
                | <coordinate-instruction>
                | <column-instruction>
+               | <inline-for-loop>
                | { <cycle-body-item> }+
 
 <cycle-body-item> ::= <instruction-row>
                     | <coordinate-instruction>
                     | <column-instruction>
+                    | <inline-for-loop>
+
+<inline-for-loop> ::= "for" <identifier> "in" <range> "{" { <cycle-body-item> }* "}"
 
 <instruction-row> ::= "row" <number> ":" <instruction-list> ";"
 
@@ -193,6 +206,7 @@ The grammar uses the following EBNF conventions:
 <instruction> ::= <opcode> [ <operand-list> ]
                 | "_"
                 | /* empty */
+                | <memory-assignment>
 
 <opcode> ::= "NOP" | "EXIT"
            | "SADD" | "SSUB" | "SMUL" | "FXPMUL"
@@ -204,6 +218,12 @@ The grammar uses the following EBNF conventions:
            | "JUMP"
 
 <operand-list> ::= <operand> { "," <operand> }*
+
+<memory-assignment> ::= <register> "=" <memory-ref>
+                      | <memory-ref> "=" <register>
+
+<memory-ref> ::= <array-access>
+               | "[" <expression> "]"
 ```
 
 ---

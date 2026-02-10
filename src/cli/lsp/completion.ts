@@ -175,9 +175,9 @@ const PRAGMA_COMPLETIONS: CompletionItem[] = [
     detail: 'Data routing pattern',
     documentation: {
       kind: MarkupKind.Markdown,
-      value: '```dsl\n#pragma route(@0,0) -> (@1,1) payload(R0) accum(R1)\n```\n\nGenerates explicit data routing between PEs.',
+      value: '```dsl\n#pragma route @0,0 -> @1,1 payload(R0) accum(R1)\n```\n\nGenerates explicit data routing between PEs.',
     },
-    insertText: '#pragma route(@${1:0},${2:0}) -> (@${3:1},${4:1}) payload(${5:R0}) accum(${6:R1})',
+    insertText: '#pragma route @${1:0},${2:0} -> @${3:1},${4:1} payload(${5:R0}) accum(${6:R1})',
     insertTextFormat: InsertTextFormat.Snippet,
   },
   {
@@ -285,6 +285,54 @@ const KEYWORD_COMPLETIONS: CompletionItem[] = [
   },
 ];
 
+// Memory sugar completions (inside cycle blocks)
+const MEMORY_SUGAR_COMPLETIONS: CompletionItem[] = [
+  {
+    label: 'load sugar',
+    kind: CompletionItemKind.Snippet,
+    detail: 'R = A[i]  -> LWI R, A[i]',
+    documentation: {
+      kind: MarkupKind.Markdown,
+      value: '```dsl\nR0 = input[i];\n```\n\nDesugars to `LWI R0, input[i]`.',
+    },
+    insertText: '${1:R0} = ${2:input}[${3:i}];',
+    insertTextFormat: InsertTextFormat.Snippet,
+  },
+  {
+    label: 'store sugar',
+    kind: CompletionItemKind.Snippet,
+    detail: 'A[i] = R  -> SWI R, A[i]',
+    documentation: {
+      kind: MarkupKind.Markdown,
+      value: '```dsl\noutput[i] = R0;\n```\n\nDesugars to `SWI R0, output[i]`.',
+    },
+    insertText: '${1:output}[${2:i}] = ${3:R0};',
+    insertTextFormat: InsertTextFormat.Snippet,
+  },
+  {
+    label: 'raw load sugar',
+    kind: CompletionItemKind.Snippet,
+    detail: 'R = [expr]  -> LWI R, IMM(expr)',
+    documentation: {
+      kind: MarkupKind.Markdown,
+      value: '```dsl\nR1 = [360 + i*4];\n```\n\nDesugars to `LWI R1, IMM(360 + i*4)`.',
+    },
+    insertText: '${1:R1} = [${2:360 + i*4}];',
+    insertTextFormat: InsertTextFormat.Snippet,
+  },
+  {
+    label: 'raw store sugar',
+    kind: CompletionItemKind.Snippet,
+    detail: '[expr] = R  -> SWI R, IMM(expr)',
+    documentation: {
+      kind: MarkupKind.Markdown,
+      value: '```dsl\n[360 + i*4] = R1;\n```\n\nDesugars to `SWI R1, IMM(360 + i*4)`.',
+    },
+    insertText: '[${1:360 + i*4}] = ${2:R1};',
+    insertTextFormat: InsertTextFormat.Snippet,
+  },
+];
+
 export class CompletionProvider {
   private opcodeCompletions: CompletionItem[];
 
@@ -360,6 +408,7 @@ export class CompletionProvider {
       if (inCycle) {
         // Inside cycle: offer instructions and location prefix
         completions.push(...this.opcodeCompletions);
+        completions.push(...MEMORY_SUGAR_COMPLETIONS);
         completions.push({
           label: '@',
           kind: CompletionItemKind.Snippet,

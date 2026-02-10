@@ -20,6 +20,7 @@ This section documents the advanced language features introduced in OpenEdge-DSL
 | [Computed Constants](computed-constants.md) | Expressions in `.const` | Relative addresses |
 | [Coordinate Expressions](coordinate-expressions.md) | `@i+1,j:` syntax | Dynamic PE selection |
 | [C-like Expressions](clike-expressions.md) | `R1 = R2 + R3;` syntax | Readable arithmetic |
+| [Memory Sugar](memory-sugar.md) | `R1 = A[i]; A[i] = R1;` | Readable load/store |
 
 ## Pragma Directives
 
@@ -105,6 +106,15 @@ cycle {
     @0,1: R0 = R1 - 5;        // SSUB R0, R1, 5
     @0,2: ROUT = R0 * R2;     // SMUL ROUT, R0, R2
     @0,3: R1 = R0 & 0xFF;     // LAND R1, R0, 0xFF
+}
+```
+
+### Memory Sugar
+
+```c
+cycle {
+    @0,0: R1 = input[i];   // LWI R1, input[i]
+    @0,0: output[i] = R1;  // SWI R1, output[i]
 }
 ```
 

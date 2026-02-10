@@ -8,7 +8,7 @@ Broadcast a value from one PE to all PEs in the same row.
 
 ## Row Broadcast
 
-<!-- TODO: #pragma broadcast not yet implemented -->
+<!-- Verified: #pragma broadcast is implemented -->
 ```c
 kernel "RowBroadcast" {
     config(0xF, 0);
@@ -51,7 +51,7 @@ Cycle 4: PE[0,3] receives from RCL, R0=42
 
 ## Column Broadcast
 
-<!-- TODO: #pragma broadcast not yet implemented -->
+<!-- Verified: #pragma broadcast is implemented -->
 ```c
 kernel "ColumnBroadcast" {
     config(0xF, 0);

@@ -564,6 +564,25 @@ kernel "FuncTest" {
     expect(result.csv).toContain('SADD R0, ZERO, 10');
     expect(result.csv).toContain('SADD R1, ZERO, 20');
   });
+
+  it('should keep all: broadcast syntax inside function bodies', () => {
+    const code = `
+function load_all(v) {
+    cycle { all: SADD R0, ZERO, IMM(v); }
+}
+
+kernel "FuncAllBroadcast" {
+    config(0xF, 0);
+    load_all(7);
+    cycle { @0,0: EXIT; }
+}
+`;
+    const result = compileDslToCsv(code);
+    expect(result.success).toBe(true);
+    // All 16 PEs receive the same instruction in the generated cycle.
+    const saddCount = (result.csv?.match(/SADD R0, ZERO, 7/g) || []).length;
+    expect(saddCount).toBe(16);
+  });
 });
 
 // ============================================

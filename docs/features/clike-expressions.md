@@ -144,11 +144,11 @@ for i in range(4) {
 
 ## Instructions That Stay Assembly-Only
 
-These instructions have no C-like equivalent and must be written in assembly:
+These instruction families still use ISA opcodes directly:
 
 | Category | Instructions |
 |----------|-------------|
-| Memory | `LWI`, `SWI`, `LWD`, `SWD` |
+| Memory | `LWD`, `SWD` (`LWI`/`SWI` are also reachable via [Memory Sugar](memory-sugar.md)) |
 | Branch | `BEQ`, `BNE`, `BLT`, `BGE`, `JUMP` |
 | Select | `BSFA`, `BZFA` |
 | Control | `NOP`, `EXIT` |
@@ -172,10 +172,22 @@ The desugarer scans for `REGISTER = OPERAND OP OPERAND ;` patterns inside `cycle
 
 1. **One operation per statement**: `R0 = R1 + R2 + R3` is NOT supported (would require chaining)
 2. **No precedence/parentheses**: Each expression is exactly `dest = op1 OP op2`
-3. **Destination must be a register**: `R0`-`R3` or `ROUT` (not `ZERO` or neighbors)
+3. **Destination must resolve to a register**: direct registers (`R0`-`R3`, `ROUT`) or function parameters that are substituted with registers after inlining
 4. **Only inside cycle blocks**: Expressions outside cycles are not desugared
-5. **No aliases as destination**: `.alias acc R0` defines an alias, but `acc = R1 + R2;` will NOT be desugared. Use the raw register name (`R0 = R1 + R2;`) or assembly syntax (`SADD acc, R1, R2;`)
-6. **`|` in row pipe syntax**: In `row N: ... | ... ;` context, `|` is a column separator. Use `@row,col:` addressing for bitwise OR expressions: `@0,0: R1 = R0 | R2;`
+5. **`|` in row pipe syntax**: In `row N: ... | ... ;` context, `|` is a column separator. Use `@row,col:` for bitwise OR expressions: `@0,0: R1 = R0 | R2;`
+6. **Memory assignment uses dedicated sugar**: `R0 = A[i]` and `A[i] = R0` are handled by [Memory Sugar](memory-sugar.md), not arithmetic desugaring.
+
+---
+
+## Function Parameters
+
+C-like expressions can target identifiers that are function parameters and are resolved after inlining:
+
+```c
+function extract(dst, src) {
+    cycle { @0,0: dst = src >> 16; }  // → SRT dst, src, 16 (then parameter substitution)
+}
+```
 
 ---
 

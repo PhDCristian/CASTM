@@ -64,7 +64,7 @@ result[0][0] = a[0][0] + a[0][1]
 
 **DSL (using pragma):**
 ```c
-#pragma route (0,1) -> (0,0) payload(R1) accum(R0)
+#pragma route @0,1 -> @0,0 payload(R1) accum(R0)
 ```
 
 **DSL (manual ROUT):**
@@ -141,9 +141,9 @@ cycle { @0,0: BSFA R0, A, B, SELF; }  // Select based on sign flag
 
 ```c
 // Sum values from all columns to column 0
-#pragma route (0,1) -> (0,0) payload(R0) accum(R3)
-#pragma route (0,2) -> (0,0) payload(R0) accum(R3)
-#pragma route (0,3) -> (0,0) payload(R0) accum(R3)
+#pragma route @0,1 -> @0,0 payload(R0) accum(R3)
+#pragma route @0,2 -> @0,0 payload(R0) accum(R3)
+#pragma route @0,3 -> @0,0 payload(R0) accum(R3)
 cycle { @0,0: SADD R3, R3, R0; }  // Add local value
 ```
 

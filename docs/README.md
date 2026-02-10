@@ -56,6 +56,7 @@ v1.1 language extensions:
 | [Control Flow](features/control-flow.md) | Structured `if-else` statements |
 | [Assertions](features/assertions.md) | `.assert` for testing and verification |
 | [C-like Expressions](features/clike-expressions.md) | `R1 = R2 + R3;` register expression syntax |
+| [Memory Sugar](features/memory-sugar.md) | `R1 = A[i]; A[i] = R1;` load/store syntax sugar |
 
 #### [Pragma Directives](features/pragmas/)
 
@@ -85,6 +86,10 @@ Complete, runnable examples organized by category:
 ### [Porting Guide](porting-guide.md)
 
 Patterns and best practices for porting imperative code (Python, C) to OpenEdgeDSL.
+
+### [Issue Status Matrix](issue-status-matrix.md)
+
+Current classification of compiler vs simulator vs documentation issues from the SBOX K7 porting report.
 
 ---
 

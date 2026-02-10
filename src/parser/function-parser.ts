@@ -176,6 +176,7 @@ export function parseFunctionArgs(
  */
 function detectLabelsInFunction(tokens: Token[]): Set<string> {
   const labels = new Set<string>();
+  const NON_LABEL_IDENTIFIERS = new Set(['all']);
 
   for (let i = 0; i < tokens.length; i++) {
     const t = tokens[i];
@@ -185,6 +186,7 @@ function detectLabelsInFunction(tokens: Token[]): Set<string> {
     // Labels are identifiers at cycle/line start followed by :
     if (t.type === TokenType.IDENTIFIER &&
       isColon(next) &&
+      !NON_LABEL_IDENTIFIERS.has(t.value.toLowerCase()) &&
       // Exclude coordinate patterns like @0,0:
       (i === 0 || tokens[i - 1]?.type !== TokenType.AT_SYMBOL)) {
       // Check it's not inside a coordinate (no comma before)

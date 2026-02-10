@@ -33,10 +33,12 @@ const OPERATOR_TO_OPCODE: Record<string, string> = {
 };
 
 /**
- * Set of valid register and neighbor names that can appear as
- * assignment targets (left-hand side of `=`).
+ * Set of valid hardware registers that can appear as destinations/sources
+ * for memory sugar forms:
+ *   R0 = A[i];
+ *   A[i] = R0;
  */
-const VALID_DESTINATIONS = new Set([
+const VALID_REGISTERS = new Set([
   'R0', 'R1', 'R2', 'R3', 'ROUT',
 ]);
 
@@ -82,14 +84,248 @@ function isExpressionStart(tokens: Token[], i: number): boolean {
   const eq = tokens[i + 1];
   const afterEq = tokens[i + 2];
 
-  // Must be: IDENTIFIER(register) OPERATOR('=') and NOT '=='
+  // Must be: IDENTIFIER OPERATOR('=') and NOT '=='
   if (dest.type !== TokenType.IDENTIFIER) return false;
-  if (!VALID_DESTINATIONS.has(dest.value.toUpperCase())) return false;
+  if (ISA_OPCODES.has(dest.value.toUpperCase())) return false;
   if (eq.type !== TokenType.OPERATOR || eq.value !== '=') return false;
   // If next is also '=', this is '==' (comparison), not assignment
   if (afterEq.type === TokenType.OPERATOR && afterEq.value === '=') return false;
 
   return true;
+}
+
+function isRegisterToken(token: Token | undefined): boolean {
+  if (!token || token.type !== TokenType.IDENTIFIER) return false;
+  return VALID_REGISTERS.has(token.value.toUpperCase());
+}
+
+interface MemoryOperand {
+  kind: 'array' | 'raw';
+  tokens: Token[];
+  nextPos: number;
+}
+
+/**
+ * Collects a balanced bracket expression starting at '['.
+ * Returns the tokens inside the brackets (without the surrounding [ ]).
+ */
+function collectBracketExpr(tokens: Token[], start: number): { expr: Token[]; nextPos: number } | null {
+  if (
+    start >= tokens.length ||
+    tokens[start].type !== TokenType.OPERATOR ||
+    tokens[start].value !== '['
+  ) {
+    return null;
+  }
+
+  const expr: Token[] = [];
+  let depth = 1;
+  let pos = start + 1;
+
+  while (pos < tokens.length && depth > 0) {
+    const t = tokens[pos];
+    if (t.type === TokenType.OPERATOR && t.value === '[') {
+      depth++;
+      expr.push(t);
+      pos++;
+      continue;
+    }
+    if (t.type === TokenType.OPERATOR && t.value === ']') {
+      depth--;
+      if (depth === 0) {
+        pos++; // consume closing ']'
+        break;
+      }
+      expr.push(t);
+      pos++;
+      continue;
+    }
+    expr.push(t);
+    pos++;
+  }
+
+  if (depth !== 0) {
+    return null;
+  }
+
+  return { expr, nextPos: pos };
+}
+
+/**
+ * Parses a memory operand:
+ *  - Named array access: A[i], M[i][j]
+ *  - Raw address expression: [addrExpr]
+ */
+function collectMemoryOperand(tokens: Token[], start: number): MemoryOperand | null {
+  if (start >= tokens.length) return null;
+  const t = tokens[start];
+
+  // Raw address expression: [expr]
+  if (t.type === TokenType.OPERATOR && t.value === '[') {
+    const raw = collectBracketExpr(tokens, start);
+    if (!raw) return null;
+    return {
+      kind: 'raw',
+      tokens: raw.expr,
+      nextPos: raw.nextPos
+    };
+  }
+
+  // Array access: name[expr] or name[expr][expr]
+  if (t.type === TokenType.IDENTIFIER && start + 1 < tokens.length &&
+      tokens[start + 1].type === TokenType.OPERATOR && tokens[start + 1].value === '[') {
+    const first = collectBracketExpr(tokens, start + 1);
+    if (!first) return null;
+
+    const operandTokens: Token[] = [tokens[start], tok(TokenType.OPERATOR, '[', tokens[start]), ...first.expr, tok(TokenType.OPERATOR, ']', tokens[start])];
+    let pos = first.nextPos;
+
+    // Optional second dimension: name[expr][expr]
+    if (pos < tokens.length && tokens[pos].type === TokenType.OPERATOR && tokens[pos].value === '[') {
+      const second = collectBracketExpr(tokens, pos);
+      if (!second) return null;
+      operandTokens.push(tok(TokenType.OPERATOR, '[', tokens[start]), ...second.expr, tok(TokenType.OPERATOR, ']', tokens[start]));
+      pos = second.nextPos;
+    }
+
+    return {
+      kind: 'array',
+      tokens: operandTokens,
+      nextPos: pos
+    };
+  }
+
+  return null;
+}
+
+function buildAddressOperandTokens(mem: MemoryOperand, ref: Token): Token[] {
+  // Array accesses stay as-is (A[i], M[i][j]).
+  if (mem.kind === 'array') {
+    return mem.tokens.map(t => ({ ...t }));
+  }
+
+  // Raw [expr] becomes IMM(expr) to reuse existing operand evaluator.
+  return [
+    tok(TokenType.IDENTIFIER, 'IMM', ref),
+    tok(TokenType.OPERATOR, '(', ref),
+    ...mem.tokens.map(t => ({ ...t })),
+    tok(TokenType.OPERATOR, ')', ref)
+  ];
+}
+
+function validateStatementTerminator(
+  tokens: Token[],
+  pos: number,
+  inRowSyntax: boolean,
+  lineRef: Token
+): { terminatorToken?: Token; nextPos: number } {
+  if (pos >= tokens.length) {
+    throw { message: 'Expected statement terminator after assignment', line: lineRef.line };
+  }
+
+  const term = tokens[pos];
+  if (term.type === TokenType.SEMICOLON) {
+    return { terminatorToken: term, nextPos: pos + 1 };
+  }
+
+  if (inRowSyntax && term.type === TokenType.OPERATOR && term.value === '|') {
+    // Row pipe separator - keep it for the row parser.
+    return { terminatorToken: undefined, nextPos: pos };
+  }
+
+  throw {
+    message: `Expected ';'${inRowSyntax ? " or '|'" : ''} after assignment`,
+    line: term.line
+  };
+}
+
+/**
+ * Memory sugar desugaring with priority over C-like expressions.
+ *
+ * Supported:
+ *  - R = A[i]      -> LWI R, A[i]
+ *  - A[i] = R      -> SWI R, A[i]
+ *  - R = [expr]    -> LWI R, IMM(expr)
+ *  - [expr] = R    -> SWI R, IMM(expr)
+ */
+function desugarMemoryAssignment(
+  tokens: Token[],
+  i: number,
+  inRowSyntax: boolean
+): { replacement: Token[]; nextPos: number } | null {
+  if (i >= tokens.length) return null;
+  const lhs = tokens[i];
+
+  // Case 1: store mem = reg
+  const lhsMem = collectMemoryOperand(tokens, i);
+  if (lhsMem) {
+    const eq = tokens[lhsMem.nextPos];
+    if (!(eq && eq.type === TokenType.OPERATOR && eq.value === '=')) {
+      return null;
+    }
+
+    const rhsStart = lhsMem.nextPos + 1;
+    if (
+      rhsStart < tokens.length &&
+      tokens[rhsStart].type === TokenType.OPERATOR &&
+      tokens[rhsStart].value === '='
+    ) {
+      return null;
+    }
+
+    const rhsToken = tokens[rhsStart];
+    const rhsMem = collectMemoryOperand(tokens, rhsStart);
+    if (rhsMem) {
+      throw {
+        message: 'Memory-to-memory assignment is not supported. Use a register temporary: R0 = src; dst = R0;',
+        line: lhs.line
+      };
+    }
+
+    if (!isRegisterToken(rhsToken)) {
+      throw {
+        message: `Store assignment requires a register source. Use: mem = R0;`,
+        line: rhsToken?.line ?? lhs.line
+      };
+    }
+
+    const { terminatorToken, nextPos } = validateStatementTerminator(tokens, rhsStart + 1, inRowSyntax, lhs);
+    const replacement: Token[] = [
+      tok(TokenType.IDENTIFIER, 'SWI', lhs),
+      tok(TokenType.IDENTIFIER, rhsToken.value.toUpperCase(), rhsToken),
+      tok(TokenType.OPERATOR, ',', lhs),
+      ...buildAddressOperandTokens(lhsMem, lhs),
+    ];
+    if (terminatorToken) replacement.push(terminatorToken);
+    return { replacement, nextPos };
+  }
+
+  // Case 2: load reg = mem
+  if (i + 2 >= tokens.length) return null;
+  const eq = tokens[i + 1];
+  const rhsStart = i + 2;
+  if (eq.type !== TokenType.OPERATOR || eq.value !== '=') return null;
+  if (tokens[rhsStart].type === TokenType.OPERATOR && tokens[rhsStart].value === '=') return null;
+
+  const rhsMem = collectMemoryOperand(tokens, rhsStart);
+  if (!rhsMem) return null;
+
+  if (!isRegisterToken(lhs)) {
+    throw {
+      message: `Load assignment destination must be a register (R0-R3 or ROUT). Use: R0 = mem;`,
+      line: lhs.line
+    };
+  }
+
+  const { terminatorToken, nextPos } = validateStatementTerminator(tokens, rhsMem.nextPos, inRowSyntax, lhs);
+  const replacement: Token[] = [
+    tok(TokenType.IDENTIFIER, 'LWI', lhs),
+    tok(TokenType.IDENTIFIER, lhs.value.toUpperCase(), lhs),
+    tok(TokenType.OPERATOR, ',', lhs),
+    ...buildAddressOperandTokens(rhsMem, lhs),
+  ];
+  if (terminatorToken) replacement.push(terminatorToken);
+  return { replacement, nextPos };
 }
 
 /**
@@ -192,7 +428,7 @@ function collectOperand(tokens: Token[], i: number): { operandTokens: Token[]; n
  */
 function desugarExpression(tokens: Token[], i: number, inRowSyntax: boolean = false): { replacement: Token[]; nextPos: number } | null {
   const dest = tokens[i];
-  const destUpper = dest.value.toUpperCase();
+  const destName = dest.value;
   // Skip the '='
   let pos = i + 2;
 
@@ -211,7 +447,7 @@ function desugarExpression(tokens: Token[], i: number, inRowSyntax: boolean = fa
   if (nextTok.type === TokenType.SEMICOLON) {
     const replacement: Token[] = [
       tok(TokenType.IDENTIFIER, 'SADD', dest),
-      tok(TokenType.IDENTIFIER, destUpper, dest),
+      tok(TokenType.IDENTIFIER, destName, dest),
       tok(TokenType.OPERATOR, ',', dest),
       ...op1,
       tok(TokenType.OPERATOR, ',', dest),
@@ -227,7 +463,7 @@ function desugarExpression(tokens: Token[], i: number, inRowSyntax: boolean = fa
       // In row syntax, '|' is a pipe separator → treat as simple copy
       const replacement: Token[] = [
         tok(TokenType.IDENTIFIER, 'SADD', dest),
-        tok(TokenType.IDENTIFIER, destUpper, dest),
+        tok(TokenType.IDENTIFIER, destName, dest),
         tok(TokenType.OPERATOR, ',', dest),
         ...op1,
         tok(TokenType.OPERATOR, ',', dest),
@@ -256,7 +492,7 @@ function desugarExpression(tokens: Token[], i: number, inRowSyntax: boolean = fa
   // Build replacement: OPCODE DEST, OP1, OP2
   const replacement: Token[] = [
     tok(TokenType.IDENTIFIER, opcode, dest),
-    tok(TokenType.IDENTIFIER, destUpper, dest),
+    tok(TokenType.IDENTIFIER, destName, dest),
     tok(TokenType.OPERATOR, ',', dest),
     ...op1,
     tok(TokenType.OPERATOR, ',', dest),
@@ -357,7 +593,15 @@ export function desugarExpressions(tokens: Token[]): Token[] {
       ctx.inRowSyntax = false;
     }
 
-    // Inside a cycle block — check for expression start
+    // Inside a cycle block — first apply memory sugar, then C-like expressions.
+    const memoryDesugared = desugarMemoryAssignment(tokens, i, ctx.inRowSyntax);
+    if (memoryDesugared) {
+      result.push(...memoryDesugared.replacement);
+      i = memoryDesugared.nextPos;
+      continue;
+    }
+
+    // C-like expression desugaring
     if (t.type === TokenType.IDENTIFIER && !ISA_OPCODES.has(t.value.toUpperCase()) && isExpressionStart(tokens, i)) {
       const desugared = desugarExpression(tokens, i, ctx.inRowSyntax);
       if (desugared) {

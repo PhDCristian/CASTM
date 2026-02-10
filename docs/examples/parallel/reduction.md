@@ -8,7 +8,7 @@ Tree reduction patterns for sum and max.
 
 ## Sum Reduction
 
-<!-- TODO: #pragma reduce has a known issue in this configuration - expected 100 -->
+<!-- Verified with current compiler: #pragma reduce works in this configuration -->
 ```c
 .data 0 { 10, 20, 30, 40 }
 
@@ -55,7 +55,7 @@ row 0: SADD ROUT, R2, RCR | NOP | NOP | NOP;
 
 ## Max Reduction
 
-<!-- TODO: #pragma reduce(max) has a known issue - expected 42 -->
+<!-- Verified with current compiler: #pragma reduce(max) works in this configuration -->
 ```c
 .data 0 { 15, 42, 8, 27 }
 
@@ -91,7 +91,7 @@ kernel "MaxReduce" {
 
 ## Combined: Sum of Squares
 
-<!-- TODO: #pragma reduce has a known issue - expected 30 -->
+<!-- Verified with current compiler: #pragma reduce works in this configuration -->
 ```c
 .data 0 { 1, 2, 3, 4 }
 

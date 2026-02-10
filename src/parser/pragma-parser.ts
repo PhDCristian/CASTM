@@ -286,12 +286,8 @@ export function parseRoutePragmaArgs(stream: TokenStream): {
   destReg?: string;
   customOp?: { opcode: string; dest: string; srcA: string; srcB: string };
 } | null {
-  // Parse src: (r,c)
-  if (!stream.match(TokenType.OPERATOR, '(')) return null;
-  const srcRow = parseInt(stream.expect(TokenType.NUMBER).value, 10);
-  stream.expect(TokenType.OPERATOR, ',');
-  const srcCol = parseInt(stream.expect(TokenType.NUMBER).value, 10);
-  stream.expect(TokenType.OPERATOR, ')');
+  const src = parseRouteCoordinate(stream);
+  if (!src) return null;
 
   // Parse arrow: -> (handled as two operators or one depending on lexer)
   // Assuming lexer splits - and >
@@ -302,12 +298,8 @@ export function parseRoutePragmaArgs(stream: TokenStream): {
     stream.expect(TokenType.OPERATOR, '>');
   }
 
-  // Parse dst: (r,c)
-  stream.expect(TokenType.OPERATOR, '(');
-  const dstRow = parseInt(stream.expect(TokenType.NUMBER).value, 10);
-  stream.expect(TokenType.OPERATOR, ',');
-  const dstCol = parseInt(stream.expect(TokenType.NUMBER).value, 10);
-  stream.expect(TokenType.OPERATOR, ')');
+  const dst = parseRouteCoordinate(stream);
+  if (!dst) return null;
 
   // Parse payload(REG)
   const payloadKey = stream.expect(TokenType.IDENTIFIER).value;
@@ -326,8 +318,8 @@ export function parseRoutePragmaArgs(stream: TokenStream): {
     stream.expect(TokenType.OPERATOR, ')');
 
     return {
-      src: { row: srcRow, col: srcCol },
-      dst: { row: dstRow, col: dstCol },
+      src,
+      dst,
       payload: payloadReg,
       accum: accumReg
     };
@@ -351,13 +343,34 @@ export function parseRoutePragmaArgs(stream: TokenStream): {
     stream.expect(TokenType.OPERATOR, ')');
 
     return {
-      src: { row: srcRow, col: srcCol },
-      dst: { row: dstRow, col: dstCol },
+      src,
+      dst,
       payload: payloadReg,
       accum: destReg, // For backward compat, accum is the dest in this mode
       destReg: destReg,
       customOp: { opcode, dest: opDest, srcA: opSrcA, srcB: opSrcB }
     };
+  }
+
+  return null;
+}
+
+function parseRouteCoordinate(stream: TokenStream): { row: number; col: number } | null {
+  // Compact syntax: @r,c
+  if (stream.match(TokenType.AT_SYMBOL)) {
+    const row = parseInt(stream.expect(TokenType.NUMBER).value, 10);
+    stream.expect(TokenType.OPERATOR, ',');
+    const col = parseInt(stream.expect(TokenType.NUMBER).value, 10);
+    return { row, col };
+  }
+
+  // Legacy syntax: (r,c)
+  if (stream.match(TokenType.OPERATOR, '(')) {
+    const row = parseInt(stream.expect(TokenType.NUMBER).value, 10);
+    stream.expect(TokenType.OPERATOR, ',');
+    const col = parseInt(stream.expect(TokenType.NUMBER).value, 10);
+    stream.expect(TokenType.OPERATOR, ')');
+    return { row, col };
   }
 
   return null;

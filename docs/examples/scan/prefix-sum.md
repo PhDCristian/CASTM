@@ -8,7 +8,7 @@ Compute inclusive prefix sum across columns using `#pragma scan`.
 
 ## Prefix Sum
 
-<!-- TODO: #pragma scan not yet implemented -->
+<!-- Verified: #pragma scan is implemented -->
 ```c
 .data 0 { 1, 2, 3, 4 }
 
@@ -58,7 +58,7 @@ Step 4: PE[2] sends 6 → PE[3] receives, R1 = R0 + 6 = 4 + 6 = 10
 
 ## Running Maximum
 
-<!-- TODO: #pragma scan not yet implemented -->
+<!-- Verified: #pragma scan is implemented -->
 ```c
 .data 0 { 3, 7, 2, 9 }
 

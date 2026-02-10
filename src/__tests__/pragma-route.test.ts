@@ -147,4 +147,37 @@ describe('Pragma Route Support', () => {
         expect(result.csv).toContain('"SADD R0, R3, RCT"');
     });
 
+    it('should support compact @r,c route syntax', () => {
+        const code = `
+    kernel "RouteTest_Compact" {
+        config(0xF, 0);
+        #pragma route @0,0 -> @1,1 payload(R1) accum(R0)
+    }
+    `;
+        const result = compileDslToCsv(code);
+        expect(result.success).toBe(true);
+        expect(result.csv).toContain('"SADD ROUT, R1, ZERO"');
+        expect(result.csv).toContain('"SADD ROUT, RCL, ZERO"');
+        expect(result.csv).toContain('"SADD R0, R0, RCT"');
+    });
+
+    it('should keep CSV-equivalence between legacy and compact syntax', () => {
+        const legacy = compileDslToCsv(`
+    kernel "RouteTest_LegacyEq" {
+        config(0xF, 0);
+        #pragma route (0,1) -> (0,0) payload(R3) dest(R1) op(SMUL R1, R0, INCOMING)
+    }
+    `);
+        const compact = compileDslToCsv(`
+    kernel "RouteTest_CompactEq" {
+        config(0xF, 0);
+        #pragma route @0,1 -> @0,0 payload(R3) dest(R1) op(SMUL R1, R0, INCOMING)
+    }
+    `);
+
+        expect(legacy.success).toBe(true);
+        expect(compact.success).toBe(true);
+        expect(compact.csv).toBe(legacy.csv);
+    });
+
 });

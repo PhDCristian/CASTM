@@ -47,7 +47,7 @@ const PRAGMA_DOCS: Record<string, string> = {
   'parallel': `**Parallel Execution**\n\nDistributes loop iterations across multiple PEs.\n\n\`\`\`dsl\n#pragma parallel\nfor i in range(0, 4) { ... }\n\`\`\`\n\nSupports \`collapse(N)\` modifier for nested loops.`,
   'reduce': `**Reduction Pattern**\n\nGenerates an efficient reduction tree across PEs.\n\n\`\`\`dsl\n#pragma reduce(ADD, R0, R1)\n\`\`\`\n\nSupported operations: ADD, MUL, AND, OR, XOR`,
   'stencil': `**Stencil Pattern**\n\nGenerates a stencil computation pattern for neighboring elements.\n\n\`\`\`dsl\n#pragma stencil(cross, ADD, R0, R1)\n\`\`\`\n\nPatterns: \`cross\` (4 neighbors), \`box\` (8 neighbors)`,
-  'route': `**Data Routing**\n\nExplicit data routing between PEs with optional accumulation.\n\n\`\`\`dsl\n#pragma route(@0,0) -> (@1,1) payload(R0) accum(R1)\n\`\`\``,
+  'route': `**Data Routing**\n\nExplicit data routing between PEs with optional accumulation.\n\n\`\`\`dsl\n#pragma route @0,0 -> @1,1 payload(R0) accum(R1)\n\`\`\`\n\nLegacy syntax with \`(r,c)\` is also supported.`,
   'scan': `**Prefix Scan**\n\nGenerates inclusive/exclusive prefix scan pattern.\n\n\`\`\`dsl\n#pragma scan(ADD, R0, R1, right)\n\`\`\`\n\nDirections: right, left, down, up`,
   'broadcast': `**Value Broadcast**\n\nBroadcasts a value from one PE to others.\n\n\`\`\`dsl\n#pragma broadcast(value=R0, from=@0,0, to=row)\n\`\`\`\n\nScopes: row, col, all`,
   'inline': `**Function Inlining**\n\nMarks a function for inline expansion.\n\n\`\`\`dsl\n#pragma inline\nfunction compute(x) { ... }\n\`\`\``,

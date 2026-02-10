@@ -1,6 +1,20 @@
-@# OpenEdgeDSL Compiler Issues — Discovered During SBOX K7 v6 Porting
+# OpenEdgeDSL Compiler Issues — Discovered During SBOX K7 v6 Porting
 
 Discovered while porting `sbox_k7_v5_rout.edsl` → `sbox_k7_v6_compact.edsl`.
+
+---
+
+## Status Snapshot (2026-02-10)
+
+Current tracking has been consolidated in:
+
+- `docs/issue-status-matrix.md` (OpenEdgeDSL vs UMA-CGRA-Simulator vs docs)
+
+Quick summary:
+
+- **Resolved in OpenEdgeDSL:** Issue 1, 2, 3, 4, 5, 6, 9, 12 and BUG-1, BUG-6.
+- **Resolved in simulator sync:** BUG-3/4 and wrapper parity guardrails for BUG-5.
+- **Pending as design/enhancement choices:** Issue 8, 10, 11 and re-validation of Issue 7 in integration scenarios.
 
 ---
 
