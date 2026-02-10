@@ -28,7 +28,7 @@ const BINARY_OPCODES: Record<string, string> = {
 };
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
-const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce']);
+const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce', 'stencil']);
 const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
   BEQ: 2,
   BNE: 2,
@@ -84,6 +84,13 @@ interface ReducePragmaArgs {
   destReg: string;
   srcReg: string;
   axis: 'row' | 'col';
+}
+
+interface StencilPragmaArgs {
+  pattern: 'cross' | 'horizontal' | 'vertical';
+  operation: string;
+  srcReg: string;
+  destReg: string;
 }
 
 function cloneInstruction(instruction: InstructionAst): InstructionAst {
@@ -487,6 +494,53 @@ function parseReducePragmaArgs(text: string): ReducePragmaArgs | null {
     destReg: match[2],
     srcReg: match[3],
     axis: (match[4]?.toLowerCase() as 'row' | 'col' | undefined) ?? 'row'
+  };
+}
+
+function splitPositionalArgs(body: string): string[] | null {
+  const parts: string[] = [];
+  let start = 0;
+  let depth = 0;
+
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i];
+    if (ch === '(' || ch === '[' || ch === '{') depth++;
+    if (ch === ')' || ch === ']' || ch === '}') depth = Math.max(0, depth - 1);
+    if (ch !== ',' || depth !== 0) continue;
+
+    parts.push(body.slice(start, i).trim());
+    start = i + 1;
+  }
+
+  parts.push(body.slice(start).trim());
+  if (parts.some((part) => part.length === 0)) {
+    return null;
+  }
+  return parts;
+}
+
+function parseStencilPragmaArgs(text: string): StencilPragmaArgs | null {
+  const match = text.trim().match(/^#pragma\s+stencil\s*\((.+)\)\s*$/i);
+  if (!match) return null;
+
+  const parts = splitPositionalArgs(match[1]);
+  if (!parts || (parts.length !== 3 && parts.length !== 4)) {
+    return null;
+  }
+
+  const pattern = parts[0].toLowerCase();
+  const operation = (parts.length === 4 ? parts[1] : 'sum').toLowerCase();
+  const srcReg = parts.length === 4 ? parts[2] : parts[1];
+  const destReg = parts.length === 4 ? parts[3] : parts[2];
+
+  if (!['cross', 'horizontal', 'vertical'].includes(pattern)) return null;
+  if (!isIdentifier(operation) || !isIdentifier(srcReg) || !isIdentifier(destReg)) return null;
+
+  return {
+    pattern: pattern as 'cross' | 'horizontal' | 'vertical',
+    operation,
+    srcReg,
+    destReg
   };
 }
 
@@ -1309,6 +1363,64 @@ function buildReduceCycles(
   return cycles;
 }
 
+function buildStencilCycles(
+  pragma: StencilPragmaArgs,
+  startIndex: number,
+  grid: GridSpec,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): CycleAst[] {
+  if (grid.cols <= 0) {
+    return [];
+  }
+
+  if (!['sum', 'add', 'avg'].includes(pragma.operation)) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `Unsupported stencil operation '${pragma.operation}'.`,
+      'Supported operations: sum, add, avg.'
+    ));
+    return [];
+  }
+
+  const makeUniformRowCycle = (
+    cycleIndex: number,
+    dest: string,
+    srcA: string,
+    srcB: string
+  ): CycleAst => createRowCycle(
+    cycleIndex,
+    0,
+    Array.from(
+      { length: grid.cols },
+      () => createInstruction('SADD', [dest, srcA, srcB], span)
+    ),
+    span
+  );
+
+  const cycles: CycleAst[] = [];
+
+  if (pragma.pattern === 'cross') {
+    cycles.push(makeUniformRowCycle(startIndex + cycles.length, 'R2', pragma.srcReg, 'RCT'));
+    cycles.push(makeUniformRowCycle(startIndex + cycles.length, 'R2', 'R2', 'RCB'));
+    cycles.push(makeUniformRowCycle(startIndex + cycles.length, 'R2', 'R2', 'RCL'));
+    cycles.push(makeUniformRowCycle(startIndex + cycles.length, pragma.destReg, 'R2', 'RCR'));
+    return cycles;
+  }
+
+  if (pragma.pattern === 'horizontal') {
+    cycles.push(makeUniformRowCycle(startIndex + cycles.length, 'R2', pragma.srcReg, 'RCL'));
+    cycles.push(makeUniformRowCycle(startIndex + cycles.length, pragma.destReg, 'R2', 'RCR'));
+    return cycles;
+  }
+
+  cycles.push(makeUniformRowCycle(startIndex + cycles.length, 'R2', pragma.srcReg, 'RCT'));
+  cycles.push(makeUniformRowCycle(startIndex + cycles.length, pragma.destReg, 'R2', 'RCB'));
+  return cycles;
+}
+
 function isPointInGrid(point: RoutePoint, grid: GridSpec): boolean {
   return (
     point.row >= 0 &&
@@ -1833,6 +1945,30 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
           }
 
           const cycles = buildReduceCycles(
+            parsed,
+            generatedCycles.length,
+            grid,
+            pragma.span,
+            diagnostics
+          );
+          generatedCycles.push(...cycles);
+          continue;
+        }
+
+        if (name === 'stencil') {
+          const parsed = parseStencilPragmaArgs(pragma.text);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid stencil pragma syntax: '${pragma.text}'.`,
+              'Use #pragma stencil(pattern, srcReg, destReg) or #pragma stencil(pattern, operation, srcReg, destReg).'
+            ));
+            continue;
+          }
+
+          const cycles = buildStencilCycles(
             parsed,
             generatedCycles.length,
             grid,

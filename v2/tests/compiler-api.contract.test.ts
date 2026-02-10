@@ -751,11 +751,83 @@ kernel "reduce_grid_unsupported" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 
+  it('lowers stencil pragma cross pattern', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "stencil_cross" {
+  #pragma stencil(cross, add, R0, R1)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R2 R0 RCT');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R2 R2 RCB');
+    expect(result.artifacts.csv).toContain('2,0,0,SADD R2 R2 RCL');
+    expect(result.artifacts.csv).toContain('3,0,0,SADD R1 R2 RCR');
+    expect(result.artifacts.csv).toContain('4,0,0,EXIT');
+  });
+
+  it('supports stencil shorthand syntax without explicit operation', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "stencil_horizontal_short" {
+  #pragma stencil(horizontal, R0, R1)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R2 R0 RCL');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R1 R2 RCR');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('supports stencil vertical pattern', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "stencil_vertical" {
+  #pragma stencil(vertical, avg, R0, R1)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R2 R0 RCT');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R1 R2 RCB');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('rejects unsupported stencil operations', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "stencil_bad_op" {
+  #pragma stencil(cross, median, R0, R1)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
   it('rejects unsupported pragmas by default in strict mode', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "stencil_pragma" {
-  #pragma stencil(cross, add, R0, R1)
+kernel "allreduce_pragma" {
+  #pragma allreduce(sum, R0, R1)
   cycle {
     @0,0: EXIT;
   }
@@ -770,8 +842,8 @@ kernel "stencil_pragma" {
   it('allows unsupported pragmas in transitional mode and emits simulator matrix CSV', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "stencil_pragma_relaxed" {
-  #pragma stencil(cross, add, R0, R1)
+kernel "allreduce_pragma_relaxed" {
+  #pragma allreduce(sum, R0, R1)
   cycle {
     @0,0: EXIT;
   }
