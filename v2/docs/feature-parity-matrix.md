@@ -27,7 +27,7 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 |---|---|---|---|
 | `.const`, `.alias` parse | done | indirect (`compile` contracts) | Exposed via `artifacts.symbols`. |
 | `.data` parse + regions | done | `tests/compiler-api.contract.test.ts` | Also exposed in `memoryRegions`. |
-| `.data2d` | pending | - | Not ported yet. |
+| `.data2d` | partial | `tests/compiler-api.contract.test.ts` | Supports declaration + region allocation + literal 2D index lowering; dynamic index expressions remain pending. |
 | `.io_load`, `.io_store` | partial | `tests/compiler-api.contract.test.ts` | Parsed as raw directives, emitted in `ioConfig`. |
 | `.assert` | partial | `tests/compiler-api.contract.test.ts` | Collected into `artifacts.assertions`; lowering pending. |
 | `.limit` | pending | - | Not ported yet. |

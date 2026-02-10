@@ -99,6 +99,64 @@ kernel "dynamic_data_idx" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 
+  it('parses .data2d declarations and exposes dimensional symbols', () => {
+    const source = `
+target "uma-cgra-v1";
+.data2d M[2][3] { 1, 2, 3, 4, 5, 6 }
+.data2d Z[4]
+kernel "data2d_regions" {
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.memoryRegions).toEqual([
+      { name: 'M', start: 0, values: [1, 2, 3, 4, 5, 6], rows: 2, cols: 3 },
+      { name: 'Z', start: 24, values: [0, 0, 0, 0], rows: 2, cols: 2 }
+    ]);
+    expect(result.artifacts.symbols?.arrays).toEqual([
+      { name: 'M', start: 0, length: 6, rows: 2, cols: 3 },
+      { name: 'Z', start: 24, length: 4, rows: 2, cols: 2 }
+    ]);
+  });
+
+  it('resolves literal .data2d indices in memory sugar', () => {
+    const source = `
+target "uma-cgra-v1";
+.data2d M[2][2] { 10, 20, 30, 40 }
+kernel "data2d_access" {
+  cycle {
+    @0,0: R1 = M[1][0];
+    @0,1: M[0][1] = R2;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,LWI R1 8');
+    expect(result.artifacts.csv).toContain('0,0,1,SWI R2 4');
+  });
+
+  it('rejects non-literal .data2d indices in v2 baseline', () => {
+    const source = `
+target "uma-cgra-v1";
+.data2d M[2][2] { 10, 20, 30, 40 }
+kernel "data2d_dynamic_idx" {
+  cycle {
+    @0,0: R1 = M[i][0];
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
   it('broadcasts row statements according to target grid and supports NxM override', () => {
     const source = `
 target "uma-cgra-v2";

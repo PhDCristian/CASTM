@@ -1880,9 +1880,16 @@ function parseIntegerLiteral(text: string): number | null {
   return null;
 }
 
+interface DataSymbolInfo {
+  start: number;
+  length: number;
+  rows?: number;
+  cols?: number;
+}
+
 function toAddressOperand(
   memExpr: string,
-  dataSymbols: ReadonlyMap<string, number>,
+  dataSymbols: ReadonlyMap<string, DataSymbolInfo>,
   passDiagnostics: Diagnostic[],
   span: SourceSpan
 ): string | null {
@@ -1900,26 +1907,66 @@ function toAddressOperand(
   }
 
   const arrayName = arrayMatch[1];
+  const symbol = dataSymbols.get(arrayName);
+  if (!symbol) {
+    passDiagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.InvalidAssignment,
+      'error',
+      span,
+      `Undefined data symbol '${arrayName}'.`,
+      `Declare it first: .data ${arrayName} { ... } or .data2d ${arrayName}[rows][cols].`
+    ));
+    return null;
+  }
+
   const indices = [...arrayMatch[2].matchAll(/\[([^\]]+)\]/g)].map((m) => m[1].trim());
+  if (symbol.rows !== undefined && symbol.cols !== undefined) {
+    if (indices.length !== 2) {
+      passDiagnostics.push(makeDiagnostic(
+        ErrorCodes.Semantic.UnsupportedOperation,
+        'error',
+        span,
+        `Expected 2D addressing for '.data2d ${arrayName}', got '${trimmed}'.`,
+        `Use two indices like ${arrayName}[row][col].`
+      ));
+      return null;
+    }
+
+    const rowIndex = parseIntegerLiteral(indices[0]);
+    const colIndex = parseIntegerLiteral(indices[1]);
+    if (rowIndex === null || colIndex === null) {
+      passDiagnostics.push(makeDiagnostic(
+        ErrorCodes.Semantic.UnsupportedOperation,
+        'error',
+        span,
+        `v2 baseline only supports literal .data2d indices, got '${arrayName}[${indices[0]}][${indices[1]}]'.`,
+        `Use literal indices like ${arrayName}[0][0].`
+      ));
+      return null;
+    }
+
+    if (rowIndex < 0 || rowIndex >= symbol.rows || colIndex < 0 || colIndex >= symbol.cols) {
+      passDiagnostics.push(makeDiagnostic(
+        ErrorCodes.Semantic.CoordinateOutOfBounds,
+        'error',
+        span,
+        `Index out of bounds for '.data2d ${arrayName}[${symbol.rows}][${symbol.cols}]': [${rowIndex}][${colIndex}].`,
+        'Use indices within declared bounds.'
+      ));
+      return null;
+    }
+
+    const linearIndex = rowIndex * symbol.cols + colIndex;
+    return String(symbol.start + linearIndex * 4);
+  }
+
   if (indices.length !== 1) {
     passDiagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Only 1D .data addressing is supported in v2 baseline, got '${trimmed}'.`,
-      'Use single-index accesses like A[i] or raw [addr] expressions.'
-    ));
-    return null;
-  }
-
-  const baseAddress = dataSymbols.get(arrayName);
-  if (baseAddress === undefined) {
-    passDiagnostics.push(makeDiagnostic(
-      ErrorCodes.Semantic.InvalidAssignment,
-      'error',
-      span,
-      `Undefined .data symbol '${arrayName}'.`,
-      `Declare it first: .data ${arrayName} { ... }`
+      `Expected 1D addressing for '.data ${arrayName}', got '${trimmed}'.`,
+      `Use one index like ${arrayName}[i].`
     ));
     return null;
   }
@@ -1931,12 +1978,23 @@ function toAddressOperand(
       'error',
       span,
       `v2 baseline only supports literal .data indices, got '${arrayName}[${indices[0]}]'.`,
-      `Use a literal index (e.g. ${arrayName}[0]) or compile with legacy backend.`
+      `Use a literal index (e.g. ${arrayName}[0]).`
     ));
     return null;
   }
 
-  return String(baseAddress + literalIndex * 4);
+  if (literalIndex < 0 || literalIndex >= symbol.length) {
+    passDiagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.CoordinateOutOfBounds,
+      'error',
+      span,
+      `Index out of bounds for '.data ${arrayName}[${symbol.length}]': [${literalIndex}].`,
+      'Use indices within declared bounds.'
+    ));
+    return null;
+  }
+
+  return String(symbol.start + literalIndex * 4);
 }
 
 function splitAssignment(text: string): { lhs: string; rhs: string } | null {
@@ -2025,7 +2083,7 @@ function transformInstructions(
 }
 
 export function createDesugarMemoryPass(
-  dataSymbols: ReadonlyMap<string, number> = new Map()
+  dataSymbols: ReadonlyMap<string, DataSymbolInfo> = new Map()
 ): CompilerPass<AstProgram, AstProgram> {
   return {
     name: 'desugar-memory',

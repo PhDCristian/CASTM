@@ -43,6 +43,8 @@ export interface MemoryRegionInfo {
   name?: string;
   start: number;
   values: number[];
+  rows?: number;
+  cols?: number;
 }
 
 export interface IoConfigInfo {
@@ -132,7 +134,7 @@ export interface CycleAst {
 }
 
 export interface DirectiveAst {
-  kind: 'const' | 'alias' | 'data' | 'raw';
+  kind: 'const' | 'alias' | 'data' | 'data2d' | 'raw';
   name: string;
   value: string;
   span: SourceSpan;

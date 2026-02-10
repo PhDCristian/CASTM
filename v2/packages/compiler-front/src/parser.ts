@@ -177,6 +177,16 @@ function parseDirective(clean: string, line: number): DirectiveAst | null {
     };
   }
 
+  const data2dMatch = clean.match(/^\.data2d\s+([A-Za-z_][A-Za-z0-9_]*)\s*(.+)$/i);
+  if (data2dMatch) {
+    return {
+      kind: 'data2d',
+      name: data2dMatch[1],
+      value: data2dMatch[2].trim(),
+      span: spanAt(line, 1, clean.length)
+    };
+  }
+
   if (clean.startsWith('.')) {
     return {
       kind: 'raw',
