@@ -47,8 +47,8 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 | `allreduce` lowering | partial | `tests/compiler-api.contract.test.ts` | Composes `reduce` + broadcast from `@0,0` with support for `axis=row|col` in 4-lane baseline lowering patterns. |
 | `transpose` lowering | partial | `tests/compiler-api.contract.test.ts` | Square-grid lowering implemented via pairwise route swaps using scratch registers; advanced optimization/scheduling pending. |
 | `gather` lowering | partial | `tests/compiler-api.contract.test.ts` | Row-wise gather to configurable destination with `add/sum/and/or/xor/mul` accumulation using route transfers. |
+| `stream_load` / `stream_store` lowering | partial | `tests/compiler-api.contract.test.ts` | Supports `row` and `count` parameters with row-wide `LWD`/`SWD` emission over current grid width. |
 | `auto_cycle` lowering | pending | - | Pass currently no-op. |
-| Advanced codegen pragmas (`stream_*`) | pending | - | Tracked for v2 completion phases. |
 
 ## IR / Backend / Tooling
 

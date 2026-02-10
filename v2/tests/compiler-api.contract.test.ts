@@ -976,11 +976,81 @@ kernel "gather_bad_op" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 
+  it('lowers stream_load pragma with default row/count', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "stream_load_default" {
+  #pragma stream_load(dest=R0)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,LWD R0');
+    expect(result.artifacts.csv).toContain('0,0,3,LWD R0');
+    expect(result.artifacts.csv).toContain('1,0,0,EXIT');
+  });
+
+  it('supports stream_load with row/count overrides', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "stream_load_row_count" {
+  #pragma stream_load(dest=R1, row=2, count=2)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,2,0,LWD R1');
+    expect(result.artifacts.csv).toContain('1,2,3,LWD R1');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('lowers stream_store pragma with row/count overrides', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "stream_store_row_count" {
+  #pragma stream_store(src=R2, row=1, count=2)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,1,0,SWD R2');
+    expect(result.artifacts.csv).toContain('1,1,3,SWD R2');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('rejects stream pragmas with invalid count', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "stream_bad_count" {
+  #pragma stream_load(dest=R0, count=0)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
   it('rejects unsupported pragmas by default in strict mode', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "stream_load_pragma" {
-  #pragma stream_load(dest=R0)
+kernel "auto_cycle_pragma" {
+  #pragma auto_cycle
   cycle {
     @0,0: EXIT;
   }
@@ -995,8 +1065,8 @@ kernel "stream_load_pragma" {
   it('allows unsupported pragmas in transitional mode and emits simulator matrix CSV', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "stream_load_pragma_relaxed" {
-  #pragma stream_load(dest=R0)
+kernel "auto_cycle_pragma_relaxed" {
+  #pragma auto_cycle
   cycle {
     @0,0: EXIT;
   }

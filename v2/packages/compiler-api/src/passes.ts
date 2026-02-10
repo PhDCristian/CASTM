@@ -28,7 +28,20 @@ const BINARY_OPCODES: Record<string, string> = {
 };
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
-const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce', 'stencil', 'allreduce', 'transpose', 'gather']);
+const SUPPORTED_PRAGMAS = new Set<string>([
+  'route',
+  'broadcast',
+  'rotate',
+  'shift',
+  'scan',
+  'reduce',
+  'stencil',
+  'allreduce',
+  'transpose',
+  'gather',
+  'stream_load',
+  'stream_store'
+]);
 const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
   BEQ: 2,
   BNE: 2,
@@ -109,6 +122,18 @@ interface GatherPragmaArgs {
   dest: RoutePoint;
   destReg: string;
   operation: string;
+}
+
+interface StreamLoadPragmaArgs {
+  destReg: string;
+  row: number;
+  count: number;
+}
+
+interface StreamStorePragmaArgs {
+  srcReg: string;
+  row: number;
+  count: number;
 }
 
 function cloneInstruction(instruction: InstructionAst): InstructionAst {
@@ -602,6 +627,68 @@ function parseGatherPragmaArgs(text: string): GatherPragmaArgs | null {
     dest,
     destReg: match[3],
     operation: match[4].toLowerCase()
+  };
+}
+
+function parseStreamLoadPragmaArgs(text: string): StreamLoadPragmaArgs | null {
+  const match = text.trim().match(/^#pragma\s+stream_load\s*\((.+)\)\s*$/i);
+  if (!match) return null;
+
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+
+  for (const key of args.keys()) {
+    if (key !== 'dest' && key !== 'row' && key !== 'count') {
+      return null;
+    }
+  }
+
+  const destReg = args.get('dest');
+  if (!destReg || !isIdentifier(destReg)) return null;
+
+  const rowRaw = args.get('row');
+  const row = rowRaw === undefined ? 0 : parseIntegerLiteral(rowRaw);
+  if (row === null) return null;
+
+  const countRaw = args.get('count');
+  const count = countRaw === undefined ? 1 : parseIntegerLiteral(countRaw);
+  if (count === null) return null;
+
+  return {
+    destReg,
+    row,
+    count
+  };
+}
+
+function parseStreamStorePragmaArgs(text: string): StreamStorePragmaArgs | null {
+  const match = text.trim().match(/^#pragma\s+stream_store\s*\((.+)\)\s*$/i);
+  if (!match) return null;
+
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+
+  for (const key of args.keys()) {
+    if (key !== 'src' && key !== 'row' && key !== 'count') {
+      return null;
+    }
+  }
+
+  const srcReg = args.get('src');
+  if (!srcReg || !isIdentifier(srcReg)) return null;
+
+  const rowRaw = args.get('row');
+  const row = rowRaw === undefined ? 0 : parseIntegerLiteral(rowRaw);
+  if (row === null) return null;
+
+  const countRaw = args.get('count');
+  const count = countRaw === undefined ? 1 : parseIntegerLiteral(countRaw);
+  if (count === null) return null;
+
+  return {
+    srcReg,
+    row,
+    count
   };
 }
 
@@ -1711,6 +1798,49 @@ function buildGatherCycles(
   return cycles;
 }
 
+function buildStreamCycles(
+  opcode: 'LWD' | 'SWD',
+  reg: string,
+  row: number,
+  count: number,
+  startIndex: number,
+  grid: GridSpec,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): CycleAst[] {
+  if (!Number.isInteger(row) || row < 0 || row >= grid.rows) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.CoordinateOutOfBounds,
+      'error',
+      span,
+      `#pragma ${opcode === 'LWD' ? 'stream_load' : 'stream_store'} row=${row} is outside ${grid.rows} rows.`,
+      'Use a valid row index within the current grid.'
+    ));
+    return [];
+  }
+
+  if (!Number.isInteger(count) || count <= 0) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `#pragma ${opcode === 'LWD' ? 'stream_load' : 'stream_store'} requires count >= 1, got ${count}.`,
+      'Use a positive integer count.'
+    ));
+    return [];
+  }
+
+  const cycles: CycleAst[] = [];
+  for (let i = 0; i < count; i++) {
+    const instructions = Array.from(
+      { length: grid.cols },
+      () => createInstruction(opcode, [reg], span)
+    );
+    cycles.push(createRowCycle(startIndex + cycles.length, row, instructions, span));
+  }
+  return cycles;
+}
+
 function isPointInGrid(point: RoutePoint, grid: GridSpec): boolean {
   return (
     point.row >= 0 &&
@@ -2332,6 +2462,60 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
 
           const cycles = buildGatherCycles(
             parsed,
+            generatedCycles.length,
+            grid,
+            pragma.span,
+            diagnostics
+          );
+          generatedCycles.push(...cycles);
+          continue;
+        }
+
+        if (name === 'stream_load') {
+          const parsed = parseStreamLoadPragmaArgs(pragma.text);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid stream_load pragma syntax: '${pragma.text}'.`,
+              'Use #pragma stream_load(dest=R0[, row=N][, count=N]).'
+            ));
+            continue;
+          }
+
+          const cycles = buildStreamCycles(
+            'LWD',
+            parsed.destReg,
+            parsed.row,
+            parsed.count,
+            generatedCycles.length,
+            grid,
+            pragma.span,
+            diagnostics
+          );
+          generatedCycles.push(...cycles);
+          continue;
+        }
+
+        if (name === 'stream_store') {
+          const parsed = parseStreamStorePragmaArgs(pragma.text);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid stream_store pragma syntax: '${pragma.text}'.`,
+              'Use #pragma stream_store(src=R0[, row=N][, count=N]).'
+            ));
+            continue;
+          }
+
+          const cycles = buildStreamCycles(
+            'SWD',
+            parsed.srcReg,
+            parsed.row,
+            parsed.count,
             generatedCycles.length,
             grid,
             pragma.span,
