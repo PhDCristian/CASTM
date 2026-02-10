@@ -78,9 +78,65 @@ kernel "data_regions" {
       loadAddrs: [100, 104],
       storeAddrs: [200]
     });
-    expect(result.artifacts.assertions).toHaveLength(1);
+    expect(result.artifacts.assertions).toEqual([
+      {
+        cycle: 0,
+        row: 0,
+        col: 0,
+        register: 'R1',
+        value: 30,
+        raw: '.assert cycle=0 @0,0 R1 == 30',
+        span: expect.any(Object)
+      }
+    ]);
     expect(result.artifacts.lir?.cycles).toHaveLength(1);
     expect(result.artifacts.csv).toContain('0,0,0,LWI R1 8');
+  });
+
+  it('parses .assert object payload and infers cycle from source position when omitted', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "assert_object_form" {
+  cycle {
+    @0,0: SADD R1, ZERO, IMM(42);
+  }
+  .assert { location: 0,0, register: R1, value: 42 }
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.assertions).toEqual([
+      {
+        cycle: 0,
+        row: 0,
+        col: 0,
+        register: 'R1',
+        value: 42,
+        raw: '.assert { location: 0,0, register: R1, value: 42 }',
+        span: expect.any(Object)
+      }
+    ]);
+  });
+
+  it('rejects invalid .assert payloads with parse diagnostics', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "assert_invalid" {
+  .assert cycle=foo @0,0 R1 == 30
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.artifacts.assertions).toEqual([]);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
   it('parses .limit and exposes cycleLimit artifact', () => {
