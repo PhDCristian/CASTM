@@ -455,13 +455,13 @@ kernel "kernel_for_unroll_factor" {
     expect(result.artifacts.csv).toContain('2,0,0,EXIT');
   });
 
-  it('lowers #pragma no_unroll for register-controlled runtime loops', () => {
+  it('lowers #pragma no_unroll for register-controlled runtime loops (standard path)', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "kernel_for_no_unroll" {
+kernel "kernel_for_no_unroll_standard" {
   #pragma no_unroll
   for R0 in range(0, 3) @0,0 {
-    cycle { @0,1: SADD R1, R1, R0; }
+    cycle { @0,0: SADD R1, R1, R0; }
   }
   cycle { @0,0: EXIT; }
 }
@@ -475,6 +475,28 @@ kernel "kernel_for_no_unroll" {
     expect(result.artifacts.csv).toContain('SADD R0 R0 IMM(1)');
     expect(result.artifacts.csv).toContain('JUMP');
     expect(result.artifacts.csv).toContain('EXIT');
+    expect(result.stats.cycles).toBe(6);
+  });
+
+  it('uses aggressive #pragma no_unroll lowering for adjacent single-cycle body', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_for_no_unroll_aggressive" {
+  #pragma no_unroll
+  for R0 in range(0, 3) @0,0 {
+    cycle { @0,1: SADD R1, R1, R0; }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('BGE R0 IMM(3)');
+    expect(result.artifacts.csv).toContain('SADD R3 RCL ZERO');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R3');
+    expect(result.artifacts.csv).toContain('SADD R0 R0 IMM(1)');
+    expect(result.stats.cycles).toBe(5);
   });
 
   it('rejects #pragma no_unroll when loop variable is not a register', () => {

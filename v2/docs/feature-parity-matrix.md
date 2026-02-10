@@ -38,7 +38,7 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 |---|---|---|---|
 | Pragma parsing (`#pragma ...`) | done | `tests/compiler-api.contract.test.ts` | Preserves text + span in AST. |
 | Strict unsupported validation | done | `tests/compiler-api.contract.test.ts` | `strictUnsupported` default is `true` (`E3008`). |
-| `unroll` / `no_unroll` / `parallel` / `no_fuse` | partial | `tests/compiler-api.contract.test.ts` | Parser-level control pragmas for loop lowering: unroll factor truncation, baseline runtime no_unroll lowering, nested `parallel collapse(N)` propagation, and no_fuse-controlled while back-edge fusion. |
+| `unroll` / `no_unroll` / `parallel` / `no_fuse` | partial | `tests/compiler-api.contract.test.ts` | Parser-level control pragmas for loop lowering: unroll factor truncation, runtime `no_unroll` standard/aggressive paths (adjacent single-cycle fusion), nested `parallel collapse(N)` propagation, and no_fuse-controlled while back-edge fusion. |
 | `route` lowering | partial | `tests/compiler-api.contract.test.ts` | Compact `@r,c` and legacy `(r,c)` lower to route cycles with topology-aware paths; advanced pragma families remain pending. |
 | `broadcast` lowering | partial | `tests/compiler-api.contract.test.ts` | Fanout implemented via route-style lowering for `row`/`column`/`all` scopes. |
 | `rotate`/`shift` lowering | partial | `tests/compiler-api.contract.test.ts` | Row-0 lowering implemented; `rotate` currently torus-only, `shift` supports fill values. |

@@ -805,6 +805,85 @@ function cloneCycle(cycle: CycleAst, index: number): CycleAst {
   };
 }
 
+function getHorizontalIncomingRegister(controlCol: number, bodyCol: number): string | null {
+  if (((controlCol + 1) % 4) === bodyCol) return 'RCL';
+  if (((controlCol + 3) % 4) === bodyCol) return 'RCR';
+  return null;
+}
+
+function chooseJumpColumn(controlCol: number, bodyCol?: number): number {
+  const candidates = [
+    (controlCol + 1) % 4,
+    (controlCol + 2) % 4,
+    (controlCol + 3) % 4
+  ];
+  for (const candidate of candidates) {
+    if (candidate !== controlCol && (bodyCol === undefined || candidate !== bodyCol)) {
+      return candidate;
+    }
+  }
+  return controlCol;
+}
+
+function pickRuntimeRelayRegister(loopRegister: string, instructionText: string): string {
+  const candidates = ['R3', 'R2', 'R1', 'R0'];
+  for (const candidate of candidates) {
+    if (candidate === loopRegister) continue;
+    if (!new RegExp(`\\b${escapeRegExp(candidate)}\\b`).test(instructionText)) {
+      return candidate;
+    }
+  }
+  return 'R3';
+}
+
+interface RuntimeNoUnrollAggressivePlan {
+  bodyRow: number;
+  bodyCol: number;
+  incomingRegister: string;
+  relayRegister: string;
+  bodyInstruction: InstructionAst;
+}
+
+function buildRuntimeNoUnrollAggressivePlan(
+  loopCycles: CycleAst[],
+  loopRegister: string,
+  controlRow: number,
+  controlCol: number
+): RuntimeNoUnrollAggressivePlan | null {
+  if (loopCycles.length !== 1) return null;
+  const cycle = loopCycles[0];
+  if (cycle.label) return null;
+  if (cycleHasControlFlow(cycle)) return null;
+  if (cycle.statements.length !== 1) return null;
+
+  const statement = cycle.statements[0];
+  if (statement.kind !== 'at') return null;
+  if (statement.row !== controlRow) return null;
+  if (statement.col === controlCol) return null;
+
+  const incoming = getHorizontalIncomingRegister(controlCol, statement.col);
+  if (!incoming) return null;
+
+  const loopVarPattern = new RegExp(`\\b${escapeRegExp(loopRegister)}\\b`);
+  if (!loopVarPattern.test(statement.instruction.text)) return null;
+
+  const relayRegister = pickRuntimeRelayRegister(loopRegister, statement.instruction.text);
+  const replacedText = statement.instruction.text.replace(new RegExp(`\\b${escapeRegExp(loopRegister)}\\b`, 'g'), relayRegister);
+  const bodyInstruction = parseInstruction(
+    replacedText,
+    statement.instruction.span.startLine,
+    statement.instruction.span.startColumn
+  );
+
+  return {
+    bodyRow: statement.row,
+    bodyCol: statement.col,
+    incomingRegister: incoming,
+    relayRegister,
+    bodyInstruction
+  };
+}
+
 function expandForLoopIntoKernel(
   header: ForHeader,
   loopBody: SourceLineEntry[],
@@ -863,6 +942,32 @@ function expandForLoopIntoKernel(
     const suffix = controlFlowCounter.value++;
     const startLabel = `__for_start_${suffix}`;
     const endLabel = `__for_end_${suffix}`;
+    const loopKernel: KernelAst = {
+      name: '__for_runtime_body__',
+      config: undefined,
+      cycles: [],
+      directives: [],
+      pragmas: [],
+      span: spanAt(lineNo, 1, lineLength)
+    };
+    const loopCounter = { value: 0 };
+    expandFunctionBodyIntoKernel(
+      loopBody,
+      loopKernel,
+      functions,
+      constants,
+      diagnostics,
+      loopCounter,
+      callStack,
+      expansionCounter,
+      controlFlowCounter
+    );
+    const aggressivePlan = buildRuntimeNoUnrollAggressivePlan(
+      loopKernel.cycles,
+      header.variable,
+      controlRow,
+      controlCol
+    );
 
     kernel.cycles.push(makeControlCycle(
       cycleCounter.value++,
@@ -881,33 +986,75 @@ function expandForLoopIntoKernel(
       startLabel
     ));
 
-    expandFunctionBodyIntoKernel(
-      loopBody,
-      kernel,
-      functions,
-      constants,
-      diagnostics,
-      cycleCounter,
-      callStack,
-      expansionCounter,
-      controlFlowCounter
-    );
+    if (aggressivePlan) {
+      const conditionCycle = kernel.cycles[kernel.cycles.length - 1];
+      conditionCycle.statements.push({
+        kind: 'at',
+        row: aggressivePlan.bodyRow,
+        col: aggressivePlan.bodyCol,
+        instruction: parseInstruction(
+          `SADD ${aggressivePlan.relayRegister}, ${aggressivePlan.incomingRegister}, ZERO`,
+          lineNo,
+          1
+        ),
+        span: spanAt(lineNo, 1, lineLength)
+      });
 
-    kernel.cycles.push(makeControlCycle(
-      cycleCounter.value++,
-      lineNo,
-      controlRow,
-      controlCol,
-      `SADD ${header.variable}, ${header.variable}, IMM(${header.step})`
-    ));
+      const jumpCol = chooseJumpColumn(controlCol, aggressivePlan.bodyCol);
+      kernel.cycles.push({
+        index: cycleCounter.value++,
+        statements: [
+          {
+            kind: 'at',
+            row: aggressivePlan.bodyRow,
+            col: aggressivePlan.bodyCol,
+            instruction: aggressivePlan.bodyInstruction,
+            span: spanAt(lineNo, 1, lineLength)
+          },
+          {
+            kind: 'at',
+            row: controlRow,
+            col: controlCol,
+            instruction: parseInstruction(`SADD ${header.variable}, ${header.variable}, IMM(${header.step})`, lineNo, 1),
+            span: spanAt(lineNo, 1, lineLength)
+          },
+          {
+            kind: 'at',
+            row: controlRow,
+            col: jumpCol,
+            instruction: parseInstruction(`JUMP ${startLabel}, ZERO`, lineNo, 1),
+            span: spanAt(lineNo, 1, lineLength)
+          }
+        ],
+        span: spanAt(lineNo, 1, lineLength)
+      });
+    } else {
+      for (const cycle of loopKernel.cycles) {
+        kernel.cycles.push(cloneCycle(cycle, cycleCounter.value++));
+      }
 
-    kernel.cycles.push(makeControlCycle(
-      cycleCounter.value++,
-      lineNo,
-      controlRow,
-      controlCol,
-      `JUMP ${startLabel}, ZERO`
-    ));
+      const jumpCol = chooseJumpColumn(controlCol);
+      kernel.cycles.push({
+        index: cycleCounter.value++,
+        statements: [
+          {
+            kind: 'at',
+            row: controlRow,
+            col: controlCol,
+            instruction: parseInstruction(`SADD ${header.variable}, ${header.variable}, IMM(${header.step})`, lineNo, 1),
+            span: spanAt(lineNo, 1, lineLength)
+          },
+          {
+            kind: 'at',
+            row: controlRow,
+            col: jumpCol,
+            instruction: parseInstruction(`JUMP ${startLabel}, ZERO`, lineNo, 1),
+            span: spanAt(lineNo, 1, lineLength)
+          }
+        ],
+        span: spanAt(lineNo, 1, lineLength)
+      });
+    }
 
     kernel.cycles.push(makeControlCycle(
       cycleCounter.value++,
