@@ -59,6 +59,8 @@ interface DataRegionCollection {
 
 interface RuntimeArtifactCollection {
   ioConfig: IoConfigInfo;
+  cycleLimit?: number;
+  cycleLimitSpan?: { startLine: number; startColumn: number; endLine: number; endColumn: number };
   assertions: AssertionInfo[];
   symbols: SymbolInfo;
 }
@@ -99,6 +101,8 @@ function collectRuntimeArtifacts(
   const arrays: SymbolArrayInfo[] = [];
   const labels: Record<string, number> = {};
   const ioConfig: IoConfigInfo = { loadAddrs: [], storeAddrs: [] };
+  let cycleLimit: number | undefined;
+  let cycleLimitSpan: { startLine: number; startColumn: number; endLine: number; endColumn: number } | undefined;
   const assertions: AssertionInfo[] = [];
 
   for (const region of dataRegions) {
@@ -159,11 +163,33 @@ function collectRuntimeArtifacts(
         raw: directive.value,
         span: { ...directive.span }
       });
+      continue;
+    }
+
+    if (directive.name === 'limit') {
+      const payloadMatch = directive.value.match(/^\.limit\s*(?:=\s*)?(.+)$/i);
+      const payload = payloadMatch ? payloadMatch[1].trim() : '';
+      const parsed = parseNumericLiteral(payload);
+      if (parsed === null || parsed < 0 || !Number.isInteger(parsed)) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          directive.span,
+          `Invalid .limit directive payload '${payload}'.`,
+          'Expected a non-negative integer: .limit 100'
+        ));
+        continue;
+      }
+
+      cycleLimit = parsed;
+      cycleLimitSpan = { ...directive.span };
     }
   }
 
   return {
     ioConfig,
+    cycleLimit,
+    cycleLimitSpan,
     assertions,
     symbols: { constants, aliases, arrays, labels }
   };
@@ -426,6 +452,16 @@ export function analyze(ast: AstProgram, options: CompileOptions = {}): Analysis
   const lirPipeline = runPassPipeline(mir, [lowerToLirPass], diagnostics);
   const lir = lirPipeline.output as LirProgram;
 
+  if (runtime.cycleLimit !== undefined && mir.cycles.length > runtime.cycleLimit) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      runtime.cycleLimitSpan ?? ast.span,
+      `Kernel expands to ${mir.cycles.length} cycles but .limit is ${runtime.cycleLimit}.`,
+      'Increase .limit or reduce generated cycles.'
+    ));
+  }
+
   return {
     success: !hasErrors(diagnostics),
     diagnostics,
@@ -435,6 +471,7 @@ export function analyze(ast: AstProgram, options: CompileOptions = {}): Analysis
     lir,
     memoryRegions: memory.regions,
     ioConfig: runtime.ioConfig,
+    cycleLimit: runtime.cycleLimit,
     assertions: runtime.assertions,
     symbols: runtime.symbols,
     loweredPasses: [
@@ -458,6 +495,8 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
     ? collectRuntimeArtifacts(parseResult.ast, [], diagnostics)
     : {
         ioConfig: { loadAddrs: [], storeAddrs: [] },
+        cycleLimit: undefined,
+        cycleLimitSpan: undefined,
         assertions: [],
         symbols: { constants: {}, aliases: {}, arrays: [], labels: {} }
       };
@@ -483,6 +522,7 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
         ast: want.has('ast') ? parseResult.ast : undefined,
         memoryRegions: [],
         ioConfig: parsedRuntime.ioConfig,
+        cycleLimit: parsedRuntime.cycleLimit,
         assertions: parsedRuntime.assertions,
         symbols: parsedRuntime.symbols
       },
@@ -522,6 +562,7 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       lir: want.has('lir') ? analysis.lir : undefined,
       memoryRegions: analysis.memoryRegions ?? [],
       ioConfig: analysis.ioConfig,
+      cycleLimit: analysis.cycleLimit,
       assertions: analysis.assertions,
       symbols: analysis.symbols
     },

@@ -30,7 +30,7 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 | `.data2d` | partial | `tests/compiler-api.contract.test.ts` | Supports declaration + region allocation + literal 2D index lowering; dynamic index expressions remain pending. |
 | `.io_load`, `.io_store` | partial | `tests/compiler-api.contract.test.ts` | Parsed as raw directives, emitted in `ioConfig`. |
 | `.assert` | partial | `tests/compiler-api.contract.test.ts` | Collected into `artifacts.assertions`; lowering pending. |
-| `.limit` | pending | - | Not ported yet. |
+| `.limit` | partial | `tests/compiler-api.contract.test.ts` | Parsed from directives, exposed in `artifacts.cycleLimit`, and enforced against expanded cycle count. |
 
 ## Pragmas
 

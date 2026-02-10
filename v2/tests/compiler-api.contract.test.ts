@@ -83,6 +83,56 @@ kernel "data_regions" {
     expect(result.artifacts.csv).toContain('0,0,0,LWI R1 8');
   });
 
+  it('parses .limit and exposes cycleLimit artifact', () => {
+    const source = `
+target "uma-cgra-v1";
+.limit 5
+kernel "limit_ok" {
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.cycleLimit).toBe(5);
+    expect(result.stats.cycles).toBe(1);
+  });
+
+  it('fails when generated cycles exceed .limit', () => {
+    const source = `
+target "uma-cgra-v1";
+.limit 1
+kernel "limit_exceeded" {
+  #pragma allreduce(sum, R1, R0)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
+  it('rejects invalid .limit payload', () => {
+    const source = `
+target "uma-cgra-v1";
+.limit abc
+kernel "limit_invalid" {
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
+  });
+
   it('rejects non-literal .data index in v2 baseline', () => {
     const source = `
 target "uma-cgra-v1";
