@@ -46,6 +46,63 @@ function splitTopLevel(input: string, delimiter: string): string[] {
   return out;
 }
 
+function stripLineComment(line: string): string {
+  return line.replace(/\/\/.*$/, '');
+}
+
+function countChar(text: string, needle: string): number {
+  let count = 0;
+  for (const ch of text) {
+    if (ch === needle) count++;
+  }
+  return count;
+}
+
+function escapeRegExp(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function applyBindings(input: string, bindings: ReadonlyMap<string, number>): string {
+  let out = input;
+  for (const [name, value] of bindings.entries()) {
+    const regex = new RegExp(`\\b${escapeRegExp(name)}\\b`, 'g');
+    out = out.replace(regex, String(value));
+  }
+  return out;
+}
+
+function evaluateNumericExpression(
+  expression: string,
+  constants: ReadonlyMap<string, number>,
+  bindings: ReadonlyMap<string, number>
+): number | null {
+  const unresolved: string[] = [];
+  const replaced = expression.replace(/\b[A-Za-z_][A-Za-z0-9_]*\b/g, (name) => {
+    if (bindings.has(name)) return String(bindings.get(name));
+    if (constants.has(name)) return String(constants.get(name));
+    unresolved.push(name);
+    return name;
+  });
+
+  if (unresolved.length > 0) {
+    return null;
+  }
+
+  if (!/^[0-9a-fA-FxX+\-*/%()\s]+$/.test(replaced)) {
+    return null;
+  }
+
+  try {
+    const value = Function(`"use strict"; return (${replaced});`)();
+    if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value)) {
+      return null;
+    }
+    return value;
+  } catch {
+    return null;
+  }
+}
+
 function parseInstruction(text: string, line: number, column: number): InstructionAst {
   const clean = text.trim();
 
@@ -132,11 +189,18 @@ function parseDirective(clean: string, line: number): DirectiveAst | null {
   return null;
 }
 
-function parseCycleStatement(clean: string, line: number, rawLine: string): CycleStatementAst | null {
-  const atMatch = clean.match(/^@\s*(-?\d+)\s*,\s*(-?\d+)\s*:\s*(.+);\s*$/i);
+function parseCycleStatement(
+  clean: string,
+  line: number,
+  rawLine: string,
+  constants: ReadonlyMap<string, number>,
+  bindings: ReadonlyMap<string, number>
+): CycleStatementAst | null {
+  const atMatch = clean.match(/^@\s*([^,]+)\s*,\s*([^:]+)\s*:\s*(.+);\s*$/i);
   if (atMatch) {
-    const row = parseNumber(atMatch[1]);
-    const col = parseNumber(atMatch[2]);
+    const row = evaluateNumericExpression(atMatch[1].trim(), constants, bindings);
+    const col = evaluateNumericExpression(atMatch[2].trim(), constants, bindings);
+    if (row === null || col === null) return null;
     const instructionText = atMatch[3].trim();
     const column = Math.max(1, rawLine.indexOf(instructionText) + 1);
     return {
@@ -148,9 +212,10 @@ function parseCycleStatement(clean: string, line: number, rawLine: string): Cycl
     };
   }
 
-  const rowMatch = clean.match(/^row\s+(-?\d+)\s*:\s*(.+);\s*$/i);
+  const rowMatch = clean.match(/^row\s+([^:]+)\s*:\s*(.+);\s*$/i);
   if (rowMatch) {
-    const row = parseNumber(rowMatch[1]);
+    const row = evaluateNumericExpression(rowMatch[1].trim(), constants, bindings);
+    if (row === null) return null;
     const payload = rowMatch[2].trim();
     const segments = splitTopLevel(payload, '|').map((s) => s.trim());
     return {
@@ -161,9 +226,10 @@ function parseCycleStatement(clean: string, line: number, rawLine: string): Cycl
     };
   }
 
-  const colMatch = clean.match(/^col\s+(-?\d+)\s*:\s*(.+);\s*$/i);
+  const colMatch = clean.match(/^col\s+([^:]+)\s*:\s*(.+);\s*$/i);
   if (colMatch) {
-    const col = parseNumber(colMatch[1]);
+    const col = evaluateNumericExpression(colMatch[1].trim(), constants, bindings);
+    if (col === null) return null;
     const instructionText = colMatch[2].trim();
     return {
       kind: 'col',
@@ -186,6 +252,243 @@ function parseCycleStatement(clean: string, line: number, rawLine: string): Cycl
   return null;
 }
 
+interface ForHeader {
+  variable: string;
+  start: number;
+  end: number;
+  step: number;
+}
+
+interface SourceLineEntry {
+  lineNo: number;
+  rawLine: string;
+  cleanLine: string;
+}
+
+interface CollectedBlock {
+  body: SourceLineEntry[];
+  endIndex: number | null;
+}
+
+function parseForHeader(
+  cleanLine: string,
+  lineNo: number,
+  constants: ReadonlyMap<string, number>,
+  bindings: ReadonlyMap<string, number>,
+  diagnostics: Diagnostic[]
+): ForHeader | null {
+  const loopMatch = cleanLine.match(/^for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+range\s*\((.*)\)\s*\{\s*$/i);
+  if (!loopMatch) return null;
+
+  const variable = loopMatch[1];
+  const argsText = loopMatch[2].trim();
+  const args = argsText.length === 0 ? [] : splitTopLevel(argsText, ',');
+
+  if (args.length < 1 || args.length > 3) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(lineNo, 1, cleanLine.length),
+      `Invalid range() in for loop: expected 1..3 arguments, got ${args.length}.`,
+      'Valid forms: range(end), range(start,end), range(start,end,step).'
+    ));
+    return null;
+  }
+
+  const values: number[] = [];
+  for (const arg of args) {
+    const value = evaluateNumericExpression(arg.trim(), constants, bindings);
+    if (value === null) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(lineNo, 1, cleanLine.length),
+        `Invalid range() argument '${arg.trim()}' in for loop.`,
+        'Use integer literals, constants, loop bindings, and + - * / % operators.'
+      ));
+      return null;
+    }
+    values.push(value);
+  }
+
+  let start = 0;
+  let end = 0;
+  let step = 1;
+  if (values.length === 1) {
+    end = values[0];
+  } else if (values.length === 2) {
+    start = values[0];
+    end = values[1];
+  } else {
+    [start, end, step] = values;
+  }
+
+  if (step === 0) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(lineNo, 1, cleanLine.length),
+      'range() step cannot be zero.',
+      'Use a non-zero step value.'
+    ));
+    return null;
+  }
+
+  return { variable, start, end, step };
+}
+
+function collectBlockFromSource(
+  lines: string[],
+  startIndex: number
+): CollectedBlock {
+  const body: SourceLineEntry[] = [];
+  const header = stripLineComment(lines[startIndex]).trim();
+  let depth = countChar(header, '{') - countChar(header, '}');
+  if (depth <= 0) depth = 1;
+
+  for (let i = startIndex + 1; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const cleanLine = stripLineComment(rawLine).trim();
+    const opens = countChar(cleanLine, '{');
+    const closes = countChar(cleanLine, '}');
+    const nextDepth = depth + opens - closes;
+
+    if (nextDepth === 0) {
+      return { body, endIndex: i };
+    }
+
+    body.push({
+      lineNo: i + 1,
+      rawLine,
+      cleanLine
+    });
+    depth = nextDepth;
+  }
+
+  return { body, endIndex: null };
+}
+
+function collectBlockFromEntries(
+  entries: SourceLineEntry[],
+  startIndex: number
+): CollectedBlock {
+  const body: SourceLineEntry[] = [];
+  const header = entries[startIndex].cleanLine;
+  let depth = countChar(header, '{') - countChar(header, '}');
+  if (depth <= 0) depth = 1;
+
+  for (let i = startIndex + 1; i < entries.length; i++) {
+    const cleanLine = entries[i].cleanLine;
+    const opens = countChar(cleanLine, '{');
+    const closes = countChar(cleanLine, '}');
+    const nextDepth = depth + opens - closes;
+
+    if (nextDepth === 0) {
+      return { body, endIndex: i };
+    }
+
+    body.push(entries[i]);
+    depth = nextDepth;
+  }
+
+  return { body, endIndex: null };
+}
+
+function expandLoopBody(
+  body: SourceLineEntry[],
+  constants: ReadonlyMap<string, number>,
+  bindings: ReadonlyMap<string, number>,
+  diagnostics: Diagnostic[]
+): CycleStatementAst[] {
+  const statements: CycleStatementAst[] = [];
+
+  for (let i = 0; i < body.length; i++) {
+    const entry = body[i];
+    if (!entry.cleanLine) continue;
+
+    const clean = applyBindings(entry.cleanLine, bindings);
+    const raw = applyBindings(entry.rawLine, bindings);
+    if (!clean) continue;
+
+    const loopHeader = parseForHeader(clean, entry.lineNo, constants, bindings, diagnostics);
+    if (loopHeader) {
+      const nested = collectBlockFromEntries(body, i);
+      if (nested.endIndex === null) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(entry.lineNo, 1, clean.length),
+          'Unterminated for loop inside cycle block.',
+          'Add a closing brace for for { ... }.'
+        ));
+        break;
+      }
+
+      const shouldContinue = loopHeader.step > 0
+        ? (v: number) => v < loopHeader.end
+        : (v: number) => v > loopHeader.end;
+
+      for (let value = loopHeader.start; shouldContinue(value); value += loopHeader.step) {
+        const nestedBindings = new Map(bindings);
+        nestedBindings.set(loopHeader.variable, value);
+        statements.push(...expandLoopBody(nested.body, constants, nestedBindings, diagnostics));
+      }
+
+      i = nested.endIndex;
+      continue;
+    }
+
+    if (clean === '}') {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(entry.lineNo, 1, clean.length),
+        'Unexpected closing brace inside cycle block.',
+        'Check for mismatched braces around for/cycle blocks.'
+      ));
+      continue;
+    }
+
+    const statement = parseCycleStatement(clean, entry.lineNo, raw, constants, bindings);
+    if (!statement) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(entry.lineNo, 1, clean.length),
+        `Invalid cycle statement: '${clean}'`,
+        'Expected @row,col:, row N:, col N:, all:, or for ... in range(...) { ... }.'
+      ));
+      continue;
+    }
+
+    statements.push(statement);
+  }
+
+  return statements;
+}
+
+function buildConstantMap(directives: DirectiveAst[], diagnostics: Diagnostic[]): Map<string, number> {
+  const constants = new Map<string, number>();
+
+  for (const directive of directives) {
+    if (directive.kind !== 'const') continue;
+    const value = evaluateNumericExpression(directive.value, constants, new Map());
+    if (value === null) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        directive.span,
+        `Invalid numeric value for .const '${directive.name}': '${directive.value}'.`,
+        'Use integer expressions referencing previously declared constants.'
+      ));
+      continue;
+    }
+    constants.set(directive.name, value);
+  }
+
+  return constants;
+}
+
 export function parseSource(source: string): ParseResult {
   const diagnostics: Diagnostic[] = [];
   const lines = source.split(/\r?\n/);
@@ -204,16 +507,18 @@ export function parseSource(source: string): ParseResult {
   };
 
   let kernel: KernelAst | null = null;
+  let kernelConstants = new Map<string, number>();
   let inKernel = false;
   let inCycle = false;
   let currentCycle: CycleAst | null = null;
+  let cycleConstants = new Map<string, number>();
   let cycleIndex = 0;
   const pendingDirectives: DirectiveAst[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const lineNo = i + 1;
     const rawLine = lines[i];
-    const clean = rawLine.replace(/\/\/.*$/, '').trim();
+    const clean = stripLineComment(rawLine).trim();
 
     if (!clean) continue;
 
@@ -226,14 +531,16 @@ export function parseSource(source: string): ParseResult {
 
       const kernelMatch = clean.match(/^kernel\s+"([^"]+)"\s*\{\s*$/i);
       if (kernelMatch) {
+        const initialDirectives = [...pendingDirectives];
         kernel = {
           name: kernelMatch[1],
           config: undefined,
           cycles: [],
-          directives: [...pendingDirectives],
+          directives: initialDirectives,
           pragmas: [],
           span: spanAt(lineNo, 1, clean.length)
         };
+        kernelConstants = buildConstantMap(initialDirectives, diagnostics);
         ast.kernel = kernel;
         pendingDirectives.length = 0;
         inKernel = true;
@@ -294,11 +601,26 @@ export function parseSource(source: string): ParseResult {
       const directive = parseDirective(clean, lineNo);
       if (directive && kernel) {
         kernel.directives.push(directive);
+        if (directive.kind === 'const') {
+          const value = evaluateNumericExpression(directive.value, kernelConstants, new Map());
+          if (value === null) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              directive.span,
+              `Invalid numeric value for .const '${directive.name}': '${directive.value}'.`,
+              'Use integer expressions referencing previously declared constants.'
+            ));
+          } else {
+            kernelConstants.set(directive.name, value);
+          }
+        }
         continue;
       }
 
       if (/^cycle\s*\{\s*$/i.test(clean)) {
         inCycle = true;
+        cycleConstants = new Map(kernelConstants);
         currentCycle = {
           index: cycleIndex++,
           statements: [],
@@ -327,14 +649,43 @@ export function parseSource(source: string): ParseResult {
         continue;
       }
 
-      const statement = parseCycleStatement(clean, lineNo, rawLine);
+      const loopHeader = parseForHeader(clean, lineNo, cycleConstants, new Map(), diagnostics);
+      if (loopHeader) {
+        const block = collectBlockFromSource(lines, i);
+        if (block.endIndex === null) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            'Unterminated for loop inside cycle block.',
+            'Add a closing brace for for { ... }.'
+          ));
+          break;
+        }
+
+        const shouldContinue = loopHeader.step > 0
+          ? (v: number) => v < loopHeader.end
+          : (v: number) => v > loopHeader.end;
+
+        for (let value = loopHeader.start; shouldContinue(value); value += loopHeader.step) {
+          const bindings = new Map<string, number>();
+          bindings.set(loopHeader.variable, value);
+          const expanded = expandLoopBody(block.body, cycleConstants, bindings, diagnostics);
+          currentCycle?.statements.push(...expanded);
+        }
+
+        i = block.endIndex;
+        continue;
+      }
+
+      const statement = parseCycleStatement(clean, lineNo, rawLine, cycleConstants, new Map());
       if (!statement) {
         diagnostics.push(makeDiagnostic(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
           spanAt(lineNo, 1, clean.length),
           `Invalid cycle statement: '${clean}'`,
-          'Expected @row,col:, row N:, col N:, or all: instruction syntax.'
+          'Expected @row,col:, row N:, col N:, all:, or for ... in range(...) { ... }.'
         ));
         continue;
       }

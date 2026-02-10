@@ -138,6 +138,83 @@ kernel "collision" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.Collision)).toBe(true);
   });
 
+  it('unrolls for loops inside cycle blocks using constants and loop bindings', () => {
+    const source = `
+target "uma-cgra-v1";
+.const N = 2
+kernel "for_unroll" {
+  cycle {
+    for i in range(N) {
+      @0,i: SADD R0, ZERO, IMM(i);
+    }
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.stats.instructions).toBe(2);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R0 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('0,0,1,SADD R0 ZERO IMM(1)');
+  });
+
+  it('supports nested for loops in cycle blocks', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "nested_for" {
+  cycle {
+    for i in range(2) {
+      for j in range(2) {
+        @i,j: EXIT;
+      }
+    }
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.stats.instructions).toBe(4);
+    expect(result.artifacts.csv).toContain('0,0,0,EXIT');
+    expect(result.artifacts.csv).toContain('0,0,1,EXIT');
+    expect(result.artifacts.csv).toContain('0,1,0,EXIT');
+    expect(result.artifacts.csv).toContain('0,1,1,EXIT');
+  });
+
+  it('detects PE collisions across unrolled for iterations in the same cycle', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "for_collision" {
+  cycle {
+    for i in range(2) {
+      @0,0: EXIT;
+    }
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.Collision)).toBe(true);
+  });
+
+  it('reports invalid range step in for loops', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "for_invalid_range" {
+  cycle {
+    for i in range(0, 4, 0) {
+      @0,0: EXIT;
+    }
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
+  });
+
   it('rejects memory-to-memory assignment in memory sugar', () => {
     const source = `
 target "uma-cgra-v1";
