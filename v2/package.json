@@ -12,6 +12,13 @@
     "docs:generate": "npm run docs:generate --workspace @openedge/lang-spec",
     "check:boundaries": "node ./scripts/check-boundaries.mjs"
   },
+  "dependencies": {
+    "@openedge/compiler-api": "workspace:*",
+    "@openedge/compiler-backend-csv": "workspace:*",
+    "@openedge/compiler-front": "workspace:*",
+    "@openedge/compiler-ir": "workspace:*",
+    "@openedge/lang-spec": "workspace:*"
+  },
   "devDependencies": {
     "typescript": "^5.3.0",
     "vitest": "^1.6.1"
