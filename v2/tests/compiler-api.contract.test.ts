@@ -923,11 +923,64 @@ kernel "transpose_non_square" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 
+  it('lowers gather pragma to destination accumulation on a row', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "gather_add_row0" {
+  #pragma gather(src=R0, dest=@0,0, destReg=R1, op=add)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R7');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
+  });
+
+  it('supports gather with non-origin destination and xor operation', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "gather_xor_dest_col2" {
+  #pragma gather(src=R0, dest=@0,2, destReg=R1, op=xor)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,2,SADD R1 R0 ZERO');
+    expect(result.artifacts.csv).toContain('LXOR R1 R1 R7');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
+  });
+
+  it('rejects gather with unsupported operation', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "gather_bad_op" {
+  #pragma gather(src=R0, dest=@0,0, destReg=R1, op=max)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
   it('rejects unsupported pragmas by default in strict mode', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "gather_pragma" {
-  #pragma gather(src=R0, dest=@0,0, destReg=R1, op=add)
+kernel "stream_load_pragma" {
+  #pragma stream_load(dest=R0)
   cycle {
     @0,0: EXIT;
   }
@@ -942,8 +995,8 @@ kernel "gather_pragma" {
   it('allows unsupported pragmas in transitional mode and emits simulator matrix CSV', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "gather_pragma_relaxed" {
-  #pragma gather(src=R0, dest=@0,0, destReg=R1, op=add)
+kernel "stream_load_pragma_relaxed" {
+  #pragma stream_load(dest=R0)
   cycle {
     @0,0: EXIT;
   }

@@ -28,7 +28,7 @@ const BINARY_OPCODES: Record<string, string> = {
 };
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
-const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce', 'stencil', 'allreduce', 'transpose']);
+const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce', 'stencil', 'allreduce', 'transpose', 'gather']);
 const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
   BEQ: 2,
   BNE: 2,
@@ -102,6 +102,13 @@ interface AllreducePragmaArgs {
 
 interface TransposePragmaArgs {
   reg: string;
+}
+
+interface GatherPragmaArgs {
+  srcReg: string;
+  dest: RoutePoint;
+  destReg: string;
+  operation: string;
 }
 
 function cloneInstruction(instruction: InstructionAst): InstructionAst {
@@ -581,6 +588,23 @@ function parseTransposePragmaArgs(text: string): TransposePragmaArgs | null {
   return { reg };
 }
 
+function parseGatherPragmaArgs(text: string): GatherPragmaArgs | null {
+  const match = text.trim().match(
+    /^#pragma\s+gather\s*\(\s*src\s*=\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*dest\s*=\s*(.+?)\s*,\s*destReg\s*=\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*op\s*=\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)\s*$/i
+  );
+  if (!match) return null;
+
+  const dest = parseCoordinateLiteral(match[2]);
+  if (!dest) return null;
+
+  return {
+    srcReg: match[1],
+    dest,
+    destReg: match[3],
+    operation: match[4].toLowerCase()
+  };
+}
+
 function getScanIncomingRegister(direction: 'left' | 'right' | 'up' | 'down'): string {
   switch (direction) {
     case 'right':
@@ -627,6 +651,24 @@ function getScanOpcode(operation: string): string | null {
 }
 
 function getReduceOpcode(operation: string): string | null {
+  switch (operation) {
+    case 'sum':
+    case 'add':
+      return 'SADD';
+    case 'and':
+      return 'LAND';
+    case 'or':
+      return 'LOR';
+    case 'xor':
+      return 'LXOR';
+    case 'mul':
+      return 'SMUL';
+    default:
+      return null;
+  }
+}
+
+function getGatherOpcode(operation: string): string | null {
   switch (operation) {
     case 'sum':
     case 'add':
@@ -1498,9 +1540,10 @@ function buildAllreduceCycles(
   return [...reduceCycles, ...broadcastCycles];
 }
 
-function pickScratchRegisters(exclude: string): [string, string] | null {
+function pickScratchRegisters(excludes: string[]): [string, string] | null {
   const candidates = ['R7', 'R6', 'R5', 'R4', 'R3', 'R2', 'R1', 'R0'];
-  const filtered = candidates.filter((reg) => reg !== exclude.toUpperCase());
+  const excludeSet = new Set(excludes.map((reg) => reg.toUpperCase()));
+  const filtered = candidates.filter((reg) => !excludeSet.has(reg));
   if (filtered.length < 2) return null;
   return [filtered[0], filtered[1]];
 }
@@ -1523,7 +1566,7 @@ function buildTransposeCycles(
     return [];
   }
 
-  const scratch = pickScratchRegisters(pragma.reg);
+  const scratch = pickScratchRegisters([pragma.reg]);
   if (!scratch) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
@@ -1577,6 +1620,92 @@ function buildTransposeCycles(
         span
       ));
     }
+  }
+
+  return cycles;
+}
+
+function buildGatherCycles(
+  pragma: GatherPragmaArgs,
+  startIndex: number,
+  grid: GridSpec,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): CycleAst[] {
+  if (!isPointInGrid(pragma.dest, grid)) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.CoordinateOutOfBounds,
+      'error',
+      span,
+      `Gather destination @${pragma.dest.row},${pragma.dest.col} is outside ${grid.rows}x${grid.cols}.`,
+      'Adjust destination coordinates or change CompileOptions.grid.'
+    ));
+    return [];
+  }
+
+  const opcode = getGatherOpcode(pragma.operation);
+  if (!opcode) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `Unsupported gather operation '${pragma.operation}'.`,
+      'Supported operations: add, sum, and, or, xor, mul.'
+    ));
+    return [];
+  }
+
+  const scratch = pickScratchRegisters([pragma.srcReg, pragma.destReg]);
+  if (!scratch) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `Could not allocate scratch registers for gather destination '${pragma.destReg}'.`,
+      'Use a target profile with at least one temporary register besides src/dest registers.'
+    ));
+    return [];
+  }
+  const relayReg = scratch[0];
+
+  const cycles: CycleAst[] = [];
+
+  cycles.push(createAtCycle(
+    startIndex + cycles.length,
+    pragma.dest.row,
+    pragma.dest.col,
+    createInstruction('SADD', [pragma.destReg, pragma.srcReg, 'ZERO'], span),
+    span
+  ));
+
+  const sourceCols: number[] = [];
+  for (let col = 0; col < grid.cols; col++) {
+    if (col === pragma.dest.col) continue;
+    sourceCols.push(col);
+  }
+  sourceCols.sort((a, b) => Math.abs(a - pragma.dest.col) - Math.abs(b - pragma.dest.col));
+
+  for (const srcCol of sourceCols) {
+    const src: RoutePoint = { row: pragma.dest.row, col: srcCol };
+    const transfer = buildRouteTransferCycles(
+      src,
+      pragma.dest,
+      pragma.srcReg,
+      relayReg,
+      startIndex + cycles.length,
+      grid,
+      span,
+      diagnostics
+    );
+    cycles.push(...transfer);
+
+    cycles.push(createAtCycle(
+      startIndex + cycles.length,
+      pragma.dest.row,
+      pragma.dest.col,
+      createInstruction(opcode, [pragma.destReg, pragma.destReg, relayReg], span),
+      span
+    ));
   }
 
   return cycles;
@@ -2178,6 +2307,30 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
           }
 
           const cycles = buildTransposeCycles(
+            parsed,
+            generatedCycles.length,
+            grid,
+            pragma.span,
+            diagnostics
+          );
+          generatedCycles.push(...cycles);
+          continue;
+        }
+
+        if (name === 'gather') {
+          const parsed = parseGatherPragmaArgs(pragma.text);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid gather pragma syntax: '${pragma.text}'.`,
+              'Use #pragma gather(src=R0, dest=@row,col, destReg=R1, op=add).'
+            ));
+            continue;
+          }
+
+          const cycles = buildGatherCycles(
             parsed,
             generatedCycles.length,
             grid,
