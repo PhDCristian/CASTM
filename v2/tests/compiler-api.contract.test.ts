@@ -823,11 +823,72 @@ kernel "stencil_bad_op" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 
+  it('lowers allreduce pragma as reduce + broadcast on row axis', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "allreduce_sum_row" {
+  #pragma allreduce(sum, R1, R0)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R2 R0 ZERO');
+    expect(result.artifacts.csv).toContain('3,0,0,SADD R1 R2 RCR');
+    expect(result.artifacts.csv).toContain('4,0,0,SADD ROUT R1 ZERO');
+    expect(result.artifacts.csv).toContain('5,0,1,SADD R1 RCL ZERO');
+    expect(result.artifacts.csv).toContain('8,0,2,SADD R1 RCL ZERO');
+    expect(result.artifacts.csv).toContain('10,0,3,SADD R1 RCR ZERO');
+    expect(result.artifacts.csv).toContain('11,0,0,EXIT');
+  });
+
+  it('supports allreduce axis=col using vertical broadcast chain', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "allreduce_col_axis" {
+  #pragma allreduce(sum, R1, R0, axis=col)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R2 R0 RCB');
+    expect(result.artifacts.csv).toContain('3,0,0,SADD R1 R2 RCB');
+    expect(result.artifacts.csv).toContain('4,0,0,SADD ROUT R1 ZERO');
+    expect(result.artifacts.csv).toContain('5,1,0,SADD R1 RCT ZERO');
+    expect(result.artifacts.csv).toContain('10,3,0,SADD R1 RCB ZERO');
+    expect(result.artifacts.csv).toContain('11,0,0,EXIT');
+  });
+
+  it('rejects allreduce lowering on unsupported grid dimensions', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "allreduce_grid_unsupported" {
+  #pragma allreduce(sum, R1, R0)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source, {
+      grid: { rows: 4, cols: 8, topology: 'mesh' }
+    });
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
   it('rejects unsupported pragmas by default in strict mode', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "allreduce_pragma" {
-  #pragma allreduce(sum, R0, R1)
+kernel "transpose_pragma" {
+  #pragma transpose(reg=R0)
   cycle {
     @0,0: EXIT;
   }
@@ -842,8 +903,8 @@ kernel "allreduce_pragma" {
   it('allows unsupported pragmas in transitional mode and emits simulator matrix CSV', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "allreduce_pragma_relaxed" {
-  #pragma allreduce(sum, R0, R1)
+kernel "transpose_pragma_relaxed" {
+  #pragma transpose(reg=R0)
   cycle {
     @0,0: EXIT;
   }

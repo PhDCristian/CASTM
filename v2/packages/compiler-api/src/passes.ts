@@ -28,7 +28,7 @@ const BINARY_OPCODES: Record<string, string> = {
 };
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
-const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce', 'stencil']);
+const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce', 'stencil', 'allreduce']);
 const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
   BEQ: 2,
   BNE: 2,
@@ -91,6 +91,13 @@ interface StencilPragmaArgs {
   operation: string;
   srcReg: string;
   destReg: string;
+}
+
+interface AllreducePragmaArgs {
+  operation: string;
+  destReg: string;
+  srcReg: string;
+  axis: 'row' | 'col';
 }
 
 function cloneInstruction(instruction: InstructionAst): InstructionAst {
@@ -541,6 +548,20 @@ function parseStencilPragmaArgs(text: string): StencilPragmaArgs | null {
     operation,
     srcReg,
     destReg
+  };
+}
+
+function parseAllreducePragmaArgs(text: string): AllreducePragmaArgs | null {
+  const match = text.trim().match(
+    /^#pragma\s+allreduce\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)(?:\s*,\s*axis\s*=\s*(row|col))?\s*\)\s*$/i
+  );
+  if (!match) return null;
+
+  return {
+    operation: match[1].toLowerCase(),
+    destReg: match[2],
+    srcReg: match[3],
+    axis: (match[4]?.toLowerCase() as 'row' | 'col' | undefined) ?? 'row'
   };
 }
 
@@ -1421,6 +1442,46 @@ function buildStencilCycles(
   return cycles;
 }
 
+function buildAllreduceCycles(
+  pragma: AllreducePragmaArgs,
+  startIndex: number,
+  grid: GridSpec,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): CycleAst[] {
+  const reduceBefore = diagnostics.length;
+  const reduceCycles = buildReduceCycles(
+    {
+      operation: pragma.operation,
+      destReg: pragma.destReg,
+      srcReg: pragma.srcReg,
+      axis: pragma.axis
+    },
+    startIndex,
+    grid,
+    span,
+    diagnostics
+  );
+
+  if (diagnostics.length > reduceBefore && reduceCycles.length === 0) {
+    return [];
+  }
+
+  const broadcastCycles = buildBroadcastCycles(
+    {
+      valueReg: pragma.destReg,
+      from: { row: 0, col: 0 },
+      scope: pragma.axis === 'col' ? 'column' : 'row'
+    },
+    startIndex + reduceCycles.length,
+    grid,
+    span,
+    diagnostics
+  );
+
+  return [...reduceCycles, ...broadcastCycles];
+}
+
 function isPointInGrid(point: RoutePoint, grid: GridSpec): boolean {
   return (
     point.row >= 0 &&
@@ -1969,6 +2030,30 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
           }
 
           const cycles = buildStencilCycles(
+            parsed,
+            generatedCycles.length,
+            grid,
+            pragma.span,
+            diagnostics
+          );
+          generatedCycles.push(...cycles);
+          continue;
+        }
+
+        if (name === 'allreduce') {
+          const parsed = parseAllreducePragmaArgs(pragma.text);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid allreduce pragma syntax: '${pragma.text}'.`,
+              'Use #pragma allreduce(operation, destReg, srcReg[, axis=row|col]).'
+            ));
+            continue;
+          }
+
+          const cycles = buildAllreduceCycles(
             parsed,
             generatedCycles.length,
             grid,

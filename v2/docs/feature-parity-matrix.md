@@ -44,8 +44,9 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 | `scan` lowering | partial | `tests/compiler-api.contract.test.ts` | Supports `add/and/or/xor/max/min`, `inclusive/exclusive`, and `left/right/up/down` using row-0/col-0 lane semantics. |
 | `reduce` lowering | partial | `tests/compiler-api.contract.test.ts` | Supports `sum/add/and/or/xor/mul/max/min` with `axis=row|col` in 4-lane baseline lowering patterns. |
 | `stencil` lowering | partial | `tests/compiler-api.contract.test.ts` | Supports `cross/horizontal/vertical` with `sum/add/avg` parsing and baseline row-0 neighbor lowering. |
+| `allreduce` lowering | partial | `tests/compiler-api.contract.test.ts` | Composes `reduce` + broadcast from `@0,0` with support for `axis=row|col` in 4-lane baseline lowering patterns. |
 | `auto_cycle` lowering | pending | - | Pass currently no-op. |
-| Advanced codegen pragmas (`allreduce`, `transpose`, `gather`, `stream_*`) | pending | - | Tracked for v2 completion phases. |
+| Advanced codegen pragmas (`transpose`, `gather`, `stream_*`) | pending | - | Tracked for v2 completion phases. |
 
 ## IR / Backend / Tooling
 
