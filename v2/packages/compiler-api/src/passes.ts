@@ -9,6 +9,7 @@ import {
   HirOperation,
   HirProgram,
   InstructionAst,
+  LirProgram,
   MirProgram,
   SourceSpan,
   makeDiagnostic
@@ -26,6 +27,7 @@ const BINARY_OPCODES: Record<string, string> = {
 };
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
+const SUPPORTED_PRAGMAS = new Set<string>();
 
 function cloneInstruction(instruction: InstructionAst): InstructionAst {
   return {
@@ -48,7 +50,7 @@ function cloneAst(ast: AstProgram): AstProgram {
       span: { ...ast.kernel.span },
       config: ast.kernel.config ? { ...ast.kernel.config, span: { ...ast.kernel.config.span } } : undefined,
       directives: ast.kernel.directives.map((d) => ({ ...d, span: { ...d.span } })),
-      pragmas: [...ast.kernel.pragmas],
+      pragmas: ast.kernel.pragmas.map((p) => ({ ...p, span: { ...p.span } })),
       cycles: ast.kernel.cycles.map((cycle) => ({
         ...cycle,
         span: { ...cycle.span },
@@ -78,6 +80,11 @@ function cloneAst(ast: AstProgram): AstProgram {
       }))
     }
   };
+}
+
+function extractPragmaName(text: string): string {
+  const match = text.trim().match(/^#pragma\s+([A-Za-z_][A-Za-z0-9_]*)/i);
+  return match ? match[1].toLowerCase() : 'unknown';
 }
 
 function isIdentifier(token: string): boolean {
@@ -445,12 +452,36 @@ export const desugarAutoCyclePass: CompilerPass<AstProgram, AstProgram> = {
   }
 };
 
-export const expandPragmasPass: CompilerPass<AstProgram, AstProgram> = {
-  name: 'expand-pragmas',
-  run(input) {
-    return { output: cloneAst(input), diagnostics: [] };
-  }
-};
+export function createExpandPragmasPass(strictUnsupported: boolean): CompilerPass<AstProgram, AstProgram> {
+  return {
+    name: 'expand-pragmas',
+    run(input) {
+      const output = cloneAst(input);
+      const diagnostics: Diagnostic[] = [];
+
+      if (!strictUnsupported || !output.kernel) {
+        return { output, diagnostics };
+      }
+
+      for (const pragma of output.kernel.pragmas) {
+        const name = extractPragmaName(pragma.text);
+        if (SUPPORTED_PRAGMAS.has(name)) continue;
+
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Semantic.UnsupportedPragma,
+          'error',
+          pragma.span,
+          `Unsupported pragma '${name}' in v2 baseline.`,
+          'Use CompileOptions.strictUnsupported=false to allow transitional compilation.'
+        ));
+      }
+
+      return { output, diagnostics };
+    }
+  };
+}
+
+export const expandPragmasPass = createExpandPragmasPass(false);
 
 function addOperation(
   operations: HirOperation[],
@@ -699,5 +730,32 @@ export const lowerToMirPass: CompilerPass<HirProgram, MirProgram> = {
     };
 
     return { output, diagnostics };
+  }
+};
+
+export const lowerToLirPass: CompilerPass<MirProgram, LirProgram> = {
+  name: 'lower-to-lir',
+  run(input) {
+    const diagnostics: Diagnostic[] = [];
+
+    return {
+      output: {
+        targetProfileId: input.targetProfileId,
+        grid: { ...input.grid },
+        cycles: input.cycles.map((cycle) => ({
+          index: cycle.index,
+          slots: cycle.slots.map((slot) => ({
+            row: slot.row,
+            col: slot.col,
+            instruction: {
+              opcode: slot.instruction.opcode,
+              operands: [...slot.instruction.operands],
+              span: { ...slot.instruction.span }
+            }
+          }))
+        }))
+      },
+      diagnostics
+    };
   }
 };

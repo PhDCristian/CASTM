@@ -284,7 +284,10 @@ export function parseSource(source: string): ParseResult {
       }
 
       if (/^#pragma\s+/i.test(clean) && kernel) {
-        kernel.pragmas.push(clean);
+        kernel.pragmas.push({
+          text: clean,
+          span: spanAt(lineNo, 1, clean.length)
+        });
         continue;
       }
 

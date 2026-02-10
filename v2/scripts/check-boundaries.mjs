@@ -1,7 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(process.cwd(), 'v2');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const root = path.resolve(__dirname, '..');
 const packagesDir = path.join(root, 'packages');
 
 const rules = {
@@ -31,6 +34,11 @@ function walkTsFiles(dir) {
 }
 
 const violations = [];
+if (!fs.existsSync(packagesDir)) {
+  console.error(`Packages directory not found: ${packagesDir}`);
+  process.exit(1);
+}
+
 for (const pkg of Object.keys(rules)) {
   const srcDir = path.join(packagesDir, pkg, 'src');
   if (!fs.existsSync(srcDir)) continue;

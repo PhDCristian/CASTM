@@ -2,6 +2,7 @@ import { emitCsv } from '@openedge/compiler-backend-csv';
 import { parseSource } from '@openedge/compiler-front';
 import {
   AnalysisResult,
+  AssertionInfo,
   AstProgram,
   CompileOptions,
   CompileResult,
@@ -11,9 +12,13 @@ import {
   ErrorCodes,
   GridSpec,
   HirProgram,
+  IoConfigInfo,
+  LirProgram,
   MemoryRegionInfo,
   MirProgram,
   ParseResult,
+  SymbolArrayInfo,
+  SymbolInfo,
   makeDiagnostic,
   runPassPipeline,
   spanAt
@@ -24,8 +29,9 @@ import {
   createValidateGridPass,
   desugarAutoCyclePass,
   createDesugarMemoryPass,
+  createExpandPragmasPass,
   desugarExpressionsPass,
-  expandPragmasPass,
+  lowerToLirPass,
   lowerToMirPass
 } from './passes.js';
 
@@ -49,6 +55,103 @@ function parseNumericLiteral(text: string): number | null {
 interface DataRegionCollection {
   regions: MemoryRegionInfo[];
   baseByName: Map<string, number>;
+}
+
+interface RuntimeArtifactCollection {
+  ioConfig: IoConfigInfo;
+  assertions: AssertionInfo[];
+  symbols: SymbolInfo;
+}
+
+function parseNumericList(text: string): number[] | null {
+  const normalized = text
+    .replace(/[{}\[\]\(\)]/g, ' ')
+    .split(/[,\s]+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+
+  if (normalized.length === 0) return [];
+
+  const values: number[] = [];
+  for (const token of normalized) {
+    const value = parseNumericLiteral(token);
+    if (value === null) return null;
+    values.push(value);
+  }
+
+  return values;
+}
+
+function collectRuntimeArtifacts(
+  ast: AstProgram,
+  dataRegions: MemoryRegionInfo[],
+  diagnostics: Diagnostic[]
+): RuntimeArtifactCollection {
+  const constants: Record<string, string> = {};
+  const aliases: Record<string, string> = {};
+  const arrays: SymbolArrayInfo[] = [];
+  const ioConfig: IoConfigInfo = { loadAddrs: [], storeAddrs: [] };
+  const assertions: AssertionInfo[] = [];
+
+  for (const region of dataRegions) {
+    if (!region.name) continue;
+    arrays.push({
+      name: region.name,
+      start: region.start,
+      length: region.values.length
+    });
+  }
+
+  const directives = ast.kernel?.directives ?? [];
+  for (const directive of directives) {
+    if (directive.kind === 'const') {
+      constants[directive.name] = directive.value;
+      continue;
+    }
+
+    if (directive.kind === 'alias') {
+      aliases[directive.name] = directive.value;
+      continue;
+    }
+
+    if (directive.kind !== 'raw') continue;
+
+    if (directive.name === 'io_load' || directive.name === 'io_store') {
+      const payloadMatch = directive.value.match(/^\.io_(?:load|store)\s+(.+)$/i);
+      const payload = payloadMatch ? payloadMatch[1].trim() : '';
+      const parsed = parseNumericList(payload);
+      if (parsed === null) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          directive.span,
+          `Invalid ${directive.name} directive payload '${payload}'.`,
+          'Expected numeric addresses separated by commas or spaces.'
+        ));
+        continue;
+      }
+
+      if (directive.name === 'io_load') {
+        ioConfig.loadAddrs.push(...parsed);
+      } else {
+        ioConfig.storeAddrs.push(...parsed);
+      }
+      continue;
+    }
+
+    if (directive.name === 'assert') {
+      assertions.push({
+        raw: directive.value,
+        span: { ...directive.span }
+      });
+    }
+  }
+
+  return {
+    ioConfig,
+    assertions,
+    symbols: { constants, aliases, arrays }
+  };
 }
 
 function parseDataDirectiveValue(rawValue: string): { explicitStart?: number; values: number[] } | null {
@@ -186,7 +289,9 @@ export function parse(source: string): ParseResult {
 export function analyze(ast: AstProgram, options: CompileOptions = {}): AnalysisResult {
   const diagnostics: Diagnostic[] = [];
   const memory = collectDataRegions(ast, diagnostics);
+  const runtime = collectRuntimeArtifacts(ast, memory.regions, diagnostics);
   const target = resolveGrid(ast, options, diagnostics);
+  const strictUnsupported = options.strictUnsupported !== false;
 
   if (!target) {
     return {
@@ -194,6 +299,9 @@ export function analyze(ast: AstProgram, options: CompileOptions = {}): Analysis
       diagnostics,
       ast,
       memoryRegions: memory.regions,
+      ioConfig: runtime.ioConfig,
+      assertions: runtime.assertions,
+      symbols: runtime.symbols,
       loweredPasses: []
     };
   }
@@ -202,7 +310,7 @@ export function analyze(ast: AstProgram, options: CompileOptions = {}): Analysis
     createDesugarMemoryPass(memory.baseByName),
     desugarExpressionsPass,
     desugarAutoCyclePass,
-    expandPragmasPass
+    createExpandPragmasPass(strictUnsupported)
   ];
 
   const astPipeline = runPassPipeline(ast, astPasses, diagnostics);
@@ -218,6 +326,8 @@ export function analyze(ast: AstProgram, options: CompileOptions = {}): Analysis
 
   const mirPipeline = runPassPipeline(hir, [lowerToMirPass], diagnostics);
   const mir = mirPipeline.output as MirProgram;
+  const lirPipeline = runPassPipeline(mir, [lowerToLirPass], diagnostics);
+  const lir = lirPipeline.output as LirProgram;
 
   return {
     success: !hasErrors(diagnostics),
@@ -225,19 +335,35 @@ export function analyze(ast: AstProgram, options: CompileOptions = {}): Analysis
     ast: loweredAst,
     hir,
     mir,
+    lir,
     memoryRegions: memory.regions,
-    loweredPasses: [...astPipeline.loweredPasses, ...hirPipeline.loweredPasses, ...mirPipeline.loweredPasses]
+    ioConfig: runtime.ioConfig,
+    assertions: runtime.assertions,
+    symbols: runtime.symbols,
+    loweredPasses: [
+      ...astPipeline.loweredPasses,
+      ...hirPipeline.loweredPasses,
+      ...mirPipeline.loweredPasses,
+      ...lirPipeline.loweredPasses
+    ]
   };
 }
 
-export function emit(program: MirProgram, backendOptions: EmitOptions = {}): EmitResult {
+export function emit(program: MirProgram | LirProgram, backendOptions: EmitOptions = {}): EmitResult {
   return emitCsv(program, backendOptions);
 }
 
 export function compile(source: string, options: CompileOptions = {}): CompileResult {
   const parseResult = parse(source);
   const diagnostics: Diagnostic[] = [...parseResult.diagnostics];
-  const want = new Set(options.emitArtifacts ?? ['ast', 'hir', 'mir', 'csv']);
+  const want = new Set(options.emitArtifacts ?? ['ast', 'hir', 'mir', 'lir', 'csv']);
+  const parsedRuntime = parseResult.ast
+    ? collectRuntimeArtifacts(parseResult.ast, [], diagnostics)
+    : {
+        ioConfig: { loadAddrs: [], storeAddrs: [] },
+        assertions: [],
+        symbols: { constants: {}, aliases: {}, arrays: [] }
+      };
 
   if (!parseResult.ast) {
     return {
@@ -258,7 +384,10 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       diagnostics,
       artifacts: {
         ast: want.has('ast') ? parseResult.ast : undefined,
-        memoryRegions: []
+        memoryRegions: [],
+        ioConfig: parsedRuntime.ioConfig,
+        assertions: parsedRuntime.assertions,
+        symbols: parsedRuntime.symbols
       },
       stats: {
         cycles: parseResult.ast.kernel?.cycles.length ?? 0,
@@ -275,8 +404,8 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
   diagnostics.push(...analysis.diagnostics);
 
   let csv: string | undefined;
-  if (analysis.mir && want.has('csv')) {
-    const emitted = emit(analysis.mir, { includeCycleHeader: true });
+  if ((analysis.lir || analysis.mir) && want.has('csv')) {
+    const emitted = emit(analysis.lir ?? analysis.mir!, { includeCycleHeader: true });
     diagnostics.push(...emitted.diagnostics);
     csv = emitted.csv;
   }
@@ -293,7 +422,11 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       ast: want.has('ast') ? analysis.ast : undefined,
       hir: want.has('hir') ? analysis.hir : undefined,
       mir: want.has('mir') ? analysis.mir : undefined,
-      memoryRegions: analysis.memoryRegions ?? []
+      lir: want.has('lir') ? analysis.lir : undefined,
+      memoryRegions: analysis.memoryRegions ?? [],
+      ioConfig: analysis.ioConfig,
+      assertions: analysis.assertions,
+      symbols: analysis.symbols
     },
     stats: {
       cycles: analysis.mir?.cycles.length ?? analysis.ast?.kernel?.cycles.length ?? 0,

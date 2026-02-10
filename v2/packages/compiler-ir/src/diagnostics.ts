@@ -13,7 +13,8 @@ export const ErrorCodes = {
     Collision: 'E3004',
     UnknownOpcode: 'E3005',
     UnknownTargetProfile: 'E3006',
-    InvalidGridSpec: 'E3007'
+    InvalidGridSpec: 'E3007',
+    UnsupportedPragma: 'E3008'
   },
   Internal: {
     UnexpectedState: 'E9001'

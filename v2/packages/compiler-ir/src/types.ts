@@ -45,14 +45,45 @@ export interface MemoryRegionInfo {
   values: number[];
 }
 
+export interface IoConfigInfo {
+  loadAddrs: number[];
+  storeAddrs: number[];
+}
+
+export interface AssertionInfo {
+  cycle?: number;
+  row?: number;
+  col?: number;
+  register?: string;
+  value?: number;
+  raw: string;
+  span: SourceSpan;
+}
+
+export interface SymbolArrayInfo {
+  name: string;
+  start: number;
+  length: number;
+  rows?: number;
+  cols?: number;
+}
+
+export interface SymbolInfo {
+  constants: Record<string, string>;
+  aliases: Record<string, string>;
+  arrays: SymbolArrayInfo[];
+}
+
 export interface CompileOptions {
   targetProfile?: string;
   grid?: Partial<Pick<GridSpec, 'rows' | 'cols' | 'topology'>>;
-  emitArtifacts?: Array<'ast' | 'hir' | 'mir' | 'csv'>;
+  emitArtifacts?: Array<'ast' | 'hir' | 'mir' | 'lir' | 'csv'>;
+  strictUnsupported?: boolean;
 }
 
 export interface EmitOptions {
   includeCycleHeader?: boolean;
+  format?: 'flat-csv' | 'sim-matrix-csv';
 }
 
 export interface InstructionAst {
@@ -105,12 +136,17 @@ export interface DirectiveAst {
   span: SourceSpan;
 }
 
+export interface PragmaAst {
+  text: string;
+  span: SourceSpan;
+}
+
 export interface KernelAst {
   name: string;
   config?: { mask: number; startAddr: number; span: SourceSpan };
   cycles: CycleAst[];
   directives: DirectiveAst[];
-  pragmas: string[];
+  pragmas: PragmaAst[];
   span: SourceSpan;
 }
 
@@ -163,6 +199,29 @@ export interface MirProgram {
   cycles: MirCycle[];
 }
 
+export interface LirInstruction {
+  opcode: string;
+  operands: string[];
+  span: SourceSpan;
+}
+
+export interface LirSlot {
+  row: number;
+  col: number;
+  instruction: LirInstruction;
+}
+
+export interface LirCycle {
+  index: number;
+  slots: LirSlot[];
+}
+
+export interface LirProgram {
+  targetProfileId: string;
+  grid: GridSpec;
+  cycles: LirCycle[];
+}
+
 export interface ParseResult {
   success: boolean;
   ast?: AstProgram;
@@ -175,7 +234,11 @@ export interface AnalysisResult {
   ast?: AstProgram;
   hir?: HirProgram;
   mir?: MirProgram;
+  lir?: LirProgram;
   memoryRegions?: MemoryRegionInfo[];
+  ioConfig?: IoConfigInfo;
+  assertions?: AssertionInfo[];
+  symbols?: SymbolInfo;
   loweredPasses: string[];
 }
 
@@ -187,7 +250,11 @@ export interface CompileResult {
     ast?: AstProgram;
     hir?: HirProgram;
     mir?: MirProgram;
+    lir?: LirProgram;
     memoryRegions?: MemoryRegionInfo[];
+    ioConfig?: IoConfigInfo;
+    assertions?: AssertionInfo[];
+    symbols?: SymbolInfo;
   };
   stats: {
     cycles: number;
