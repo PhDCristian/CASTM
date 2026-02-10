@@ -673,11 +673,89 @@ kernel "scan_bad_op" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 
+  it('lowers reduce pragma sum on row axis', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "reduce_sum_row" {
+  #pragma reduce(sum, R1, R0)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R2 R0 ZERO');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R2 R0 RCR');
+    expect(result.artifacts.csv).toContain('1,0,2,SADD R2 R0 RCR');
+    expect(result.artifacts.csv).toContain('2,0,1,SADD R3 RCR ZERO');
+    expect(result.artifacts.csv).toContain('3,0,0,SADD R1 R2 RCR');
+    expect(result.artifacts.csv).toContain('4,0,0,EXIT');
+  });
+
+  it('lowers reduce pragma max with SSUB+BSFA pattern', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "reduce_max_row" {
+  #pragma reduce(max, R1, R0)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('1,0,0,SSUB R2 R0 RCR');
+    expect(result.artifacts.csv).toContain('2,0,0,BSFA R2 RCR R0 SELF');
+    expect(result.artifacts.csv).toContain('5,0,0,BSFA R1 RCR R2 SELF');
+    expect(result.artifacts.csv).toContain('6,0,0,EXIT');
+  });
+
+  it('supports reduce axis=col using vertical neighbors', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "reduce_col_axis" {
+  #pragma reduce(sum, R1, R0, axis=col)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R2 R0 RCB');
+    expect(result.artifacts.csv).toContain('1,2,0,SADD R2 R0 RCB');
+    expect(result.artifacts.csv).toContain('2,1,0,SADD R3 RCB ZERO');
+    expect(result.artifacts.csv).toContain('3,0,0,SADD R1 R2 RCB');
+    expect(result.artifacts.csv).toContain('4,0,0,EXIT');
+  });
+
+  it('rejects reduce lowering on unsupported grid dimensions', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "reduce_grid_unsupported" {
+  #pragma reduce(sum, R1, R0)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source, {
+      grid: { rows: 4, cols: 8, topology: 'mesh' }
+    });
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
   it('rejects unsupported pragmas by default in strict mode', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "reduce_pragma" {
-  #pragma reduce(op=add, axis=row)
+kernel "stencil_pragma" {
+  #pragma stencil(cross, add, R0, R1)
   cycle {
     @0,0: EXIT;
   }
@@ -692,8 +770,8 @@ kernel "reduce_pragma" {
   it('allows unsupported pragmas in transitional mode and emits simulator matrix CSV', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "reduce_pragma_relaxed" {
-  #pragma reduce(op=add, axis=row)
+kernel "stencil_pragma_relaxed" {
+  #pragma stencil(cross, add, R0, R1)
   cycle {
     @0,0: EXIT;
   }

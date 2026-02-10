@@ -28,7 +28,7 @@ const BINARY_OPCODES: Record<string, string> = {
 };
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
-const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan']);
+const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce']);
 const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
   BEQ: 2,
   BNE: 2,
@@ -77,6 +77,13 @@ interface ScanPragmaArgs {
   dstReg: string;
   direction: 'left' | 'right' | 'up' | 'down';
   mode: 'inclusive' | 'exclusive';
+}
+
+interface ReducePragmaArgs {
+  operation: string;
+  destReg: string;
+  srcReg: string;
+  axis: 'row' | 'col';
 }
 
 function cloneInstruction(instruction: InstructionAst): InstructionAst {
@@ -469,6 +476,20 @@ function parseScanPragmaArgs(text: string): ScanPragmaArgs | null {
   };
 }
 
+function parseReducePragmaArgs(text: string): ReducePragmaArgs | null {
+  const match = text.trim().match(
+    /^#pragma\s+reduce\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*([A-Za-z_][A-Za-z0-9_]*)(?:\s*,\s*axis\s*=\s*(row|col))?\s*\)\s*$/i
+  );
+  if (!match) return null;
+
+  return {
+    operation: match[1].toLowerCase(),
+    destReg: match[2],
+    srcReg: match[3],
+    axis: (match[4]?.toLowerCase() as 'row' | 'col' | undefined) ?? 'row'
+  };
+}
+
 function getScanIncomingRegister(direction: 'left' | 'right' | 'up' | 'down'): string {
   switch (direction) {
     case 'right':
@@ -509,6 +530,24 @@ function getScanOpcode(operation: string): string | null {
       return 'LOR';
     case 'xor':
       return 'LXOR';
+    default:
+      return null;
+  }
+}
+
+function getReduceOpcode(operation: string): string | null {
+  switch (operation) {
+    case 'sum':
+    case 'add':
+      return 'SADD';
+    case 'and':
+      return 'LAND';
+    case 'or':
+      return 'LOR';
+    case 'xor':
+      return 'LXOR';
+    case 'mul':
+      return 'SMUL';
     default:
       return null;
   }
@@ -651,6 +690,28 @@ function createRowCycle(
       })),
       span: cloneSpan(span)
     }],
+    span: cloneSpan(span)
+  };
+}
+
+function createMultiAtCycle(
+  index: number,
+  placements: Array<{ row: number; col: number; instruction: InstructionAst }>,
+  span: SourceSpan
+): CycleAst {
+  return {
+    index,
+    statements: placements.map((placement) => ({
+      kind: 'at' as const,
+      row: placement.row,
+      col: placement.col,
+      instruction: {
+        ...placement.instruction,
+        span: cloneSpan(placement.instruction.span),
+        operands: [...placement.instruction.operands]
+      },
+      span: cloneSpan(span)
+    })),
     span: cloneSpan(span)
   };
 }
@@ -1009,7 +1070,7 @@ function buildScanCycles(
         startIndex + cycles.length,
         row,
         col,
-        createInstruction('BSFA', [pragma.dstReg, bsfaFirst, bsfaSecond], span),
+        createInstruction('BSFA', [pragma.dstReg, bsfaFirst, bsfaSecond, 'SELF'], span),
         span
       ));
     }
@@ -1027,6 +1088,223 @@ function buildScanCycles(
       ));
     }
   }
+
+  return cycles;
+}
+
+function buildReduceCycles(
+  pragma: ReducePragmaArgs,
+  startIndex: number,
+  grid: GridSpec,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): CycleAst[] {
+  const compareOp = pragma.operation === 'max' || pragma.operation === 'min';
+  const simpleOpcode = getReduceOpcode(pragma.operation);
+  if (!compareOp && !simpleOpcode) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `Unsupported reduce operation '${pragma.operation}'.`,
+      'Supported operations: sum, add, and, or, xor, mul, max, min.'
+    ));
+    return [];
+  }
+
+  if (pragma.axis === 'row' && grid.cols !== 4) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `#pragma reduce axis=row currently requires 4 columns, got ${grid.cols}.`,
+      'Use a 4-column grid for v2 baseline reduce lowering.'
+    ));
+    return [];
+  }
+
+  if (pragma.axis === 'col' && grid.rows !== 4) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `#pragma reduce axis=col currently requires 4 rows, got ${grid.rows}.`,
+      'Use a 4-row grid for v2 baseline reduce lowering.'
+    ));
+    return [];
+  }
+
+  const makeRow = (instructions: InstructionAst[]): CycleAst =>
+    createRowCycle(startIndex + cycles.length, 0, instructions, span);
+  const makeNop = () => createInstruction('NOP', [], span);
+
+  const cycles: CycleAst[] = [];
+
+  if (pragma.axis === 'row') {
+    const instr = simpleOpcode ?? 'SADD';
+
+    cycles.push(makeRow([
+      createInstruction('SADD', ['R2', pragma.srcReg, 'ZERO'], span),
+      createInstruction('SADD', ['R2', pragma.srcReg, 'ZERO'], span),
+      createInstruction('SADD', ['R2', pragma.srcReg, 'ZERO'], span),
+      createInstruction('SADD', ['R2', pragma.srcReg, 'ZERO'], span)
+    ]));
+
+    if (!compareOp) {
+      cycles.push(makeRow([
+        createInstruction(instr, ['R2', pragma.srcReg, 'RCR'], span),
+        makeNop(),
+        createInstruction(instr, ['R2', pragma.srcReg, 'RCR'], span),
+        makeNop()
+      ]));
+
+      cycles.push(makeRow([
+        makeNop(),
+        createInstruction('SADD', ['R3', 'RCR', 'ZERO'], span),
+        makeNop(),
+        makeNop()
+      ]));
+
+      cycles.push(makeRow([
+        createInstruction(instr, [pragma.destReg, 'R2', 'RCR'], span),
+        makeNop(),
+        makeNop(),
+        makeNop()
+      ]));
+      return cycles;
+    }
+
+    const pairFirst = pragma.operation === 'max' ? 'RCR' : pragma.srcReg;
+    const pairSecond = pragma.operation === 'max' ? pragma.srcReg : 'RCR';
+    const finalFirst = pragma.operation === 'max' ? 'RCR' : 'R2';
+    const finalSecond = pragma.operation === 'max' ? 'R2' : 'RCR';
+
+    cycles.push(makeRow([
+      createInstruction('SSUB', ['R2', pragma.srcReg, 'RCR'], span),
+      makeNop(),
+      createInstruction('SSUB', ['R2', pragma.srcReg, 'RCR'], span),
+      makeNop()
+    ]));
+
+    cycles.push(makeRow([
+      createInstruction('BSFA', ['R2', pairFirst, pairSecond, 'SELF'], span),
+      makeNop(),
+      createInstruction('BSFA', ['R2', pairFirst, pairSecond, 'SELF'], span),
+      makeNop()
+    ]));
+
+    cycles.push(makeRow([
+      makeNop(),
+      createInstruction('SADD', ['R3', 'RCR', 'ZERO'], span),
+      makeNop(),
+      makeNop()
+    ]));
+
+    cycles.push(makeRow([
+      createInstruction('SSUB', ['R3', 'R2', 'RCR'], span),
+      makeNop(),
+      makeNop(),
+      makeNop()
+    ]));
+
+    cycles.push(makeRow([
+      createInstruction('BSFA', [pragma.destReg, finalFirst, finalSecond, 'SELF'], span),
+      makeNop(),
+      makeNop(),
+      makeNop()
+    ]));
+
+    return cycles;
+  }
+
+  const instr = simpleOpcode ?? 'SADD';
+  const bselectFirst = pragma.operation === 'max' ? 'RCB' : pragma.srcReg;
+  const bselectSecond = pragma.operation === 'max' ? pragma.srcReg : 'RCB';
+  const finalFirst = pragma.operation === 'max' ? 'RCB' : 'R2';
+  const finalSecond = pragma.operation === 'max' ? 'R2' : 'RCB';
+
+  cycles.push(createMultiAtCycle(
+    startIndex + cycles.length,
+    [0, 1, 2, 3].map((row) => ({
+      row,
+      col: 0,
+      instruction: createInstruction('SADD', ['R2', pragma.srcReg, 'ZERO'], span)
+    })),
+    span
+  ));
+
+  if (!compareOp) {
+    cycles.push(createMultiAtCycle(
+      startIndex + cycles.length,
+      [0, 2].map((row) => ({
+        row,
+        col: 0,
+        instruction: createInstruction(instr, ['R2', pragma.srcReg, 'RCB'], span)
+      })),
+      span
+    ));
+
+    cycles.push(createAtCycle(
+      startIndex + cycles.length,
+      1,
+      0,
+      createInstruction('SADD', ['R3', 'RCB', 'ZERO'], span),
+      span
+    ));
+
+    cycles.push(createAtCycle(
+      startIndex + cycles.length,
+      0,
+      0,
+      createInstruction(instr, [pragma.destReg, 'R2', 'RCB'], span),
+      span
+    ));
+    return cycles;
+  }
+
+  cycles.push(createMultiAtCycle(
+    startIndex + cycles.length,
+    [0, 2].map((row) => ({
+      row,
+      col: 0,
+      instruction: createInstruction('SSUB', ['R2', pragma.srcReg, 'RCB'], span)
+    })),
+    span
+  ));
+
+  cycles.push(createMultiAtCycle(
+    startIndex + cycles.length,
+    [0, 2].map((row) => ({
+      row,
+      col: 0,
+      instruction: createInstruction('BSFA', ['R2', bselectFirst, bselectSecond, 'SELF'], span)
+    })),
+    span
+  ));
+
+  cycles.push(createAtCycle(
+    startIndex + cycles.length,
+    1,
+    0,
+    createInstruction('SADD', ['R3', 'RCB', 'ZERO'], span),
+    span
+  ));
+
+  cycles.push(createAtCycle(
+    startIndex + cycles.length,
+    0,
+    0,
+    createInstruction('SSUB', ['R3', 'R2', 'RCB'], span),
+    span
+  ));
+
+  cycles.push(createAtCycle(
+    startIndex + cycles.length,
+    0,
+    0,
+    createInstruction('BSFA', [pragma.destReg, finalFirst, finalSecond, 'SELF'], span),
+    span
+  ));
 
   return cycles;
 }
@@ -1531,6 +1809,30 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
           }
 
           const cycles = buildScanCycles(
+            parsed,
+            generatedCycles.length,
+            grid,
+            pragma.span,
+            diagnostics
+          );
+          generatedCycles.push(...cycles);
+          continue;
+        }
+
+        if (name === 'reduce') {
+          const parsed = parseReducePragmaArgs(pragma.text);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid reduce pragma syntax: '${pragma.text}'.`,
+              'Use #pragma reduce(operation, destReg, srcReg[, axis=row|col]).'
+            ));
+            continue;
+          }
+
+          const cycles = buildReduceCycles(
             parsed,
             generatedCycles.length,
             grid,

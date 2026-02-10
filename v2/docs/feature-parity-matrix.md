@@ -42,8 +42,9 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 | `broadcast` lowering | partial | `tests/compiler-api.contract.test.ts` | Fanout implemented via route-style lowering for `row`/`column`/`all` scopes. |
 | `rotate`/`shift` lowering | partial | `tests/compiler-api.contract.test.ts` | Row-0 lowering implemented; `rotate` currently torus-only, `shift` supports fill values. |
 | `scan` lowering | partial | `tests/compiler-api.contract.test.ts` | Supports `add/and/or/xor/max/min`, `inclusive/exclusive`, and `left/right/up/down` using row-0/col-0 lane semantics. |
+| `reduce` lowering | partial | `tests/compiler-api.contract.test.ts` | Supports `sum/add/and/or/xor/mul/max/min` with `axis=row|col` in 4-lane baseline lowering patterns. |
 | `auto_cycle` lowering | pending | - | Pass currently no-op. |
-| Advanced codegen pragmas (`reduce`, `stencil`, `allreduce`, `transpose`, `gather`, `stream_*`) | pending | - | Tracked for v2 completion phases. |
+| Advanced codegen pragmas (`stencil`, `allreduce`, `transpose`, `gather`, `stream_*`) | pending | - | Tracked for v2 completion phases. |
 
 ## IR / Backend / Tooling
 
