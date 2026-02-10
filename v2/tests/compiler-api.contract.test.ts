@@ -340,6 +340,68 @@ kernel "fn_labels" {
     expect(result.artifacts.csv).toContain('5,0,0,BGE R1 IMM(0) 4');
   });
 
+  it('lowers kernel-level if/else blocks including compact `} else {` form', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_if_else" {
+  if (R0 == IMM(1)) @0,0 {
+    cycle { @0,1: SADD R1, ZERO, IMM(2); }
+  } else {
+    cycle { @0,2: SADD R2, ZERO, IMM(3); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,BNE R0 IMM(1) 3');
+    expect(result.artifacts.csv).toContain('1,0,1,SADD R1 ZERO IMM(2)');
+    expect(result.artifacts.csv).toContain('2,0,0,JUMP 5 ZERO');
+    expect(result.artifacts.csv).toContain('4,0,2,SADD R2 ZERO IMM(3)');
+    expect(result.artifacts.csv).toContain('6,0,0,EXIT');
+  });
+
+  it('lowers kernel-level while loops into branch, body, and back-edge cycles', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_while" {
+  while (R0 < IMM(2)) @0,0 {
+    cycle { @0,0: SADD R0, R0, IMM(1); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,BGE R0 IMM(2) 3');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R0 R0 IMM(1)');
+    expect(result.artifacts.csv).toContain('2,0,0,JUMP 0 ZERO');
+    expect(result.artifacts.csv).toContain('4,0,0,EXIT');
+  });
+
+  it('supports if lowering inside expanded function bodies with parameter substitution', () => {
+    const source = `
+target "uma-cgra-v1";
+function maybe_inc(dst, src) {
+  if (src != ZERO) @0,0 {
+    cycle { @0,0: SADD dst, src, IMM(1); }
+  }
+}
+kernel "fn_if" {
+  maybe_inc(R2, R1);
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,BEQ R1 ZERO 2');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R2 R1 IMM(1)');
+    expect(result.artifacts.csv).toContain('3,0,0,EXIT');
+  });
+
   it('rejects memory-to-memory assignment in memory sugar', () => {
     const source = `
 target "uma-cgra-v1";

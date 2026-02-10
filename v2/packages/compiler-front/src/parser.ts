@@ -268,6 +268,7 @@ interface SourceLineEntry {
 interface CollectedBlock {
   body: SourceLineEntry[];
   endIndex: number | null;
+  trailingAfterClose?: string;
 }
 
 interface FunctionDefinitionLite {
@@ -280,6 +281,18 @@ interface FunctionDefinitionLite {
 interface ParsedLabeledCycle {
   label: string;
   inlinePayload?: string;
+}
+
+interface ParsedCondition {
+  lhs: string;
+  operator: '==' | '!=' | '<' | '>=' | '>' | '<=';
+  rhs: string;
+}
+
+interface ParsedControlHeader {
+  condition: ParsedCondition;
+  row: number;
+  col: number;
 }
 
 function parseForHeader(
@@ -361,6 +374,14 @@ function collectBlockFromSource(
   for (let i = startIndex + 1; i < lines.length; i++) {
     const rawLine = lines[i];
     const cleanLine = stripLineComment(rawLine).trim();
+    if (depth === 1 && cleanLine.startsWith('}')) {
+      return {
+        body,
+        endIndex: i,
+        trailingAfterClose: cleanLine.slice(1).trim()
+      };
+    }
+
     const opens = countChar(cleanLine, '{');
     const closes = countChar(cleanLine, '}');
     const nextDepth = depth + opens - closes;
@@ -391,6 +412,14 @@ function collectBlockFromEntries(
 
   for (let i = startIndex + 1; i < entries.length; i++) {
     const cleanLine = entries[i].cleanLine;
+    if (depth === 1 && cleanLine.startsWith('}')) {
+      return {
+        body,
+        endIndex: i,
+        trailingAfterClose: cleanLine.slice(1).trim()
+      };
+    }
+
     const opens = countChar(cleanLine, '{');
     const closes = countChar(cleanLine, '}');
     const nextDepth = depth + opens - closes;
@@ -398,6 +427,61 @@ function collectBlockFromEntries(
     if (nextDepth === 0) {
       return { body, endIndex: i };
     }
+
+    body.push(entries[i]);
+    depth = nextDepth;
+  }
+
+  return { body, endIndex: null };
+}
+
+function collectBlockAfterOpenFromSource(lines: string[], startIndex: number): CollectedBlock {
+  const body: SourceLineEntry[] = [];
+  let depth = 1;
+
+  for (let i = startIndex; i < lines.length; i++) {
+    const rawLine = lines[i];
+    const cleanLine = stripLineComment(rawLine).trim();
+    if (depth === 1 && cleanLine.startsWith('}')) {
+      return {
+        body,
+        endIndex: i,
+        trailingAfterClose: cleanLine.slice(1).trim()
+      };
+    }
+
+    const opens = countChar(cleanLine, '{');
+    const closes = countChar(cleanLine, '}');
+    const nextDepth = depth + opens - closes;
+
+    body.push({
+      lineNo: i + 1,
+      rawLine,
+      cleanLine
+    });
+    depth = nextDepth;
+  }
+
+  return { body, endIndex: null };
+}
+
+function collectBlockAfterOpenFromEntries(entries: SourceLineEntry[], startIndex: number): CollectedBlock {
+  const body: SourceLineEntry[] = [];
+  let depth = 1;
+
+  for (let i = startIndex; i < entries.length; i++) {
+    const cleanLine = entries[i].cleanLine;
+    if (depth === 1 && cleanLine.startsWith('}')) {
+      return {
+        body,
+        endIndex: i,
+        trailingAfterClose: cleanLine.slice(1).trim()
+      };
+    }
+
+    const opens = countChar(cleanLine, '{');
+    const closes = countChar(cleanLine, '}');
+    const nextDepth = depth + opens - closes;
 
     body.push(entries[i]);
     depth = nextDepth;
@@ -584,6 +668,100 @@ function parseLabeledCycleLine(cleanLine: string): ParsedLabeledCycle | null {
   return null;
 }
 
+function parseConditionExpression(conditionText: string): ParsedCondition | null {
+  const operators = ['==', '!=', '>=', '<=', '>', '<'] as const;
+  let paren = 0;
+  let bracket = 0;
+
+  for (let i = 0; i < conditionText.length; i++) {
+    const ch = conditionText[i];
+    if (ch === '(') paren++;
+    if (ch === ')') paren = Math.max(0, paren - 1);
+    if (ch === '[') bracket++;
+    if (ch === ']') bracket = Math.max(0, bracket - 1);
+    if (paren !== 0 || bracket !== 0) continue;
+
+    for (const op of operators) {
+      if (!conditionText.startsWith(op, i)) continue;
+      const lhs = conditionText.slice(0, i).trim();
+      const rhs = conditionText.slice(i + op.length).trim();
+      if (!lhs || !rhs) return null;
+      return {
+        lhs,
+        operator: op,
+        rhs
+      };
+    }
+  }
+
+  return null;
+}
+
+function parseControlHeader(
+  cleanLine: string,
+  keyword: 'if' | 'while',
+  lineNo: number,
+  constants: ReadonlyMap<string, number>,
+  diagnostics: Diagnostic[]
+): ParsedControlHeader | null {
+  const regex = keyword === 'if'
+    ? /^if\s*\((.+)\)\s*@\s*([^,]+)\s*,\s*([^\{]+)\{\s*$/i
+    : /^while\s*\((.+)\)\s*@\s*([^,]+)\s*,\s*([^\{]+)\{\s*$/i;
+  const match = cleanLine.match(regex);
+  if (!match) return null;
+
+  const parsedCondition = parseConditionExpression(match[1].trim());
+  if (!parsedCondition) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(lineNo, 1, cleanLine.length),
+      `Invalid ${keyword} condition '${match[1].trim()}'.`,
+      'Use condition syntax: <operand> <op> <operand>, where op is one of == != < <= > >='
+    ));
+    return null;
+  }
+
+  const row = evaluateNumericExpression(match[2].trim(), constants, new Map());
+  const col = evaluateNumericExpression(match[3].trim(), constants, new Map());
+  if (row === null || col === null) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(lineNo, 1, cleanLine.length),
+      `Invalid ${keyword} control location '@${match[2].trim()},${match[3].trim()}'.`,
+      'Control location coordinates must evaluate to integers.'
+    ));
+    return null;
+  }
+
+  return {
+    condition: parsedCondition,
+    row,
+    col
+  };
+}
+
+function buildFalseBranchInstruction(
+  condition: ParsedCondition,
+  targetLabel: string
+): string {
+  switch (condition.operator) {
+    case '==':
+      return `BNE ${condition.lhs}, ${condition.rhs}, ${targetLabel}`;
+    case '!=':
+      return `BEQ ${condition.lhs}, ${condition.rhs}, ${targetLabel}`;
+    case '<':
+      return `BGE ${condition.lhs}, ${condition.rhs}, ${targetLabel}`;
+    case '>=':
+      return `BLT ${condition.lhs}, ${condition.rhs}, ${targetLabel}`;
+    case '>':
+      return `BGE ${condition.rhs}, ${condition.lhs}, ${targetLabel}`;
+    case '<=':
+      return `BLT ${condition.rhs}, ${condition.lhs}, ${targetLabel}`;
+  }
+}
+
 function applyFunctionArgs(input: string, argsByParam: ReadonlyMap<string, string>): string {
   let out = input;
   for (const [name, value] of argsByParam.entries()) {
@@ -672,6 +850,33 @@ function parseInlineCycleStatements(
   return statements;
 }
 
+function makeControlCycle(
+  index: number,
+  lineNo: number,
+  row: number,
+  col: number,
+  instructionText: string,
+  label?: string
+): CycleAst {
+  const statementText = `@${row},${col}: ${instructionText};`;
+  return {
+    index,
+    label,
+    statements: [{
+      kind: 'at',
+      row,
+      col,
+      instruction: parseInstruction(instructionText, lineNo, 1),
+      span: spanAt(lineNo, 1, statementText.length)
+    }],
+    span: spanAt(lineNo, 1, statementText.length)
+  };
+}
+
+function isElseOpenLine(cleanLine: string): boolean {
+  return /^else\s*\{\s*$/i.test(cleanLine);
+}
+
 function expandFunctionBodyIntoKernel(
   body: SourceLineEntry[],
   kernel: KernelAst,
@@ -680,12 +885,193 @@ function expandFunctionBodyIntoKernel(
   diagnostics: Diagnostic[],
   cycleCounter: { value: number },
   callStack: string[],
-  expansionCounter: { value: number }
+  expansionCounter: { value: number },
+  controlFlowCounter: { value: number }
 ): void {
   for (let i = 0; i < body.length; i++) {
     const entry = body[i];
     const clean = entry.cleanLine.trim();
     if (!clean) continue;
+
+    const ifHeader = parseControlHeader(clean, 'if', entry.lineNo, constants, diagnostics);
+    if (ifHeader) {
+      const thenBlock = collectBlockFromEntries(body, i);
+      if (thenBlock.endIndex === null) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(entry.lineNo, 1, clean.length),
+          'Unterminated if block.',
+          'Add a closing brace for if { ... }.'
+        ));
+        break;
+      }
+
+      const suffixId = controlFlowCounter.value++;
+      const elseLabel = `__if_else_${suffixId}`;
+      const endLabel = `__if_end_${suffixId}`;
+
+      let hasElse = false;
+      let elseBlock: CollectedBlock | null = null;
+      let consumedEnd = thenBlock.endIndex;
+
+      if (thenBlock.trailingAfterClose && isElseOpenLine(thenBlock.trailingAfterClose)) {
+        hasElse = true;
+        elseBlock = collectBlockAfterOpenFromEntries(body, thenBlock.endIndex + 1);
+        if (elseBlock.endIndex === null) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(entry.lineNo, 1, clean.length),
+            'Unterminated else block.',
+            'Add a closing brace for else { ... }.'
+          ));
+          break;
+        }
+        consumedEnd = elseBlock.endIndex;
+      } else {
+        const maybeElseIndex = thenBlock.endIndex + 1;
+        if (maybeElseIndex < body.length && isElseOpenLine(body[maybeElseIndex].cleanLine)) {
+          hasElse = true;
+          elseBlock = collectBlockFromEntries(body, maybeElseIndex);
+          if (elseBlock.endIndex === null) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              spanAt(body[maybeElseIndex].lineNo, 1, body[maybeElseIndex].cleanLine.length),
+              'Unterminated else block.',
+              'Add a closing brace for else { ... }.'
+            ));
+            break;
+          }
+          consumedEnd = elseBlock.endIndex;
+        }
+      }
+
+      const falseTarget = hasElse ? elseLabel : endLabel;
+      kernel.cycles.push(makeControlCycle(
+        cycleCounter.value++,
+        entry.lineNo,
+        ifHeader.row,
+        ifHeader.col,
+        buildFalseBranchInstruction(ifHeader.condition, falseTarget)
+      ));
+
+      expandFunctionBodyIntoKernel(
+        thenBlock.body,
+        kernel,
+        functions,
+        constants,
+        diagnostics,
+        cycleCounter,
+        callStack,
+        expansionCounter,
+        controlFlowCounter
+      );
+
+      if (hasElse && elseBlock) {
+        kernel.cycles.push(makeControlCycle(
+          cycleCounter.value++,
+          entry.lineNo,
+          ifHeader.row,
+          ifHeader.col,
+          `JUMP ${endLabel}, ZERO`
+        ));
+
+        kernel.cycles.push(makeControlCycle(
+          cycleCounter.value++,
+          entry.lineNo,
+          ifHeader.row,
+          ifHeader.col,
+          'NOP',
+          elseLabel
+        ));
+
+        expandFunctionBodyIntoKernel(
+          elseBlock.body,
+          kernel,
+          functions,
+          constants,
+          diagnostics,
+          cycleCounter,
+          callStack,
+          expansionCounter,
+          controlFlowCounter
+        );
+      }
+
+      kernel.cycles.push(makeControlCycle(
+        cycleCounter.value++,
+        entry.lineNo,
+        ifHeader.row,
+        ifHeader.col,
+        'NOP',
+        endLabel
+      ));
+
+      i = consumedEnd;
+      continue;
+    }
+
+    const whileHeader = parseControlHeader(clean, 'while', entry.lineNo, constants, diagnostics);
+    if (whileHeader) {
+      const loopBlock = collectBlockFromEntries(body, i);
+      if (loopBlock.endIndex === null) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(entry.lineNo, 1, clean.length),
+          'Unterminated while block.',
+          'Add a closing brace for while { ... }.'
+        ));
+        break;
+      }
+
+      const suffixId = controlFlowCounter.value++;
+      const startLabel = `__while_start_${suffixId}`;
+      const endLabel = `__while_end_${suffixId}`;
+
+      kernel.cycles.push(makeControlCycle(
+        cycleCounter.value++,
+        entry.lineNo,
+        whileHeader.row,
+        whileHeader.col,
+        buildFalseBranchInstruction(whileHeader.condition, endLabel),
+        startLabel
+      ));
+
+      expandFunctionBodyIntoKernel(
+        loopBlock.body,
+        kernel,
+        functions,
+        constants,
+        diagnostics,
+        cycleCounter,
+        callStack,
+        expansionCounter,
+        controlFlowCounter
+      );
+
+      kernel.cycles.push(makeControlCycle(
+        cycleCounter.value++,
+        entry.lineNo,
+        whileHeader.row,
+        whileHeader.col,
+        `JUMP ${startLabel}, ZERO`
+      ));
+
+      kernel.cycles.push(makeControlCycle(
+        cycleCounter.value++,
+        entry.lineNo,
+        whileHeader.row,
+        whileHeader.col,
+        'NOP',
+        endLabel
+      ));
+
+      i = loopBlock.endIndex;
+      continue;
+    }
 
     const labeledCycle = parseLabeledCycleLine(clean);
     if (labeledCycle && labeledCycle.inlinePayload !== undefined) {
@@ -780,7 +1166,8 @@ function expandFunctionBodyIntoKernel(
         diagnostics,
         cycleCounter,
         [...callStack, nestedCall.name],
-        expansionCounter
+        expansionCounter,
+        controlFlowCounter
       );
       continue;
     }
@@ -790,7 +1177,7 @@ function expandFunctionBodyIntoKernel(
       'error',
       spanAt(entry.lineNo, 1, clean.length),
       `Unsupported function body statement: '${clean}'.`,
-      'Function bodies currently support cycle blocks and function calls.'
+      'Function bodies currently support cycle blocks, labeled cycles, if/while control-flow, and function calls.'
     ));
   }
 }
@@ -820,6 +1207,7 @@ export function parseSource(source: string): ParseResult {
   let cycleConstants = new Map<string, number>();
   let cycleIndex = 0;
   const functionExpansionCounter = { value: 0 };
+  const controlFlowCounter = { value: 0 };
   const pendingDirectives: DirectiveAst[] = [];
   const functions = new Map<string, FunctionDefinitionLite>();
 
@@ -1037,10 +1425,201 @@ export function parseSource(source: string): ParseResult {
             diagnostics,
             cycleCounter,
             [functionCall.name],
-            functionExpansionCounter
+            functionExpansionCounter,
+            controlFlowCounter
           );
           cycleIndex = cycleCounter.value;
         }
+        continue;
+      }
+
+      const ifHeader = parseControlHeader(clean, 'if', lineNo, kernelConstants, diagnostics);
+      if (ifHeader && kernel) {
+        const thenBlock = collectBlockFromSource(lines, i);
+        if (thenBlock.endIndex === null) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            'Unterminated if block.',
+            'Add a closing brace for if { ... }.'
+          ));
+          break;
+        }
+
+        const suffixId = controlFlowCounter.value++;
+        const elseLabel = `__if_else_${suffixId}`;
+        const endLabel = `__if_end_${suffixId}`;
+
+        let hasElse = false;
+        let elseBlock: CollectedBlock | null = null;
+        let consumedEnd = thenBlock.endIndex;
+
+        if (thenBlock.trailingAfterClose && isElseOpenLine(thenBlock.trailingAfterClose)) {
+          hasElse = true;
+          elseBlock = collectBlockAfterOpenFromSource(lines, thenBlock.endIndex + 1);
+          if (elseBlock.endIndex === null) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              spanAt(lineNo, 1, clean.length),
+              'Unterminated else block.',
+              'Add a closing brace for else { ... }.'
+            ));
+            break;
+          }
+          consumedEnd = elseBlock.endIndex;
+        } else {
+          const maybeElseIndex = thenBlock.endIndex + 1;
+          if (maybeElseIndex < lines.length && isElseOpenLine(stripLineComment(lines[maybeElseIndex]).trim())) {
+            hasElse = true;
+            elseBlock = collectBlockFromSource(lines, maybeElseIndex);
+            if (elseBlock.endIndex === null) {
+              diagnostics.push(makeDiagnostic(
+                ErrorCodes.Parse.InvalidSyntax,
+                'error',
+                spanAt(maybeElseIndex + 1, 1, clean.length),
+                'Unterminated else block.',
+                'Add a closing brace for else { ... }.'
+              ));
+              break;
+            }
+            consumedEnd = elseBlock.endIndex;
+          }
+        }
+
+        const falseTarget = hasElse ? elseLabel : endLabel;
+        kernel.cycles.push(makeControlCycle(
+          cycleIndex++,
+          lineNo,
+          ifHeader.row,
+          ifHeader.col,
+          buildFalseBranchInstruction(ifHeader.condition, falseTarget)
+        ));
+
+        {
+          const cycleCounter = { value: cycleIndex };
+          expandFunctionBodyIntoKernel(
+            thenBlock.body,
+            kernel,
+            functions,
+            kernelConstants,
+            diagnostics,
+            cycleCounter,
+            [],
+            functionExpansionCounter,
+            controlFlowCounter
+          );
+          cycleIndex = cycleCounter.value;
+        }
+
+        if (hasElse && elseBlock) {
+          kernel.cycles.push(makeControlCycle(
+            cycleIndex++,
+            lineNo,
+            ifHeader.row,
+            ifHeader.col,
+            `JUMP ${endLabel}, ZERO`
+          ));
+
+          kernel.cycles.push(makeControlCycle(
+            cycleIndex++,
+            lineNo,
+            ifHeader.row,
+            ifHeader.col,
+            'NOP',
+            elseLabel
+          ));
+
+          const cycleCounter = { value: cycleIndex };
+          expandFunctionBodyIntoKernel(
+            elseBlock.body,
+            kernel,
+            functions,
+            kernelConstants,
+            diagnostics,
+            cycleCounter,
+            [],
+            functionExpansionCounter,
+            controlFlowCounter
+          );
+          cycleIndex = cycleCounter.value;
+        }
+
+        kernel.cycles.push(makeControlCycle(
+          cycleIndex++,
+          lineNo,
+          ifHeader.row,
+          ifHeader.col,
+          'NOP',
+          endLabel
+        ));
+
+        i = consumedEnd;
+        continue;
+      }
+
+      const whileHeader = parseControlHeader(clean, 'while', lineNo, kernelConstants, diagnostics);
+      if (whileHeader && kernel) {
+        const loopBlock = collectBlockFromSource(lines, i);
+        if (loopBlock.endIndex === null) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            'Unterminated while block.',
+            'Add a closing brace for while { ... }.'
+          ));
+          break;
+        }
+
+        const suffixId = controlFlowCounter.value++;
+        const startLabel = `__while_start_${suffixId}`;
+        const endLabel = `__while_end_${suffixId}`;
+
+        kernel.cycles.push(makeControlCycle(
+          cycleIndex++,
+          lineNo,
+          whileHeader.row,
+          whileHeader.col,
+          buildFalseBranchInstruction(whileHeader.condition, endLabel),
+          startLabel
+        ));
+
+        {
+          const cycleCounter = { value: cycleIndex };
+          expandFunctionBodyIntoKernel(
+            loopBlock.body,
+            kernel,
+            functions,
+            kernelConstants,
+            diagnostics,
+            cycleCounter,
+            [],
+            functionExpansionCounter,
+            controlFlowCounter
+          );
+          cycleIndex = cycleCounter.value;
+        }
+
+        kernel.cycles.push(makeControlCycle(
+          cycleIndex++,
+          lineNo,
+          whileHeader.row,
+          whileHeader.col,
+          `JUMP ${startLabel}, ZERO`
+        ));
+
+        kernel.cycles.push(makeControlCycle(
+          cycleIndex++,
+          lineNo,
+          whileHeader.row,
+          whileHeader.col,
+          'NOP',
+          endLabel
+        ));
+
+        i = loopBlock.endIndex;
         continue;
       }
 
@@ -1049,7 +1628,7 @@ export function parseSource(source: string): ParseResult {
         'error',
         spanAt(lineNo, 1, clean.length),
         `Unexpected kernel statement: '${clean}'`,
-        'Expected config, directive, pragma, cycle block, or kernel close.'
+        'Expected config, directive, pragma, cycle block, if/while block, function call, or kernel close.'
       ));
       continue;
     }
