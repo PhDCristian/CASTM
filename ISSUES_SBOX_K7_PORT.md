@@ -1223,3 +1223,77 @@ cycle {
 **Suspected root cause:** The `{ ...firstInstr }` shallow copy in `parseRowInstructions` (Style A' branch) may create aliased Instruction objects. When the code generator later mutates instruction fields (e.g., resolving named array addresses), all 4 "copies" share the same nested object references, causing overwrites.
 
 **Workaround:** Use explicit pipe syntax: `row N: instr | instr | instr | instr;`
+
+---
+
+## BUG-2: Lexer Does Not Tokenize `&` Operator
+
+**Severity:** Medium — blocks `R0 = R1 & 65535` expression syntax for `LAND`.
+
+**Description:** The expression desugarer (`expression-desugar.ts`) maps `&` → `LAND`, but the **lexer** (`lexer.ts`) does not recognize `&` as a valid operator character. Any DSL source containing `&` fails immediately at tokenization with `Unexpected character '&'`.
+
+**Affected operators from `OPERATOR_TO_OPCODE`:**
+
+| Operator | Target ISA | Status |
+|----------|-----------|--------|
+| `&` | `LAND` | ❌ Lexer error |
+| `\|` | `LOR` | ⚠️ Ambiguous with pipe separator |
+| `^` | `LXOR` | ❌ Untested (likely same issue) |
+| `~&` | `LNAND` | ❌ Untested (likely same issue) |
+| `~\|` | `LNOR` | ❌ Untested (likely same issue) |
+| `~^` | `LXNOR` | ❌ Untested (likely same issue) |
+
+**Reproduction:**
+```c
+cycle { @0,0: R0 = R1 & 65535; }
+// Error: Unexpected character '&'
+```
+
+**Fix:** Add `&`, `^`, `~` to the lexer's operator character set.
+
+---
+
+## BUG-3: Expression Desugarer Not Invoked by UMA-CGRA-Simulator Pipeline
+
+**Severity:** Critical — C-style expression syntax is **completely non-functional** in the simulation workflow.
+
+**Description:** The expression desugarer pass (`desugarExpressions()`) exists and is correctly wired into **OpenEdgeDSL's own** `compileDslToCsv()` (in `compiler.ts`, lines 139 and 197). However, the **UMA-CGRA-Simulator** has its own `compileDslToCsv()` wrapper in `src/utils/dsl-compiler.ts` that reimplements the compilation pipeline as:
+
+```
+tokenize() → parse() → generateCsvFromAst()
+```
+
+This pipeline **skips the `desugarExpressions()` pass** entirely. The OpenEdgeDSL compiler's correct pipeline is:
+
+```
+tokenize() → desugarExpressions() → desugarAutoCycle() → parse() → generateCsvFromAst()
+```
+
+**Impact:** ALL C-style expression patterns fail when compiled through the simulator:
+
+```c
+// ALL of these fail with "Expected SEMICOLON, but found IDENTIFIER":
+R1 = R0 + R2;    // SADD
+R1 = R0;          // copy
+R0 = R1 >> 16;    // SRT
+R0 = R1 << 8;     // SLT
+R1 = R0 - R2;     // SSUB
+R2 = R0 * R1;     // SMUL
+ROUT = RCR;       // copy via neighbor
+```
+
+**Root cause:** `UMA-CGRA-Simulator/src/utils/dsl-compiler.ts:121` calls `parse(tokens)` directly on raw tokens without desugar passes.
+
+**Fix:** Add the missing desugar passes to the simulator's pipeline:
+
+```diff
+ export function compileDslToCsv(dslCode: string): CompilationResult {
+   try {
+     const tokens = tokenize(dslCode);
+-    const { ast, symbols } = parse(tokens);
++    const desugared = desugarExpressions(tokens);
++    const autoCycled = desugarAutoCycle(desugared);
++    const { ast, symbols } = parse(autoCycled);
+```
+
+Or better: import and use OpenEdgeDSL's own `compileDslToCsv` directly instead of reimplementing the pipeline.
