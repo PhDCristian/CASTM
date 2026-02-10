@@ -29,6 +29,10 @@ const BINARY_OPCODES: Record<string, string> = {
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
 const SUPPORTED_PRAGMAS = new Set<string>([
+  'unroll',
+  'no_unroll',
+  'parallel',
+  'no_fuse',
   'route',
   'broadcast',
   'rotate',

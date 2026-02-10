@@ -340,6 +340,25 @@ interface ForHeader {
   start: number;
   end: number;
   step: number;
+  control?: {
+    row: number;
+    col: number;
+  };
+}
+
+interface ParsedControlPragma {
+  kind: 'unroll' | 'no_unroll' | 'parallel' | 'no_fuse';
+  span: SourceSpan;
+  unrollFactor?: number;
+  collapseLevels?: number;
+}
+
+interface PendingControlPragmas {
+  span: SourceSpan;
+  unrollFactor?: number;
+  noUnroll?: boolean;
+  parallelCollapseLevels?: number;
+  noFuse?: boolean;
 }
 
 interface SourceLineEntry {
@@ -385,7 +404,9 @@ function parseForHeader(
   bindings: ReadonlyMap<string, number>,
   diagnostics: Diagnostic[]
 ): ForHeader | null {
-  const loopMatch = cleanLine.match(/^for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+range\s*\((.*)\)\s*\{\s*$/i);
+  const loopMatch = cleanLine.match(
+    /^for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+range\s*\((.*)\)\s*(?:@\s*([^,{\s]+)\s*,\s*([^{\s]+))?\s*\{\s*$/i
+  );
   if (!loopMatch) return null;
 
   const variable = loopMatch[1];
@@ -442,7 +463,455 @@ function parseForHeader(
     return null;
   }
 
-  return { variable, start, end, step };
+  let control: { row: number; col: number } | undefined;
+  if (loopMatch[3] !== undefined && loopMatch[4] !== undefined) {
+    const row = evaluateNumericExpression(loopMatch[3].trim(), constants, bindings);
+    const col = evaluateNumericExpression(loopMatch[4].trim(), constants, bindings);
+    if (row === null || col === null) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(lineNo, 1, cleanLine.length),
+        `Invalid control location '@${loopMatch[3]},${loopMatch[4]}' in for loop.`,
+        'Use integer literals, constants, loop bindings, and + - * / % operators.'
+      ));
+      return null;
+    }
+    control = { row, col };
+  }
+
+  return { variable, start, end, step, control };
+}
+
+interface ParseControlPragmaResult {
+  consumed: boolean;
+  pragma: ParsedControlPragma | null;
+}
+
+function parseControlPragma(
+  cleanLine: string,
+  lineNo: number,
+  diagnostics: Diagnostic[]
+): ParseControlPragmaResult {
+  const pragmaMatch = cleanLine.match(/^#pragma\s+([A-Za-z_][A-Za-z0-9_]*)(.*)$/i);
+  if (!pragmaMatch) return { consumed: false, pragma: null };
+
+  const name = pragmaMatch[1].toLowerCase();
+  const rest = pragmaMatch[2].trim();
+  const span = spanAt(lineNo, 1, cleanLine.length);
+
+  if (name === 'unroll') {
+    if (!rest) return { consumed: true, pragma: { kind: 'unroll', span } };
+    const factorMatch = rest.match(/^\(\s*(\d+)\s*\)$/);
+    if (!factorMatch) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        span,
+        `Invalid unroll pragma syntax: '${cleanLine}'.`,
+        'Use #pragma unroll or #pragma unroll(N) with N > 0.'
+      ));
+      return { consumed: true, pragma: null };
+    }
+    const factor = parseInt(factorMatch[1], 10);
+    if (!Number.isInteger(factor) || factor <= 0) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        span,
+        `Invalid unroll factor '${factorMatch[1]}'.`,
+        'Use a positive integer factor.'
+      ));
+      return { consumed: true, pragma: null };
+    }
+    return {
+      consumed: true,
+      pragma: { kind: 'unroll', span, unrollFactor: factor }
+    };
+  }
+
+  if (name === 'no_unroll') {
+    if (rest) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        span,
+        `Invalid no_unroll pragma syntax: '${cleanLine}'.`,
+        'Use #pragma no_unroll without extra arguments.'
+      ));
+      return { consumed: true, pragma: null };
+    }
+    return { consumed: true, pragma: { kind: 'no_unroll', span } };
+  }
+
+  if (name === 'parallel') {
+    if (!rest) return { consumed: true, pragma: { kind: 'parallel', span } };
+    const collapseMatch = rest.match(/^collapse(?:\s*\(\s*(\d+)\s*\))?$/i);
+    if (!collapseMatch) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        span,
+        `Invalid parallel pragma syntax: '${cleanLine}'.`,
+        'Use #pragma parallel, #pragma parallel collapse, or #pragma parallel collapse(N).'
+      ));
+      return { consumed: true, pragma: null };
+    }
+    const collapseLevels = collapseMatch[1] ? parseInt(collapseMatch[1], 10) : Number.POSITIVE_INFINITY;
+    if (collapseMatch[1] && (!Number.isInteger(collapseLevels) || collapseLevels <= 0)) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        span,
+        `Invalid collapse depth '${collapseMatch[1]}'.`,
+        'Use a positive integer in collapse(N).'
+      ));
+      return { consumed: true, pragma: null };
+    }
+    return {
+      consumed: true,
+      pragma: { kind: 'parallel', span, collapseLevels }
+    };
+  }
+
+  if (name === 'no_fuse') {
+    if (rest) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        span,
+        `Invalid no_fuse pragma syntax: '${cleanLine}'.`,
+        'Use #pragma no_fuse without extra arguments.'
+      ));
+      return { consumed: true, pragma: null };
+    }
+    return { consumed: true, pragma: { kind: 'no_fuse', span } };
+  }
+
+  return { consumed: false, pragma: null };
+}
+
+function applyControlPragma(
+  pending: PendingControlPragmas | null,
+  pragma: ParsedControlPragma
+): PendingControlPragmas {
+  const next: PendingControlPragmas = pending
+    ? { ...pending, span: pragma.span }
+    : { span: pragma.span };
+
+  if (pragma.kind === 'unroll') {
+    next.noUnroll = false;
+    next.unrollFactor = pragma.unrollFactor;
+    return next;
+  }
+
+  if (pragma.kind === 'no_unroll') {
+    next.noUnroll = true;
+    next.unrollFactor = undefined;
+    return next;
+  }
+
+  if (pragma.kind === 'parallel') {
+    next.parallelCollapseLevels = pragma.collapseLevels;
+    return next;
+  }
+
+  next.noFuse = true;
+  return next;
+}
+
+function hasForScopedPragmas(pending: PendingControlPragmas | null): boolean {
+  if (!pending) return false;
+  return pending.noUnroll === true ||
+    pending.unrollFactor !== undefined ||
+    pending.parallelCollapseLevels !== undefined;
+}
+
+function hasAnyPendingPragmas(pending: PendingControlPragmas | null): boolean {
+  if (!pending) return false;
+  return hasForScopedPragmas(pending) || pending.noFuse === true;
+}
+
+function describePendingPragmas(pending: PendingControlPragmas | null): string {
+  if (!pending) return '';
+  const names: string[] = [];
+  if (pending.unrollFactor !== undefined) names.push('unroll');
+  else if (pending.noUnroll) names.push('no_unroll');
+  if (pending.parallelCollapseLevels !== undefined) names.push('parallel');
+  if (pending.noFuse) names.push('no_fuse');
+  return names.join(', ');
+}
+
+function instantiateEntriesWithBindings(
+  body: SourceLineEntry[],
+  bindings: ReadonlyMap<string, number>
+): SourceLineEntry[] {
+  if (bindings.size === 0) {
+    return body.map((entry) => ({
+      lineNo: entry.lineNo,
+      rawLine: entry.rawLine,
+      cleanLine: entry.cleanLine
+    }));
+  }
+
+  return body.map((entry) => ({
+    lineNo: entry.lineNo,
+    rawLine: applyBindings(entry.rawLine, bindings),
+    cleanLine: applyBindings(entry.cleanLine, bindings)
+  }));
+}
+
+function enumerateForValues(
+  header: ForHeader,
+  lineNo: number,
+  lineLength: number,
+  diagnostics: Diagnostic[]
+): number[] | null {
+  const values: number[] = [];
+  const shouldContinue = header.step > 0
+    ? (value: number) => value < header.end
+    : (value: number) => value > header.end;
+
+  const maxIterations = 100_000;
+  for (let value = header.start, count = 0; shouldContinue(value); value += header.step, count++) {
+    if (count >= maxIterations) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Semantic.UnsupportedOperation,
+        'error',
+        spanAt(lineNo, 1, lineLength),
+        `For loop exceeds max supported iterations (${maxIterations}).`,
+        'Reduce the loop range or use #pragma no_unroll for runtime control.'
+      ));
+      return null;
+    }
+    values.push(value);
+  }
+  return values;
+}
+
+const CONTROL_FLOW_OPCODES = new Set(['BEQ', 'BNE', 'BLT', 'BGE', 'JUMP']);
+
+function cycleHasControlFlow(cycle: CycleAst): boolean {
+  if (cycle.label) return true;
+
+  for (const statement of cycle.statements) {
+    if (statement.kind === 'row') {
+      if (statement.instructions.some((inst) => inst.opcode && CONTROL_FLOW_OPCODES.has(inst.opcode))) {
+        return true;
+      }
+      continue;
+    }
+
+    if (statement.instruction.opcode && CONTROL_FLOW_OPCODES.has(statement.instruction.opcode)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function expandForLoopIntoKernel(
+  header: ForHeader,
+  loopBody: SourceLineEntry[],
+  lineNo: number,
+  lineLength: number,
+  kernel: KernelAst,
+  functions: ReadonlyMap<string, FunctionDefinitionLite>,
+  constants: ReadonlyMap<string, number>,
+  diagnostics: Diagnostic[],
+  cycleCounter: { value: number },
+  callStack: string[],
+  expansionCounter: { value: number },
+  controlFlowCounter: { value: number },
+  pendingPragmas: PendingControlPragmas | null
+): void {
+  const noUnroll = pendingPragmas?.noUnroll === true;
+  const unrollFactor = pendingPragmas?.unrollFactor;
+  const collapseRequested = pendingPragmas?.parallelCollapseLevels !== undefined;
+
+  if (pendingPragmas?.parallelCollapseLevels !== undefined &&
+      pendingPragmas.parallelCollapseLevels > 1 &&
+      Number.isFinite(pendingPragmas.parallelCollapseLevels)) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'warning',
+      pendingPragmas.span,
+      `#pragma parallel collapse(${pendingPragmas.parallelCollapseLevels}) currently collapses one loop level in v2 baseline.`,
+      'Nested collapse depth > 1 will be expanded in a follow-up phase.'
+    ));
+  }
+
+  if (noUnroll) {
+    if (collapseRequested) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Semantic.UnsupportedOperation,
+        'error',
+        pendingPragmas?.span ?? spanAt(lineNo, 1, lineLength),
+        'Cannot combine #pragma no_unroll with #pragma parallel collapse in v2 baseline.',
+        'Use either runtime no_unroll or compile-time parallel collapse.'
+      ));
+      return;
+    }
+
+    if (!/^R\d+$/i.test(header.variable)) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        pendingPragmas?.span ?? spanAt(lineNo, 1, lineLength),
+        `#pragma no_unroll requires a register loop variable, got '${header.variable}'.`,
+        'Use for R0 in range(...), for R1 in range(...), etc.'
+      ));
+      return;
+    }
+
+    if (header.step <= 0) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Semantic.UnsupportedOperation,
+        'error',
+        spanAt(lineNo, 1, lineLength),
+        `#pragma no_unroll currently supports positive step only, got step=${header.step}.`,
+        'Use a positive step or switch to compile-time unrolling.'
+      ));
+      return;
+    }
+
+    const controlRow = header.control?.row ?? 0;
+    const controlCol = header.control?.col ?? 0;
+    const suffix = controlFlowCounter.value++;
+    const startLabel = `__for_start_${suffix}`;
+    const endLabel = `__for_end_${suffix}`;
+
+    kernel.cycles.push(makeControlCycle(
+      cycleCounter.value++,
+      lineNo,
+      controlRow,
+      controlCol,
+      `SADD ${header.variable}, ZERO, IMM(${header.start})`
+    ));
+
+    kernel.cycles.push(makeControlCycle(
+      cycleCounter.value++,
+      lineNo,
+      controlRow,
+      controlCol,
+      `BGE ${header.variable}, IMM(${header.end}), ${endLabel}`,
+      startLabel
+    ));
+
+    expandFunctionBodyIntoKernel(
+      loopBody,
+      kernel,
+      functions,
+      constants,
+      diagnostics,
+      cycleCounter,
+      callStack,
+      expansionCounter,
+      controlFlowCounter
+    );
+
+    kernel.cycles.push(makeControlCycle(
+      cycleCounter.value++,
+      lineNo,
+      controlRow,
+      controlCol,
+      `SADD ${header.variable}, ${header.variable}, IMM(${header.step})`
+    ));
+
+    kernel.cycles.push(makeControlCycle(
+      cycleCounter.value++,
+      lineNo,
+      controlRow,
+      controlCol,
+      `JUMP ${startLabel}, ZERO`
+    ));
+
+    kernel.cycles.push(makeControlCycle(
+      cycleCounter.value++,
+      lineNo,
+      controlRow,
+      controlCol,
+      'NOP',
+      endLabel
+    ));
+    return;
+  }
+
+  let values = enumerateForValues(header, lineNo, lineLength, diagnostics);
+  if (!values) return;
+  if (unrollFactor !== undefined) {
+    values = values.slice(0, unrollFactor);
+  }
+
+  const perIterationCycles: CycleAst[][] = [];
+  for (const value of values) {
+    const bindings = new Map<string, number>();
+    bindings.set(header.variable, value);
+    const instantiated = instantiateEntriesWithBindings(loopBody, bindings);
+
+    const tmpKernel: KernelAst = {
+      name: '__for_iter__',
+      config: undefined,
+      cycles: [],
+      directives: [],
+      pragmas: [],
+      span: spanAt(lineNo, 1, lineLength)
+    };
+    const tmpCounter = { value: 0 };
+    expandFunctionBodyIntoKernel(
+      instantiated,
+      tmpKernel,
+      functions,
+      constants,
+      diagnostics,
+      tmpCounter,
+      callStack,
+      expansionCounter,
+      controlFlowCounter
+    );
+    perIterationCycles.push(tmpKernel.cycles);
+  }
+
+  if (collapseRequested) {
+    const hasControlFlow = perIterationCycles.some((iterCycles) => iterCycles.some(cycleHasControlFlow));
+    if (hasControlFlow) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Semantic.UnsupportedOperation,
+        'error',
+        pendingPragmas?.span ?? spanAt(lineNo, 1, lineLength),
+        '#pragma parallel collapse currently supports loop bodies without control-flow labels/branches.',
+        'Use plain cycle blocks in collapsed loops.'
+      ));
+      return;
+    }
+
+    const maxCycleCount = perIterationCycles.reduce((max, iter) => Math.max(max, iter.length), 0);
+    for (let idx = 0; idx < maxCycleCount; idx++) {
+      const statements: CycleAst['statements'] = [];
+      let span: SourceSpan | null = null;
+      for (const iterCycles of perIterationCycles) {
+        const cycle = iterCycles[idx];
+        if (!cycle) continue;
+        if (!span) span = cycle.span;
+        statements.push(...cycle.statements);
+      }
+      if (statements.length === 0) continue;
+      kernel.cycles.push({
+        index: cycleCounter.value++,
+        statements,
+        span: span ?? spanAt(lineNo, 1, lineLength)
+      });
+    }
+    return;
+  }
+
+  for (const iterCycles of perIterationCycles) {
+    for (const cycle of iterCycles) {
+      kernel.cycles.push({
+        ...cycle,
+        index: cycleCounter.value++
+      });
+    }
+  }
 }
 
 function collectBlockFromSource(
@@ -591,6 +1060,17 @@ function expandLoopBody(
 
     const loopHeader = parseForHeader(clean, entry.lineNo, constants, bindings, diagnostics);
     if (loopHeader) {
+      if (loopHeader.control) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(entry.lineNo, 1, clean.length),
+          'Control location @row,col is not supported for for-loops inside cycle blocks.',
+          'Move the loop to kernel/function scope to use runtime-control syntax.'
+        ));
+        continue;
+      }
+
       const nested = collectBlockFromEntries(body, i);
       if (nested.endIndex === null) {
         diagnostics.push(makeDiagnostic(
@@ -971,13 +1451,78 @@ function expandFunctionBodyIntoKernel(
   expansionCounter: { value: number },
   controlFlowCounter: { value: number }
 ): void {
+  let pendingControlPragmas: PendingControlPragmas | null = null;
+
   for (let i = 0; i < body.length; i++) {
     const entry = body[i];
     const clean = entry.cleanLine.trim();
     if (!clean) continue;
 
+    const controlPragma = parseControlPragma(clean, entry.lineNo, diagnostics);
+    if (controlPragma.consumed) {
+      if (controlPragma.pragma) {
+        pendingControlPragmas = applyControlPragma(pendingControlPragmas, controlPragma.pragma);
+      }
+      continue;
+    }
+
+    const forHeader = parseForHeader(clean, entry.lineNo, constants, new Map(), diagnostics);
+    if (forHeader) {
+      const loopBlock = collectBlockFromEntries(body, i);
+      if (loopBlock.endIndex === null) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(entry.lineNo, 1, clean.length),
+          'Unterminated for block.',
+          'Add a closing brace for for { ... }.'
+        ));
+        break;
+      }
+
+      if (pendingControlPragmas?.noFuse) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          pendingControlPragmas.span,
+          '#pragma no_fuse can only be applied to while loops.',
+          'Move #pragma no_fuse directly above a while (...) block.'
+        ));
+      }
+
+      expandForLoopIntoKernel(
+        forHeader,
+        loopBlock.body,
+        entry.lineNo,
+        clean.length,
+        kernel,
+        functions,
+        constants,
+        diagnostics,
+        cycleCounter,
+        callStack,
+        expansionCounter,
+        controlFlowCounter,
+        pendingControlPragmas
+      );
+      pendingControlPragmas = null;
+      i = loopBlock.endIndex;
+      continue;
+    }
+
     const ifHeader = parseControlHeader(clean, 'if', entry.lineNo, constants, diagnostics);
     if (ifHeader) {
+      if (hasAnyPendingPragmas(pendingControlPragmas)) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          pendingControlPragmas!.span,
+          `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} must be followed by a compatible loop.`,
+          'Use unroll/no_unroll/parallel with for, and no_fuse with while.'
+        ));
+        pendingControlPragmas = null;
+      }
+
       const thenBlock = collectBlockFromEntries(body, i);
       if (thenBlock.endIndex === null) {
         diagnostics.push(makeDiagnostic(
@@ -1098,6 +1643,17 @@ function expandFunctionBodyIntoKernel(
 
     const whileHeader = parseControlHeader(clean, 'while', entry.lineNo, constants, diagnostics);
     if (whileHeader) {
+      if (hasForScopedPragmas(pendingControlPragmas)) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          pendingControlPragmas!.span,
+          `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} cannot be applied to while loops.`,
+          'Use #pragma no_fuse for while loops, or move unroll/parallel pragmas before for loops.'
+        ));
+      }
+      pendingControlPragmas = null;
+
       const loopBlock = collectBlockFromEntries(body, i);
       if (loopBlock.endIndex === null) {
         diagnostics.push(makeDiagnostic(
@@ -1154,6 +1710,17 @@ function expandFunctionBodyIntoKernel(
 
       i = loopBlock.endIndex;
       continue;
+    }
+
+    if (hasAnyPendingPragmas(pendingControlPragmas)) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        pendingControlPragmas!.span,
+        `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} must be followed by a compatible loop.`,
+        'Use unroll/no_unroll/parallel with for, and no_fuse with while.'
+      ));
+      pendingControlPragmas = null;
     }
 
     const labeledCycle = parseLabeledCycleLine(clean);
@@ -1260,7 +1827,17 @@ function expandFunctionBodyIntoKernel(
       'error',
       spanAt(entry.lineNo, 1, clean.length),
       `Unsupported function body statement: '${clean}'.`,
-      'Function bodies currently support cycle blocks, labeled cycles, if/while control-flow, and function calls.'
+      'Function bodies currently support pragmas, for/while/if control-flow, cycle blocks, labeled cycles, and function calls.'
+    ));
+  }
+
+  if (hasAnyPendingPragmas(pendingControlPragmas)) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      pendingControlPragmas!.span,
+      `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} are not followed by a loop.`,
+      'Place control pragmas directly before for/while statements.'
     ));
   }
 }
@@ -1296,6 +1873,7 @@ export function parseSource(source: string): ParseResult {
   const controlFlowCounter = { value: 0 };
   const pendingDirectives: DirectiveAst[] = [];
   const functions = new Map<string, FunctionDefinitionLite>();
+  let pendingControlPragmas: PendingControlPragmas | null = null;
 
   const flushAutoCycleCurrent = (): void => {
     if (kernel && autoCycleCurrent) {
@@ -1402,6 +1980,17 @@ export function parseSource(source: string): ParseResult {
 
     if (inKernel && !inCycle) {
       if (clean === '}') {
+        if (hasAnyPendingPragmas(pendingControlPragmas)) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            pendingControlPragmas!.span,
+            `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} are not followed by a loop.`,
+            'Place control pragmas directly before for/while statements.'
+          ));
+          pendingControlPragmas = null;
+        }
+
         if (autoCycleActive) {
           diagnostics.push(makeDiagnostic(
             ErrorCodes.Parse.InvalidSyntax,
@@ -1471,6 +2060,14 @@ export function parseSource(source: string): ParseResult {
             `Unsupported pragma '${pragmaName}' inside #pragma auto_cycle region.`,
             'Only PE-prefixed instructions and #pragma end_auto_cycle are allowed in this region.'
           ));
+          continue;
+        }
+
+        const parsedControlPragma = parseControlPragma(clean, lineNo, diagnostics);
+        if (parsedControlPragma.consumed) {
+          if (parsedControlPragma.pragma) {
+            pendingControlPragmas = applyControlPragma(pendingControlPragmas, parsedControlPragma.pragma);
+          }
           continue;
         }
 
@@ -1547,8 +2144,65 @@ export function parseSource(source: string): ParseResult {
         continue;
       }
 
+      const forHeader = parseForHeader(clean, lineNo, kernelConstants, new Map(), diagnostics);
+      if (forHeader && kernel) {
+        const loopBlock = collectBlockFromSource(lines, i);
+        if (loopBlock.endIndex === null) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            'Unterminated for block.',
+            'Add a closing brace for for { ... }.'
+          ));
+          break;
+        }
+
+        if (pendingControlPragmas?.noFuse) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            pendingControlPragmas.span,
+            '#pragma no_fuse can only be applied to while loops.',
+            'Move #pragma no_fuse directly above a while (...) block.'
+          ));
+        }
+
+        const cycleCounter = { value: cycleIndex };
+        expandForLoopIntoKernel(
+          forHeader,
+          loopBlock.body,
+          lineNo,
+          clean.length,
+          kernel,
+          functions,
+          kernelConstants,
+          diagnostics,
+          cycleCounter,
+          [],
+          functionExpansionCounter,
+          controlFlowCounter,
+          pendingControlPragmas
+        );
+        cycleIndex = cycleCounter.value;
+        pendingControlPragmas = null;
+        i = loopBlock.endIndex;
+        continue;
+      }
+
       const inlineCycleMatch = clean.match(/^cycle\s*\{\s*(.+)\s*\}\s*$/i);
       if (inlineCycleMatch && kernel) {
+        if (hasAnyPendingPragmas(pendingControlPragmas)) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            pendingControlPragmas!.span,
+            `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} must be followed by a compatible loop.`,
+            'Use unroll/no_unroll/parallel with for, and no_fuse with while.'
+          ));
+          pendingControlPragmas = null;
+        }
+
         const statements = parseInlineCycleStatements(
           inlineCycleMatch[1],
           lineNo,
@@ -1565,6 +2219,17 @@ export function parseSource(source: string): ParseResult {
 
       const labeledCycle = parseLabeledCycleLine(clean);
       if (labeledCycle && labeledCycle.inlinePayload !== undefined && kernel) {
+        if (hasAnyPendingPragmas(pendingControlPragmas)) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            pendingControlPragmas!.span,
+            `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} must be followed by a compatible loop.`,
+            'Use unroll/no_unroll/parallel with for, and no_fuse with while.'
+          ));
+          pendingControlPragmas = null;
+        }
+
         kernel.cycles.push({
           index: cycleIndex++,
           label: labeledCycle.label,
@@ -1575,6 +2240,17 @@ export function parseSource(source: string): ParseResult {
       }
 
       if (labeledCycle && kernel) {
+        if (hasAnyPendingPragmas(pendingControlPragmas)) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            pendingControlPragmas!.span,
+            `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} must be followed by a compatible loop.`,
+            'Use unroll/no_unroll/parallel with for, and no_fuse with while.'
+          ));
+          pendingControlPragmas = null;
+        }
+
         const block = collectBlockFromSource(lines, i);
         if (block.endIndex === null) {
           diagnostics.push(makeDiagnostic(
@@ -1598,6 +2274,17 @@ export function parseSource(source: string): ParseResult {
       }
 
       if (/^cycle\s*\{\s*$/i.test(clean)) {
+        if (hasAnyPendingPragmas(pendingControlPragmas)) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            pendingControlPragmas!.span,
+            `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} must be followed by a compatible loop.`,
+            'Use unroll/no_unroll/parallel with for, and no_fuse with while.'
+          ));
+          pendingControlPragmas = null;
+        }
+
         inCycle = true;
         cycleConstants = new Map(kernelConstants);
         currentCycle = {
@@ -1610,6 +2297,17 @@ export function parseSource(source: string): ParseResult {
 
       const functionCall = parseFunctionCallLine(clean);
       if (functionCall && functions.has(functionCall.name) && kernel) {
+        if (hasAnyPendingPragmas(pendingControlPragmas)) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            pendingControlPragmas!.span,
+            `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} must be followed by a compatible loop.`,
+            'Use unroll/no_unroll/parallel with for, and no_fuse with while.'
+          ));
+          pendingControlPragmas = null;
+        }
+
         const def = functions.get(functionCall.name)!;
         const instantiated = instantiateFunctionBody(def, functionCall.args, lineNo, diagnostics, functionExpansionCounter);
         if (instantiated) {
@@ -1632,6 +2330,17 @@ export function parseSource(source: string): ParseResult {
 
       const ifHeader = parseControlHeader(clean, 'if', lineNo, kernelConstants, diagnostics);
       if (ifHeader && kernel) {
+        if (hasAnyPendingPragmas(pendingControlPragmas)) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            pendingControlPragmas!.span,
+            `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} must be followed by a compatible loop.`,
+            'Use unroll/no_unroll/parallel with for, and no_fuse with while.'
+          ));
+          pendingControlPragmas = null;
+        }
+
         const thenBlock = collectBlockFromSource(lines, i);
         if (thenBlock.endIndex === null) {
           diagnostics.push(makeDiagnostic(
@@ -1758,6 +2467,17 @@ export function parseSource(source: string): ParseResult {
 
       const whileHeader = parseControlHeader(clean, 'while', lineNo, kernelConstants, diagnostics);
       if (whileHeader && kernel) {
+        if (hasForScopedPragmas(pendingControlPragmas)) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            pendingControlPragmas!.span,
+            `Pragma(s) ${describePendingPragmas(pendingControlPragmas)} cannot be applied to while loops.`,
+            'Use #pragma no_fuse for while loops, or move unroll/parallel pragmas before for loops.'
+          ));
+        }
+        pendingControlPragmas = null;
+
         const loopBlock = collectBlockFromSource(lines, i);
         if (loopBlock.endIndex === null) {
           diagnostics.push(makeDiagnostic(
@@ -1825,8 +2545,11 @@ export function parseSource(source: string): ParseResult {
         'error',
         spanAt(lineNo, 1, clean.length),
         `Unexpected kernel statement: '${clean}'`,
-        'Expected config, directive, pragma, cycle block, if/while block, function call, or kernel close.'
+        hasAnyPendingPragmas(pendingControlPragmas)
+          ? 'Control pragmas must be followed by a compatible for/while loop.'
+          : 'Expected config, directive, pragma, cycle block, if/while block, function call, or kernel close.'
       ));
+      pendingControlPragmas = null;
       continue;
     }
 
@@ -1842,6 +2565,17 @@ export function parseSource(source: string): ParseResult {
 
       const loopHeader = parseForHeader(clean, lineNo, cycleConstants, new Map(), diagnostics);
       if (loopHeader) {
+        if (loopHeader.control) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            'Control location @row,col is not supported for for-loops inside cycle blocks.',
+            'Move the loop to kernel/function scope to use runtime-control syntax.'
+          ));
+          continue;
+        }
+
         const block = collectBlockFromSource(lines, i);
         if (block.endIndex === null) {
           diagnostics.push(makeDiagnostic(

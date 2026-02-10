@@ -416,6 +416,124 @@ kernel "for_invalid_range" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
+  it('supports kernel-level for loops with default compile-time unrolling', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_for_unroll_default" {
+  for i in range(3) {
+    cycle { @0,0: SADD R0, ZERO, IMM(i); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R0 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R0 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('2,0,0,SADD R0 ZERO IMM(2)');
+    expect(result.artifacts.csv).toContain('3,0,0,EXIT');
+  });
+
+  it('applies #pragma unroll(N) truncation in baseline behavior', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_for_unroll_factor" {
+  #pragma unroll(2)
+  for i in range(5) {
+    cycle { @0,0: SADD R0, ZERO, IMM(i); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R0 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R0 ZERO IMM(1)');
+    expect(result.artifacts.csv).not.toContain('IMM(2)');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('lowers #pragma no_unroll for register-controlled runtime loops', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_for_no_unroll" {
+  #pragma no_unroll
+  for R0 in range(0, 3) @0,0 {
+    cycle { @0,1: SADD R1, R1, R0; }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('SADD R0 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('BGE R0 IMM(3)');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R0');
+    expect(result.artifacts.csv).toContain('SADD R0 R0 IMM(1)');
+    expect(result.artifacts.csv).toContain('JUMP');
+    expect(result.artifacts.csv).toContain('EXIT');
+  });
+
+  it('rejects #pragma no_unroll when loop variable is not a register', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_for_no_unroll_invalid_var" {
+  #pragma no_unroll
+  for i in range(0, 3) {
+    cycle { @0,0: EXIT; }
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
+  });
+
+  it('collapses kernel for-loop iterations with #pragma parallel collapse', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_for_parallel_collapse" {
+  #pragma parallel collapse
+  for i in range(2) {
+    cycle { @0,i: SADD R0, ZERO, IMM(i); }
+    cycle { @1,i: SADD R1, ZERO, IMM(i); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R0 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('0,0,1,SADD R0 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('1,1,0,SADD R1 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('1,1,1,SADD R1 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('accepts #pragma no_fuse before while loops in baseline lowering', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_while_no_fuse" {
+  #pragma no_fuse
+  while (R0 < IMM(2)) @0,0 {
+    cycle { @0,0: SADD R0, R0, IMM(1); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('BGE R0 IMM(2)');
+    expect(result.artifacts.csv).toContain('JUMP');
+    expect(result.artifacts.csv).toContain('EXIT');
+  });
+
   it('expands function calls with parameter substitution into kernel cycles', () => {
     const source = `
 target "uma-cgra-v1";
