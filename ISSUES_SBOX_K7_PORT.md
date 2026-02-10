@@ -693,3 +693,238 @@ On OpenEdgeCGRA, **memory broadcast (LWI with same address to N PEs) is cheaper 
 | **Total** | **274** | **349** | **-16 (-5.5%)** | **-28 (-7.4%)** |
 
 All optimizations verified: **12/12 tests pass** across full BabyBear range.
+
+---
+---
+
+# DSL Feature Gap Analysis — Missing Language Features
+
+Analysis of the v7-optimized kernel (332 lines, 274 instr, 349 hwcc) to identify language features that would reduce code size, cycle count, or hardware latency.
+
+---
+
+## 🔴 HIGH IMPACT — Latency Reduction
+
+### FEAT-1: `#pragma latency_hide` — Latency-Aware Instruction Scheduling
+
+**Problem:** 75 stall cycles (27% overhead) from LWI (2cc) and SMUL (3cc). SMUL cycles have idle PEs that waste the 2-cycle stall. We manually hid the `p` LWI inside a SMUL slot (OPT-G), but the compiler should do this automatically.
+
+**Current (manual):**
+```c
+// Manually merge LWI into SMUL slot
+cycle {
+    @0,3: LWI R0, 4;  // hidden in SMUL stall
+    row 1: SMUL R2, R0, R1 | SMUL R2, R0, R1 | SMUL R2, R0, R1 | SMUL R2, R0, R1;
+}
+```
+
+**Proposed:**
+```c
+#pragma latency_hide  // compiler auto-merges adjacent cycles
+cycle { row 1: SMUL R2, R0, R1 | ...; }  // 3cc, row 0 idle
+cycle { @0,3: LWI R1, 4; }               // compiler moves this INTO the SMUL cycle
+```
+
+**Impact:** -10 to -20 hwcc. The compiler analyzes data dependencies and PE occupancy to fill stall slots with independent work from adjacent cycles.
+
+---
+
+### FEAT-2: `#pragma carry_chain` — Carry Propagation Primitive
+
+**Problem:** The `build_limbs` carry chain (lines 131-139) is 8 hand-written cycles with a repeating `LAND → SADD RCL → SWI → SRT` pattern. Data-dependent but structurally regular.
+
+**Current (8 cycles, 8 lines):**
+```c
+cycle { @0,0: LAND R0, R0, 65535; @0,1: SADD R0, R0, RCL; }
+cycle { @0,0: SWI R0, L[0]; @0,1: SRT R3, R0, 16; }
+cycle { @0,1: LAND R0, R0, 65535; @0,2: SADD R0, R0, RCL; }
+cycle { @0,1: SWI R0, L[1]; @0,2: SRT R3, R0, 16; }
+// ... repeats for L[2], L[3], L[4]
+```
+
+**Proposed:**
+```c
+#pragma carry_chain(src=R0, carry=R3, mask=65535, width=16, limbs=4, store=L)
+```
+
+The compiler generates the optimal interleaved schedule, potentially finding internal parallelism (e.g., overlapping SWI with the next iteration's LAND).
+
+**Impact:** -30 lines. Potential -4 cycles if compiler finds better scheduling than hand-written.
+
+---
+
+### FEAT-3: `#pragma specialize` — Constant Specialization
+
+**Problem:** We manually discovered that `p_limbs[0] = 1` and replaced `SMUL R2, R0, 1` (3cc) with `SADD R2, R0, ZERO` (1cc). The compiler should detect and optimize multiply-by-1, multiply-by-0, add-with-0, and similar identity operations automatically.
+
+**Current (manual):**
+```c
+// We had to manually recognize p_limbs[0]=1 and rewrite
+cycle {
+    row 0: SADD R2, R0, ZERO | SADD R2, R0, ZERO | ...; // identity copy
+    row 1: LWI R1, p_limbs[1] | ...;                      // real multiply
+}
+```
+
+**Proposed:**
+```c
+#pragma specialize(p_limbs[0] == 1)  // or auto-detected from .data
+// Compiler replaces SMUL R2, R0, R1 with SADD R2, R0, ZERO where R1=1
+```
+
+**Impact:** -8 hwcc automatically (4×SMUL@3cc → 4×SADD@1cc). Zero manual effort.
+
+---
+
+## 🟡 MEDIUM IMPACT — Code Reduction + Clarity
+
+### FEAT-4: `for` Inside `cycle { }` — Mixed Loop + Explicit PEs (Issue #6)
+
+**Problem:** Diagonal patterns (4 PEs), triangle inits (7 PEs), and sparse patterns require listing every PE coordinate. A `for` inside a cycle block would allow compact expressions.
+
+**Current (4 lines for diagonal init):**
+```c
+cycle {
+    @0,0: SADD R3, ZERO, ZERO; @1,1: SADD R3, ZERO, ZERO;
+    @2,2: SADD R3, ZERO, ZERO; @3,3: SADD R3, ZERO, ZERO;
+}
+```
+
+**Proposed (1 line):**
+```c
+cycle { for k in range(4) { @k,k: SADD R3, ZERO, ZERO; } }
+```
+
+**Impact:** -15 lines across diagonal inits (+7 lines), triangle ops (+8 lines).
+
+---
+
+### FEAT-5: `#pragma normalize` — Base-2^16 Normalization
+
+**Problem:** The `SRT R1, R3, 16; LAND R3, R3, 65535` + carry propagation pattern appears **3 times** in the kernel (build_limbs, compute_qhat, mul_qhat_p). It's the canonical normalize-and-carry for multi-limb arithmetic.
+
+**Current (6 lines per instance, ~18 total):**
+```c
+#pragma parallel collapse
+for j in range(4) {
+    cycle { @0,j: SRT R1, R3, 16; }
+    cycle { @0,j: LAND R3, R3, 65535; }
+}
+cycle { row 0: SADD ROUT, R1, ZERO | SADD ROUT, R1, ZERO | SADD ROUT, R1, ZERO | _; }
+cycle { row 0: _ | SADD R3, R3, RCL | SADD R3, R3, RCL | SADD R3, R3, RCL; }
+```
+
+**Proposed (1 line):**
+```c
+#pragma normalize(reg=R3, width=16, cols=4, carry_dir=right)
+```
+
+**Impact:** -20 lines. Abstracts the most common pattern in multi-limb CGRA arithmetic.
+
+---
+
+### FEAT-6: `#pragma triangle` — Upper/Lower Triangle Patterns
+
+**Problem:** The Karatsuba upper-triangle SMUL (lines 90-95) maps 10 PEs where `col >= row`. Cannot be expressed with a single `for` because the condition is 2D.
+
+**Current (5 lines):**
+```c
+row 0: SMUL R2, R0, R1 | SMUL R2, R0, R1 | SMUL R2, R0, R1 | SMUL R2, R0, R1;
+row 1: _ | SMUL R2, R0, R1 | SMUL R2, R0, R1 | SMUL R2, R0, R1;
+@2,2: SMUL R2, R0, R1; @2,3: SMUL R2, R0, R1;
+@3,3: SMUL R2, R0, R1;
+```
+
+**Proposed (1 line):**
+```c
+#pragma triangle(upper, inclusive) { @row,col: SMUL R2, R0, R1; }
+```
+
+**Impact:** -10 lines. Semantic clarity — immediately conveys "upper triangle multiply."
+
+---
+
+### FEAT-7: `#pragma broadcast` Implementation
+
+**Problem:** `#pragma broadcast` exists in the language spec but is **not implemented**. The kernel uses `load_all()` (16 LWI from same address) as a workaround. When the source is a register (not memory), there's no broadcast primitive — manual ROUT chains are needed.
+
+**Current (3 lines function):**
+```c
+function load_all(reg, addr) {
+    #pragma parallel collapse
+    for k in range(16) { cycle { @k/4,k%4: LWI reg, addr; } }
+}
+```
+
+**Proposed:**
+```c
+#pragma broadcast(value=R3, from=@0,0, to=all)
+// Compiler chooses: SWI+LWI (if cheaper) or ROUT tree (if source is register)
+```
+
+**Impact:** -5 lines. Compiler makes the LWI vs routing cost decision automatically.
+
+---
+
+## 🟢 LOW IMPACT — Ergonomics
+
+### FEAT-8: Range Coordinate Syntax — `@0,0..3` (Issue #7)
+
+**Problem:** Every multi-PE instruction requires explicit coordinate listing.
+
+**Current:** `@0,0: SADD R3, ZERO, ZERO; @0,1: SADD R3, ZERO, ZERO; @0,2: SADD R3, ZERO, ZERO; @0,3: SADD R3, ZERO, ZERO;`
+
+**Proposed:** `@0,0..3: SADD R3, ZERO, ZERO;`
+
+**Impact:** -10 lines across kernel.
+
+---
+
+### FEAT-9: Inline Operand Arithmetic
+
+**Problem:** Memory operands don't support arithmetic. Must use `.data` named arrays or `.const` workarounds.
+
+**Current:** `.data L 360 { 0, 0, 0, 0, 0 }` then `LWI R0, L[j]`
+**Could be:** `LWI R0, 360 + j*4` (if inline arithmetic were supported)
+
+**Impact:** -5 lines (eliminate buffer declarations).
+
+---
+
+### FEAT-10: `#pragma stash` — Register Lifetime Extension
+
+**Problem:** Values like `L[0..1]` and `mu[0]` are needed across function boundaries but get overwritten by intermediate operations. Manual stashing to row 3 (which is idle) takes 6-8 routing cycles, more expensive than LWI. The compiler could optimize this by analyzing register lifetimes across functions.
+
+**Proposed:**
+```c
+#pragma stash(R0@(0,0), into=@(3,0), lifetime=until(compute_r))
+// Compiler generates optimal route+retrieval or decides memory is cheaper
+```
+
+**Impact:** 0 to -8 hwcc (compiler decides the cheapest approach: register route vs memory spill).
+
+---
+
+## Summary
+
+| Feature | Lines | Cycles | HW Latency | Effort |
+|---------|:---:|:---:|:---:|:---:|
+| FEAT-1 `latency_hide` | 0 | 0 | **-10 to -20cc** | High |
+| FEAT-2 `carry_chain` | **-30** | -0 to -4 | -0 to -8cc | High |
+| FEAT-3 `specialize` | -3 | 0 | **-8cc** (auto) | Medium |
+| FEAT-4 `for`-in-cycle | **-15** | 0 | 0 | Low |
+| FEAT-5 `normalize` | **-20** | 0 | 0 | Medium |
+| FEAT-6 `triangle` | **-10** | 0 | 0 | Medium |
+| FEAT-7 `broadcast` (impl) | -5 | -0 to -4 | -0 to -8cc | Medium |
+| FEAT-8 Range coords | **-10** | 0 | 0 | Low |
+| FEAT-9 Inline arithmetic | -5 | 0 | 0 | Low |
+| FEAT-10 `stash` | -5 | -0 to -4 | -0 to -8cc | High |
+| **Total potential** | **~-100 lines** | **-4 to -12** | **-18 to -44cc** | — |
+
+### Recommended Priority
+
+1. **FEAT-4** (for-in-cycle) — Low effort, high ergonomic value, already Issue #6
+2. **FEAT-8** (range coords) — Low effort, immediate readability improvement
+3. **FEAT-3** (specialize) — Medium effort, automatic latency reduction
+4. **FEAT-1** (latency_hide) — High effort, highest latency impact
+5. **FEAT-5** (normalize) — Medium effort, most frequent pattern in ZKP kernels
