@@ -277,6 +277,11 @@ interface FunctionDefinitionLite {
   span: SourceSpan;
 }
 
+interface ParsedLabeledCycle {
+  label: string;
+  inlinePayload?: string;
+}
+
 function parseForHeader(
   cleanLine: string,
   lineNo: number,
@@ -560,6 +565,25 @@ function parseFunctionCallLine(cleanLine: string): { name: string; args: string[
   };
 }
 
+function parseLabeledCycleLine(cleanLine: string): ParsedLabeledCycle | null {
+  const inline = cleanLine.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*cycle\s*\{\s*(.+)\s*\}\s*$/i);
+  if (inline) {
+    return {
+      label: inline[1],
+      inlinePayload: inline[2]
+    };
+  }
+
+  const block = cleanLine.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*cycle\s*\{\s*$/i);
+  if (block) {
+    return {
+      label: block[1]
+    };
+  }
+
+  return null;
+}
+
 function applyFunctionArgs(input: string, argsByParam: ReadonlyMap<string, string>): string {
   let out = input;
   for (const [name, value] of argsByParam.entries()) {
@@ -573,7 +597,8 @@ function instantiateFunctionBody(
   def: FunctionDefinitionLite,
   args: string[],
   callLineNo: number,
-  diagnostics: Diagnostic[]
+  diagnostics: Diagnostic[],
+  expansionCounter: { value: number }
 ): SourceLineEntry[] | null {
   if (args.length !== def.params.length) {
     diagnostics.push(makeDiagnostic(
@@ -591,9 +616,28 @@ function instantiateFunctionBody(
     argsByParam.set(def.params[i], args[i]);
   }
 
+  const expansionId = expansionCounter.value++;
+  const labelMap = new Map<string, string>();
+  const labelPattern = /^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*cycle\b/i;
+  for (const entry of def.body) {
+    const match = entry.cleanLine.match(labelPattern);
+    if (!match) continue;
+    const original = match[1];
+    if (!labelMap.has(original)) {
+      labelMap.set(original, `__fn_${def.name}_${expansionId}_${original}`);
+    }
+  }
+
   return def.body.map((entry) => {
-    const raw = applyFunctionArgs(entry.rawLine, argsByParam);
-    const clean = applyFunctionArgs(entry.cleanLine, argsByParam);
+    let raw = applyFunctionArgs(entry.rawLine, argsByParam);
+    let clean = applyFunctionArgs(entry.cleanLine, argsByParam);
+
+    for (const [original, renamed] of labelMap.entries()) {
+      const regex = new RegExp(`\\b${escapeRegExp(original)}\\b`, 'g');
+      raw = raw.replace(regex, renamed);
+      clean = clean.replace(regex, renamed);
+    }
+
     return {
       lineNo: callLineNo,
       rawLine: raw,
@@ -635,12 +679,48 @@ function expandFunctionBodyIntoKernel(
   constants: ReadonlyMap<string, number>,
   diagnostics: Diagnostic[],
   cycleCounter: { value: number },
-  callStack: string[]
+  callStack: string[],
+  expansionCounter: { value: number }
 ): void {
   for (let i = 0; i < body.length; i++) {
     const entry = body[i];
     const clean = entry.cleanLine.trim();
     if (!clean) continue;
+
+    const labeledCycle = parseLabeledCycleLine(clean);
+    if (labeledCycle && labeledCycle.inlinePayload !== undefined) {
+      const cycle: CycleAst = {
+        index: cycleCounter.value++,
+        label: labeledCycle.label,
+        statements: parseInlineCycleStatements(labeledCycle.inlinePayload, entry.lineNo, constants, diagnostics),
+        span: spanAt(entry.lineNo, 1, clean.length)
+      };
+      kernel.cycles.push(cycle);
+      continue;
+    }
+
+    if (labeledCycle) {
+      const block = collectBlockFromEntries(body, i);
+      if (block.endIndex === null) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(entry.lineNo, 1, clean.length),
+          `Unterminated labeled cycle '${labeledCycle.label}' inside function body.`,
+          'Add a closing brace for cycle { ... }.'
+        ));
+        break;
+      }
+
+      kernel.cycles.push({
+        index: cycleCounter.value++,
+        label: labeledCycle.label,
+        statements: expandLoopBody(block.body, constants, new Map(), diagnostics),
+        span: spanAt(entry.lineNo, 1, clean.length)
+      });
+      i = block.endIndex;
+      continue;
+    }
 
     const inlineCycleMatch = clean.match(/^cycle\s*\{\s*(.+)\s*\}\s*$/i);
     if (inlineCycleMatch) {
@@ -689,7 +769,7 @@ function expandFunctionBodyIntoKernel(
       }
 
       const def = functions.get(nestedCall.name)!;
-      const instantiated = instantiateFunctionBody(def, nestedCall.args, entry.lineNo, diagnostics);
+      const instantiated = instantiateFunctionBody(def, nestedCall.args, entry.lineNo, diagnostics, expansionCounter);
       if (!instantiated) continue;
 
       expandFunctionBodyIntoKernel(
@@ -699,7 +779,8 @@ function expandFunctionBodyIntoKernel(
         constants,
         diagnostics,
         cycleCounter,
-        [...callStack, nestedCall.name]
+        [...callStack, nestedCall.name],
+        expansionCounter
       );
       continue;
     }
@@ -738,6 +819,7 @@ export function parseSource(source: string): ParseResult {
   let currentCycle: CycleAst | null = null;
   let cycleConstants = new Map<string, number>();
   let cycleIndex = 0;
+  const functionExpansionCounter = { value: 0 };
   const pendingDirectives: DirectiveAst[] = [];
   const functions = new Map<string, FunctionDefinitionLite>();
 
@@ -896,6 +978,40 @@ export function parseSource(source: string): ParseResult {
         continue;
       }
 
+      const labeledCycle = parseLabeledCycleLine(clean);
+      if (labeledCycle && labeledCycle.inlinePayload !== undefined && kernel) {
+        kernel.cycles.push({
+          index: cycleIndex++,
+          label: labeledCycle.label,
+          statements: parseInlineCycleStatements(labeledCycle.inlinePayload, lineNo, kernelConstants, diagnostics),
+          span: spanAt(lineNo, 1, clean.length)
+        });
+        continue;
+      }
+
+      if (labeledCycle && kernel) {
+        const block = collectBlockFromSource(lines, i);
+        if (block.endIndex === null) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            `Unterminated labeled cycle '${labeledCycle.label}'.`,
+            'Add a closing brace for cycle { ... }.'
+          ));
+          break;
+        }
+
+        kernel.cycles.push({
+          index: cycleIndex++,
+          label: labeledCycle.label,
+          statements: expandLoopBody(block.body, kernelConstants, new Map(), diagnostics),
+          span: spanAt(lineNo, 1, clean.length)
+        });
+        i = block.endIndex;
+        continue;
+      }
+
       if (/^cycle\s*\{\s*$/i.test(clean)) {
         inCycle = true;
         cycleConstants = new Map(kernelConstants);
@@ -910,7 +1026,7 @@ export function parseSource(source: string): ParseResult {
       const functionCall = parseFunctionCallLine(clean);
       if (functionCall && functions.has(functionCall.name) && kernel) {
         const def = functions.get(functionCall.name)!;
-        const instantiated = instantiateFunctionBody(def, functionCall.args, lineNo, diagnostics);
+        const instantiated = instantiateFunctionBody(def, functionCall.args, lineNo, diagnostics, functionExpansionCounter);
         if (instantiated) {
           const cycleCounter = { value: cycleIndex };
           expandFunctionBodyIntoKernel(
@@ -920,7 +1036,8 @@ export function parseSource(source: string): ParseResult {
             kernelConstants,
             diagnostics,
             cycleCounter,
-            [functionCall.name]
+            [functionCall.name],
+            functionExpansionCounter
           );
           cycleIndex = cycleCounter.value;
         }

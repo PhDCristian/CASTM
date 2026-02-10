@@ -28,6 +28,13 @@ const BINARY_OPCODES: Record<string, string> = {
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
 const SUPPORTED_PRAGMAS = new Set<string>();
+const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
+  BEQ: 2,
+  BNE: 2,
+  BLT: 2,
+  BGE: 2,
+  JUMP: 0
+};
 
 function cloneInstruction(instruction: InstructionAst): InstructionAst {
   return {
@@ -53,6 +60,7 @@ function cloneAst(ast: AstProgram): AstProgram {
       pragmas: ast.kernel.pragmas.map((p) => ({ ...p, span: { ...p.span } })),
       cycles: ast.kernel.cycles.map((cycle) => ({
         ...cycle,
+        label: cycle.label,
         span: { ...cycle.span },
         statements: cycle.statements.map((stmt) => {
           if (stmt.kind === 'at') {
@@ -85,6 +93,45 @@ function cloneAst(ast: AstProgram): AstProgram {
 function extractPragmaName(text: string): string {
   const match = text.trim().match(/^#pragma\s+([A-Za-z_][A-Za-z0-9_]*)/i);
   return match ? match[1].toLowerCase() : 'unknown';
+}
+
+function isNumericLiteralToken(text: string): boolean {
+  const trimmed = text.trim();
+  return /^-?\d+$/.test(trimmed) || /^-?0x[0-9a-f]+$/i.test(trimmed);
+}
+
+function resolveLabelOperand(
+  opcode: string,
+  operands: string[],
+  labels: ReadonlyMap<string, number>,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): string[] {
+  const index = BRANCH_LABEL_OPERAND_INDEX[opcode];
+  if (index === undefined || index < 0 || index >= operands.length) {
+    return [...operands];
+  }
+
+  const token = operands[index].trim();
+  if (!token || isNumericLiteralToken(token)) {
+    return [...operands];
+  }
+
+  const targetCycle = labels.get(token);
+  if (targetCycle === undefined) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnknownLabel,
+      'error',
+      span,
+      `Unknown branch label '${token}'.`,
+      'Declare the label with syntax: labelName: cycle { ... }'
+    ));
+    return [...operands];
+  }
+
+  const resolved = [...operands];
+  resolved[index] = String(targetCycle);
+  return resolved;
 }
 
 function isIdentifier(token: string): boolean {
@@ -491,6 +538,7 @@ function addOperation(
   col: number,
   instruction: InstructionAst,
   grid: GridSpec,
+  labels: ReadonlyMap<string, number>,
   diagnostics: Diagnostic[]
 ): void {
   if (row < 0 || row >= grid.rows || col < 0 || col >= grid.cols) {
@@ -540,11 +588,12 @@ function addOperation(
   }
 
   occupied.add(key);
+  const resolvedOperands = resolveLabelOperand(opcode, instruction.operands, labels, instruction.span, diagnostics);
   operations.push({
     row,
     col,
     opcode,
-    operands: [...instruction.operands],
+    operands: resolvedOperands,
     span: { ...instruction.span }
   });
 }
@@ -568,13 +617,29 @@ export function createResolveSymbolsPass(targetProfileId: string, grid: GridSpec
         };
       }
 
+      const labels = new Map<string, number>();
+      for (const cycle of kernel.cycles) {
+        if (!cycle.label) continue;
+        if (labels.has(cycle.label)) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Semantic.DuplicateLabel,
+            'error',
+            cycle.span,
+            `Duplicate cycle label '${cycle.label}'.`,
+            'Use unique labels for each labeled cycle.'
+          ));
+          continue;
+        }
+        labels.set(cycle.label, cycle.index);
+      }
+
       for (const cycle of kernel.cycles) {
         const operations: HirOperation[] = [];
         const occupied = new Set<string>();
 
         for (const stmt of cycle.statements) {
           if (stmt.kind === 'at') {
-            addOperation(operations, occupied, cycle.index, stmt.row, stmt.col, stmt.instruction, grid, diagnostics);
+            addOperation(operations, occupied, cycle.index, stmt.row, stmt.col, stmt.instruction, grid, labels, diagnostics);
             continue;
           }
 
@@ -594,7 +659,7 @@ export function createResolveSymbolsPass(targetProfileId: string, grid: GridSpec
 
             if (stmt.instructions.length === 1) {
               for (let col = 0; col < grid.cols; col++) {
-                addOperation(operations, occupied, cycle.index, stmt.row, col, stmt.instructions[0], grid, diagnostics);
+                addOperation(operations, occupied, cycle.index, stmt.row, col, stmt.instructions[0], grid, labels, diagnostics);
               }
               continue;
             }
@@ -611,7 +676,7 @@ export function createResolveSymbolsPass(targetProfileId: string, grid: GridSpec
 
             const max = Math.min(stmt.instructions.length, grid.cols);
             for (let col = 0; col < max; col++) {
-              addOperation(operations, occupied, cycle.index, stmt.row, col, stmt.instructions[col], grid, diagnostics);
+              addOperation(operations, occupied, cycle.index, stmt.row, col, stmt.instructions[col], grid, labels, diagnostics);
             }
 
             for (let col = max; col < grid.cols; col++) {
@@ -620,7 +685,7 @@ export function createResolveSymbolsPass(targetProfileId: string, grid: GridSpec
                 opcode: 'NOP',
                 operands: [],
                 span: { ...stmt.span }
-              }, grid, diagnostics);
+              }, grid, labels, diagnostics);
             }
             continue;
           }
@@ -638,14 +703,14 @@ export function createResolveSymbolsPass(targetProfileId: string, grid: GridSpec
             }
 
             for (let row = 0; row < grid.rows; row++) {
-              addOperation(operations, occupied, cycle.index, row, stmt.col, stmt.instruction, grid, diagnostics);
+              addOperation(operations, occupied, cycle.index, row, stmt.col, stmt.instruction, grid, labels, diagnostics);
             }
             continue;
           }
 
           for (let row = 0; row < grid.rows; row++) {
             for (let col = 0; col < grid.cols; col++) {
-              addOperation(operations, occupied, cycle.index, row, col, stmt.instruction, grid, diagnostics);
+              addOperation(operations, occupied, cycle.index, row, col, stmt.instruction, grid, labels, diagnostics);
             }
           }
         }

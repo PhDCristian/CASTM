@@ -71,7 +71,8 @@ kernel "data_regions" {
     expect(result.artifacts.symbols).toEqual({
       constants: { TILE: '4' },
       aliases: { ACC: 'R3' },
-      arrays: [{ name: 'A', start: 0, length: 4 }]
+      arrays: [{ name: 'A', start: 0, length: 4 }],
+      labels: {}
     });
     expect(result.artifacts.ioConfig).toEqual({
       loadAddrs: [100, 104],
@@ -271,6 +272,72 @@ kernel "recursive_fn" {
     const result = compile(source);
     expect(result.success).toBe(false);
     expect(result.diagnostics.some((d) => d.message.includes('Recursive function call detected'))).toBe(true);
+  });
+
+  it('resolves labeled cycle references in branch/jump operands', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "labels_ok" {
+  start: cycle { @0,0: SADD R0, ZERO, IMM(1); }
+  cycle { @0,0: BGE R0, IMM(0), start; }
+  cycle { @0,0: JUMP start, ZERO; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('1,0,0,BGE R0 IMM(0) 0');
+    expect(result.artifacts.csv).toContain('2,0,0,JUMP 0 ZERO');
+    expect(result.artifacts.symbols?.labels).toEqual({ start: 0 });
+  });
+
+  it('rejects branches to unknown labels', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "labels_missing" {
+  cycle { @0,0: JUMP nowhere, ZERO; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnknownLabel)).toBe(true);
+  });
+
+  it('rejects duplicate labeled cycles', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "labels_dup" {
+  loop: cycle { @0,0: EXIT; }
+  loop: cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.DuplicateLabel)).toBe(true);
+  });
+
+  it('prefixes function-internal labels per expansion to avoid collisions', () => {
+    const source = `
+target "uma-cgra-v1";
+function dec_loop(reg) {
+  loop: cycle { @0,0: SSUB reg, reg, IMM(1); }
+  cycle { @0,0: BGE reg, IMM(0), loop; }
+}
+kernel "fn_labels" {
+  cycle { @0,0: SADD R0, ZERO, IMM(1); }
+  dec_loop(R0);
+  cycle { @0,0: SADD R1, ZERO, IMM(1); }
+  dec_loop(R1);
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.DuplicateLabel)).toBe(false);
+    expect(result.artifacts.csv).toContain('2,0,0,BGE R0 IMM(0) 1');
+    expect(result.artifacts.csv).toContain('5,0,0,BGE R1 IMM(0) 4');
   });
 
   it('rejects memory-to-memory assignment in memory sugar', () => {

@@ -72,6 +72,7 @@ export interface SymbolInfo {
   constants: Record<string, string>;
   aliases: Record<string, string>;
   arrays: SymbolArrayInfo[];
+  labels: Record<string, number>;
 }
 
 export interface CompileOptions {
@@ -125,6 +126,7 @@ export type CycleStatementAst = CycleStmtAt | CycleStmtRow | CycleStmtCol | Cycl
 
 export interface CycleAst {
   index: number;
+  label?: string;
   statements: CycleStatementAst[];
   span: SourceSpan;
 }

@@ -90,6 +90,7 @@ function collectRuntimeArtifacts(
   const constants: Record<string, string> = {};
   const aliases: Record<string, string> = {};
   const arrays: SymbolArrayInfo[] = [];
+  const labels: Record<string, number> = {};
   const ioConfig: IoConfigInfo = { loadAddrs: [], storeAddrs: [] };
   const assertions: AssertionInfo[] = [];
 
@@ -100,6 +101,11 @@ function collectRuntimeArtifacts(
       start: region.start,
       length: region.values.length
     });
+  }
+
+  for (const cycle of ast.kernel?.cycles ?? []) {
+    if (!cycle.label) continue;
+    labels[cycle.label] = cycle.index;
   }
 
   const directives = ast.kernel?.directives ?? [];
@@ -150,7 +156,7 @@ function collectRuntimeArtifacts(
   return {
     ioConfig,
     assertions,
-    symbols: { constants, aliases, arrays }
+    symbols: { constants, aliases, arrays, labels }
   };
 }
 
@@ -362,7 +368,7 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
     : {
         ioConfig: { loadAddrs: [], storeAddrs: [] },
         assertions: [],
-        symbols: { constants: {}, aliases: {}, arrays: [] }
+        symbols: { constants: {}, aliases: {}, arrays: [], labels: {} }
       };
 
   if (!parseResult.ast) {
