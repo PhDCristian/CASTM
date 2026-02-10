@@ -39,8 +39,10 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 | Pragma parsing (`#pragma ...`) | done | `tests/compiler-api.contract.test.ts` | Preserves text + span in AST. |
 | Strict unsupported validation | done | `tests/compiler-api.contract.test.ts` | `strictUnsupported` default is `true` (`E3008`). |
 | `route` lowering | partial | `tests/compiler-api.contract.test.ts` | Compact `@r,c` and legacy `(r,c)` lower to route cycles with topology-aware paths; advanced pragma families remain pending. |
+| `broadcast` lowering | partial | `tests/compiler-api.contract.test.ts` | Fanout implemented via route-style lowering for `row`/`column`/`all` scopes. |
+| `rotate`/`shift` lowering | partial | `tests/compiler-api.contract.test.ts` | Row-0 lowering implemented; `rotate` currently torus-only, `shift` supports fill values. |
 | `auto_cycle` lowering | pending | - | Pass currently no-op. |
-| Advanced codegen pragmas (`reduce`, `scan`, etc.) | pending | - | Tracked for v2 completion phases. |
+| Advanced codegen pragmas (`reduce`, `scan`, `stencil`, `allreduce`, `transpose`, `gather`, `stream_*`) | pending | - | Tracked for v2 completion phases. |
 
 ## IR / Backend / Tooling
 

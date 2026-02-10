@@ -497,6 +497,84 @@ kernel "route_topology" {
     expect(meshResult.artifacts.csv).toContain('4,0,0,EXIT');
   });
 
+  it('lowers broadcast pragma using route-style fanout for row scope', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "broadcast_row" {
+  #pragma broadcast(value=R0, from=@0,0, to=row)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD ROUT R0 ZERO');
+    expect(result.artifacts.csv).toContain('1,0,1,SADD R0 RCL ZERO');
+    expect(result.artifacts.csv).toContain('4,0,2,SADD R0 RCL ZERO');
+    expect(result.artifacts.csv).toContain('6,0,3,SADD R0 RCR ZERO');
+    expect(result.artifacts.csv).toContain('7,0,0,EXIT');
+  });
+
+  it('lowers rotate pragma on row 0 in torus topology', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "rotate_row0" {
+  #pragma rotate(reg=R0, direction=left, distance=1)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD ROUT R0 ZERO');
+    expect(result.artifacts.csv).toContain('0,0,3,SADD ROUT R0 ZERO');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R0 RCR ZERO');
+    expect(result.artifacts.csv).toContain('1,0,3,SADD R0 RCR ZERO');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('rejects rotate pragma on mesh topology for now', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "rotate_mesh" {
+  #pragma rotate(reg=R0, direction=left, distance=1)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source, {
+      grid: { rows: 4, cols: 4, topology: 'mesh' }
+    });
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
+  it('lowers shift pragma with fill value at edge', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "shift_row0" {
+  #pragma shift(reg=R0, direction=right, distance=1, fill=7)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD ROUT R0 ZERO');
+    expect(result.artifacts.csv).toContain('0,0,3,SADD ROUT R0 ZERO');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R0 ZERO IMM(7)');
+    expect(result.artifacts.csv).toContain('1,0,1,SADD R0 RCL ZERO');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
   it('rejects unsupported pragmas by default in strict mode', () => {
     const source = `
 target "uma-cgra-v1";

@@ -28,7 +28,7 @@ const BINARY_OPCODES: Record<string, string> = {
 };
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
-const SUPPORTED_PRAGMAS = new Set<string>(['route']);
+const SUPPORTED_PRAGMAS = new Set<string>(['route', 'broadcast', 'rotate', 'shift']);
 const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
   BEQ: 2,
   BNE: 2,
@@ -56,6 +56,19 @@ interface RoutePragmaArgs {
   accum: string;
   destReg?: string;
   customOp?: RouteCustomOp;
+}
+
+interface BroadcastPragmaArgs {
+  valueReg: string;
+  from: RoutePoint;
+  scope: 'row' | 'column' | 'all';
+}
+
+interface RotateShiftPragmaArgs {
+  reg: string;
+  direction: 'left' | 'right';
+  distance: number;
+  fill?: number;
 }
 
 function cloneInstruction(instruction: InstructionAst): InstructionAst {
@@ -346,6 +359,72 @@ function parseRoutePragmaArgs(text: string): RoutePragmaArgs | null {
   };
 }
 
+function parseCoordinateLiteral(text: string): RoutePoint | null {
+  const parsed = parseRouteCoordinate(text.trim(), 0);
+  if (!parsed) return null;
+  const tail = text.slice(parsed.next).trim();
+  if (tail.length > 0) return null;
+  return parsed.point;
+}
+
+function parseBroadcastPragmaArgs(text: string): BroadcastPragmaArgs | null {
+  const match = text.trim().match(
+    /^#pragma\s+broadcast\s*\(\s*value\s*=\s*([A-Za-z_][A-Za-z0-9_]*)\s*,\s*from\s*=\s*([^,]+(?:,[^,]+)?)\s*,\s*to\s*=\s*(row|column|all)\s*\)\s*$/i
+  );
+  if (!match) return null;
+
+  const from = parseCoordinateLiteral(match[2]);
+  if (!from) return null;
+
+  return {
+    valueReg: match[1].trim(),
+    from,
+    scope: match[3].toLowerCase() as 'row' | 'column' | 'all'
+  };
+}
+
+function parseKeyValueArgs(body: string): Map<string, string> | null {
+  const args = new Map<string, string>();
+  const entries = body.split(',').map((part) => part.trim()).filter(Boolean);
+  for (const entry of entries) {
+    const match = entry.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/);
+    if (!match) return null;
+    args.set(match[1].toLowerCase(), match[2].trim());
+  }
+  return args;
+}
+
+function parseRotateShiftPragmaArgs(text: string, pragmaName: 'rotate' | 'shift'): RotateShiftPragmaArgs | null {
+  const match = text.trim().match(new RegExp(`^#pragma\\s+${pragmaName}\\s*\\((.+)\\)\\s*$`, 'i'));
+  if (!match) return null;
+
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+
+  const reg = args.get('reg');
+  const direction = args.get('direction')?.toLowerCase();
+  if (!reg || (direction !== 'left' && direction !== 'right')) {
+    return null;
+  }
+
+  const rawDistance = args.get('distance');
+  const distance = rawDistance ? parseIntegerLiteral(rawDistance) : 1;
+  if (distance === null || distance <= 0) return null;
+
+  const fillRaw = args.get('fill');
+  const fill = fillRaw !== undefined ? parseIntegerLiteral(fillRaw) : undefined;
+  if (pragmaName === 'shift' && fillRaw !== undefined && fill === null) {
+    return null;
+  }
+
+  return {
+    reg,
+    direction,
+    distance,
+    fill: fill === undefined ? undefined : fill
+  };
+}
+
 function wrap(value: number, size: number): number {
   return ((value % size) + size) % size;
 }
@@ -465,8 +544,217 @@ function createAtCycle(
   };
 }
 
+function createRowCycle(
+  index: number,
+  row: number,
+  instructions: InstructionAst[],
+  span: SourceSpan
+): CycleAst {
+  return {
+    index,
+    statements: [{
+      kind: 'row',
+      row,
+      instructions: instructions.map((inst) => ({
+        ...inst,
+        span: cloneSpan(inst.span),
+        operands: [...inst.operands]
+      })),
+      span: cloneSpan(span)
+    }],
+    span: cloneSpan(span)
+  };
+}
+
 function replaceIncoming(token: string, incoming: string): string {
   return token.trim().toUpperCase() === 'INCOMING' ? incoming : token.trim();
+}
+
+function buildRouteTransferCycles(
+  src: RoutePoint,
+  dst: RoutePoint,
+  payloadReg: string,
+  destReg: string,
+  startIndex: number,
+  grid: GridSpec,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): CycleAst[] {
+  const path = computeRoutePath(src, dst, grid);
+  const cycles: CycleAst[] = [];
+  if (path.length === 0) return cycles;
+
+  if (path.length === 1) {
+    cycles.push(createAtCycle(
+      startIndex,
+      src.row,
+      src.col,
+      createInstruction('SADD', [destReg, payloadReg, 'ZERO'], span),
+      span
+    ));
+    return cycles;
+  }
+
+  for (let i = 0; i < path.length; i++) {
+    const point = path[i];
+    const isFirst = i === 0;
+    const isLast = i === path.length - 1;
+
+    if (isFirst) {
+      cycles.push(createAtCycle(
+        startIndex + i,
+        point.row,
+        point.col,
+        createInstruction('SADD', ['ROUT', payloadReg, 'ZERO'], span),
+        span
+      ));
+      continue;
+    }
+
+    const incoming = getIncomingRegister(path[i - 1], point, grid);
+    if (!incoming) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Internal.UnexpectedState,
+        'error',
+        span,
+        `Could not resolve transfer direction for step (${path[i - 1].row},${path[i - 1].col}) -> (${point.row},${point.col}).`
+      ));
+      continue;
+    }
+
+    if (!isLast) {
+      cycles.push(createAtCycle(
+        startIndex + i,
+        point.row,
+        point.col,
+        createInstruction('SADD', ['ROUT', incoming, 'ZERO'], span),
+        span
+      ));
+      continue;
+    }
+
+    cycles.push(createAtCycle(
+      startIndex + i,
+      point.row,
+      point.col,
+      createInstruction('SADD', [destReg, incoming, 'ZERO'], span),
+      span
+    ));
+  }
+
+  return cycles;
+}
+
+function buildBroadcastCycles(
+  pragma: BroadcastPragmaArgs,
+  startIndex: number,
+  grid: GridSpec,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): CycleAst[] {
+  const targets: RoutePoint[] = [];
+
+  if (pragma.scope === 'row' || pragma.scope === 'all') {
+    for (let col = 0; col < grid.cols; col++) {
+      if (col === pragma.from.col) continue;
+      targets.push({ row: pragma.from.row, col });
+    }
+  }
+
+  if (pragma.scope === 'column' || pragma.scope === 'all') {
+    for (let row = 0; row < grid.rows; row++) {
+      if (row === pragma.from.row) continue;
+      const point = { row, col: pragma.from.col };
+      if (!targets.some((existing) => isSamePoint(existing, point))) {
+        targets.push(point);
+      }
+    }
+  }
+
+  if (pragma.scope === 'all') {
+    for (let row = 0; row < grid.rows; row++) {
+      for (let col = 0; col < grid.cols; col++) {
+        const point = { row, col };
+        if (isSamePoint(point, pragma.from)) continue;
+        if (!targets.some((existing) => isSamePoint(existing, point))) {
+          targets.push(point);
+        }
+      }
+    }
+  }
+
+  const cycles: CycleAst[] = [];
+  for (const target of targets) {
+    const transfer = buildRouteTransferCycles(
+      pragma.from,
+      target,
+      pragma.valueReg,
+      pragma.valueReg,
+      startIndex + cycles.length,
+      grid,
+      span,
+      diagnostics
+    );
+    cycles.push(...transfer);
+  }
+
+  return cycles;
+}
+
+function buildRotateShiftCycles(
+  pragma: RotateShiftPragmaArgs,
+  isShift: boolean,
+  startIndex: number,
+  grid: GridSpec,
+  span: SourceSpan,
+  diagnostics: Diagnostic[]
+): CycleAst[] {
+  if (grid.rows <= 0 || grid.cols <= 0) {
+    return [];
+  }
+
+  if (!isShift && grid.topology !== 'torus') {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `#pragma rotate currently requires torus topology, got '${grid.topology}'.`,
+      'Use topology torus or switch to #pragma shift for mesh.'
+    ));
+    return [];
+  }
+
+  const iterations = isShift
+    ? pragma.distance
+    : (pragma.distance % grid.cols + grid.cols) % grid.cols;
+  if (iterations === 0) {
+    return [];
+  }
+
+  const cycles: CycleAst[] = [];
+  const neighborReg = pragma.direction === 'left' ? 'RCR' : 'RCL';
+  const edgeCol = pragma.direction === 'left' ? grid.cols - 1 : 0;
+  const fillValue = pragma.fill ?? 0;
+
+  for (let step = 0; step < iterations; step++) {
+    const sendInstructions: InstructionAst[] = [];
+    for (let col = 0; col < grid.cols; col++) {
+      sendInstructions.push(createInstruction('SADD', ['ROUT', pragma.reg, 'ZERO'], span));
+    }
+    cycles.push(createRowCycle(startIndex + cycles.length, 0, sendInstructions, span));
+
+    const recvInstructions: InstructionAst[] = [];
+    for (let col = 0; col < grid.cols; col++) {
+      if (isShift && col === edgeCol) {
+        recvInstructions.push(createInstruction('SADD', [pragma.reg, 'ZERO', `IMM(${fillValue})`], span));
+      } else {
+        recvInstructions.push(createInstruction('SADD', [pragma.reg, neighborReg, 'ZERO'], span));
+      }
+    }
+    cycles.push(createRowCycle(startIndex + cycles.length, 0, recvInstructions, span));
+  }
+
+  return cycles;
 }
 
 function buildRouteCycles(
@@ -968,6 +1256,68 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
 
           const cycles = buildRouteCycles(
             parsed,
+            generatedCycles.length,
+            grid,
+            pragma.span,
+            diagnostics
+          );
+          generatedCycles.push(...cycles);
+          continue;
+        }
+
+        if (name === 'broadcast') {
+          const parsed = parseBroadcastPragmaArgs(pragma.text);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid broadcast pragma syntax: '${pragma.text}'.`,
+              'Use #pragma broadcast(value=R0, from=@row,col, to=row|column|all).'
+            ));
+            continue;
+          }
+
+          if (!isPointInGrid(parsed.from, grid)) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Semantic.CoordinateOutOfBounds,
+              'error',
+              pragma.span,
+              `Broadcast source @${parsed.from.row},${parsed.from.col} is outside ${grid.rows}x${grid.cols}.`,
+              'Adjust source coordinates or change CompileOptions.grid.'
+            ));
+            continue;
+          }
+
+          const cycles = buildBroadcastCycles(
+            parsed,
+            generatedCycles.length,
+            grid,
+            pragma.span,
+            diagnostics
+          );
+          generatedCycles.push(...cycles);
+          continue;
+        }
+
+        if (name === 'rotate' || name === 'shift') {
+          const parsed = parseRotateShiftPragmaArgs(pragma.text, name);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid ${name} pragma syntax: '${pragma.text}'.`,
+              name === 'rotate'
+                ? 'Use #pragma rotate(reg=R0, direction=left|right, distance=1).'
+                : 'Use #pragma shift(reg=R0, direction=left|right, distance=1, fill=0).'
+            ));
+            continue;
+          }
+
+          const cycles = buildRotateShiftCycles(
+            parsed,
+            name === 'shift',
             generatedCycles.length,
             grid,
             pragma.span,
