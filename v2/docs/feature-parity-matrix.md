@@ -68,7 +68,7 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 |---|---|---|---|
 | Replace path alias imports to v2 internals | pending | Simulator | Consume only published `@openedge/*` versions. |
 | Remove legacy fallback for stable feature set | pending | Simulator | Contract parity in CI is green. |
-| Cross-repo parity workflow | pending | OpenEdgeDSL + Simulator | Compile parity + simulation parity fixtures in CI. |
+| Cross-repo parity workflow | done | OpenEdgeDSL + Simulator | Automated in `.github/workflows/v2-cross-repo-parity.yml` via `v2/scripts/run-simulator-parity.mjs` against simulator parity fixtures (`dsl-compiler-parity` + `dsl-compiler-v2-adapter`). |
 
 ## Executable Snippet
 
