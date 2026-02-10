@@ -1046,11 +1046,76 @@ kernel "stream_bad_count" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 
+  it('groups auto_cycle statements by PE conflicts', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "auto_cycle_grouping" {
+  #pragma auto_cycle
+  @0,0: SADD R0, ZERO, IMM(10);
+  @0,1: SADD R0, ZERO, IMM(20);
+  @0,0: SADD R1, ZERO, IMM(30);
+  @0,1: SADD R1, ZERO, IMM(40);
+  #pragma end_auto_cycle
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R0 ZERO IMM(10)');
+    expect(result.artifacts.csv).toContain('0,0,1,SADD R0 ZERO IMM(20)');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R1 ZERO IMM(30)');
+    expect(result.artifacts.csv).toContain('1,0,1,SADD R1 ZERO IMM(40)');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('supports auto_cycle with row-scoped conflict detection', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "auto_cycle_rows" {
+  #pragma auto_cycle
+  row 0: SADD R0, ZERO, IMM(1);
+  row 1: SADD R0, ZERO, IMM(2);
+  row 0: SADD R1, ZERO, IMM(3);
+  #pragma end_auto_cycle
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R0 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('0,1,3,SADD R0 ZERO IMM(2)');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R1 ZERO IMM(3)');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('rejects auto_cycle regions without end_auto_cycle', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "auto_cycle_missing_end" {
+  #pragma auto_cycle
+  @0,0: SADD R0, ZERO, IMM(10);
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
+  });
+
   it('rejects unsupported pragmas by default in strict mode', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "auto_cycle_pragma" {
-  #pragma auto_cycle
+kernel "unknown_pragma" {
+  #pragma foobar
   cycle {
     @0,0: EXIT;
   }
@@ -1065,8 +1130,8 @@ kernel "auto_cycle_pragma" {
   it('allows unsupported pragmas in transitional mode and emits simulator matrix CSV', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "auto_cycle_pragma_relaxed" {
-  #pragma auto_cycle
+kernel "unknown_pragma_relaxed" {
+  #pragma foobar
   cycle {
     @0,0: EXIT;
   }

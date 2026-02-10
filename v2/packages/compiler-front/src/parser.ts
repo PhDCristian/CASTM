@@ -252,6 +252,79 @@ function parseCycleStatement(
   return null;
 }
 
+interface AutoCycleOccupancy {
+  all: boolean;
+  rows: Set<number>;
+  cols: Set<number>;
+  points: Set<string>;
+}
+
+function createAutoCycleOccupancy(): AutoCycleOccupancy {
+  return {
+    all: false,
+    rows: new Set<number>(),
+    cols: new Set<number>(),
+    points: new Set<string>()
+  };
+}
+
+function autoCycleHasConflict(statement: CycleStatementAst, occupancy: AutoCycleOccupancy): boolean {
+  if (occupancy.all) return true;
+
+  if (statement.kind === 'all') {
+    return occupancy.rows.size > 0 || occupancy.cols.size > 0 || occupancy.points.size > 0;
+  }
+
+  if (statement.kind === 'at') {
+    const key = `${statement.row},${statement.col}`;
+    if (occupancy.points.has(key)) return true;
+    if (occupancy.rows.has(statement.row)) return true;
+    if (occupancy.cols.has(statement.col)) return true;
+    return false;
+  }
+
+  if (statement.kind === 'row') {
+    if (occupancy.cols.size > 0) return true;
+    if (occupancy.rows.has(statement.row)) return true;
+    for (const point of occupancy.points) {
+      const [pointRow] = point.split(',').map((x) => parseInt(x, 10));
+      if (pointRow === statement.row) return true;
+    }
+    return false;
+  }
+
+  if (statement.kind === 'col') {
+    if (occupancy.rows.size > 0) return true;
+    if (occupancy.cols.has(statement.col)) return true;
+    for (const point of occupancy.points) {
+      const [, pointCol] = point.split(',').map((x) => parseInt(x, 10));
+      if (pointCol === statement.col) return true;
+    }
+    return false;
+  }
+
+  return false;
+}
+
+function markAutoCycleOccupancy(statement: CycleStatementAst, occupancy: AutoCycleOccupancy): void {
+  if (statement.kind === 'all') {
+    occupancy.all = true;
+    return;
+  }
+
+  if (statement.kind === 'at') {
+    occupancy.points.add(`${statement.row},${statement.col}`);
+    return;
+  }
+
+  if (statement.kind === 'row') {
+    occupancy.rows.add(statement.row);
+    return;
+  }
+
+  occupancy.cols.add(statement.col);
+}
+
 interface ForHeader {
   variable: string;
   start: number;
@@ -1204,12 +1277,23 @@ export function parseSource(source: string): ParseResult {
   let inKernel = false;
   let inCycle = false;
   let currentCycle: CycleAst | null = null;
+  let autoCycleActive = false;
+  let autoCycleCurrent: CycleAst | null = null;
+  let autoCycleOccupancy = createAutoCycleOccupancy();
   let cycleConstants = new Map<string, number>();
   let cycleIndex = 0;
   const functionExpansionCounter = { value: 0 };
   const controlFlowCounter = { value: 0 };
   const pendingDirectives: DirectiveAst[] = [];
   const functions = new Map<string, FunctionDefinitionLite>();
+
+  const flushAutoCycleCurrent = (): void => {
+    if (kernel && autoCycleCurrent) {
+      kernel.cycles.push(autoCycleCurrent);
+    }
+    autoCycleCurrent = null;
+    autoCycleOccupancy = createAutoCycleOccupancy();
+  };
 
   for (let i = 0; i < lines.length; i++) {
     const lineNo = i + 1;
@@ -1308,6 +1392,17 @@ export function parseSource(source: string): ParseResult {
 
     if (inKernel && !inCycle) {
       if (clean === '}') {
+        if (autoCycleActive) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            '#pragma auto_cycle without matching #pragma end_auto_cycle.',
+            'Close the region with #pragma end_auto_cycle before ending the kernel.'
+          ));
+          flushAutoCycleCurrent();
+          autoCycleActive = false;
+        }
         inKernel = false;
         continue;
       }
@@ -1322,7 +1417,53 @@ export function parseSource(source: string): ParseResult {
         continue;
       }
 
-      if (/^#pragma\s+/i.test(clean) && kernel) {
+      const pragmaMatch = clean.match(/^#pragma\s+([A-Za-z_][A-Za-z0-9_]*)/i);
+      if (pragmaMatch && kernel) {
+        const pragmaName = pragmaMatch[1].toLowerCase();
+        if (pragmaName === 'auto_cycle') {
+          if (autoCycleActive) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              spanAt(lineNo, 1, clean.length),
+              'Nested #pragma auto_cycle regions are not supported.',
+              'Close the current region with #pragma end_auto_cycle before opening another.'
+            ));
+          } else {
+            autoCycleActive = true;
+            autoCycleCurrent = null;
+            autoCycleOccupancy = createAutoCycleOccupancy();
+          }
+          continue;
+        }
+
+        if (pragmaName === 'end_auto_cycle') {
+          if (!autoCycleActive) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              spanAt(lineNo, 1, clean.length),
+              'Found #pragma end_auto_cycle without matching #pragma auto_cycle.',
+              'Open an auto-cycle region before closing it.'
+            ));
+          } else {
+            flushAutoCycleCurrent();
+            autoCycleActive = false;
+          }
+          continue;
+        }
+
+        if (autoCycleActive) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            `Unsupported pragma '${pragmaName}' inside #pragma auto_cycle region.`,
+            'Only PE-prefixed instructions and #pragma end_auto_cycle are allowed in this region.'
+          ));
+          continue;
+        }
+
         kernel.pragmas.push({
           text: clean,
           span: spanAt(lineNo, 1, clean.length)
@@ -1332,6 +1473,17 @@ export function parseSource(source: string): ParseResult {
 
       const directive = parseDirective(clean, lineNo);
       if (directive && kernel) {
+        if (autoCycleActive) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            `Unsupported directive '${clean}' inside #pragma auto_cycle region.`,
+            'Only PE-prefixed instructions and #pragma end_auto_cycle are allowed in this region.'
+          ));
+          continue;
+        }
+
         kernel.directives.push(directive);
         if (directive.kind === 'const') {
           const value = evaluateNumericExpression(directive.value, kernelConstants, new Map());
@@ -1347,6 +1499,41 @@ export function parseSource(source: string): ParseResult {
             kernelConstants.set(directive.name, value);
           }
         }
+        continue;
+      }
+
+      if (autoCycleActive && kernel) {
+        const statement = parseCycleStatement(clean, lineNo, rawLine, kernelConstants, new Map());
+        if (!statement) {
+          diagnostics.push(makeDiagnostic(
+            ErrorCodes.Parse.InvalidSyntax,
+            'error',
+            spanAt(lineNo, 1, clean.length),
+            `Invalid auto_cycle statement: '${clean}'.`,
+            'Use PE-prefixed instructions like @r,c:, row N:, col N:, or all:.'
+          ));
+          continue;
+        }
+
+        if (!autoCycleCurrent) {
+          autoCycleCurrent = {
+            index: cycleIndex++,
+            statements: [],
+            span: spanAt(lineNo, 1, clean.length)
+          };
+        }
+
+        if (autoCycleHasConflict(statement, autoCycleOccupancy)) {
+          flushAutoCycleCurrent();
+          autoCycleCurrent = {
+            index: cycleIndex++,
+            statements: [],
+            span: spanAt(lineNo, 1, clean.length)
+          };
+        }
+
+        autoCycleCurrent.statements.push(statement);
+        markAutoCycleOccupancy(statement, autoCycleOccupancy);
         continue;
       }
 
@@ -1696,6 +1883,17 @@ export function parseSource(source: string): ParseResult {
       'Unterminated cycle block.',
       'Add a closing brace for cycle { ... }.'
     ));
+  }
+
+  if (autoCycleActive) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(lines.length, 1, 1),
+      '#pragma auto_cycle without matching #pragma end_auto_cycle.',
+      'Close the auto-cycle region with #pragma end_auto_cycle.'
+    ));
+    flushAutoCycleCurrent();
   }
 
   if (inKernel) {
