@@ -1,4 +1,4 @@
-# OpenEdgeDSL Compiler Issues — Discovered During SBOX K7 v6 Porting
+@# OpenEdgeDSL Compiler Issues — Discovered During SBOX K7 v6 Porting
 
 Discovered while porting `sbox_k7_v5_rout.edsl` → `sbox_k7_v6_compact.edsl`.
 
@@ -1173,3 +1173,53 @@ More general than FEAT-6 (`#pragma triangle`): allows any boolean condition over
 
 Current kernel: **328 lines / 269 instr / 340 hwcc**.
 With all features: **~152 lines / 265-269 instr / 296-322 hwcc** (estimated).
+
+---
+---
+
+# Known Compiler Bugs
+
+## BUG-1: Style A' Row Auto-Broadcast Corrupts When Mixed With Other Styles
+
+**Severity:** High — silently produces wrong results (no compile error).
+
+**Description:** Style A' (`row N: instr;` → auto-broadcast to all 4 columns) exists in the parser (`parseRowInstructions`) but produces **incorrect simulation output** when the same `cycle { }` block also contains:
+- Another row with Style A pipe-varied instructions (`row M: a | b | c | d;`)
+- Direct coordinate instructions (`@r,c: instr;`)
+
+**Reproduction:**
+
+```c
+// WORKS — row 1 alone in cycle or with @-coords that don't conflict:
+cycle {
+    @0,3: LWI R0, 4;
+    row 1: SMUL R2, R0, R1;   // ✅ Style A' broadcast OK
+}
+
+// FAILS — row 1 broadcast mixed with pipe-varied row 0:
+cycle {
+    row 0: SRT R3, R0, 16 | LWI R1, mu[0] | LWI R1, mu[0] | LWI R1, mu[0];
+    row 1: LWI R1, mu[1];     // ❌ Style A' broadcast WRONG OUTPUT
+}
+
+// FAILS — row 0 broadcast mixed with another broadcast row 1:
+cycle {
+    row 0: SADD R2, R0, ZERO; // ❌ broadcast
+    row 1: LWI R1, p_limbs[1]; // This one works, but row 0 doesn't
+}
+```
+
+**Test results (each broadcast tested individually, 12 test vectors):**
+
+| Broadcast | Cycle Context | Pass/Fail |
+|-----------|--------------|:---------:|
+| `row 1: LWI R1, p_limbs[1]` | Cycle with 2 broadcast rows | ✅ 12/12 |
+| `row 1: SMUL R2, R0, R1` | Cycle with `@0,3:` + broadcast row | ✅ 12/12 |
+| `row 1: LWI R1, mu[1]` | Cycle with pipe-varied row 0 | ❌ 4/12 |
+| `row 2: LWI R1, mu[2]` | Cycle with pipe-varied row 0 | ❌ 4/12 |
+| `row 1: SADD R3, RCB, ZERO` | Cycle with `@0,0:` + broadcast | ❌ 5/12 |
+| `row 0: SADD R2, R0, ZERO` | Cycle with broadcast row 1 | ❌ 2/12 |
+
+**Suspected root cause:** The `{ ...firstInstr }` shallow copy in `parseRowInstructions` (Style A' branch) may create aliased Instruction objects. When the code generator later mutates instruction fields (e.g., resolving named array addresses), all 4 "copies" share the same nested object references, causing overwrites.
+
+**Workaround:** Use explicit pipe syntax: `row N: instr | instr | instr | instr;`
