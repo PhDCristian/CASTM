@@ -18,8 +18,8 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 | C-like assignment desugar | partial | `tests/compiler-api.contract.test.ts` | Baseline arithmetic only. |
 | `function` (definition + call expansion) | partial | `tests/compiler-api.contract.test.ts` | Supports pre-kernel definitions, parameter substitution, nested non-recursive calls, and cycle-based bodies. |
 | Labeled cycles + branch label resolution | partial | `tests/compiler-api.contract.test.ts` | Supports `label: cycle { ... }`, branch/jump label resolution, duplicate/unknown label diagnostics. |
-| `while` / `if` | partial | `tests/compiler-api.contract.test.ts` | Kernel/function lowering to branch+jump labeled cycles is in place; `#pragma no_fuse` is accepted in baseline while preserving current lowering shape (advanced fusion parity still pending). |
-| `for ... in range(...)` (kernel + `cycle`) | partial | `tests/compiler-api.contract.test.ts` | Supports compile-time unroll in kernel and cycle scopes, plus baseline `#pragma unroll(N)`, `#pragma no_unroll`, and `#pragma parallel collapse` behavior. |
+| `while` / `if` | partial | `tests/compiler-api.contract.test.ts` | Kernel/function lowering to branch+jump labeled cycles is in place; `#pragma no_fuse` now disables back-edge fusion where applicable (full v1 fusion parity still pending). |
+| `for ... in range(...)` (kernel + `cycle`) | partial | `tests/compiler-api.contract.test.ts` | Supports compile-time unroll in kernel and cycle scopes, plus baseline `#pragma unroll(N)`, `#pragma no_unroll`, and `#pragma parallel collapse` including `collapse(N)` propagation over nested loops. |
 
 ## Directives
 
@@ -38,7 +38,7 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 |---|---|---|---|
 | Pragma parsing (`#pragma ...`) | done | `tests/compiler-api.contract.test.ts` | Preserves text + span in AST. |
 | Strict unsupported validation | done | `tests/compiler-api.contract.test.ts` | `strictUnsupported` default is `true` (`E3008`). |
-| `unroll` / `no_unroll` / `parallel` / `no_fuse` | partial | `tests/compiler-api.contract.test.ts` | Parser-level control pragmas for loop lowering: unroll factor truncation, baseline runtime no_unroll lowering, baseline parallel collapse (single-loop-level), and no_fuse acceptance for while. |
+| `unroll` / `no_unroll` / `parallel` / `no_fuse` | partial | `tests/compiler-api.contract.test.ts` | Parser-level control pragmas for loop lowering: unroll factor truncation, baseline runtime no_unroll lowering, nested `parallel collapse(N)` propagation, and no_fuse-controlled while back-edge fusion. |
 | `route` lowering | partial | `tests/compiler-api.contract.test.ts` | Compact `@r,c` and legacy `(r,c)` lower to route cycles with topology-aware paths; advanced pragma families remain pending. |
 | `broadcast` lowering | partial | `tests/compiler-api.contract.test.ts` | Fanout implemented via route-style lowering for `row`/`column`/`all` scopes. |
 | `rotate`/`shift` lowering | partial | `tests/compiler-api.contract.test.ts` | Row-0 lowering implemented; `rotate` currently torus-only, `shift` supports fill values. |

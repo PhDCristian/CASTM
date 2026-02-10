@@ -515,13 +515,16 @@ kernel "kernel_for_parallel_collapse" {
     expect(result.artifacts.csv).toContain('2,0,0,EXIT');
   });
 
-  it('accepts #pragma no_fuse before while loops in baseline lowering', () => {
+  it('supports #pragma parallel collapse(2) across two nested loop levels', () => {
     const source = `
 target "uma-cgra-v1";
-kernel "kernel_while_no_fuse" {
-  #pragma no_fuse
-  while (R0 < IMM(2)) @0,0 {
-    cycle { @0,0: SADD R0, R0, IMM(1); }
+kernel "kernel_for_parallel_collapse2" {
+  #pragma parallel collapse(2)
+  for i in range(2) {
+    for j in range(2) {
+      cycle { @i,j: SADD R0, ZERO, IMM(i); }
+      cycle { @i,j: SADD R1, ZERO, IMM(j); }
+    }
   }
   cycle { @0,0: EXIT; }
 }
@@ -529,9 +532,45 @@ kernel "kernel_while_no_fuse" {
 
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('BGE R0 IMM(2)');
-    expect(result.artifacts.csv).toContain('JUMP');
-    expect(result.artifacts.csv).toContain('EXIT');
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R0 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('0,0,1,SADD R0 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('0,1,0,SADD R0 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('0,1,1,SADD R0 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R1 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('1,0,1,SADD R1 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('1,1,0,SADD R1 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('1,1,1,SADD R1 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('makes #pragma no_fuse affect while-loop lowering', () => {
+    const baseSource = `
+target "uma-cgra-v1";
+kernel "kernel_while_fused" {
+  while (R0 < IMM(2)) @0,0 {
+    cycle { @0,1: SADD R1, R1, IMM(1); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+    const noFuseSource = `
+target "uma-cgra-v1";
+kernel "kernel_while_no_fuse" {
+  #pragma no_fuse
+  while (R0 < IMM(2)) @0,0 {
+    cycle { @0,1: SADD R1, R1, IMM(1); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const fused = compile(baseSource);
+    const noFuse = compile(noFuseSource);
+    expect(fused.success).toBe(true);
+    expect(noFuse.success).toBe(true);
+    expect(fused.stats.cycles).toBeLessThan(noFuse.stats.cycles);
+    expect(noFuse.artifacts.csv).toContain('JUMP');
+    expect(fused.artifacts.csv).toContain('JUMP');
   });
 
   it('expands function calls with parameter substitution into kernel cycles', () => {

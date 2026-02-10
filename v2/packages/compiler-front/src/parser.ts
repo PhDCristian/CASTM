@@ -661,6 +661,16 @@ function instantiateEntriesWithBindings(
   }));
 }
 
+function hasImmediateNestedForLoop(body: SourceLineEntry[]): boolean {
+  for (const entry of body) {
+    const clean = entry.cleanLine.trim();
+    if (!clean) continue;
+    if (/^#pragma\s+(unroll|no_unroll|parallel|no_fuse)\b/i.test(clean)) continue;
+    return /^for\s+[A-Za-z_][A-Za-z0-9_]*\s+in\s+range\s*\(/i.test(clean);
+  }
+  return false;
+}
+
 function enumerateForValues(
   header: ForHeader,
   lineNo: number,
@@ -709,6 +719,92 @@ function cycleHasControlFlow(cycle: CycleAst): boolean {
   return false;
 }
 
+function cycleTargetsPoint(cycle: CycleAst, row: number, col: number): boolean {
+  for (const statement of cycle.statements) {
+    if (statement.kind === 'at') {
+      if (statement.row === row && statement.col === col) return true;
+      continue;
+    }
+
+    if (statement.kind === 'row') {
+      if (statement.row === row && statement.instructions.length > 0) return true;
+      continue;
+    }
+
+    if (statement.kind === 'col') {
+      if (statement.col === col) return true;
+      continue;
+    }
+
+    return true;
+  }
+
+  return false;
+}
+
+function cloneCycle(cycle: CycleAst, index: number): CycleAst {
+  return {
+    index,
+    label: cycle.label,
+    span: { ...cycle.span },
+    statements: cycle.statements.map((statement) => {
+      if (statement.kind === 'at') {
+        return {
+          kind: 'at' as const,
+          row: statement.row,
+          col: statement.col,
+          instruction: {
+            text: statement.instruction.text,
+            opcode: statement.instruction.opcode,
+            operands: [...statement.instruction.operands],
+            span: { ...statement.instruction.span }
+          },
+          span: { ...statement.span }
+        };
+      }
+
+      if (statement.kind === 'row') {
+        return {
+          kind: 'row' as const,
+          row: statement.row,
+          instructions: statement.instructions.map((instruction) => ({
+            text: instruction.text,
+            opcode: instruction.opcode,
+            operands: [...instruction.operands],
+            span: { ...instruction.span }
+          })),
+          span: { ...statement.span }
+        };
+      }
+
+      if (statement.kind === 'col') {
+        return {
+          kind: 'col' as const,
+          col: statement.col,
+          instruction: {
+            text: statement.instruction.text,
+            opcode: statement.instruction.opcode,
+            operands: [...statement.instruction.operands],
+            span: { ...statement.instruction.span }
+          },
+          span: { ...statement.span }
+        };
+      }
+
+      return {
+        kind: 'all' as const,
+        instruction: {
+          text: statement.instruction.text,
+          opcode: statement.instruction.opcode,
+          operands: [...statement.instruction.operands],
+          span: { ...statement.instruction.span }
+        },
+        span: { ...statement.span }
+      };
+    })
+  };
+}
+
 function expandForLoopIntoKernel(
   header: ForHeader,
   loopBody: SourceLineEntry[],
@@ -727,18 +823,6 @@ function expandForLoopIntoKernel(
   const noUnroll = pendingPragmas?.noUnroll === true;
   const unrollFactor = pendingPragmas?.unrollFactor;
   const collapseRequested = pendingPragmas?.parallelCollapseLevels !== undefined;
-
-  if (pendingPragmas?.parallelCollapseLevels !== undefined &&
-      pendingPragmas.parallelCollapseLevels > 1 &&
-      Number.isFinite(pendingPragmas.parallelCollapseLevels)) {
-    diagnostics.push(makeDiagnostic(
-      ErrorCodes.Semantic.UnsupportedOperation,
-      'warning',
-      pendingPragmas.span,
-      `#pragma parallel collapse(${pendingPragmas.parallelCollapseLevels}) currently collapses one loop level in v2 baseline.`,
-      'Nested collapse depth > 1 will be expanded in a follow-up phase.'
-    ));
-  }
 
   if (noUnroll) {
     if (collapseRequested) {
@@ -857,6 +941,16 @@ function expandForLoopIntoKernel(
       span: spanAt(lineNo, 1, lineLength)
     };
     const tmpCounter = { value: 0 };
+    const hasNestedFor = hasImmediateNestedForLoop(instantiated);
+    const inheritedParallelCollapseLevels = (() => {
+      if (!hasNestedFor) return undefined;
+      const levels = pendingPragmas?.parallelCollapseLevels;
+      if (levels === undefined) return undefined;
+      if (!Number.isFinite(levels)) return Number.POSITIVE_INFINITY;
+      if (levels <= 1) return undefined;
+      return levels - 1;
+    })();
+
     expandFunctionBodyIntoKernel(
       instantiated,
       tmpKernel,
@@ -866,7 +960,10 @@ function expandForLoopIntoKernel(
       tmpCounter,
       callStack,
       expansionCounter,
-      controlFlowCounter
+      controlFlowCounter,
+      inheritedParallelCollapseLevels === undefined
+        ? null
+        : { span: pendingPragmas?.span ?? spanAt(lineNo, 1, lineLength), parallelCollapseLevels: inheritedParallelCollapseLevels }
     );
     perIterationCycles.push(tmpKernel.cycles);
   }
@@ -906,10 +1003,7 @@ function expandForLoopIntoKernel(
 
   for (const iterCycles of perIterationCycles) {
     for (const cycle of iterCycles) {
-      kernel.cycles.push({
-        ...cycle,
-        index: cycleCounter.value++
-      });
+      kernel.cycles.push(cloneCycle(cycle, cycleCounter.value++));
     }
   }
 }
@@ -1449,9 +1543,12 @@ function expandFunctionBodyIntoKernel(
   cycleCounter: { value: number },
   callStack: string[],
   expansionCounter: { value: number },
-  controlFlowCounter: { value: number }
+  controlFlowCounter: { value: number },
+  initialPendingControlPragmas: PendingControlPragmas | null = null
 ): void {
-  let pendingControlPragmas: PendingControlPragmas | null = null;
+  let pendingControlPragmas: PendingControlPragmas | null = initialPendingControlPragmas
+    ? { ...initialPendingControlPragmas }
+    : null;
 
   for (let i = 0; i < body.length; i++) {
     const entry = body[i];
@@ -1643,6 +1740,7 @@ function expandFunctionBodyIntoKernel(
 
     const whileHeader = parseControlHeader(clean, 'while', entry.lineNo, constants, diagnostics);
     if (whileHeader) {
+      const disableFuse = pendingControlPragmas?.noFuse === true;
       if (hasForScopedPragmas(pendingControlPragmas)) {
         diagnostics.push(makeDiagnostic(
           ErrorCodes.Parse.InvalidSyntax,
@@ -1669,23 +1767,22 @@ function expandFunctionBodyIntoKernel(
       const suffixId = controlFlowCounter.value++;
       const startLabel = `__while_start_${suffixId}`;
       const endLabel = `__while_end_${suffixId}`;
-
-      kernel.cycles.push(makeControlCycle(
-        cycleCounter.value++,
-        entry.lineNo,
-        whileHeader.row,
-        whileHeader.col,
-        buildFalseBranchInstruction(whileHeader.condition, endLabel),
-        startLabel
-      ));
-
+      const loopKernel: KernelAst = {
+        name: '__while_body__',
+        config: undefined,
+        cycles: [],
+        directives: [],
+        pragmas: [],
+        span: spanAt(entry.lineNo, 1, clean.length)
+      };
+      const loopCounter = { value: 0 };
       expandFunctionBodyIntoKernel(
         loopBlock.body,
-        kernel,
+        loopKernel,
         functions,
         constants,
         diagnostics,
-        cycleCounter,
+        loopCounter,
         callStack,
         expansionCounter,
         controlFlowCounter
@@ -1696,8 +1793,40 @@ function expandFunctionBodyIntoKernel(
         entry.lineNo,
         whileHeader.row,
         whileHeader.col,
-        `JUMP ${startLabel}, ZERO`
+        buildFalseBranchInstruction(whileHeader.condition, endLabel),
+        startLabel
       ));
+
+      for (const cycle of loopKernel.cycles) {
+        kernel.cycles.push(cloneCycle(cycle, cycleCounter.value++));
+      }
+
+      let fusedBackEdge = false;
+      const lastBodyCycle = loopKernel.cycles[loopKernel.cycles.length - 1];
+      if (!disableFuse &&
+          lastBodyCycle &&
+          !cycleHasControlFlow(lastBodyCycle) &&
+          !cycleTargetsPoint(lastBodyCycle, whileHeader.row, whileHeader.col)) {
+        const jumpText = `JUMP ${startLabel}, ZERO`;
+        kernel.cycles[kernel.cycles.length - 1].statements.push({
+          kind: 'at',
+          row: whileHeader.row,
+          col: whileHeader.col,
+          instruction: parseInstruction(jumpText, entry.lineNo, 1),
+          span: spanAt(entry.lineNo, 1, jumpText.length)
+        });
+        fusedBackEdge = true;
+      }
+
+      if (!fusedBackEdge) {
+        kernel.cycles.push(makeControlCycle(
+          cycleCounter.value++,
+          entry.lineNo,
+          whileHeader.row,
+          whileHeader.col,
+          `JUMP ${startLabel}, ZERO`
+        ));
+      }
 
       kernel.cycles.push(makeControlCycle(
         cycleCounter.value++,
@@ -2467,6 +2596,7 @@ export function parseSource(source: string): ParseResult {
 
       const whileHeader = parseControlHeader(clean, 'while', lineNo, kernelConstants, diagnostics);
       if (whileHeader && kernel) {
+        const disableFuse = pendingControlPragmas?.noFuse === true;
         if (hasForScopedPragmas(pendingControlPragmas)) {
           diagnostics.push(makeDiagnostic(
             ErrorCodes.Parse.InvalidSyntax,
@@ -2493,6 +2623,26 @@ export function parseSource(source: string): ParseResult {
         const suffixId = controlFlowCounter.value++;
         const startLabel = `__while_start_${suffixId}`;
         const endLabel = `__while_end_${suffixId}`;
+        const loopKernel: KernelAst = {
+          name: '__while_body__',
+          config: undefined,
+          cycles: [],
+          directives: [],
+          pragmas: [],
+          span: spanAt(lineNo, 1, clean.length)
+        };
+        const loopCounter = { value: 0 };
+        expandFunctionBodyIntoKernel(
+          loopBlock.body,
+          loopKernel,
+          functions,
+          kernelConstants,
+          diagnostics,
+          loopCounter,
+          [],
+          functionExpansionCounter,
+          controlFlowCounter
+        );
 
         kernel.cycles.push(makeControlCycle(
           cycleIndex++,
@@ -2503,29 +2653,36 @@ export function parseSource(source: string): ParseResult {
           startLabel
         ));
 
-        {
-          const cycleCounter = { value: cycleIndex };
-          expandFunctionBodyIntoKernel(
-            loopBlock.body,
-            kernel,
-            functions,
-            kernelConstants,
-            diagnostics,
-            cycleCounter,
-            [],
-            functionExpansionCounter,
-            controlFlowCounter
-          );
-          cycleIndex = cycleCounter.value;
+        for (const cycle of loopKernel.cycles) {
+          kernel.cycles.push(cloneCycle(cycle, cycleIndex++));
         }
 
-        kernel.cycles.push(makeControlCycle(
-          cycleIndex++,
-          lineNo,
-          whileHeader.row,
-          whileHeader.col,
-          `JUMP ${startLabel}, ZERO`
-        ));
+        let fusedBackEdge = false;
+        const lastBodyCycle = loopKernel.cycles[loopKernel.cycles.length - 1];
+        if (!disableFuse &&
+            lastBodyCycle &&
+            !cycleHasControlFlow(lastBodyCycle) &&
+            !cycleTargetsPoint(lastBodyCycle, whileHeader.row, whileHeader.col)) {
+          const jumpText = `JUMP ${startLabel}, ZERO`;
+          kernel.cycles[kernel.cycles.length - 1].statements.push({
+            kind: 'at',
+            row: whileHeader.row,
+            col: whileHeader.col,
+            instruction: parseInstruction(jumpText, lineNo, 1),
+            span: spanAt(lineNo, 1, jumpText.length)
+          });
+          fusedBackEdge = true;
+        }
+
+        if (!fusedBackEdge) {
+          kernel.cycles.push(makeControlCycle(
+            cycleIndex++,
+            lineNo,
+            whileHeader.row,
+            whileHeader.col,
+            `JUMP ${startLabel}, ZERO`
+          ));
+        }
 
         kernel.cycles.push(makeControlCycle(
           cycleIndex++,
