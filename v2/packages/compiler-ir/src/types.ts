@@ -39,6 +39,12 @@ export interface TargetProfile {
   neighbors: string[];
 }
 
+export interface MemoryRegionInfo {
+  name?: string;
+  start: number;
+  values: number[];
+}
+
 export interface CompileOptions {
   targetProfile?: string;
   grid?: Partial<Pick<GridSpec, 'rows' | 'cols' | 'topology'>>;
@@ -169,6 +175,7 @@ export interface AnalysisResult {
   ast?: AstProgram;
   hir?: HirProgram;
   mir?: MirProgram;
+  memoryRegions?: MemoryRegionInfo[];
   loweredPasses: string[];
 }
 
@@ -180,6 +187,7 @@ export interface CompileResult {
     ast?: AstProgram;
     hir?: HirProgram;
     mir?: MirProgram;
+    memoryRegions?: MemoryRegionInfo[];
   };
   stats: {
     cycles: number;

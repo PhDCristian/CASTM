@@ -41,6 +41,47 @@ kernel "mem_sugar" {
     expect(result.artifacts.csv).toContain('0,0,2,SWI R2 360 + i*4');
   });
 
+  it('keeps top-level .data directives, resolves literal indices, and exposes memory regions', () => {
+    const source = `
+target "uma-cgra-v1";
+.data A { 10, 20, 30, 40 }
+kernel "data_regions" {
+  cycle {
+    @0,0: R1 = A[2];
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+
+    const slots = result.artifacts.mir?.cycles[0].slots ?? [];
+    expect(slots).toHaveLength(1);
+    expect(slots[0].instruction.opcode).toBe('LWI');
+    expect(slots[0].instruction.operands).toEqual(['R1', '8']);
+
+    expect(result.artifacts.memoryRegions).toEqual([
+      { name: 'A', start: 0, values: [10, 20, 30, 40] }
+    ]);
+    expect(result.artifacts.csv).toContain('0,0,0,LWI R1 8');
+  });
+
+  it('rejects non-literal .data index in v2 baseline', () => {
+    const source = `
+target "uma-cgra-v1";
+.data A { 10, 20, 30, 40 }
+kernel "dynamic_data_idx" {
+  cycle {
+    @0,0: R1 = A[i];
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
   it('broadcasts row statements according to target grid and supports NxM override', () => {
     const source = `
 target "uma-cgra-v2";

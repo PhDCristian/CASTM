@@ -208,6 +208,7 @@ export function parseSource(source: string): ParseResult {
   let inCycle = false;
   let currentCycle: CycleAst | null = null;
   let cycleIndex = 0;
+  const pendingDirectives: DirectiveAst[] = [];
 
   for (let i = 0; i < lines.length; i++) {
     const lineNo = i + 1;
@@ -229,11 +230,12 @@ export function parseSource(source: string): ParseResult {
           name: kernelMatch[1],
           config: undefined,
           cycles: [],
-          directives: [],
+          directives: [...pendingDirectives],
           pragmas: [],
           span: spanAt(lineNo, 1, clean.length)
         };
         ast.kernel = kernel;
+        pendingDirectives.length = 0;
         inKernel = true;
         continue;
       }
@@ -241,19 +243,17 @@ export function parseSource(source: string): ParseResult {
       const topDirective = parseDirective(clean, lineNo);
       if (topDirective) {
         if (!ast.kernel) {
-          if (!kernel) {
-            kernel = {
-              name: 'Untitled',
-              config: undefined,
-              cycles: [],
-              directives: [],
-              pragmas: [],
-              span
-            };
-            ast.kernel = kernel;
-          }
-          kernel.directives.push(topDirective);
+          pendingDirectives.push(topDirective);
+          continue;
         }
+
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(lineNo, 1, clean.length),
+          `Unexpected top-level directive after kernel declaration: '${clean}'`,
+          'Move directives into kernel block or place them before kernel declaration.'
+        ));
         continue;
       }
 

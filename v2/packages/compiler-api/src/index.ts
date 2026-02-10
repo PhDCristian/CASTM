@@ -11,6 +11,7 @@ import {
   ErrorCodes,
   GridSpec,
   HirProgram,
+  MemoryRegionInfo,
   MirProgram,
   ParseResult,
   makeDiagnostic,
@@ -22,14 +23,109 @@ import {
   createResolveSymbolsPass,
   createValidateGridPass,
   desugarAutoCyclePass,
+  createDesugarMemoryPass,
   desugarExpressionsPass,
-  desugarMemoryPass,
   expandPragmasPass,
   lowerToMirPass
 } from './passes.js';
 
 function hasErrors(diagnostics: Diagnostic[]): boolean {
   return diagnostics.some((d) => d.severity === 'error');
+}
+
+function parseNumericLiteral(text: string): number | null {
+  const trimmed = text.trim();
+  if (/^-?0x[0-9a-f]+$/i.test(trimmed)) {
+    const sign = trimmed.startsWith('-') ? -1 : 1;
+    const raw = trimmed.startsWith('-') ? trimmed.slice(1) : trimmed;
+    return sign * parseInt(raw, 16);
+  }
+  if (/^-?\d+$/.test(trimmed)) {
+    return parseInt(trimmed, 10);
+  }
+  return null;
+}
+
+interface DataRegionCollection {
+  regions: MemoryRegionInfo[];
+  baseByName: Map<string, number>;
+}
+
+function parseDataDirectiveValue(rawValue: string): { explicitStart?: number; values: number[] } | null {
+  const trimmed = rawValue.trim();
+  const explicitAddressMatch = trimmed.match(/^(-?0x[0-9a-f]+|-?\d+)\s*\{([\s\S]*)\}$/i);
+
+  let explicitStart: number | undefined;
+  let valuesBody = '';
+
+  if (explicitAddressMatch) {
+    const parsedStart = parseNumericLiteral(explicitAddressMatch[1]);
+    if (parsedStart === null) return null;
+    explicitStart = parsedStart;
+    valuesBody = explicitAddressMatch[2].trim();
+  } else {
+    const bodyMatch = trimmed.match(/^\{([\s\S]*)\}$/);
+    if (!bodyMatch) return null;
+    valuesBody = bodyMatch[1].trim();
+  }
+
+  if (valuesBody.length === 0) {
+    return { explicitStart, values: [] };
+  }
+
+  const values: number[] = [];
+  for (const token of valuesBody.split(',')) {
+    const parsed = parseNumericLiteral(token);
+    if (parsed === null) return null;
+    values.push(parsed);
+  }
+
+  return { explicitStart, values };
+}
+
+function collectDataRegions(ast: AstProgram, diagnostics: Diagnostic[]): DataRegionCollection {
+  const regions: MemoryRegionInfo[] = [];
+  const baseByName = new Map<string, number>();
+  const directives = ast.kernel?.directives ?? [];
+  let nextAddress = 0;
+
+  for (const directive of directives) {
+    if (directive.kind !== 'data') continue;
+
+    const parsed = parseDataDirectiveValue(directive.value);
+    if (!parsed) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        directive.span,
+        `Invalid .data directive for '${directive.name}'.`,
+        'Expected .data name { 1, 2, 3 } or .data name 100 { 1, 2, 3 }.'
+      ));
+      continue;
+    }
+
+    if (baseByName.has(directive.name)) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        directive.span,
+        `Duplicate .data symbol '${directive.name}'.`,
+        'Use unique names for each .data declaration.'
+      ));
+      continue;
+    }
+
+    const start = parsed.explicitStart ?? nextAddress;
+    regions.push({
+      name: directive.name,
+      start,
+      values: parsed.values
+    });
+    baseByName.set(directive.name, start);
+    nextAddress = Math.max(nextAddress, start + parsed.values.length * 4);
+  }
+
+  return { regions, baseByName };
 }
 
 function resolveGrid(ast: AstProgram, options: CompileOptions, diagnostics: Diagnostic[]): { targetProfileId: string; grid: GridSpec } | null {
@@ -89,6 +185,7 @@ export function parse(source: string): ParseResult {
 
 export function analyze(ast: AstProgram, options: CompileOptions = {}): AnalysisResult {
   const diagnostics: Diagnostic[] = [];
+  const memory = collectDataRegions(ast, diagnostics);
   const target = resolveGrid(ast, options, diagnostics);
 
   if (!target) {
@@ -96,12 +193,13 @@ export function analyze(ast: AstProgram, options: CompileOptions = {}): Analysis
       success: false,
       diagnostics,
       ast,
+      memoryRegions: memory.regions,
       loweredPasses: []
     };
   }
 
   const astPasses = [
-    desugarMemoryPass,
+    createDesugarMemoryPass(memory.baseByName),
     desugarExpressionsPass,
     desugarAutoCyclePass,
     expandPragmasPass
@@ -127,6 +225,7 @@ export function analyze(ast: AstProgram, options: CompileOptions = {}): Analysis
     ast: loweredAst,
     hir,
     mir,
+    memoryRegions: memory.regions,
     loweredPasses: [...astPipeline.loweredPasses, ...hirPipeline.loweredPasses, ...mirPipeline.loweredPasses]
   };
 }
@@ -158,7 +257,8 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       success: false,
       diagnostics,
       artifacts: {
-        ast: want.has('ast') ? parseResult.ast : undefined
+        ast: want.has('ast') ? parseResult.ast : undefined,
+        memoryRegions: []
       },
       stats: {
         cycles: parseResult.ast.kernel?.cycles.length ?? 0,
@@ -192,7 +292,8 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       csv,
       ast: want.has('ast') ? analysis.ast : undefined,
       hir: want.has('hir') ? analysis.hir : undefined,
-      mir: want.has('mir') ? analysis.mir : undefined
+      mir: want.has('mir') ? analysis.mir : undefined,
+      memoryRegions: analysis.memoryRegions ?? []
     },
     stats: {
       cycles: analysis.mir?.cycles.length ?? analysis.ast?.kernel?.cycles.length ?? 0,

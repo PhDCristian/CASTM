@@ -10,6 +10,7 @@ import {
   HirProgram,
   InstructionAst,
   MirProgram,
+  SourceSpan,
   makeDiagnostic
 } from '@openedge/compiler-ir';
 
@@ -96,10 +97,76 @@ function isMemoryReference(expr: string): boolean {
   return isRawAddress(expr) || isArrayAddress(expr);
 }
 
-function toAddressOperand(memExpr: string): string {
+function parseIntegerLiteral(text: string): number | null {
+  const trimmed = text.trim();
+  if (/^-?0x[0-9a-f]+$/i.test(trimmed)) {
+    const sign = trimmed.startsWith('-') ? -1 : 1;
+    const raw = trimmed.startsWith('-') ? trimmed.slice(1) : trimmed;
+    return sign * parseInt(raw, 16);
+  }
+  if (/^-?\d+$/.test(trimmed)) {
+    return parseInt(trimmed, 10);
+  }
+  return null;
+}
+
+function toAddressOperand(
+  memExpr: string,
+  dataSymbols: ReadonlyMap<string, number>,
+  passDiagnostics: Diagnostic[],
+  span: SourceSpan
+): string | null {
   const trimmed = memExpr.trim();
   const raw = trimmed.match(/^\[(.+)\]$/s);
-  return raw ? raw[1].trim() : trimmed;
+  if (raw) {
+    return raw[1].trim();
+  }
+
+  const compact = trimmed.replace(/\s+/g, '');
+  const arrayMatch = compact.match(/^([A-Za-z_][A-Za-z0-9_]*)((?:\[[^\]]+\])+)$/
+  );
+  if (!arrayMatch) {
+    return trimmed;
+  }
+
+  const arrayName = arrayMatch[1];
+  const indices = [...arrayMatch[2].matchAll(/\[([^\]]+)\]/g)].map((m) => m[1].trim());
+  if (indices.length !== 1) {
+    passDiagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `Only 1D .data addressing is supported in v2 baseline, got '${trimmed}'.`,
+      'Use single-index accesses like A[i] or raw [addr] expressions.'
+    ));
+    return null;
+  }
+
+  const baseAddress = dataSymbols.get(arrayName);
+  if (baseAddress === undefined) {
+    passDiagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.InvalidAssignment,
+      'error',
+      span,
+      `Undefined .data symbol '${arrayName}'.`,
+      `Declare it first: .data ${arrayName} { ... }`
+    ));
+    return null;
+  }
+
+  const literalIndex = parseIntegerLiteral(indices[0]);
+  if (literalIndex === null) {
+    passDiagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnsupportedOperation,
+      'error',
+      span,
+      `v2 baseline only supports literal .data indices, got '${arrayName}[${indices[0]}]'.`,
+      `Use a literal index (e.g. ${arrayName}[0]) or compile with legacy backend.`
+    ));
+    return null;
+  }
+
+  return String(baseAddress + literalIndex * 4);
 }
 
 function splitAssignment(text: string): { lhs: string; rhs: string } | null {
@@ -187,75 +254,117 @@ function transformInstructions(
   return { output: out, diagnostics };
 }
 
-export const desugarMemoryPass: CompilerPass<AstProgram, AstProgram> = {
-  name: 'desugar-memory',
-  run(input) {
-    const { output, diagnostics } = transformInstructions(input, (instruction, passDiagnostics) => {
-      if (instruction.opcode) return instruction;
+export function createDesugarMemoryPass(
+  dataSymbols: ReadonlyMap<string, number> = new Map()
+): CompilerPass<AstProgram, AstProgram> {
+  return {
+    name: 'desugar-memory',
+    run(input) {
+      const { output, diagnostics } = transformInstructions(input, (instruction, passDiagnostics) => {
+        if (instruction.opcode) {
+          const opcode = instruction.opcode.toUpperCase();
+          if (opcode === 'LWI' || opcode === 'SWI') {
+            if (instruction.operands.length < 2) {
+              passDiagnostics.push(makeDiagnostic(
+                ErrorCodes.Semantic.InvalidAssignment,
+                'error',
+                instruction.span,
+                `${opcode} expects at least 2 operands.`,
+                `Valid form: ${opcode} R0, [addr]`
+              ));
+              return instruction;
+            }
 
-      const assignment = splitAssignment(instruction.text);
-      if (!assignment) return instruction;
+            const normalizedAddr = toAddressOperand(
+              instruction.operands[1],
+              dataSymbols,
+              passDiagnostics,
+              instruction.span
+            );
+            if (!normalizedAddr) return instruction;
 
-      const lhs = assignment.lhs.trim();
-      const rhs = assignment.rhs.trim();
-      const lhsMem = isMemoryReference(lhs);
-      const rhsMem = isMemoryReference(rhs);
+            return {
+              ...instruction,
+              operands: [instruction.operands[0], normalizedAddr, ...instruction.operands.slice(2)],
+              text: `${opcode} ${instruction.operands[0]}, ${normalizedAddr}`
+            };
+          }
 
-      if (!lhsMem && !rhsMem) return instruction;
+          return instruction;
+        }
 
-      if (lhsMem && rhsMem) {
-        passDiagnostics.push(makeDiagnostic(
-          ErrorCodes.Semantic.InvalidAssignment,
-          'error',
-          instruction.span,
-          'Memory-to-memory assignment is not supported in v2.',
-          'Use a temporary register: R0 = src[i]; dst[i] = R0;'
-        ));
-        return instruction;
-      }
+        const assignment = splitAssignment(instruction.text);
+        if (!assignment) return instruction;
 
-      if (lhsMem) {
-        if (!isIdentifier(rhs)) {
+        const lhs = assignment.lhs.trim();
+        const rhs = assignment.rhs.trim();
+        const lhsMem = isMemoryReference(lhs);
+        const rhsMem = isMemoryReference(rhs);
+
+        if (!lhsMem && !rhsMem) return instruction;
+
+        if (lhsMem && rhsMem) {
           passDiagnostics.push(makeDiagnostic(
             ErrorCodes.Semantic.InvalidAssignment,
             'error',
             instruction.span,
-            `Store source must be a register-like identifier, got '${rhs}'.`,
-            'Valid form: A[i] = R3; or [addr] = R3;'
+            'Memory-to-memory assignment is not supported in v2.',
+            'Use a temporary register: R0 = src[i]; dst[i] = R0;'
           ));
           return instruction;
         }
 
+        if (lhsMem) {
+          if (!isIdentifier(rhs)) {
+            passDiagnostics.push(makeDiagnostic(
+              ErrorCodes.Semantic.InvalidAssignment,
+              'error',
+              instruction.span,
+              `Store source must be a register-like identifier, got '${rhs}'.`,
+              'Valid form: A[i] = R3; or [addr] = R3;'
+            ));
+            return instruction;
+          }
+
+          const address = toAddressOperand(lhs, dataSymbols, passDiagnostics, instruction.span);
+          if (!address) return instruction;
+
+          return {
+            ...instruction,
+            opcode: 'SWI',
+            operands: [rhs, address],
+            text: `SWI ${rhs}, ${address}`
+          };
+        }
+
+        if (!isIdentifier(lhs)) {
+          passDiagnostics.push(makeDiagnostic(
+            ErrorCodes.Semantic.InvalidAssignment,
+            'error',
+            instruction.span,
+            `Load destination must be a register-like identifier, got '${lhs}'.`,
+            'Valid form: R3 = A[i]; or R3 = [addr];'
+          ));
+          return instruction;
+        }
+
+        const address = toAddressOperand(rhs, dataSymbols, passDiagnostics, instruction.span);
+        if (!address) return instruction;
+
         return {
           ...instruction,
-          opcode: 'SWI',
-          operands: [rhs, toAddressOperand(lhs)],
-          text: `SWI ${rhs}, ${toAddressOperand(lhs)}`
+          opcode: 'LWI',
+          operands: [lhs, address],
+          text: `LWI ${lhs}, ${address}`
         };
-      }
+      });
 
-      if (!isIdentifier(lhs)) {
-        passDiagnostics.push(makeDiagnostic(
-          ErrorCodes.Semantic.InvalidAssignment,
-          'error',
-          instruction.span,
-          `Load destination must be a register-like identifier, got '${lhs}'.`,
-          'Valid form: R3 = A[i]; or R3 = [addr];'
-        ));
-        return instruction;
-      }
+      return { output, diagnostics };
+    }
+  };
+}
 
-      return {
-        ...instruction,
-        opcode: 'LWI',
-        operands: [lhs, toAddressOperand(rhs)],
-        text: `LWI ${lhs}, ${toAddressOperand(rhs)}`
-      };
-    });
-
-    return { output, diagnostics };
-  }
-};
+export const desugarMemoryPass = createDesugarMemoryPass();
 
 export const desugarExpressionsPass: CompilerPass<AstProgram, AstProgram> = {
   name: 'desugar-expressions',
