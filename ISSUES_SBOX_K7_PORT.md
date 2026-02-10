@@ -1226,36 +1226,38 @@ cycle {
 
 ---
 
-## BUG-2: Lexer Does Not Tokenize `&` Operator
+## BUG-2: Lexer Does Not Tokenize `&` Operator — ✅ RESOLVED
 
 **Severity:** Medium — blocks `R0 = R1 & 65535` expression syntax for `LAND`.
 
-**Description:** The expression desugarer (`expression-desugar.ts`) maps `&` → `LAND`, but the **lexer** (`lexer.ts`) does not recognize `&` as a valid operator character. Any DSL source containing `&` fails immediately at tokenization with `Unexpected character '&'`.
+**Status:** ✅ **RESOLVED** (commit `62b0f8e` in UMA-CGRA-Simulator)
+
+**Root cause:** The simulator was importing from a stale copy at `libs/OpenEdgeDSL/` whose `patterns.ts` was missing `&`, `^`, `~` from `SINGLE_CHAR_OPERATORS`. The OpenEdgeDSL repo itself already had these operators.
+
+**Resolution:** Changed `vite.config.ts` and `tsconfig.app.json` to import from the sibling submodule (`../OpenEdgeDSL/src`) instead of the stale `libs/` copy. Verified: `LAND R0,R1,65535` and `LXOR R0,R1,R2` now compile correctly.
+
+**Original description:** The expression desugarer (`expression-desugar.ts`) maps `&` → `LAND`, but the stale lexer copy did not recognize `&` as a valid operator character.
 
 **Affected operators from `OPERATOR_TO_OPCODE`:**
 
 | Operator | Target ISA | Status |
 |----------|-----------|--------|
-| `&` | `LAND` | ❌ Lexer error |
+| `&` | `LAND` | ✅ Fixed |
 | `\|` | `LOR` | ⚠️ Ambiguous with pipe separator |
-| `^` | `LXOR` | ❌ Untested (likely same issue) |
-| `~&` | `LNAND` | ❌ Untested (likely same issue) |
-| `~\|` | `LNOR` | ❌ Untested (likely same issue) |
-| `~^` | `LXNOR` | ❌ Untested (likely same issue) |
-
-**Reproduction:**
-```c
-cycle { @0,0: R0 = R1 & 65535; }
-// Error: Unexpected character '&'
-```
-
-**Fix:** Add `&`, `^`, `~` to the lexer's operator character set.
+| `^` | `LXOR` | ✅ Fixed |
+| `~&` | `LNAND` | ✅ Fixed (via submodule) |
+| `~\|` | `LNOR` | ⚠️ Ambiguous with pipe separator |
+| `~^` | `LXNOR` | ✅ Fixed (via submodule) |
 
 ---
 
-## BUG-3: Expression Desugarer Not Invoked by UMA-CGRA-Simulator Pipeline
+## BUG-3: Expression Desugarer Not Invoked by UMA-CGRA-Simulator Pipeline — ✅ RESOLVED
 
-**Severity:** Critical — C-style expression syntax is **completely non-functional** in the simulation workflow.
+**Severity:** Critical — C-style expression syntax was **completely non-functional** in the simulation workflow.
+
+**Status:** ✅ **RESOLVED** (commit `62b0f8e` in UMA-CGRA-Simulator)
+
+**Resolution:** Added `desugarExpressions()` and `desugarAutoCycle()` to the simulator's `dsl-compiler.ts` pipeline. Verified: all expression patterns (`+`, `-`, `*`, `>>`, `<<`, `&`, `^`, copy) now compile correctly.
 
 **Description:** The expression desugarer pass (`desugarExpressions()`) exists and is correctly wired into **OpenEdgeDSL's own** `compileDslToCsv()` (in `compiler.ts`, lines 139 and 197). However, the **UMA-CGRA-Simulator** has its own `compileDslToCsv()` wrapper in `src/utils/dsl-compiler.ts` that reimplements the compilation pipeline as:
 
@@ -1300,9 +1302,13 @@ Or better: import and use OpenEdgeDSL's own `compileDslToCsv` directly instead o
 
 ---
 
-## BUG-4: Simulator Pipeline Missing 7 Code-Generating Pragmas
+## BUG-4: Simulator Pipeline Missing 7 Code-Generating Pragmas — ⚠️ PARTIALLY RESOLVED
 
 **Severity:** Medium — these pragmas exist and work in OpenEdgeDSL's `compiler.ts` but are absent from the simulator's `dsl-compiler.ts`.
+
+**Status:** ⚠️ **PARTIALLY RESOLVED** (commit `62b0f8e` in UMA-CGRA-Simulator)
+
+**Resolution:** The submodule path fix (BUG-5) makes the updated OpenEdgeDSL lexer and types available, and the desugar passes were added (BUG-3). However, the simulator's `dsl-compiler.ts` still maintains its own `parse()` function that only handles 5 of the 12 code-generating pragmas. The 7 missing pragmas (`rotate`, `shift`, `allreduce`, `transpose`, `gather`, `stream_load`, `stream_store`) still need to be added to the simulator's `parseBlock()` function, or the whole pipeline should be replaced with OpenEdgeDSL's `compileDslToCsv()` directly.
 
 **Description:** The UMA-CGRA-Simulator's `dsl-compiler.ts` is a **partial copy** of OpenEdgeDSL's `compiler.ts`. The simulator copy has fallen behind and is missing 7 code-generating pragmas that were added to OpenEdgeDSL.
 
@@ -1333,9 +1339,13 @@ Or better: import and use OpenEdgeDSL's own `compileDslToCsv` directly instead o
 
 ---
 
-## BUG-5: Stale `libs/OpenEdgeDSL/` Copy — Unified Root Cause of BUG-2, BUG-3, BUG-4
+## BUG-5: Stale `libs/OpenEdgeDSL/` Copy — Unified Root Cause of BUG-2, BUG-3, BUG-4 — ✅ RESOLVED
 
-**Severity:** Critical — this is the **single root cause** underlying bugs 2, 3, and 4.
+**Severity:** Critical — this was the **single root cause** underlying bugs 2, 3, and 4.
+
+**Status:** ✅ **RESOLVED** (commit `62b0f8e` in UMA-CGRA-Simulator)
+
+**Resolution:** Changed `vite.config.ts` and `tsconfig.app.json` to point `@core/dsl` at the sibling submodule (`../OpenEdgeDSL/src`) instead of the stale `libs/OpenEdgeDSL/` copy. The `libs/` copy is no longer used at runtime. Added `desugarExpressions()` + `desugarAutoCycle()` to the compilation pipeline.
 
 **Description:** The UMA-CGRA-Simulator imports OpenEdgeDSL via:
 
