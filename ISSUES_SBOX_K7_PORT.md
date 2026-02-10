@@ -928,3 +928,248 @@ function load_all(reg, addr) {
 3. **FEAT-3** (specialize) — Medium effort, automatic latency reduction
 4. **FEAT-1** (latency_hide) — High effort, highest latency impact
 5. **FEAT-5** (normalize) — Medium effort, most frequent pattern in ZKP kernels
+
+---
+
+## Domain-Specific Patterns (FEAT-11..17)
+
+These are higher-level abstractions targeting **multi-limb arithmetic** and **CGRA spatial patterns** that appear repeatedly in ZKP kernels.
+
+---
+
+### FEAT-11: Parameterized Byte Extraction — `extract_bytes(axis)`
+
+**Problem:** `extract_bytes_col` and `extract_bytes_row` are identical except for the shift formula (`k%4*8` vs `k/4*8`). Two 7-line functions for what should be one.
+
+**Current (14 lines):**
+```c
+function extract_bytes_col(src, dst) {
+    #pragma parallel collapse
+    for k in range(16) {
+        cycle { @k/4,k%4: SRT dst, src, k%4*8; }
+        cycle { @k/4,k%4: LAND dst, dst, 255; }
+    }
+}
+function extract_bytes_row(src, dst) {
+    #pragma parallel collapse
+    for k in range(16) {
+        cycle { @k/4,k%4: SRT dst, src, k/4*8; }
+        cycle { @k/4,k%4: LAND dst, dst, 255; }
+    }
+}
+```
+
+**Proposed (7 lines):**
+```c
+function extract_bytes(src, dst, axis) {
+    #pragma parallel collapse
+    for k in range(16) {
+        cycle { @k/4,k%4: SRT dst, src, k.select(axis, col=%4, row=/4)*8; }
+        cycle { @k/4,k%4: LAND dst, dst, 255; }
+    }
+}
+```
+
+Requires the DSL to support **conditional expressions** on loop variables based on function parameters.
+
+**Impact:** -7 lines.
+
+---
+
+### FEAT-12: `#pragma collect` — Cross-Row Value Collection
+
+**Problem:** The pattern "read ROUT from another row and accumulate" appears 3 times in the kernel with the same structure: read RCB/RCT from adjacent row, then combine with local register.
+
+**Current (5 lines per instance, ~15 total):**
+```c
+// Instance 1: collect row 1 products in mul_qhat_p (lines 204-209)
+#pragma parallel collapse
+for j in range(4) {
+    cycle { @0,j: SADD R3, RCB, ZERO; }
+}
+cycle { row 0: SADD R3, R2, ZERO | SADD R3, R2, RCL | SADD R3, R2, RCL | SADD R3, R2, RCL; }
+
+// Instance 2: collect row 1 products in compute_qhat (lines 154-161)
+// Instance 3: collect diagonal via RCT in accumulate_c (lines 104-113)
+```
+
+**Proposed (1 line per instance):**
+```c
+#pragma collect(from=row(1), via=RCB, local=R2, into=R3, combine=shift_add)
+```
+
+**Impact:** -12 lines across 3 instances.
+
+---
+
+### FEAT-13: `#pragma accumulate` — Product Accumulation Networks
+
+**Problem:** The product accumulation in `accumulate_c_multiply` (lines 274-304) is the **longest single block** in the kernel: 31 lines of hand-optimized ROUT chains where each PE has a different instruction (RCB, RCL, RCR, RCT, SELF, R2). This is a **convolution accumulation graph** that maps anti-diagonal sums.
+
+**Current (31 lines):**
+```c
+// 7 cycles of route+accumulate + 2 cycles of ROUT refresh
+// Each cycle: custom per-PE mix of ROUT forwarding and R3 accumulation
+cycle {
+    @0,0: SADD ROUT, RCB, ZERO; @0,1: SADD R3, R3, R2;
+    row 1: SADD ROUT, RCB, ZERO | SADD ROUT, RCB, ZERO | ... ;
+    // ... (31 lines total)
+}
+```
+
+**Proposed:**
+```c
+#pragma accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT)
+// Compiler generates the optimal routing graph for anti-diagonal accumulation
+```
+
+**Impact:** -30 lines. This is the highest single-block reduction potential but also the hardest to implement — requires the compiler to synthesize optimal ROUT chains for arbitrary accumulation topologies.
+
+---
+
+### FEAT-14: `#pragma conditional_sub` — Barrett Conditional Subtraction
+
+**Problem:** The Barrett final step (reconstruct → subtract p → BSFA select) is a 5-cycle idiom that appears identically 4 times in the kernel (once per modular operation):
+
+**Current (5 lines per call, called 4×):**
+```c
+// Reconstruction + conditional subtraction
+cycle { @0,0: SADD R0, R2, ZERO; @0,1: SLT R1, R2, 16; }
+cycle { @0,0: SADD R0, R0, RCR; @0,3: SADD R1, R0, ZERO; }
+cycle { @0,0: SSUB R2, R0, RCL; }
+cycle { @0,0: BSFA R3, R0, R2, SELF; }
+cycle { @0,0: SWI R3, out_addr; }
+```
+
+**Proposed (1 line):**
+```c
+#pragma conditional_sub(limb0=R2@(0,0), limb1=R2@(0,1), prime_addr=4, out=out_addr)
+```
+
+**Impact:** The idiom is already inside a function so current lines don't multiply, but it makes the semantic intent instantly clear. -3 lines.
+
+---
+
+### FEAT-15: Row Auto-Broadcast Syntax
+
+**Problem:** When all 4 PEs in a row execute the same instruction, the current syntax requires repeating it 4 times with `|`:
+
+**Current:**
+```c
+row 1: LWI R1, mu[1] | LWI R1, mu[1] | LWI R1, mu[1] | LWI R1, mu[1];
+```
+
+**Proposed:** When a row has a single instruction (no `|` separators), auto-expand to all columns:
+```c
+row 1: LWI R1, mu[1];  // → all 4 cols
+```
+
+This is distinct from FEAT-8 (range coords). FEAT-8 targets `@row,col..col` coordinate ranges; FEAT-15 targets the **visual pipe** row syntax.
+
+**Impact:** -6 lines across mu preload (lines 127-129), p_limbs load (line 197), SMUL rows.
+
+---
+
+### FEAT-16: Pipeline Macro — Shared Tail Abstraction
+
+**Problem:** `square_mod` and `multiply_mod` share 4 of 5 function calls (the "Barrett pipeline tail"):
+
+**Current (12 lines):**
+```c
+function square_mod(in_addr, out_addr) {
+    accumulate_c_square_inregs_and_route(in_addr);
+    build_limbs_base16_from_regs();
+    compute_qhat_inregs();
+    mul_qhat_p_inregs();
+    compute_r_inregs(out_addr);
+}
+function multiply_mod(a_addr, b_addr, out_addr) {
+    accumulate_c_multiply_inregs_and_route(a_addr, b_addr);
+    build_limbs_base16_from_regs();
+    compute_qhat_inregs();
+    mul_qhat_p_inregs();
+    compute_r_inregs(out_addr);
+}
+```
+
+**Proposed:**
+```c
+macro barrett_tail(out_addr) {
+    build_limbs_base16_from_regs();
+    compute_qhat_inregs();
+    mul_qhat_p_inregs();
+    compute_r_inregs(out_addr);
+}
+function square_mod(in, out) { accum_square(in); barrett_tail(out); }
+function multiply_mod(a, b, out) { accum_mul(a, b); barrett_tail(out); }
+```
+
+**Impact:** -5 lines, clearer separation between accumulation strategy and reduction pipeline.
+
+---
+
+### FEAT-17: `#pragma guard(condition)` — Conditional PE Activation in Loops
+
+**Problem:** The upper-triangle SMUL (lines 90-95) and diagonal init (lines 267-271) are patterns where only PEs matching a 2D condition are active. These can't be expressed with a simple `for` loop.
+
+**Current (5 lines for triangle, 4 lines for diagonal):**
+```c
+// Upper triangle: col >= row
+row 0: SMUL R2, R0, R1 | SMUL R2, R0, R1 | SMUL R2, R0, R1 | SMUL R2, R0, R1;
+row 1: _ | SMUL R2, R0, R1 | SMUL R2, R0, R1 | SMUL R2, R0, R1;
+@2,2: SMUL R2, R0, R1; @2,3: SMUL R2, R0, R1;
+@3,3: SMUL R2, R0, R1;
+
+// Diagonal: col == row
+@0,0: SADD R3, ZERO, ZERO; @1,1: SADD R3, ZERO, ZERO;
+@2,2: SADD R3, ZERO, ZERO; @3,3: SADD R3, ZERO, ZERO;
+```
+
+**Proposed:**
+```c
+// Upper triangle
+#pragma parallel collapse
+for k in range(16) {
+    #pragma guard(k%4 >= k/4)
+    cycle { @k/4,k%4: SMUL R2, R0, R1; }
+}
+
+// Diagonal
+#pragma parallel collapse
+for k in range(16) {
+    #pragma guard(k%4 == k/4)
+    cycle { @k/4,k%4: SADD R3, ZERO, ZERO; }
+}
+```
+
+More general than FEAT-6 (`#pragma triangle`): allows any boolean condition over the PE index space. Also covers off-diagonal doubling, L-shaped patterns, and arbitrary subsets.
+
+**Impact:** -10 lines across triangle + diagonal + off-diagonal patterns.
+
+---
+
+## Combined Summary (FEAT-1..17)
+
+| Feature | Category | Lines | HW Latency | Effort |
+|---------|----------|:---:|:---:|:---:|
+| FEAT-1 `latency_hide` | Scheduling | 0 | **-10 to -20cc** | High |
+| FEAT-2 `carry_chain` | Primitive | **-30** | -0 to -8cc | High |
+| FEAT-3 `specialize` | Optimization | -3 | **-8cc** | Medium |
+| FEAT-4 `for`-in-cycle | Syntax | **-15** | 0 | Low |
+| FEAT-5 `normalize` | Primitive | **-20** | 0 | Medium |
+| FEAT-6 `triangle` | Pattern | **-10** | 0 | Medium |
+| FEAT-7 `broadcast` impl | Primitive | -5 | -0 to -8cc | Medium |
+| FEAT-8 Range coords | Syntax | **-10** | 0 | Low |
+| FEAT-9 Inline arith | Syntax | -5 | 0 | Low |
+| FEAT-10 `stash` | Scheduling | -5 | -0 to -8cc | High |
+| FEAT-11 `extract(axis)` | Unification | -7 | 0 | Low |
+| FEAT-12 `collect` | Pattern | **-12** | 0 | Medium |
+| FEAT-13 `accumulate` | Pattern | **-30** | 0 | High |
+| FEAT-14 `conditional_sub` | Domain | -3 | 0 | Medium |
+| FEAT-15 Row auto-broadcast | Syntax | -6 | 0 | Low |
+| FEAT-16 Pipeline macro | Abstraction | -5 | 0 | Low |
+| FEAT-17 `guard` condition | Syntax | **-10** | 0 | Low |
+| **Total** | | **~-176 lines** | **-18 to -44cc** | — |
+
+Current kernel: **328 lines / 269 instr / 340 hwcc**.
+With all features: **~152 lines / 265-269 instr / 296-322 hwcc** (estimated).
