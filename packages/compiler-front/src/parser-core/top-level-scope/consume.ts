@@ -1,130 +1,57 @@
-import { ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
-import { parseDirective } from '../declarations.js';
-import { parseFunctionHeader, parseFunctionParams } from '../functions.js';
-import { collectBlockFromSource } from '../../parser-utils/blocks.js';
-import { buildConstantMap } from './constants.js';
 import {
   ConsumeTopLevelScopeInput,
   ConsumeTopLevelScopeResult
 } from './types.js';
+import { createTopLevelScopeResultFactory } from './result.js';
+import {
+  consumeFunctionDefinitionStep,
+  consumeKernelDeclarationStep,
+  consumeLegacyPragmaStep,
+  consumeTargetStep,
+  consumeTopDirectiveStep,
+  createTopLevelScopeWorkingState,
+  reportUnexpectedTopLevelStatement
+} from './steps.js';
 
 export function consumeTopLevelScopeStatement(input: ConsumeTopLevelScopeInput): ConsumeTopLevelScopeResult {
-  const {
-    lines,
-    index,
-    lineNo,
-    clean,
-    ast,
-    diagnostics
-  } = input;
-  let kernel = input.kernel;
-  let kernelConstants = input.kernelConstants;
-  const pendingDirectives = input.pendingDirectives;
-  const functions = input.functions;
+  const state = createTopLevelScopeWorkingState(input);
+  const keep = createTopLevelScopeResultFactory(input, state);
 
-  const keep = (nextIndex = index, inKernel = false, shouldBreak = false): ConsumeTopLevelScopeResult => ({
-    nextIndex,
-    kernel,
-    kernelConstants,
-    pendingDirectives,
-    functions,
-    inKernel,
-    shouldBreak
-  });
-
-  const topPragma = clean.match(/^#pragma\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s+.*)?$/i);
-  if (topPragma) {
-    diagnostics.push(makeDiagnostic(
-      ErrorCodes.Parse.InvalidSyntax,
-      'error',
-      spanAt(lineNo, 1, clean.length),
-      `Legacy pragma syntax is not supported: '${clean}'.`,
-      'Use canonical declarations and statements.'
-    ));
+  if (consumeLegacyPragmaStep(input)) {
     return keep();
   }
 
-  const functionHeader = parseFunctionHeader(clean);
-  if (functionHeader) {
-    const params = parseFunctionParams(functionHeader.paramsText, lineNo, diagnostics);
-    const block = collectBlockFromSource(lines, index);
-    if (block.endIndex === null) {
-      diagnostics.push(makeDiagnostic(
-        ErrorCodes.Parse.InvalidSyntax,
-        'error',
-        spanAt(lineNo, 1, clean.length),
-        `Unterminated function '${functionHeader.name}'.`,
-        'Add a closing brace for function { ... }.'
-      ));
-      return keep(index, false, true);
-    }
-
-    if (params && !functions.has(functionHeader.name)) {
-      functions.set(functionHeader.name, {
-        name: functionHeader.name,
-        params,
-        body: block.body,
-        span: spanAt(lineNo, 1, clean.length)
-      });
-    } else if (params) {
-      diagnostics.push(makeDiagnostic(
-        ErrorCodes.Parse.InvalidSyntax,
-        'error',
-        spanAt(lineNo, 1, clean.length),
-        `Duplicate function definition '${functionHeader.name}'.`,
-        'Use unique function names.'
-      ));
-    }
-
-    return keep(block.endIndex);
+  const functionStep = consumeFunctionDefinitionStep(input, state);
+  if (functionStep.handled) {
+    return keep(
+      functionStep.nextIndex,
+      functionStep.inKernel ?? false,
+      functionStep.shouldBreak ?? false
+    );
   }
 
-  const targetMatch = clean.match(/^target\s+"([^"]+)"\s*;?\s*$/i);
-  if (targetMatch) {
-    ast.targetProfileId = targetMatch[1];
+  if (consumeTargetStep(input)) {
     return keep();
   }
 
-  const kernelMatch = clean.match(/^kernel\s+"([^"]+)"\s*\{\s*$/i);
-  if (kernelMatch) {
-    const initialDirectives = [...pendingDirectives];
-    kernel = {
-      name: kernelMatch[1],
-      config: undefined,
-      cycles: [],
-      directives: initialDirectives,
-      pragmas: [],
-      span: spanAt(lineNo, 1, clean.length)
-    };
-    kernelConstants = buildConstantMap(initialDirectives, diagnostics);
-    ast.kernel = kernel;
-    pendingDirectives.length = 0;
-    return keep(index, true);
+  const kernelStep = consumeKernelDeclarationStep(input, state);
+  if (kernelStep.handled) {
+    return keep(
+      kernelStep.nextIndex,
+      kernelStep.inKernel ?? false,
+      kernelStep.shouldBreak ?? false
+    );
   }
 
-  const topDirective = parseDirective(clean, lineNo);
-  if (topDirective) {
-    if (!ast.kernel) {
-      pendingDirectives.push(topDirective);
-      return keep();
-    }
-
-    diagnostics.push(makeDiagnostic(
-      ErrorCodes.Parse.InvalidSyntax,
-      'error',
-      spanAt(lineNo, 1, clean.length),
-      `Unexpected top-level directive after kernel declaration: '${clean}'`,
-      'Move directives into kernel block or place them before kernel declaration.'
-    ));
-    return keep();
+  const directiveStep = consumeTopDirectiveStep(input, state);
+  if (directiveStep.handled) {
+    return keep(
+      directiveStep.nextIndex,
+      directiveStep.inKernel ?? false,
+      directiveStep.shouldBreak ?? false
+    );
   }
 
-  diagnostics.push(makeDiagnostic(
-    ErrorCodes.Parse.InvalidSyntax,
-    'error',
-    spanAt(lineNo, 1, clean.length),
-    `Unexpected top-level statement: '${clean}'`,
-    'Expected target declaration or kernel block.'
-  ));
+  reportUnexpectedTopLevelStatement(input);
   return keep();
 }

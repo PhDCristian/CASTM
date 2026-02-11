@@ -1,19 +1,16 @@
-import { KernelAst } from '@openedge/compiler-ir';
 import { ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
-import { buildFalseBranchInstruction, parseControlHeader } from './control-flow.js';
+import { parseControlHeader } from './control-flow.js';
 import {
   buildWhileFusionPlan,
-  cloneCycle,
-  expandFunctionBodyIntoKernel,
-  makeControlCycle,
   rewriteConditionForWhileFusion
 } from './function-expand.js';
-import { parseInstruction } from './instructions.js';
 import { collectBlockFromSource } from '../parser-utils/blocks.js';
 import {
   ConsumeKernelControlFlowInput,
   ConsumeKernelControlFlowResult
 } from './kernel-control-flow-types.js';
+import { emitWhileControlFlowCycles } from './control-flow-emit/while-cycles.js';
+import { expandControlBodyIntoKernel } from './kernel-control-utils.js';
 
 export function consumeKernelWhileControlFlowStatement(
   input: ConsumeKernelControlFlowInput
@@ -54,7 +51,7 @@ export function consumeKernelWhileControlFlowStatement(
   const suffixId = controlFlowCounter.value++;
   const startLabel = `__while_start_${suffixId}`;
   const endLabel = `__while_end_${suffixId}`;
-  const loopKernel: KernelAst = {
+  const loopKernel = {
     name: '__while_body__',
     config: undefined,
     cycles: [],
@@ -62,15 +59,13 @@ export function consumeKernelWhileControlFlowStatement(
     pragmas: [],
     span: spanAt(lineNo, 1, clean.length)
   };
-  const loopCounter = { value: 0 };
-  expandFunctionBodyIntoKernel(
+  expandControlBodyIntoKernel(
     loopBlock.body,
     loopKernel,
     functions,
     kernelConstants,
     diagnostics,
-    loopCounter,
-    [],
+    0,
     functionExpansionCounter,
     controlFlowCounter
   );
@@ -82,50 +77,18 @@ export function consumeKernelWhileControlFlowStatement(
     ? rewriteConditionForWhileFusion(whileHeader.condition, fusionPlan.incomingRegister)
     : whileHeader.condition;
 
-  kernel.cycles.push(makeControlCycle(
-    cycleIndex++,
+  cycleIndex = emitWhileControlFlowCycles({
+    kernel,
+    cycleIndex,
     lineNo,
-    whileHeader.row,
-    whileHeader.col,
-    buildFalseBranchInstruction(branchCondition, endLabel),
-    startLabel
-  ));
-
-  for (const cycle of loopKernel.cycles) {
-    kernel.cycles.push(cloneCycle(cycle, cycleIndex++));
-  }
-
-  let fusedBackEdge = false;
-  if (fusionPlan) {
-    const jumpText = `JUMP ${startLabel}, ZERO`;
-    kernel.cycles[kernel.cycles.length - 1].statements.push({
-      kind: 'at',
-      row: whileHeader.row,
-      col: whileHeader.col,
-      instruction: parseInstruction(jumpText, lineNo, 1),
-      span: spanAt(lineNo, 1, jumpText.length)
-    });
-    fusedBackEdge = true;
-  }
-
-  if (!fusedBackEdge) {
-    kernel.cycles.push(makeControlCycle(
-      cycleIndex++,
-      lineNo,
-      whileHeader.row,
-      whileHeader.col,
-      `JUMP ${startLabel}, ZERO`
-    ));
-  }
-
-  kernel.cycles.push(makeControlCycle(
-    cycleIndex++,
-    lineNo,
-    whileHeader.row,
-    whileHeader.col,
-    'NOP',
-    endLabel
-  ));
+    row: whileHeader.row,
+    col: whileHeader.col,
+    condition: branchCondition,
+    startLabel,
+    endLabel,
+    loopCycles: loopKernel.cycles,
+    fusionPlan
+  });
 
   return { handled: true, nextIndex: loopBlock.endIndex, cycleIndex, shouldBreak: false };
 }

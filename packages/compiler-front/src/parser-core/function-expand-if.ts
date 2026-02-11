@@ -5,15 +5,13 @@ import {
 } from './control-flow.js';
 import { makeControlCycle } from './function-expand-helpers.js';
 import {
-  CollectedBlock,
-  collectBlockAfterOpenFromEntries,
   collectBlockFromEntries
 } from '../parser-utils/blocks.js';
-import { isElseOpenLine } from './cycle-expand.js';
 import {
   ExpandControlBaseInput,
   ExpandControlFlowResult
 } from './function-expand-control-types.js';
+import { resolveOptionalElseBlockInFunction } from './function-expand-if/else-resolution.js';
 
 export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandControlFlowResult {
   const {
@@ -52,43 +50,13 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
   const suffixId = controlFlowCounter.value++;
   const elseLabel = `__if_else_${suffixId}`;
   const endLabel = `__if_end_${suffixId}`;
-
-  let hasElse = false;
-  let elseBlock: CollectedBlock | null = null;
-  let consumedEnd = thenBlock.endIndex;
-
-  if (thenBlock.trailingAfterClose && isElseOpenLine(thenBlock.trailingAfterClose)) {
-    hasElse = true;
-    elseBlock = collectBlockAfterOpenFromEntries(body, thenBlock.endIndex + 1);
-    if (elseBlock.endIndex === null) {
-      diagnostics.push(makeDiagnostic(
-        ErrorCodes.Parse.InvalidSyntax,
-        'error',
-        spanAt(entry.lineNo, 1, clean.length),
-        'Unterminated else block.',
-        'Add a closing brace for else { ... }.'
-      ));
-      return { handled: true, nextIndex: index, shouldBreak: true };
-    }
-    consumedEnd = elseBlock.endIndex;
-  } else {
-    const maybeElseIndex = thenBlock.endIndex + 1;
-    if (maybeElseIndex < body.length && isElseOpenLine(body[maybeElseIndex].cleanLine)) {
-      hasElse = true;
-      elseBlock = collectBlockFromEntries(body, maybeElseIndex);
-      if (elseBlock.endIndex === null) {
-        diagnostics.push(makeDiagnostic(
-          ErrorCodes.Parse.InvalidSyntax,
-          'error',
-          spanAt(body[maybeElseIndex].lineNo, 1, body[maybeElseIndex].cleanLine.length),
-          'Unterminated else block.',
-          'Add a closing brace for else { ... }.'
-        ));
-        return { handled: true, nextIndex: index, shouldBreak: true };
-      }
-      consumedEnd = elseBlock.endIndex;
-    }
+  const resolvedElse = resolveOptionalElseBlockInFunction(body, thenBlock, entry.lineNo, clean.length, diagnostics);
+  if (resolvedElse.shouldBreak) {
+    return { handled: true, nextIndex: index, shouldBreak: true };
   }
+  const hasElse = resolvedElse.hasElse;
+  const elseBlock = resolvedElse.elseBlock;
+  const consumedEnd = resolvedElse.consumedEnd;
 
   const falseTarget = hasElse ? elseLabel : endLabel;
   kernel.cycles.push(makeControlCycle(

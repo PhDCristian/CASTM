@@ -1,149 +1,57 @@
 import { ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
-import { consumeKernelControlFlowStatement } from '../kernel-control-scope.js';
-import { consumeKernelCycleBlockStatement } from '../kernel-cycle-block-scope.js';
-import { consumeKernelDirectivesStatement } from '../kernel-directives-scope.js';
-import { consumeKernelForStatement } from '../kernel-for-scope.js';
-import { consumeKernelFunctionCallStatement } from '../kernel-function-call-scope.js';
 import {
   ConsumeKernelScopeInput,
   ConsumeKernelScopeResult
 } from './types.js';
+import { createKernelScopeResultFactory } from './result.js';
+import {
+  consumeKernelControlFlowStep,
+  consumeKernelCycleBlockStep,
+  consumeKernelDirectivesStep,
+  consumeKernelForStep,
+  consumeKernelFunctionCallStep,
+  createKernelScopeWorkingState
+} from './steps.js';
 
 export function consumeKernelScopeStatement(input: ConsumeKernelScopeInput): ConsumeKernelScopeResult {
-  const {
-    lines,
-    index,
-    lineNo,
-    clean,
-    kernel,
-    functions,
-    diagnostics,
-    functionExpansionCounter,
-    controlFlowCounter
-  } = input;
+  const state = createKernelScopeWorkingState(input);
+  const result = createKernelScopeResultFactory(input, state);
 
-  let kernelConstants = input.kernelConstants;
-  let cycleIndex = input.cycleIndex;
-
-  const noCycleResult = (nextIndex = index): ConsumeKernelScopeResult => ({
-    nextIndex,
-    cycleIndex,
-    kernelConstants,
-    enterCycle: false,
-    currentCycle: null,
-    cycleConstants: new Map(),
-    shouldBreak: false
-  });
-
-  const breakResult = (): ConsumeKernelScopeResult => ({
-    nextIndex: index,
-    cycleIndex,
-    kernelConstants,
-    enterCycle: false,
-    currentCycle: null,
-    cycleConstants: new Map(),
-    shouldBreak: true
-  });
-
-  const directives = consumeKernelDirectivesStatement({
-    lineNo,
-    clean,
-    kernel,
-    kernelConstants,
-    diagnostics
-  });
-  kernelConstants = directives.kernelConstants;
-  if (directives.handled) {
-    return noCycleResult();
+  if (consumeKernelDirectivesStep(input, state)) {
+    return result.noCycle();
   }
 
-  const forStatement = consumeKernelForStatement({
-    lines,
-    index,
-    lineNo,
-    clean,
-    kernel,
-    functions,
-    kernelConstants,
-    diagnostics,
-    cycleIndex,
-    functionExpansionCounter,
-    controlFlowCounter
-  });
-  if (forStatement.handled) {
-    cycleIndex = forStatement.cycleIndex;
-    if (forStatement.shouldBreak) return breakResult();
-    return noCycleResult(forStatement.nextIndex);
+  const forStep = consumeKernelForStep(input, state);
+  if (forStep.handled) {
+    if (forStep.shouldBreak) return result.noCycle(input.index, true);
+    return result.noCycle(forStep.nextIndex);
   }
 
-  const cycleBlock = consumeKernelCycleBlockStatement({
-    lines,
-    index,
-    lineNo,
-    clean,
-    kernel,
-    kernelConstants,
-    diagnostics,
-    cycleIndex
-  });
-  if (cycleBlock.handled) {
-    cycleIndex = cycleBlock.cycleIndex;
-    if (cycleBlock.shouldBreak) return breakResult();
-    if (cycleBlock.enterCycle) {
-      return {
-        nextIndex: cycleBlock.nextIndex,
-        cycleIndex,
-        kernelConstants,
-        enterCycle: true,
-        currentCycle: cycleBlock.currentCycle,
-        cycleConstants: cycleBlock.cycleConstants,
-        shouldBreak: false
-      };
+  const cycleStep = consumeKernelCycleBlockStep(input, state);
+  if (cycleStep.handled) {
+    if (cycleStep.shouldBreak) return result.noCycle(input.index, true);
+    if (cycleStep.enterCycle && cycleStep.currentCycle && cycleStep.cycleConstants) {
+      return result.enterCycle(cycleStep.nextIndex ?? input.index, cycleStep.currentCycle, cycleStep.cycleConstants);
     }
-    return noCycleResult(cycleBlock.nextIndex);
+    return result.noCycle(cycleStep.nextIndex);
   }
 
-  const functionCall = consumeKernelFunctionCallStatement({
-    lineNo,
-    clean,
-    kernel,
-    functions,
-    kernelConstants,
-    diagnostics,
-    cycleIndex,
-    functionExpansionCounter,
-    controlFlowCounter
-  });
-  if (functionCall.handled) {
-    cycleIndex = functionCall.cycleIndex;
-    return noCycleResult();
+  if (consumeKernelFunctionCallStep(input, state)) {
+    return result.noCycle();
   }
 
-  const controlFlow = consumeKernelControlFlowStatement({
-    lines,
-    index,
-    lineNo,
-    clean,
-    kernel,
-    functions,
-    kernelConstants,
-    diagnostics,
-    cycleIndex,
-    functionExpansionCounter,
-    controlFlowCounter
-  });
-  if (controlFlow.handled) {
-    cycleIndex = controlFlow.cycleIndex;
-    if (controlFlow.shouldBreak) return breakResult();
-    return noCycleResult(controlFlow.nextIndex);
+  const controlStep = consumeKernelControlFlowStep(input, state);
+  if (controlStep.handled) {
+    if (controlStep.shouldBreak) return result.noCycle(input.index, true);
+    return result.noCycle(controlStep.nextIndex);
   }
 
-  diagnostics.push(makeDiagnostic(
+  input.diagnostics.push(makeDiagnostic(
     ErrorCodes.Parse.InvalidSyntax,
     'error',
-    spanAt(lineNo, 1, clean.length),
-    `Unexpected kernel statement: '${clean}'`,
+    spanAt(input.lineNo, 1, input.clean.length),
+    `Unexpected kernel statement: '${input.clean}'`,
     'Expected config, directive, advanced statement, cycle block, if/while block, function call, or kernel close.'
   ));
-  return noCycleResult();
+  return result.noCycle();
 }

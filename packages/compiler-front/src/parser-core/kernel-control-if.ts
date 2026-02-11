@@ -1,20 +1,17 @@
 import { ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
 import { buildFalseBranchInstruction, parseControlHeader } from './control-flow.js';
 import {
-  expandFunctionBodyIntoKernel,
   makeControlCycle
 } from './function-expand.js';
-import { isElseOpenLine } from './cycle-expand.js';
 import {
-  CollectedBlock,
-  collectBlockAfterOpenFromSource,
   collectBlockFromSource
 } from '../parser-utils/blocks.js';
-import { stripLineComment } from '../parser-utils/strings.js';
 import {
   ConsumeKernelControlFlowInput,
   ConsumeKernelControlFlowResult
 } from './kernel-control-flow-types.js';
+import { resolveOptionalElseBlock } from './kernel-control-if/else-resolution.js';
+import { expandControlBodyIntoKernel } from './kernel-control-utils.js';
 
 export function consumeKernelIfControlFlowStatement(
   input: ConsumeKernelControlFlowInput
@@ -53,43 +50,13 @@ export function consumeKernelIfControlFlowStatement(
   const suffixId = controlFlowCounter.value++;
   const elseLabel = `__if_else_${suffixId}`;
   const endLabel = `__if_end_${suffixId}`;
-
-  let hasElse = false;
-  let elseBlock: CollectedBlock | null = null;
-  let consumedEnd = thenBlock.endIndex;
-
-  if (thenBlock.trailingAfterClose && isElseOpenLine(thenBlock.trailingAfterClose)) {
-    hasElse = true;
-    elseBlock = collectBlockAfterOpenFromSource(lines, thenBlock.endIndex + 1);
-    if (elseBlock.endIndex === null) {
-      diagnostics.push(makeDiagnostic(
-        ErrorCodes.Parse.InvalidSyntax,
-        'error',
-        spanAt(lineNo, 1, clean.length),
-        'Unterminated else block.',
-        'Add a closing brace for else { ... }.'
-      ));
-      return { handled: true, nextIndex: index, cycleIndex, shouldBreak: true };
-    }
-    consumedEnd = elseBlock.endIndex;
-  } else {
-    const maybeElseIndex = thenBlock.endIndex + 1;
-    if (maybeElseIndex < lines.length && isElseOpenLine(stripLineComment(lines[maybeElseIndex]).trim())) {
-      hasElse = true;
-      elseBlock = collectBlockFromSource(lines, maybeElseIndex);
-      if (elseBlock.endIndex === null) {
-        diagnostics.push(makeDiagnostic(
-          ErrorCodes.Parse.InvalidSyntax,
-          'error',
-          spanAt(maybeElseIndex + 1, 1, clean.length),
-          'Unterminated else block.',
-          'Add a closing brace for else { ... }.'
-        ));
-        return { handled: true, nextIndex: index, cycleIndex, shouldBreak: true };
-      }
-      consumedEnd = elseBlock.endIndex;
-    }
+  const resolvedElse = resolveOptionalElseBlock(lines, thenBlock, lineNo, clean.length, diagnostics);
+  if (resolvedElse.shouldBreak) {
+    return { handled: true, nextIndex: index, cycleIndex, shouldBreak: true };
   }
+  const hasElse = resolvedElse.hasElse;
+  const elseBlock = resolvedElse.elseBlock;
+  const consumedEnd = resolvedElse.consumedEnd;
 
   const falseTarget = hasElse ? elseLabel : endLabel;
   kernel.cycles.push(makeControlCycle(
@@ -100,21 +67,16 @@ export function consumeKernelIfControlFlowStatement(
     buildFalseBranchInstruction(ifHeader.condition, falseTarget)
   ));
 
-  {
-    const cycleCounter = { value: cycleIndex };
-    expandFunctionBodyIntoKernel(
-      thenBlock.body,
-      kernel,
-      functions,
-      kernelConstants,
-      diagnostics,
-      cycleCounter,
-      [],
-      functionExpansionCounter,
-      controlFlowCounter
-    );
-    cycleIndex = cycleCounter.value;
-  }
+  cycleIndex = expandControlBodyIntoKernel(
+    thenBlock.body,
+    kernel,
+    functions,
+    kernelConstants,
+    diagnostics,
+    cycleIndex,
+    functionExpansionCounter,
+    controlFlowCounter
+  );
 
   if (hasElse && elseBlock) {
     kernel.cycles.push(makeControlCycle(
@@ -134,19 +96,16 @@ export function consumeKernelIfControlFlowStatement(
       elseLabel
     ));
 
-    const cycleCounter = { value: cycleIndex };
-    expandFunctionBodyIntoKernel(
+    cycleIndex = expandControlBodyIntoKernel(
       elseBlock.body,
       kernel,
       functions,
       kernelConstants,
       diagnostics,
-      cycleCounter,
-      [],
+      cycleIndex,
       functionExpansionCounter,
       controlFlowCounter
     );
-    cycleIndex = cycleCounter.value;
   }
 
   kernel.cycles.push(makeControlCycle(
