@@ -1,90 +1,39 @@
 {
   "name": "@phdcristian/openedge-dsl",
-  "version": "0.1.0",
-  "description": "OpenEdge-DSL: A domain-specific language for programming Coarse-Grained Reconfigurable Arrays (CGRAs)",
+  "private": true,
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "bin": {
-    "openedge": "./bin/openedge.js"
-  },
+  "main": "./compat/index.ts",
+  "types": "./compat/index.ts",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./compat/index.ts",
+      "import": "./compat/index.ts"
     },
     "./compiler": {
-      "types": "./dist/compiler.d.ts",
-      "import": "./dist/compiler.js"
-    },
-    "./cli": {
-      "types": "./dist/cli/index.d.ts",
-      "import": "./dist/cli/index.js"
+      "types": "./compat/compiler.ts",
+      "import": "./compat/compiler.ts"
     }
   },
-  "files": [
-    "dist",
-    "bin",
-    "README.md",
-    "LICENSE"
+  "workspaces": [
+    "packages/*"
   ],
   "scripts": {
-    "build": "tsc",
-    "build:watch": "tsc --watch",
-    "build:cli": "esbuild src/cli/index.ts --bundle --platform=node --target=node18 --outfile=dist/cli.js --format=esm --packages=external",
-    "cli": "node bin/openedge.js",
-    "test": "vitest",
-    "test:coverage": "vitest --coverage",
-    "lint": "eslint src --ext .ts",
-    "clean": "rm -rf dist",
-    "prepublishOnly": "npm run clean && npm run build && npm run build:cli"
+    "build": "npm run build --workspaces --if-present",
+    "test": "vitest run -c ./vitest.config.ts",
+    "test:watch": "vitest -c ./vitest.config.ts",
+    "test:simulator-parity": "node ./scripts/run-simulator-parity.mjs",
+    "docs:generate": "npm run docs:generate --workspace @openedge/lang-spec",
+    "check:boundaries": "node ./scripts/check-boundaries.mjs"
   },
-  "keywords": [
-    "cgra",
-    "dsl",
-    "compiler",
-    "reconfigurable",
-    "spatial-computing",
-    "openedge",
-    "cli"
-  ],
-  "author": "Cristian Campos <cristian@uma.es>",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/PhDCristian/OpenEdgeDSL.git"
-  },
-  "bugs": {
-    "url": "https://github.com/PhDCristian/OpenEdgeDSL/issues"
-  },
-  "homepage": "https://github.com/PhDCristian/OpenEdgeDSL#readme",
   "dependencies": {
-    "@inquirer/prompts": "^8.2.0",
-    "boxen": "^8.0.1",
-    "chalk": "^5.6.2",
-    "cli-spinners": "^3.4.0",
-    "commander": "^12.0.0",
-    "figlet": "^1.10.0",
-    "glob": "^13.0.0",
-    "gradient-string": "^3.0.0",
-    "ink": "^6.6.0",
-    "ink-text-input": "^6.0.0",
-    "ora": "^9.1.0",
-    "react": "^19.2.3",
-    "vscode-languageserver": "^9.0.1",
-    "vscode-languageserver-textdocument": "^1.0.12",
-    "vscode-uri": "^3.1.0"
+    "@openedge/compiler-api": "workspace:*",
+    "@openedge/compiler-backend-csv": "workspace:*",
+    "@openedge/compiler-front": "workspace:*",
+    "@openedge/compiler-ir": "workspace:*",
+    "@openedge/lang-spec": "workspace:*"
   },
   "devDependencies": {
-    "@types/figlet": "^1.7.0",
-    "@types/gradient-string": "^1.1.6",
-    "@types/node": "^20.10.0",
-    "esbuild": "^0.27.2",
     "typescript": "^5.3.0",
-    "vitest": "^1.0.0"
-  },
-  "engines": {
-    "node": ">=18.0.0"
+    "vitest": "^1.6.1"
   }
 }

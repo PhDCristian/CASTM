@@ -1,0 +1,57 @@
+name: OpenEdgeDSL Cross-Repo Parity
+
+on:
+  pull_request:
+    paths:
+      - 'packages/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'docs/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/cross-repo-parity.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'packages/**'
+      - 'scripts/**'
+      - 'tests/**'
+      - 'docs/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/cross-repo-parity.yml'
+  workflow_dispatch:
+
+jobs:
+  simulator-parity:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout OpenEdgeDSL
+        uses: actions/checkout@v4
+        with:
+          path: OpenEdgeDSL
+
+      - name: Checkout UMA-CGRA-Simulator
+        uses: actions/checkout@v4
+        with:
+          repository: PhDCristian/UMA-CGRA-Simulator
+          ref: main
+          path: UMA-CGRA-Simulator
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            OpenEdgeDSL/package-lock.json
+            UMA-CGRA-Simulator/package-lock.json
+
+      - name: Install OpenEdgeDSL dependencies
+        working-directory: OpenEdgeDSL
+        run: npm ci
+
+      - name: Run simulator parity tests
+        working-directory: OpenEdgeDSL
+        run: npm run test:simulator-parity
