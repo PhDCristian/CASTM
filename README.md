@@ -37,3 +37,10 @@ npx openedge program.dsl -o out.csv
 
 - The previous v1 compiler tree (`src`, legacy CLI/TUI, VSCode extension sources) has been removed from active development.
 - Simulator integration is validated through `scripts/run-simulator-parity.mjs` and CI workflow `cross-repo-parity.yml`.
+
+## Release and migration docs
+
+- `CHANGELOG.md`
+- `docs/migration-v1-to-v2.md`
+- `docs/release-cutover-checklist.md`
+- `docs/deprecation-policy.md`
