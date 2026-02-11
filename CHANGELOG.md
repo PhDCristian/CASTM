@@ -7,15 +7,17 @@ The format follows Keep a Changelog and Semantic Versioning intent for package r
 ## [Unreleased]
 
 ### Added
-- Release documentation for cutover (`docs/migration-from-legacy.md`, `docs/release-cutover-checklist.md`, `docs/deprecation-policy.md`).
+- Compiler phase contract document (`docs/compiler-contracts.md`).
 
 ### Changed
-- Simulator integration no longer imports `@phdcristian/openedge-dsl` compatibility entrypoints.
-- Simulator `backend: "legacy"` option is now a compatibility alias to the package-based compiler (no legacy compiler fallback path).
+- Structured parser is now canonical-only (no fallback path to classic parser).
+- Route coordinates are canonical-only (`@row,col`).
+- `@openedge/compiler-front` public API now exports canonical entrypoints only.
 
 ### Removed
 - Root compatibility layer (`compat/index.ts`, `compat/compiler.ts`).
 - Local residual directories from transition phase (versioned staging tree and `editors/`).
+- Migration/cutover/deprecation docs tied to compatibility paths.
 
 ## [2.0.0-alpha.1] - 2026-02-11
 
