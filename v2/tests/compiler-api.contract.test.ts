@@ -1656,6 +1656,47 @@ kernel "auto_cycle_missing_end" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
+  it('rejects nested auto_cycle regions', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "auto_cycle_nested" {
+  #pragma auto_cycle
+  @0,0: SADD R0, ZERO, IMM(10);
+  #pragma auto_cycle
+  @0,1: SADD R1, ZERO, IMM(11);
+  #pragma end_auto_cycle
+  #pragma end_auto_cycle
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.message.includes('Nested #pragma auto_cycle'))).toBe(true);
+  });
+
+  it('rejects non-end pragmas inside auto_cycle regions', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "auto_cycle_mixed_pragma" {
+  #pragma auto_cycle
+  @0,0: SADD R0, ZERO, IMM(10);
+  #pragma route @0,1 -> @0,0 payload(R1) accum(R0)
+  @0,1: SADD R1, ZERO, IMM(11);
+  #pragma end_auto_cycle
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.message.includes('Unsupported pragma'))).toBe(true);
+  });
+
   it('rejects unsupported pragmas by default in strict mode', () => {
     const source = `
 target "uma-cgra-v1";
