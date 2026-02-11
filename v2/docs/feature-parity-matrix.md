@@ -27,9 +27,9 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 |---|---|---|---|
 | `.const`, `.alias` parse | done | indirect (`compile` contracts) | Exposed via `artifacts.symbols`. |
 | `.data` parse + regions | done | `tests/compiler-api.contract.test.ts` | Also exposed in `memoryRegions`. |
-| `.data2d` | partial | `tests/compiler-api.contract.test.ts` | Supports declaration + region allocation + literal 2D index lowering; dynamic index expressions remain pending. |
-| `.io_load`, `.io_store` | partial | `tests/compiler-api.contract.test.ts` | Parsed into `ioConfig` from comma/brace payloads with non-negative address validation; runtime/simulator enforcement remains pending. |
-| `.assert` | partial | `tests/compiler-api.contract.test.ts` | Parsed to structured assertion artifacts (`cycle,row,col,register,value`) for short/object forms; runtime lowering/execution integration still pending. |
+| `.data2d` | done | `tests/compiler-api.contract.test.ts` | Supports declaration, region allocation, literal and dynamic 2D index lowering to address expressions. |
+| `.io_load`, `.io_store` | done | `tests/compiler-api.contract.test.ts` | Parsed into `ioConfig` with non-negative validation and propagated through simulator v2 adapter contract tests. |
+| `.assert` | done | `tests/compiler-api.contract.test.ts` | Structured assertion artifacts parsed and propagated to simulator v2 adapter/runtime contract tests. |
 | `.limit` | partial | `tests/compiler-api.contract.test.ts` | Parsed from directives, exposed in `artifacts.cycleLimit`, and enforced against expanded cycle count. |
 
 ## Pragmas
@@ -41,13 +41,13 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 | `unroll` / `no_unroll` / `parallel` / `no_fuse` | partial | `tests/compiler-api.contract.test.ts` | Parser-level control pragmas for loop lowering: unroll factor truncation, runtime `no_unroll` standard/aggressive paths (adjacent single-cycle fusion), nested `parallel collapse(N)` propagation, and no_fuse-controlled while back-edge fusion. |
 | `route` lowering | partial | `tests/compiler-api.contract.test.ts` | Compact `@r,c` and legacy `(r,c)` lower to route cycles with topology-aware paths; advanced pragma families remain pending. |
 | `broadcast` lowering | partial | `tests/compiler-api.contract.test.ts` | Fanout implemented via route-style lowering for `row`/`column`/`all` scopes. |
-| `rotate`/`shift` lowering | partial | `tests/compiler-api.contract.test.ts` | Row-0 lowering implemented; `rotate` currently torus-only, `shift` supports fill values. |
-| `scan` lowering | partial | `tests/compiler-api.contract.test.ts` | Supports `add/and/or/xor/max/min`, `inclusive/exclusive`, and `left/right/up/down` using row-0/col-0 lane semantics. |
-| `reduce` lowering | partial | `tests/compiler-api.contract.test.ts` | Supports `sum/add/and/or/xor/mul/max/min` with `axis=row|col` in 4-lane baseline lowering patterns. |
-| `stencil` lowering | partial | `tests/compiler-api.contract.test.ts` | Supports `cross/horizontal/vertical` with `sum/add/avg` parsing and baseline row-0 neighbor lowering. |
-| `allreduce` lowering | partial | `tests/compiler-api.contract.test.ts` | Composes `reduce` + broadcast from `@0,0` with support for `axis=row|col` in 4-lane baseline lowering patterns. |
+| `rotate`/`shift` lowering | done | `tests/compiler-api.contract.test.ts` | Lowering applies across all grid rows; `rotate` remains torus-only by design and `shift` supports fill values. |
+| `scan` lowering | done | `tests/compiler-api.contract.test.ts` | Supports `add/and/or/xor/max/min`, `inclusive/exclusive`, and `left/right/up/down` across all rows/cols lanes. |
+| `reduce` lowering | done | `tests/compiler-api.contract.test.ts` | Supports `sum/add/and/or/xor/mul/max/min` with `axis=row|col` using route-based NxM lowering. |
+| `stencil` lowering | done | `tests/compiler-api.contract.test.ts` | Supports `cross/horizontal/vertical` with `sum/add/avg` lowering across full grid. |
+| `allreduce` lowering | done | `tests/compiler-api.contract.test.ts` | Composes NxM reduce + broadcast from `@0,0` with support for `axis=row|col`. |
 | `transpose` lowering | partial | `tests/compiler-api.contract.test.ts` | Square-grid lowering implemented via pairwise route swaps using scratch registers; advanced optimization/scheduling pending. |
-| `gather` lowering | partial | `tests/compiler-api.contract.test.ts` | Row-wise gather to configurable destination with `add/sum/and/or/xor/mul` accumulation using route transfers. |
+| `gather` lowering | done | `tests/compiler-api.contract.test.ts` | Full-grid gather to configurable destination with `add/sum/and/or/xor/mul` accumulation using route transfers. |
 | `stream_load` / `stream_store` lowering | partial | `tests/compiler-api.contract.test.ts` | Supports `row` and `count` parameters with row-wide `LWD`/`SWD` emission over current grid width. |
 | `auto_cycle` lowering | partial | `tests/compiler-api.contract.test.ts` | Parser-level grouping of PE-prefixed statements with conflict-based cycle inference; nested regions and mixed pragmas inside region are rejected. |
 

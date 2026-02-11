@@ -1111,21 +1111,38 @@ function buildRotateShiftCycles(
   const fillValue = pragma.fill ?? 0;
 
   for (let step = 0; step < iterations; step++) {
-    const sendInstructions: InstructionAst[] = [];
-    for (let col = 0; col < grid.cols; col++) {
-      sendInstructions.push(createInstruction('SADD', ['ROUT', pragma.reg, 'ZERO'], span));
-    }
-    cycles.push(createRowCycle(startIndex + cycles.length, 0, sendInstructions, span));
-
-    const recvInstructions: InstructionAst[] = [];
-    for (let col = 0; col < grid.cols; col++) {
-      if (isShift && col === edgeCol) {
-        recvInstructions.push(createInstruction('SADD', [pragma.reg, 'ZERO', `IMM(${fillValue})`], span));
-      } else {
-        recvInstructions.push(createInstruction('SADD', [pragma.reg, neighborReg, 'ZERO'], span));
+    const sendPlacements: Array<{ row: number; col: number; instruction: InstructionAst }> = [];
+    for (let row = 0; row < grid.rows; row++) {
+      for (let col = 0; col < grid.cols; col++) {
+        sendPlacements.push({
+          row,
+          col,
+          instruction: createInstruction('SADD', ['ROUT', pragma.reg, 'ZERO'], span)
+        });
       }
     }
-    cycles.push(createRowCycle(startIndex + cycles.length, 0, recvInstructions, span));
+    cycles.push(createMultiAtCycle(startIndex + cycles.length, sendPlacements, span));
+
+    const recvPlacements: Array<{ row: number; col: number; instruction: InstructionAst }> = [];
+    for (let row = 0; row < grid.rows; row++) {
+      for (let col = 0; col < grid.cols; col++) {
+        if (isShift && col === edgeCol) {
+          recvPlacements.push({
+            row,
+            col,
+            instruction: createInstruction('SADD', [pragma.reg, 'ZERO', `IMM(${fillValue})`], span)
+          });
+          continue;
+        }
+
+        recvPlacements.push({
+          row,
+          col,
+          instruction: createInstruction('SADD', [pragma.reg, neighborReg, 'ZERO'], span)
+        });
+      }
+    }
+    cycles.push(createMultiAtCycle(startIndex + cycles.length, recvPlacements, span));
   }
 
   return cycles;
@@ -1236,8 +1253,9 @@ function buildScanCycles(
   }
 
   const horizontal = pragma.direction === 'left' || pragma.direction === 'right';
+  const lineCount = horizontal ? grid.rows : grid.cols;
   const laneLength = horizontal ? grid.cols : grid.rows;
-  if (laneLength <= 0) {
+  if (laneLength <= 0 || lineCount <= 0) {
     return [];
   }
 
@@ -1251,65 +1269,81 @@ function buildScanCycles(
 
   for (let i = 0; i < laneLength; i++) {
     const laneIndex = forward ? i : laneLength - 1 - i;
-    const row = horizontal ? 0 : laneIndex;
-    const col = horizontal ? laneIndex : 0;
     const first = i === 0;
+    const stagePlacements: Array<{ row: number; col: number; instruction: InstructionAst }> = [];
+
+    for (let line = 0; line < lineCount; line++) {
+      const row = horizontal ? line : laneIndex;
+      const col = horizontal ? laneIndex : line;
+
+      if (first) {
+        if (pragma.mode === 'inclusive') {
+          stagePlacements.push({
+            row,
+            col,
+            instruction: createInstruction('SADD', [pragma.dstReg, pragma.srcReg, 'ZERO'], span)
+          });
+        } else {
+          stagePlacements.push({
+            row,
+            col,
+            instruction: createInstruction('SADD', [pragma.dstReg, 'ZERO', `IMM(${identity})`], span)
+          });
+        }
+        continue;
+      }
+
+      if (!compareOp && simpleOpcode) {
+        stagePlacements.push({
+          row,
+          col,
+          instruction: createInstruction(simpleOpcode, [pragma.dstReg, pragma.dstReg, incoming], span)
+        });
+        continue;
+      }
+
+      stagePlacements.push({
+        row,
+        col,
+        instruction: createInstruction('SSUB', ['R2', pragma.dstReg, incoming], span)
+      });
+    }
 
     if (first) {
-      if (pragma.mode === 'inclusive') {
-        cycles.push(createAtCycle(
-          startIndex + cycles.length,
-          row,
-          col,
-          createInstruction('SADD', [pragma.dstReg, pragma.srcReg, 'ZERO'], span),
-          span
-        ));
-      } else {
-        cycles.push(createAtCycle(
-          startIndex + cycles.length,
-          row,
-          col,
-          createInstruction('SADD', [pragma.dstReg, 'ZERO', `IMM(${identity})`], span),
-          span
-        ));
-      }
+      cycles.push(createMultiAtCycle(startIndex + cycles.length, stagePlacements, span));
     } else if (!compareOp && simpleOpcode) {
-      cycles.push(createAtCycle(
-        startIndex + cycles.length,
-        row,
-        col,
-        createInstruction(simpleOpcode, [pragma.dstReg, pragma.dstReg, incoming], span),
-        span
-      ));
+      cycles.push(createMultiAtCycle(startIndex + cycles.length, stagePlacements, span));
     } else {
-      cycles.push(createAtCycle(
-        startIndex + cycles.length,
-        row,
-        col,
-        createInstruction('SSUB', ['R2', pragma.dstReg, incoming], span),
-        span
-      ));
+      cycles.push(createMultiAtCycle(startIndex + cycles.length, stagePlacements, span));
 
-      cycles.push(createAtCycle(
-        startIndex + cycles.length,
-        row,
-        col,
-        createInstruction('BSFA', [pragma.dstReg, bsfaFirst, bsfaSecond, 'SELF'], span),
-        span
-      ));
+      const selectPlacements: Array<{ row: number; col: number; instruction: InstructionAst }> = [];
+      for (let line = 0; line < lineCount; line++) {
+        const row = horizontal ? line : laneIndex;
+        const col = horizontal ? laneIndex : line;
+        selectPlacements.push({
+          row,
+          col,
+          instruction: createInstruction('BSFA', [pragma.dstReg, bsfaFirst, bsfaSecond, 'SELF'], span)
+        });
+      }
+      cycles.push(createMultiAtCycle(startIndex + cycles.length, selectPlacements, span));
     }
 
     if (i < laneLength - 1) {
       const relaySource = first && pragma.mode === 'exclusive'
         ? pragma.srcReg
         : pragma.dstReg;
-      cycles.push(createAtCycle(
-        startIndex + cycles.length,
-        row,
-        col,
-        createInstruction('SADD', ['ROUT', relaySource, 'ZERO'], span),
-        span
-      ));
+      const relayPlacements: Array<{ row: number; col: number; instruction: InstructionAst }> = [];
+      for (let line = 0; line < lineCount; line++) {
+        const row = horizontal ? line : laneIndex;
+        const col = horizontal ? laneIndex : line;
+        relayPlacements.push({
+          row,
+          col,
+          instruction: createInstruction('SADD', ['ROUT', relaySource, 'ZERO'], span)
+        });
+      }
+      cycles.push(createMultiAtCycle(startIndex + cycles.length, relayPlacements, span));
     }
   }
 
@@ -1336,199 +1370,93 @@ function buildReduceCycles(
     return [];
   }
 
-  if (pragma.axis === 'row' && grid.cols !== 4) {
+  const lanes = pragma.axis === 'row' ? grid.cols : grid.rows;
+  if (lanes <= 0) {
+    return [];
+  }
+
+  const scratch = pickScratchRegisters([pragma.srcReg, pragma.destReg]);
+  if (!scratch) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `#pragma reduce axis=row currently requires 4 columns, got ${grid.cols}.`,
-      'Use a 4-column grid for v2 baseline reduce lowering.'
+      `Could not allocate scratch registers for reduce destination '${pragma.destReg}'.`,
+      'Use a target profile with temporary registers available.'
     ));
     return [];
   }
 
-  if (pragma.axis === 'col' && grid.rows !== 4) {
-    diagnostics.push(makeDiagnostic(
-      ErrorCodes.Semantic.UnsupportedOperation,
-      'error',
-      span,
-      `#pragma reduce axis=col currently requires 4 rows, got ${grid.rows}.`,
-      'Use a 4-row grid for v2 baseline reduce lowering.'
-    ));
-    return [];
+  const relayReg = scratch[0];
+  const cmpReg = scratch[1];
+  const anchor: RoutePoint = { row: 0, col: 0 };
+  const sources: RoutePoint[] = [];
+  for (let i = 1; i < lanes; i++) {
+    sources.push(
+      pragma.axis === 'row'
+        ? { row: 0, col: i }
+        : { row: i, col: 0 }
+    );
   }
-
-  const makeRow = (instructions: InstructionAst[]): CycleAst =>
-    createRowCycle(startIndex + cycles.length, 0, instructions, span);
-  const makeNop = () => createInstruction('NOP', [], span);
+  sources.sort((a, b) => {
+    const da = Math.abs(a.row - anchor.row) + Math.abs(a.col - anchor.col);
+    const db = Math.abs(b.row - anchor.row) + Math.abs(b.col - anchor.col);
+    if (da !== db) return da - db;
+    if (a.row !== b.row) return a.row - b.row;
+    return a.col - b.col;
+  });
 
   const cycles: CycleAst[] = [];
+  cycles.push(createAtCycle(
+    startIndex + cycles.length,
+    anchor.row,
+    anchor.col,
+    createInstruction('SADD', [pragma.destReg, pragma.srcReg, 'ZERO'], span),
+    span
+  ));
 
-  if (pragma.axis === 'row') {
-    const instr = simpleOpcode ?? 'SADD';
+  for (const source of sources) {
+    const transfer = buildRouteTransferCycles(
+      source,
+      anchor,
+      pragma.srcReg,
+      relayReg,
+      startIndex + cycles.length,
+      grid,
+      span,
+      diagnostics
+    );
+    cycles.push(...transfer);
 
-    cycles.push(makeRow([
-      createInstruction('SADD', ['R2', pragma.srcReg, 'ZERO'], span),
-      createInstruction('SADD', ['R2', pragma.srcReg, 'ZERO'], span),
-      createInstruction('SADD', ['R2', pragma.srcReg, 'ZERO'], span),
-      createInstruction('SADD', ['R2', pragma.srcReg, 'ZERO'], span)
-    ]));
-
-    if (!compareOp) {
-      cycles.push(makeRow([
-        createInstruction(instr, ['R2', pragma.srcReg, 'RCR'], span),
-        makeNop(),
-        createInstruction(instr, ['R2', pragma.srcReg, 'RCR'], span),
-        makeNop()
-      ]));
-
-      cycles.push(makeRow([
-        makeNop(),
-        createInstruction('SADD', ['R3', 'RCR', 'ZERO'], span),
-        makeNop(),
-        makeNop()
-      ]));
-
-      cycles.push(makeRow([
-        createInstruction(instr, [pragma.destReg, 'R2', 'RCR'], span),
-        makeNop(),
-        makeNop(),
-        makeNop()
-      ]));
-      return cycles;
+    if (!compareOp && simpleOpcode) {
+      cycles.push(createAtCycle(
+        startIndex + cycles.length,
+        anchor.row,
+        anchor.col,
+        createInstruction(simpleOpcode, [pragma.destReg, pragma.destReg, relayReg], span),
+        span
+      ));
+      continue;
     }
 
-    const pairFirst = pragma.operation === 'max' ? 'RCR' : pragma.srcReg;
-    const pairSecond = pragma.operation === 'max' ? pragma.srcReg : 'RCR';
-    const finalFirst = pragma.operation === 'max' ? 'RCR' : 'R2';
-    const finalSecond = pragma.operation === 'max' ? 'R2' : 'RCR';
-
-    cycles.push(makeRow([
-      createInstruction('SSUB', ['R2', pragma.srcReg, 'RCR'], span),
-      makeNop(),
-      createInstruction('SSUB', ['R2', pragma.srcReg, 'RCR'], span),
-      makeNop()
-    ]));
-
-    cycles.push(makeRow([
-      createInstruction('BSFA', ['R2', pairFirst, pairSecond, 'SELF'], span),
-      makeNop(),
-      createInstruction('BSFA', ['R2', pairFirst, pairSecond, 'SELF'], span),
-      makeNop()
-    ]));
-
-    cycles.push(makeRow([
-      makeNop(),
-      createInstruction('SADD', ['R3', 'RCR', 'ZERO'], span),
-      makeNop(),
-      makeNop()
-    ]));
-
-    cycles.push(makeRow([
-      createInstruction('SSUB', ['R3', 'R2', 'RCR'], span),
-      makeNop(),
-      makeNop(),
-      makeNop()
-    ]));
-
-    cycles.push(makeRow([
-      createInstruction('BSFA', [pragma.destReg, finalFirst, finalSecond, 'SELF'], span),
-      makeNop(),
-      makeNop(),
-      makeNop()
-    ]));
-
-    return cycles;
-  }
-
-  const instr = simpleOpcode ?? 'SADD';
-  const bselectFirst = pragma.operation === 'max' ? 'RCB' : pragma.srcReg;
-  const bselectSecond = pragma.operation === 'max' ? pragma.srcReg : 'RCB';
-  const finalFirst = pragma.operation === 'max' ? 'RCB' : 'R2';
-  const finalSecond = pragma.operation === 'max' ? 'R2' : 'RCB';
-
-  cycles.push(createMultiAtCycle(
-    startIndex + cycles.length,
-    [0, 1, 2, 3].map((row) => ({
-      row,
-      col: 0,
-      instruction: createInstruction('SADD', ['R2', pragma.srcReg, 'ZERO'], span)
-    })),
-    span
-  ));
-
-  if (!compareOp) {
-    cycles.push(createMultiAtCycle(
-      startIndex + cycles.length,
-      [0, 2].map((row) => ({
-        row,
-        col: 0,
-        instruction: createInstruction(instr, ['R2', pragma.srcReg, 'RCB'], span)
-      })),
-      span
-    ));
-
     cycles.push(createAtCycle(
       startIndex + cycles.length,
-      1,
-      0,
-      createInstruction('SADD', ['R3', 'RCB', 'ZERO'], span),
+      anchor.row,
+      anchor.col,
+      createInstruction('SSUB', [cmpReg, pragma.destReg, relayReg], span),
       span
     ));
 
+    const first = pragma.operation === 'max' ? relayReg : pragma.destReg;
+    const second = pragma.operation === 'max' ? pragma.destReg : relayReg;
     cycles.push(createAtCycle(
       startIndex + cycles.length,
-      0,
-      0,
-      createInstruction(instr, [pragma.destReg, 'R2', 'RCB'], span),
+      anchor.row,
+      anchor.col,
+      createInstruction('BSFA', [pragma.destReg, first, second, 'SELF'], span),
       span
     ));
-    return cycles;
   }
-
-  cycles.push(createMultiAtCycle(
-    startIndex + cycles.length,
-    [0, 2].map((row) => ({
-      row,
-      col: 0,
-      instruction: createInstruction('SSUB', ['R2', pragma.srcReg, 'RCB'], span)
-    })),
-    span
-  ));
-
-  cycles.push(createMultiAtCycle(
-    startIndex + cycles.length,
-    [0, 2].map((row) => ({
-      row,
-      col: 0,
-      instruction: createInstruction('BSFA', ['R2', bselectFirst, bselectSecond, 'SELF'], span)
-    })),
-    span
-  ));
-
-  cycles.push(createAtCycle(
-    startIndex + cycles.length,
-    1,
-    0,
-    createInstruction('SADD', ['R3', 'RCB', 'ZERO'], span),
-    span
-  ));
-
-  cycles.push(createAtCycle(
-    startIndex + cycles.length,
-    0,
-    0,
-    createInstruction('SSUB', ['R3', 'R2', 'RCB'], span),
-    span
-  ));
-
-  cycles.push(createAtCycle(
-    startIndex + cycles.length,
-    0,
-    0,
-    createInstruction('BSFA', [pragma.destReg, finalFirst, finalSecond, 'SELF'], span),
-    span
-  ));
 
   return cycles;
 }
@@ -1560,13 +1488,17 @@ function buildStencilCycles(
     dest: string,
     srcA: string,
     srcB: string
-  ): CycleAst => createRowCycle(
+  ): CycleAst => createMultiAtCycle(
     cycleIndex,
-    0,
-    Array.from(
-      { length: grid.cols },
-      () => createInstruction('SADD', [dest, srcA, srcB], span)
-    ),
+    Array.from({ length: grid.rows * grid.cols }, (_, idx) => {
+      const row = Math.floor(idx / grid.cols);
+      const col = idx % grid.cols;
+      return {
+        row,
+        col,
+        instruction: createInstruction('SADD', [dest, srcA, srcB], span)
+      };
+    }),
     span
   );
 
@@ -1769,15 +1701,22 @@ function buildGatherCycles(
     span
   ));
 
-  const sourceCols: number[] = [];
-  for (let col = 0; col < grid.cols; col++) {
-    if (col === pragma.dest.col) continue;
-    sourceCols.push(col);
+  const sources: RoutePoint[] = [];
+  for (let row = 0; row < grid.rows; row++) {
+    for (let col = 0; col < grid.cols; col++) {
+      if (row === pragma.dest.row && col === pragma.dest.col) continue;
+      sources.push({ row, col });
+    }
   }
-  sourceCols.sort((a, b) => Math.abs(a - pragma.dest.col) - Math.abs(b - pragma.dest.col));
+  sources.sort((a, b) => {
+    const da = Math.abs(a.row - pragma.dest.row) + Math.abs(a.col - pragma.dest.col);
+    const db = Math.abs(b.row - pragma.dest.row) + Math.abs(b.col - pragma.dest.col);
+    if (da !== db) return da - db;
+    if (a.row !== b.row) return a.row - b.row;
+    return a.col - b.col;
+  });
 
-  for (const srcCol of sourceCols) {
-    const src: RoutePoint = { row: pragma.dest.row, col: srcCol };
+  for (const src of sources) {
     const transfer = buildRouteTransferCycles(
       src,
       pragma.dest,
@@ -1938,30 +1877,25 @@ function toAddressOperand(
 
     const rowIndex = parseIntegerLiteral(indices[0]);
     const colIndex = parseIntegerLiteral(indices[1]);
-    if (rowIndex === null || colIndex === null) {
-      passDiagnostics.push(makeDiagnostic(
-        ErrorCodes.Semantic.UnsupportedOperation,
-        'error',
-        span,
-        `v2 baseline only supports literal .data2d indices, got '${arrayName}[${indices[0]}][${indices[1]}]'.`,
-        `Use literal indices like ${arrayName}[0][0].`
-      ));
-      return null;
+    if (rowIndex !== null && colIndex !== null) {
+      if (rowIndex < 0 || rowIndex >= symbol.rows || colIndex < 0 || colIndex >= symbol.cols) {
+        passDiagnostics.push(makeDiagnostic(
+          ErrorCodes.Semantic.CoordinateOutOfBounds,
+          'error',
+          span,
+          `Index out of bounds for '.data2d ${arrayName}[${symbol.rows}][${symbol.cols}]': [${rowIndex}][${colIndex}].`,
+          'Use indices within declared bounds.'
+        ));
+        return null;
+      }
+
+      const linearIndex = rowIndex * symbol.cols + colIndex;
+      return String(symbol.start + linearIndex * 4);
     }
 
-    if (rowIndex < 0 || rowIndex >= symbol.rows || colIndex < 0 || colIndex >= symbol.cols) {
-      passDiagnostics.push(makeDiagnostic(
-        ErrorCodes.Semantic.CoordinateOutOfBounds,
-        'error',
-        span,
-        `Index out of bounds for '.data2d ${arrayName}[${symbol.rows}][${symbol.cols}]': [${rowIndex}][${colIndex}].`,
-        'Use indices within declared bounds.'
-      ));
-      return null;
-    }
-
-    const linearIndex = rowIndex * symbol.cols + colIndex;
-    return String(symbol.start + linearIndex * 4);
+    const rowExpr = indices[0];
+    const colExpr = indices[1];
+    return `${symbol.start} + (((${rowExpr}) * ${symbol.cols}) + (${colExpr})) * 4`;
   }
 
   if (indices.length !== 1) {
@@ -1976,29 +1910,22 @@ function toAddressOperand(
   }
 
   const literalIndex = parseIntegerLiteral(indices[0]);
-  if (literalIndex === null) {
-    passDiagnostics.push(makeDiagnostic(
-      ErrorCodes.Semantic.UnsupportedOperation,
-      'error',
-      span,
-      `v2 baseline only supports literal .data indices, got '${arrayName}[${indices[0]}]'.`,
-      `Use a literal index (e.g. ${arrayName}[0]).`
-    ));
-    return null;
+  if (literalIndex !== null) {
+    if (literalIndex < 0 || literalIndex >= symbol.length) {
+      passDiagnostics.push(makeDiagnostic(
+        ErrorCodes.Semantic.CoordinateOutOfBounds,
+        'error',
+        span,
+        `Index out of bounds for '.data ${arrayName}[${symbol.length}]': [${literalIndex}].`,
+        'Use indices within declared bounds.'
+      ));
+      return null;
+    }
+
+    return String(symbol.start + literalIndex * 4);
   }
 
-  if (literalIndex < 0 || literalIndex >= symbol.length) {
-    passDiagnostics.push(makeDiagnostic(
-      ErrorCodes.Semantic.CoordinateOutOfBounds,
-      'error',
-      span,
-      `Index out of bounds for '.data ${arrayName}[${symbol.length}]': [${literalIndex}].`,
-      'Use indices within declared bounds.'
-    ));
-    return null;
-  }
-
-  return String(symbol.start + literalIndex * 4);
+  return `${symbol.start} + (${indices[0]}) * 4`;
 }
 
 function splitAssignment(text: string): { lhs: string; rhs: string } | null {

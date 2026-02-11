@@ -225,20 +225,22 @@ kernel "limit_invalid" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
-  it('rejects non-literal .data index in v2 baseline', () => {
+  it('supports non-literal .data index expressions in memory sugar', () => {
     const source = `
 target "uma-cgra-v1";
 .data A { 10, 20, 30, 40 }
 kernel "dynamic_data_idx" {
   cycle {
     @0,0: R1 = A[i];
+    @0,1: A[i + 1] = R2;
   }
 }
 `;
 
     const result = compile(source);
-    expect(result.success).toBe(false);
-    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,LWI R1 0 + (i) * 4');
+    expect(result.artifacts.csv).toContain('0,0,1,SWI R2 0 + (i+1) * 4');
   });
 
   it('parses .data2d declarations and exposes dimensional symbols', () => {
@@ -283,20 +285,22 @@ kernel "data2d_access" {
     expect(result.artifacts.csv).toContain('0,0,1,SWI R2 4');
   });
 
-  it('rejects non-literal .data2d indices in v2 baseline', () => {
+  it('supports non-literal .data2d indices in memory sugar', () => {
     const source = `
 target "uma-cgra-v1";
 .data2d M[2][2] { 10, 20, 30, 40 }
 kernel "data2d_dynamic_idx" {
   cycle {
-    @0,0: R1 = M[i][0];
+    @0,0: R1 = M[i][j];
+    @0,1: M[i + 1][j] = R2;
   }
 }
 `;
 
     const result = compile(source);
-    expect(result.success).toBe(false);
-    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,LWI R1 0 + (((i) * 2) + (j)) * 4');
+    expect(result.artifacts.csv).toContain('0,0,1,SWI R2 0 + (((i+1) * 2) + (j)) * 4');
   });
 
   it('broadcasts row statements according to target grid and supports NxM override', () => {
@@ -916,6 +920,25 @@ kernel "rotate_row0" {
     expect(result.artifacts.csv).toContain('2,0,0,EXIT');
   });
 
+  it('applies rotate lowering across every row of the grid', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "rotate_all_rows" {
+  #pragma rotate(reg=R0, direction=left, distance=1)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,1,0,SADD ROUT R0 ZERO');
+    expect(result.artifacts.csv).toContain('0,3,3,SADD ROUT R0 ZERO');
+    expect(result.artifacts.csv).toContain('1,2,0,SADD R0 RCR ZERO');
+    expect(result.artifacts.csv).toContain('1,3,3,SADD R0 RCR ZERO');
+  });
+
   it('rejects rotate pragma on mesh topology for now', () => {
     const source = `
 target "uma-cgra-v1";
@@ -973,6 +996,24 @@ kernel "scan_add_inclusive" {
     expect(result.artifacts.csv).toContain('5,0,2,SADD ROUT R1 ZERO');
     expect(result.artifacts.csv).toContain('6,0,3,SADD R1 R1 RCL');
     expect(result.artifacts.csv).toContain('7,0,0,EXIT');
+  });
+
+  it('applies horizontal scan lowering across every row', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "scan_all_rows" {
+  #pragma scan(add, R0, R1, right)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,1,0,SADD R1 R0 ZERO');
+    expect(result.artifacts.csv).toContain('2,2,1,SADD R1 R1 RCL');
+    expect(result.artifacts.csv).toContain('6,3,3,SADD R1 R1 RCL');
   });
 
   it('lowers scan pragma (add, exclusive) using identity and source relay', () => {
@@ -1065,12 +1106,9 @@ kernel "reduce_sum_row" {
 
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('0,0,0,SADD R2 R0 ZERO');
-    expect(result.artifacts.csv).toContain('1,0,0,SADD R2 R0 RCR');
-    expect(result.artifacts.csv).toContain('1,0,2,SADD R2 R0 RCR');
-    expect(result.artifacts.csv).toContain('2,0,1,SADD R3 RCR ZERO');
-    expect(result.artifacts.csv).toContain('3,0,0,SADD R1 R2 RCR');
-    expect(result.artifacts.csv).toContain('4,0,0,EXIT');
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
   it('lowers reduce pragma max with SSUB+BSFA pattern', () => {
@@ -1086,10 +1124,9 @@ kernel "reduce_max_row" {
 
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('1,0,0,SSUB R2 R0 RCR');
-    expect(result.artifacts.csv).toContain('2,0,0,BSFA R2 RCR R0 SELF');
-    expect(result.artifacts.csv).toContain('5,0,0,BSFA R1 RCR R2 SELF');
-    expect(result.artifacts.csv).toContain('6,0,0,EXIT');
+    expect(result.artifacts.csv).toContain('SSUB R6 R1 R7');
+    expect(result.artifacts.csv).toContain('BSFA R1 R7 R1 SELF');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
   it('supports reduce axis=col using vertical neighbors', () => {
@@ -1105,14 +1142,12 @@ kernel "reduce_col_axis" {
 
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('1,0,0,SADD R2 R0 RCB');
-    expect(result.artifacts.csv).toContain('1,2,0,SADD R2 R0 RCB');
-    expect(result.artifacts.csv).toContain('2,1,0,SADD R3 RCB ZERO');
-    expect(result.artifacts.csv).toContain('3,0,0,SADD R1 R2 RCB');
-    expect(result.artifacts.csv).toContain('4,0,0,EXIT');
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
-  it('rejects reduce lowering on unsupported grid dimensions', () => {
+  it('supports reduce lowering on wider NxM grids', () => {
     const source = `
 target "uma-cgra-v1";
 kernel "reduce_grid_unsupported" {
@@ -1126,8 +1161,9 @@ kernel "reduce_grid_unsupported" {
     const result = compile(source, {
       grid: { rows: 4, cols: 8, topology: 'mesh' }
     });
-    expect(result.success).toBe(false);
-    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
   it('lowers stencil pragma cross pattern', () => {
@@ -1144,6 +1180,7 @@ kernel "stencil_cross" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,0,0,SADD R2 R0 RCT');
+    expect(result.artifacts.csv).toContain('0,1,0,SADD R2 R0 RCT');
     expect(result.artifacts.csv).toContain('1,0,0,SADD R2 R2 RCB');
     expect(result.artifacts.csv).toContain('2,0,0,SADD R2 R2 RCL');
     expect(result.artifacts.csv).toContain('3,0,0,SADD R1 R2 RCR');
@@ -1164,6 +1201,7 @@ kernel "stencil_horizontal_short" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,0,0,SADD R2 R0 RCL');
+    expect(result.artifacts.csv).toContain('0,1,0,SADD R2 R0 RCL');
     expect(result.artifacts.csv).toContain('1,0,0,SADD R1 R2 RCR');
     expect(result.artifacts.csv).toContain('2,0,0,EXIT');
   });
@@ -1182,6 +1220,7 @@ kernel "stencil_vertical" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,0,0,SADD R2 R0 RCT');
+    expect(result.artifacts.csv).toContain('0,1,0,SADD R2 R0 RCT');
     expect(result.artifacts.csv).toContain('1,0,0,SADD R1 R2 RCB');
     expect(result.artifacts.csv).toContain('2,0,0,EXIT');
   });
@@ -1215,13 +1254,11 @@ kernel "allreduce_sum_row" {
 
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('0,0,0,SADD R2 R0 ZERO');
-    expect(result.artifacts.csv).toContain('3,0,0,SADD R1 R2 RCR');
-    expect(result.artifacts.csv).toContain('4,0,0,SADD ROUT R1 ZERO');
-    expect(result.artifacts.csv).toContain('5,0,1,SADD R1 RCL ZERO');
-    expect(result.artifacts.csv).toContain('8,0,2,SADD R1 RCL ZERO');
-    expect(result.artifacts.csv).toContain('10,0,3,SADD R1 RCR ZERO');
-    expect(result.artifacts.csv).toContain('11,0,0,EXIT');
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain('SADD ROUT R1 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R1 RCL ZERO');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
   it('supports allreduce axis=col using vertical broadcast chain', () => {
@@ -1237,15 +1274,14 @@ kernel "allreduce_col_axis" {
 
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('1,0,0,SADD R2 R0 RCB');
-    expect(result.artifacts.csv).toContain('3,0,0,SADD R1 R2 RCB');
-    expect(result.artifacts.csv).toContain('4,0,0,SADD ROUT R1 ZERO');
-    expect(result.artifacts.csv).toContain('5,1,0,SADD R1 RCT ZERO');
-    expect(result.artifacts.csv).toContain('10,3,0,SADD R1 RCB ZERO');
-    expect(result.artifacts.csv).toContain('11,0,0,EXIT');
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain('SADD ROUT R1 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R1 RCT ZERO');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
-  it('rejects allreduce lowering on unsupported grid dimensions', () => {
+  it('supports allreduce lowering on wider NxM grids', () => {
     const source = `
 target "uma-cgra-v1";
 kernel "allreduce_grid_unsupported" {
@@ -1259,8 +1295,10 @@ kernel "allreduce_grid_unsupported" {
     const result = compile(source, {
       grid: { rows: 4, cols: 8, topology: 'mesh' }
     });
-    expect(result.success).toBe(false);
-    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('SADD ROUT R1 ZERO');
+    expect(result.artifacts.csv).toContain(',0,7,SADD R1');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
   it('lowers transpose pragma for square grids', () => {
@@ -1336,6 +1374,25 @@ kernel "gather_xor_dest_col2" {
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,0,2,SADD R1 R0 ZERO');
     expect(result.artifacts.csv).toContain('LXOR R1 R1 R7');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
+  });
+
+  it('gathers from the full grid into destination accumulator', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "gather_full_grid" {
+  #pragma gather(src=R0, dest=@1,1, destReg=R2, op=add)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,1,1,SADD R2 R0 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R7');
+    expect(result.artifacts.csv).toContain('SADD R2 R2 R7');
     expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
