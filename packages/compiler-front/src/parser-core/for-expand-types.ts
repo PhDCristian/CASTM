@@ -1,0 +1,42 @@
+import {
+  CycleAst,
+  Diagnostic,
+  InstructionAst,
+  KernelAst,
+  SourceSpan
+} from '@openedge/compiler-ir';
+import type { SourceLineEntry } from '../parser-utils/blocks.js';
+
+export interface FunctionDefinitionLike {
+  name: string;
+  params: string[];
+  body: SourceLineEntry[];
+  span: SourceSpan;
+}
+
+export type ExpandFunctionBodyIntoKernel = (
+  body: SourceLineEntry[],
+  kernel: KernelAst,
+  functions: ReadonlyMap<string, FunctionDefinitionLike>,
+  constants: ReadonlyMap<string, number>,
+  diagnostics: Diagnostic[],
+  cycleCounter: { value: number },
+  callStack: string[],
+  expansionCounter: { value: number },
+  controlFlowCounter: { value: number }
+) => void;
+
+export interface ExpandForCallbacks {
+  cycleHasControlFlow: (cycle: CycleAst) => boolean;
+  cloneCycle: (cycle: CycleAst, index: number) => CycleAst;
+  parseInstruction: (text: string, line: number, column: number) => InstructionAst;
+  makeControlCycle: (
+    index: number,
+    lineNo: number,
+    row: number,
+    col: number,
+    instructionText: string,
+    label?: string
+  ) => CycleAst;
+  expandFunctionBodyIntoKernel: ExpandFunctionBodyIntoKernel;
+}
