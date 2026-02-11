@@ -20,11 +20,16 @@ const BINARY_OPCODES: Record<string, string> = {
   '+': 'SADD',
   '-': 'SSUB',
   '*': 'SMUL',
+  '**': 'FXPMUL',
   '&': 'LAND',
+  '~&': 'LNAND',
   '|': 'LOR',
+  '~|': 'LNOR',
   '^': 'LXOR',
+  '~^': 'LXNOR',
   '<<': 'SLT',
-  '>>': 'SRT'
+  '>>': 'SRT',
+  '>>>': 'SRA'
 };
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
@@ -1958,6 +1963,7 @@ function splitAssignment(text: string): { lhs: string; rhs: string } | null {
 function splitTopLevelBinary(rhs: string): { left: string; op: string; right: string } | null {
   let paren = 0;
   let bracket = 0;
+  const operators = ['>>>', '>>', '<<', '**', '~&', '~|', '~^', '+', '-', '*', '&', '|', '^'];
 
   for (let i = 0; i < rhs.length; i++) {
     const ch = rhs[i];
@@ -1968,21 +1974,13 @@ function splitTopLevelBinary(rhs: string): { left: string; op: string; right: st
 
     if (paren !== 0 || bracket !== 0) continue;
 
-    const two = rhs.slice(i, i + 2);
-    if (two === '<<' || two === '>>') {
+    for (const op of operators) {
+      if (!rhs.startsWith(op, i)) continue;
+      if (op === '-' && i === 0) continue;
       return {
         left: rhs.slice(0, i).trim(),
-        op: two,
-        right: rhs.slice(i + 2).trim()
-      };
-    }
-
-    if (['+', '-', '*', '&', '|', '^'].includes(ch)) {
-      if (i === 0 && ch === '-') continue;
-      return {
-        left: rhs.slice(0, i).trim(),
-        op: ch,
-        right: rhs.slice(i + 1).trim()
+        op,
+        right: rhs.slice(i + op.length).trim()
       };
     }
   }
@@ -2175,15 +2173,15 @@ export const desugarExpressionsPass: CompilerPass<AstProgram, AstProgram> = {
 
       const opcode = BINARY_OPCODES[binary.op];
       if (!opcode) {
-        passDiagnostics.push(makeDiagnostic(
-          ErrorCodes.Semantic.UnsupportedOperation,
-          'error',
-          instruction.span,
-          `Unsupported operator '${binary.op}'.`,
-          'Supported operators: + - * & | ^ << >>'
-        ));
-        return instruction;
-      }
+          passDiagnostics.push(makeDiagnostic(
+            ErrorCodes.Semantic.UnsupportedOperation,
+            'error',
+            instruction.span,
+            `Unsupported operator '${binary.op}'.`,
+            'Supported operators: + - * ** & ~& | ~| ^ ~^ << >> >>>'
+          ));
+          return instruction;
+        }
 
       return {
         ...instruction,

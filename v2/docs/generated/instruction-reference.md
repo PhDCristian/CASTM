@@ -9,8 +9,11 @@
 | `SMUL` | alu | dest, srcA, srcB | Signed multiply |
 | `FXPMUL` | alu | dest, srcA, srcB | Fixed-point multiply |
 | `LAND` | logic | dest, srcA, srcB | Bitwise and |
+| `LNAND` | logic | dest, srcA, srcB | Bitwise nand |
 | `LOR` | logic | dest, srcA, srcB | Bitwise or |
+| `LNOR` | logic | dest, srcA, srcB | Bitwise nor |
 | `LXOR` | logic | dest, srcA, srcB | Bitwise xor |
+| `LXNOR` | logic | dest, srcA, srcB | Bitwise xnor |
 | `SLT` | shift | dest, srcA, srcB | Shift left |
 | `SRT` | shift | dest, srcA, srcB | Logical shift right |
 | `SRA` | shift | dest, srcA, srcB | Arithmetic shift right |

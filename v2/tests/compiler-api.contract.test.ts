@@ -41,6 +41,32 @@ kernel "mem_sugar" {
     expect(result.artifacts.csv).toContain('0,0,2,SWI R2 360 + i*4');
   });
 
+  it('supports extended C-like operator desugaring from v1 syntax', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "clike_extended_ops" {
+  cycle {
+    @0,0: R0 = R1 ** R2;
+    @0,1: R0 = R1 >>> 1;
+    @0,2: R0 = R1 ~& R2;
+    @0,3: R0 = R1 ~| R2;
+  }
+  cycle {
+    @0,0: R0 = R1 ~^ R2;
+    @0,1: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,FXPMUL R0 R1 R2');
+    expect(result.artifacts.csv).toContain('0,0,1,SRA R0 R1 1');
+    expect(result.artifacts.csv).toContain('0,0,2,LNAND R0 R1 R2');
+    expect(result.artifacts.csv).toContain('0,0,3,LNOR R0 R1 R2');
+    expect(result.artifacts.csv).toContain('1,0,0,LXNOR R0 R1 R2');
+  });
+
   it('keeps top-level .data directives, resolves literal indices, and exposes memory regions', () => {
     const source = `
 target "uma-cgra-v1";
@@ -900,6 +926,43 @@ kernel "broadcast_row" {
     expect(result.artifacts.csv).toContain('7,0,0,EXIT');
   });
 
+  it('lowers broadcast pragma for column scope', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "broadcast_column" {
+  #pragma broadcast(value=R0, from=@0,1, to=column)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,1,SADD ROUT R0 ZERO');
+    expect(result.artifacts.csv).toContain('1,1,1,SADD R0 RCT ZERO');
+    expect(result.artifacts.csv).toContain('4,2,1,SADD R0 RCT ZERO');
+    expect(result.artifacts.csv).toContain('6,3,1,SADD R0 RCB ZERO');
+  });
+
+  it('lowers broadcast pragma for all scope', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "broadcast_all" {
+  #pragma broadcast(value=R0, from=@0,0, to=all)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('SADD R0 RCL ZERO');
+    expect(result.artifacts.csv).toContain('SADD R0 RCT ZERO');
+    expect(result.artifacts.csv).toContain(',0,0,EXIT');
+  });
+
   it('lowers rotate pragma on row 0 in torus topology', () => {
     const source = `
 target "uma-cgra-v1";
@@ -1448,6 +1511,28 @@ kernel "stream_load_row_count" {
     expect(result.artifacts.csv).toContain('2,0,0,EXIT');
   });
 
+  it('supports stream pragmas on wider NxM grids', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "stream_nxm" {
+  #pragma stream_load(dest=R1, row=1, count=2)
+  #pragma stream_store(src=R1, row=1, count=1)
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source, {
+      grid: { rows: 2, cols: 8, topology: 'mesh' }
+    });
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,1,0,LWD R1');
+    expect(result.artifacts.csv).toContain('1,1,7,LWD R1');
+    expect(result.artifacts.csv).toContain('2,1,7,SWD R1');
+    expect(result.artifacts.csv).toContain('3,0,0,EXIT');
+  });
+
   it('lowers stream_store pragma with row/count overrides', () => {
     const source = `
 target "uma-cgra-v1";
@@ -1528,6 +1613,30 @@ kernel "auto_cycle_rows" {
     expect(result.artifacts.csv).toContain('0,1,3,SADD R0 ZERO IMM(2)');
     expect(result.artifacts.csv).toContain('1,0,0,SADD R1 ZERO IMM(3)');
     expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('supports auto_cycle with col/all occupancy conflict detection', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "auto_cycle_col_all" {
+  #pragma auto_cycle
+  col 0: SADD R0, ZERO, IMM(1);
+  all: SADD R1, ZERO, IMM(2);
+  col 0: SADD R2, ZERO, IMM(3);
+  #pragma end_auto_cycle
+  cycle {
+    @0,0: EXIT;
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R0 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('0,3,0,SADD R0 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R1 ZERO IMM(2)');
+    expect(result.artifacts.csv).toContain('2,0,0,SADD R2 ZERO IMM(3)');
+    expect(result.artifacts.csv).toContain('3,0,0,EXIT');
   });
 
   it('rejects auto_cycle regions without end_auto_cycle', () => {
