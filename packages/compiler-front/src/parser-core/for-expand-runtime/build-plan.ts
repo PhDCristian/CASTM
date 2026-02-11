@@ -1,0 +1,70 @@
+import {
+  KernelAst,
+  spanAt
+} from '@openedge/compiler-ir';
+import { buildRuntimeNoUnrollAggressivePlan } from '../for-expand-helpers.js';
+import {
+  ExpandRuntimeForInput,
+  RuntimeLoopPlan
+} from './types.js';
+
+export function buildRuntimeLoopPlan(input: ExpandRuntimeForInput): RuntimeLoopPlan {
+  const {
+    header,
+    loopBody,
+    lineNo,
+    lineLength,
+    functions,
+    constants,
+    diagnostics,
+    callStack,
+    expansionCounter,
+    controlFlowCounter,
+    callbacks
+  } = input;
+
+  const controlRow = header.control?.row ?? 0;
+  const controlCol = header.control?.col ?? 0;
+  const suffix = controlFlowCounter.value++;
+  const startLabel = `__for_start_${suffix}`;
+  const endLabel = `__for_end_${suffix}`;
+
+  const loopKernel: KernelAst = {
+    name: '__for_runtime_body__',
+    config: undefined,
+    cycles: [],
+    directives: [],
+    pragmas: [],
+    span: spanAt(lineNo, 1, lineLength)
+  };
+  const loopCounter = { value: 0 };
+  callbacks.expandFunctionBodyIntoKernel(
+    loopBody,
+    loopKernel,
+    functions,
+    constants,
+    diagnostics,
+    loopCounter,
+    callStack,
+    expansionCounter,
+    controlFlowCounter
+  );
+
+  const aggressivePlan = buildRuntimeNoUnrollAggressivePlan(
+    loopKernel.cycles,
+    header.variable,
+    controlRow,
+    controlCol,
+    callbacks.cycleHasControlFlow,
+    callbacks.parseInstruction
+  );
+
+  return {
+    controlRow,
+    controlCol,
+    startLabel,
+    endLabel,
+    loopKernel,
+    aggressivePlan
+  };
+}

@@ -1,0 +1,56 @@
+import { Diagnostic } from '@openedge/compiler-ir';
+import { bindFunctionCallArgs } from '../functions.js';
+import {
+  FunctionDefinitionLike
+} from '../for-expand.js';
+import { SourceLineEntry } from '../../parser-utils/blocks.js';
+import { escapeRegExp } from '../../parser-utils/strings.js';
+
+function applyFunctionArgs(input: string, argsByParam: ReadonlyMap<string, string>): string {
+  let out = input;
+  for (const [name, value] of argsByParam.entries()) {
+    const regex = new RegExp(`\\b${escapeRegExp(name)}\\b`, 'g');
+    out = out.replace(regex, value);
+  }
+  return out;
+}
+
+export function instantiateFunctionBody(
+  def: FunctionDefinitionLike,
+  args: string[],
+  callLineNo: number,
+  diagnostics: Diagnostic[],
+  expansionCounter: { value: number }
+): SourceLineEntry[] | null {
+  const argsByParam = bindFunctionCallArgs(def, args, callLineNo, diagnostics);
+  if (!argsByParam) return null;
+
+  const expansionId = expansionCounter.value++;
+  const labelMap = new Map<string, string>();
+  const labelPattern = /^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*cycle\b/i;
+  for (const entry of def.body) {
+    const match = entry.cleanLine.match(labelPattern);
+    if (!match) continue;
+    const original = match[1];
+    if (!labelMap.has(original)) {
+      labelMap.set(original, `__fn_${def.name}_${expansionId}_${original}`);
+    }
+  }
+
+  return def.body.map((entry) => {
+    let raw = applyFunctionArgs(entry.rawLine, argsByParam);
+    let clean = applyFunctionArgs(entry.cleanLine, argsByParam);
+
+    for (const [original, renamed] of labelMap.entries()) {
+      const regex = new RegExp(`\\b${escapeRegExp(original)}\\b`, 'g');
+      raw = raw.replace(regex, renamed);
+      clean = clean.replace(regex, renamed);
+    }
+
+    return {
+      lineNo: callLineNo,
+      rawLine: raw,
+      cleanLine: clean
+    };
+  });
+}
