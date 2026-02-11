@@ -1,19 +1,15 @@
 import {
   AstProgram,
-  CycleAst,
-  DirectiveAst,
   Diagnostic,
-  KernelAst,
   ParseResult,
-  SourceSpan,
-  spanAt
+  SourceSpan
 } from '@openedge/compiler-ir';
-import { ErrorCodes, makeDiagnostic } from '@openedge/compiler-ir';
-import { consumeCycleScopeStatement } from './parser-core/cycle-scope.js';
-import { consumeKernelScopeStatement } from './parser-core/kernel-scope.js';
-import { consumeTopLevelScopeStatement } from './parser-core/top-level-scope.js';
+import { consumeParserLine } from './parser-core/parse-line.js';
+import {
+  createInitialParserState,
+  finalizeParserState
+} from './parser-core/parse-state.js';
 import { stripLineComment } from './parser-utils/strings.js';
-import type { FunctionDefinitionLike } from './parser-core/for-expand.js';
 
 export function parseSource(source: string): ParseResult {
   const diagnostics: Diagnostic[] = [];
@@ -32,17 +28,7 @@ export function parseSource(source: string): ParseResult {
     span
   };
 
-  let kernel: KernelAst | null = null;
-  let kernelConstants = new Map<string, number>();
-  let inKernel = false;
-  let inCycle = false;
-  let currentCycle: CycleAst | null = null;
-  let cycleConstants = new Map<string, number>();
-  let cycleIndex = 0;
-  const functionExpansionCounter = { value: 0 };
-  const controlFlowCounter = { value: 0 };
-  const pendingDirectives: DirectiveAst[] = [];
-  const functions = new Map<string, FunctionDefinitionLike>();
+  const state = createInitialParserState();
 
   for (let i = 0; i < lines.length; i++) {
     const lineNo = i + 1;
@@ -51,125 +37,12 @@ export function parseSource(source: string): ParseResult {
 
     if (!clean) continue;
 
-    if (!inKernel) {
-      const consumed = consumeTopLevelScopeStatement({
-        lines,
-        index: i,
-        lineNo,
-        clean,
-        ast,
-        kernel,
-        kernelConstants,
-        pendingDirectives,
-        functions,
-        diagnostics
-      });
-
-      kernel = consumed.kernel;
-      kernelConstants = consumed.kernelConstants;
-      inKernel = consumed.inKernel;
-      if (consumed.shouldBreak) break;
-      i = consumed.nextIndex;
-      continue;
-    }
-
-    if (inKernel && !inCycle) {
-      if (clean === '}') {
-        inKernel = false;
-        continue;
-      }
-
-      const consumed = consumeKernelScopeStatement({
-        lines,
-        index: i,
-        lineNo,
-        clean,
-        kernel,
-        functions,
-        kernelConstants,
-        diagnostics,
-        cycleIndex,
-        functionExpansionCounter,
-        controlFlowCounter
-      });
-
-      kernelConstants = consumed.kernelConstants;
-      cycleIndex = consumed.cycleIndex;
-      if (consumed.shouldBreak) break;
-      if (consumed.enterCycle) {
-        inCycle = true;
-        currentCycle = consumed.currentCycle;
-        cycleConstants = consumed.cycleConstants;
-      }
-      i = consumed.nextIndex;
-      continue;
-    }
-
-    if (inCycle) {
-      if (clean === '}') {
-        if (kernel && currentCycle) {
-          kernel.cycles.push(currentCycle);
-        }
-        currentCycle = null;
-        inCycle = false;
-        continue;
-      }
-
-      const consumed = consumeCycleScopeStatement({
-        lines,
-        index: i,
-        lineNo,
-        rawLine,
-        clean,
-        cycleConstants,
-        diagnostics,
-        currentCycle
-      });
-      currentCycle = consumed.currentCycle;
-      if (consumed.shouldBreak) break;
-      i = consumed.nextIndex;
-    }
+    const consumed = consumeParserLine(lines, i, lineNo, rawLine, clean, ast, state, diagnostics);
+    if (consumed.shouldBreak) break;
+    i = consumed.nextIndex;
   }
 
-  if (inCycle) {
-    diagnostics.push(makeDiagnostic(
-      ErrorCodes.Parse.InvalidSyntax,
-      'error',
-      spanAt(lines.length, 1, 1),
-      'Unterminated cycle block.',
-      'Add a closing brace for cycle { ... }.'
-    ));
-  }
-
-  if (inKernel) {
-    diagnostics.push(makeDiagnostic(
-      ErrorCodes.Parse.InvalidSyntax,
-      'error',
-      spanAt(lines.length, 1, 1),
-      'Unterminated kernel block.',
-      'Add a closing brace for kernel { ... }.'
-    ));
-  }
-
-  if (!ast.targetProfileId) {
-    diagnostics.push(makeDiagnostic(
-      ErrorCodes.Parse.MissingTarget,
-      'error',
-      spanAt(1, 1, 1),
-      'Missing required target declaration.',
-      'Add: target "uma-cgra-base";'
-    ));
-  }
-
-  if (!ast.kernel) {
-    diagnostics.push(makeDiagnostic(
-      ErrorCodes.Parse.MissingKernel,
-      'error',
-      spanAt(1, 1, 1),
-      'Missing kernel declaration.',
-      'Add: kernel "Name" { ... }'
-    ));
-  }
+  finalizeParserState(ast, lines, state, diagnostics);
 
   return {
     success: diagnostics.every((d) => d.severity !== 'error'),
