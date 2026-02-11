@@ -9,10 +9,10 @@ import {
 import {
   collectBlockFromEntries,
   SourceLineEntry
-} from '../parser-utils/blocks.js';
-import { stripLineComment } from '../parser-utils/strings.js';
-import { parseDirective } from '../parser-core/declarations.js';
-import { parseFunctionHeader, parseFunctionParams } from '../parser-core/functions.js';
+} from './parser-utils/blocks.js';
+import { stripLineComment } from './parser-utils/strings.js';
+import { parseDirective } from './lowering/declarations.js';
+import { parseFunctionHeader, parseFunctionParams } from './lowering/functions.js';
 import { parseStructuredStatements } from './statements.js';
 import { parseInteger, spanAt } from './utils.js';
 import { parseProgramHeadersFromTokens } from './token-stream.js';

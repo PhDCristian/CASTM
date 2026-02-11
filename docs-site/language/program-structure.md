@@ -134,7 +134,7 @@ cycle { @0,0: LWI R0, values[values.last()]; }
 ### Examples
 
 ```c
-// Anonymous arrays (legacy syntax)
+// Anonymous arrays (archived syntax)
 .data 0 { 1, 2, 3, 4, 5 }
 .data { 10, 20, 30 }  // Auto-address at 20
 

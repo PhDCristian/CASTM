@@ -1,6 +1,6 @@
 # Introduction
 
-> Legacy reference notice: the canonical private source of truth is now `docs/language/*`. This section documents legacy syntax and is kept for historical context only.
+> Archived reference notice: the canonical private source of truth is now `docs/language/*`. This section is kept for historical context only.
 
 [← Back to Index](../README.md) | [Next: Program Structure →](02-program-structure.md)
 

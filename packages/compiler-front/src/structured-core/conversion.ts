@@ -7,9 +7,9 @@ import {
   StructuredProgramAst
 } from '@openedge/compiler-ir';
 import { cloneAstProgram } from './utils.js';
-import { SourceLineEntry } from '../parser-utils/blocks.js';
-import { buildConstantMap } from '../parser-core/top-level-scope/constants.js';
-import { expandFunctionBodyIntoKernel } from '../parser-core/function-expand.js';
+import { SourceLineEntry } from './parser-utils/blocks.js';
+import { buildConstantMap } from './lowering/top-level-scope/constants.js';
+import { expandFunctionBodyIntoKernel } from './lowering/function-expand.js';
 
 function renderCycleStatement(statement: CycleStatementAst): string {
   if (statement.kind === 'at') {

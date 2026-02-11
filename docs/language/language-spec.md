@@ -4,7 +4,6 @@ OpenEdgeDSL canonical syntax is the only supported public language surface.
 Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas (`#pragma ...`) are not valid source syntax.
 
 - Grammar: `docs/language/grammar.md`
-- Migration map: `docs/language/migration-map.md`
 
 ## Core
 

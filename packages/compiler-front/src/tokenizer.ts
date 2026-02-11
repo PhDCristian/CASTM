@@ -1,11 +1,11 @@
 export interface FrontToken {
-  type: 'keyword' | 'identifier' | 'number' | 'string' | 'operator' | 'directive' | 'pragma' | 'symbol';
+  type: 'keyword' | 'identifier' | 'number' | 'string' | 'operator' | 'symbol';
   value: string;
   line: number;
   column: number;
 }
 
-const TOKEN_RE = /#pragma|\.\w+|"(?:\\.|[^"])*"|0x[0-9a-fA-F]+|-?\d+|[A-Za-z_][A-Za-z0-9_]*|==|!=|<=|>=|->|[{}()\[\],:;|=+\-*/%&^@]/g;
+const TOKEN_RE = /"(?:\\.|[^"])*"|0x[0-9a-fA-F]+|-?\d+|[A-Za-z_][A-Za-z0-9_]*|==|!=|<=|>=|->|[{}()\[\],:;|=+\-*/%&^@]/g;
 const KEYWORDS = new Set([
   'target', 'kernel', 'config', 'cycle',
   'let', 'at', 'row', 'col', 'all',
@@ -29,9 +29,7 @@ export function tokenizeSource(source: string): FrontToken[] {
       const value = m[0];
       const column = m.index + 1;
       let type: FrontToken['type'] = 'symbol';
-      if (value === '#pragma') type = 'pragma';
-      else if (value.startsWith('.')) type = 'directive';
-      else if (/^"/.test(value)) type = 'string';
+      if (/^"/.test(value)) type = 'string';
       else if (/^-?\d+$/.test(value) || /^0x/.test(value)) type = 'number';
       else if (/^[A-Za-z_]/.test(value)) {
         const normalized = value.toLowerCase();

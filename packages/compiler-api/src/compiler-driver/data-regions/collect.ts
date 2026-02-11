@@ -26,7 +26,7 @@ export function collectDataRegions(ast: AstProgram, diagnostics: Diagnostic[]): 
         'error',
         directive.span,
         `Duplicate data symbol '${directive.name}'.`,
-        'Use unique names across .data and .data2d declarations.'
+        'Use unique names across let array declarations.'
       ));
       continue;
     }
@@ -38,8 +38,8 @@ export function collectDataRegions(ast: AstProgram, diagnostics: Diagnostic[]): 
           ErrorCodes.Parse.InvalidSyntax,
           'error',
           directive.span,
-          `Invalid .data directive for '${directive.name}'.`,
-          'Expected .data name { 1, 2, 3 } or .data name 100 { 1, 2, 3 }.'
+          `Invalid let array declaration for '${directive.name}'.`,
+          `Expected let ${directive.name} = { 1, 2, 3 } or let ${directive.name} @100 = { 1, 2, 3 }.`
         ));
         continue;
       }
@@ -64,8 +64,8 @@ export function collectDataRegions(ast: AstProgram, diagnostics: Diagnostic[]): 
         ErrorCodes.Parse.InvalidSyntax,
         'error',
         directive.span,
-        `Invalid .data2d directive for '${directive.name}'.`,
-        'Expected .data2d name[rows][cols] { ... } or .data2d name[total].'
+        `Invalid let matrix declaration for '${directive.name}'.`,
+        `Expected let ${directive.name}[rows][cols] = { ... } or let ${directive.name}[total].`
       ));
       continue;
     }

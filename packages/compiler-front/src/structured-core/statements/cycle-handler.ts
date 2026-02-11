@@ -6,8 +6,8 @@ import {
 import {
   collectBlockFromEntries,
   SourceLineEntry
-} from '../../parser-utils/blocks.js';
-import { expandLoopBody, parseInlineCycleStatements } from '../../parser-core/cycle-expand.js';
+} from '../parser-utils/blocks.js';
+import { expandLoopBody, parseInlineCycleStatements } from '../lowering/cycle-expand.js';
 import { spanAt } from '../utils.js';
 
 export interface StructuredCycleParseResult {

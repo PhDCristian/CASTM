@@ -13,7 +13,7 @@ export function consumeFunctionPreludeStatement(
       ErrorCodes.Parse.InvalidSyntax,
       'error',
       spanAt(entry.lineNo, 1, clean.length),
-      `Legacy pragma syntax is not supported: '${clean}'.`,
+      `Non-canonical pragma syntax is not supported: '${clean}'.`,
       'Use canonical statements (for example route(...), reduce(...), scan(...)) and explicit control-flow syntax.'
     ));
     return true;

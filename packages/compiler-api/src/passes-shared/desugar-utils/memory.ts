@@ -47,7 +47,7 @@ export function toAddressOperand(
       'error',
       span,
       `Undefined data symbol '${arrayName}'.`,
-      `Declare it first: .data ${arrayName} { ... } or .data2d ${arrayName}[rows][cols].`
+      `Declare it first with let: let ${arrayName} = { ... } or let ${arrayName}[rows][cols] = { ... }.`
     ));
     return null;
   }
@@ -59,7 +59,7 @@ export function toAddressOperand(
         ErrorCodes.Semantic.UnsupportedOperation,
         'error',
         span,
-        `Expected 2D addressing for '.data2d ${arrayName}', got '${trimmed}'.`,
+        `Expected 2D addressing for '${arrayName}', got '${trimmed}'.`,
         `Use two indices like ${arrayName}[row][col].`
       ));
       return null;
@@ -73,7 +73,7 @@ export function toAddressOperand(
           ErrorCodes.Semantic.CoordinateOutOfBounds,
           'error',
           span,
-          `Index out of bounds for '.data2d ${arrayName}[${symbol.rows}][${symbol.cols}]': [${rowIndex}][${colIndex}].`,
+          `Index out of bounds for '${arrayName}[${symbol.rows}][${symbol.cols}]': [${rowIndex}][${colIndex}].`,
           'Use indices within declared bounds.'
         ));
         return null;
@@ -93,7 +93,7 @@ export function toAddressOperand(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Expected 1D addressing for '.data ${arrayName}', got '${trimmed}'.`,
+      `Expected 1D addressing for '${arrayName}', got '${trimmed}'.`,
       `Use one index like ${arrayName}[i].`
     ));
     return null;
@@ -106,7 +106,7 @@ export function toAddressOperand(
         ErrorCodes.Semantic.CoordinateOutOfBounds,
         'error',
         span,
-        `Index out of bounds for '.data ${arrayName}[${symbol.length}]': [${literalIndex}].`,
+        `Index out of bounds for '${arrayName}[${symbol.length}]': [${literalIndex}].`,
         'Use indices within declared bounds.'
       ));
       return null;

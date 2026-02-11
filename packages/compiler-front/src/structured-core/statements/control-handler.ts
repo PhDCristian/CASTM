@@ -8,7 +8,7 @@ import {
   collectBlockAfterOpenFromEntries,
   collectBlockFromEntries,
   SourceLineEntry
-} from '../../parser-utils/blocks.js';
+} from '../parser-utils/blocks.js';
 import { isElseOpenLine, parseInteger, spanAt } from '../utils.js';
 
 export interface StructuredControlParseResult {

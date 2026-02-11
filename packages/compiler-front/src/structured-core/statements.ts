@@ -6,7 +6,7 @@ import {
 } from '@openedge/compiler-ir';
 import {
   SourceLineEntry
-} from '../parser-utils/blocks.js';
+} from './parser-utils/blocks.js';
 import { spanAt } from './utils.js';
 import {
   parseAdvancedStatement,
