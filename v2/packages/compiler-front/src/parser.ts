@@ -545,7 +545,12 @@ function parseControlPragma(
   }
 
   if (name === 'parallel') {
-    if (!rest) return { consumed: true, pragma: { kind: 'parallel', span } };
+    if (!rest) {
+      return {
+        consumed: true,
+        pragma: { kind: 'parallel', span, collapseLevels: 1 }
+      };
+    }
     const collapseMatch = rest.match(/^collapse(?:\s*\(\s*(\d+)\s*\))?$/i);
     if (!collapseMatch) {
       diagnostics.push(makeDiagnostic(
@@ -719,27 +724,60 @@ function cycleHasControlFlow(cycle: CycleAst): boolean {
   return false;
 }
 
-function cycleTargetsPoint(cycle: CycleAst, row: number, col: number): boolean {
-  for (const statement of cycle.statements) {
-    if (statement.kind === 'at') {
-      if (statement.row === row && statement.col === col) return true;
-      continue;
-    }
+interface WhileFusionPlan {
+  bodyRow: number;
+  bodyCol: number;
+  incomingRegister: string;
+}
 
-    if (statement.kind === 'row') {
-      if (statement.row === row && statement.instructions.length > 0) return true;
-      continue;
-    }
-
-    if (statement.kind === 'col') {
-      if (statement.col === col) return true;
-      continue;
-    }
-
-    return true;
+function getWhileFusionIncomingRegister(
+  controlRow: number,
+  controlCol: number,
+  bodyRow: number,
+  bodyCol: number
+): string | null {
+  if (bodyRow === controlRow) {
+    if (((controlCol + 1) % 4) === bodyCol) return 'RCR';
+    if (((controlCol + 3) % 4) === bodyCol) return 'RCL';
+    return null;
   }
 
-  return false;
+  if (bodyCol !== controlCol) return null;
+  if (bodyRow === controlRow - 1) return 'RCT';
+  if (bodyRow === controlRow + 1) return 'RCB';
+  return null;
+}
+
+function buildWhileFusionPlan(
+  loopCycles: CycleAst[],
+  controlRow: number,
+  controlCol: number
+): WhileFusionPlan | null {
+  if (loopCycles.length !== 1) return null;
+  const cycle = loopCycles[0];
+  if (cycle.label) return null;
+  if (cycleHasControlFlow(cycle)) return null;
+  if (cycle.statements.length !== 1) return null;
+
+  const statement = cycle.statements[0];
+  if (statement.kind !== 'at') return null;
+  if (statement.row === controlRow && statement.col === controlCol) return null;
+  const incomingRegister = getWhileFusionIncomingRegister(controlRow, controlCol, statement.row, statement.col);
+  if (!incomingRegister) return null;
+  return {
+    bodyRow: statement.row,
+    bodyCol: statement.col,
+    incomingRegister
+  };
+}
+
+function rewriteConditionForWhileFusion(condition: ParsedCondition, incomingRegister: string): ParsedCondition {
+  const replace = (operand: string): string => /^R\d+$/i.test(operand) ? incomingRegister : operand;
+  return {
+    lhs: replace(condition.lhs),
+    operator: condition.operator,
+    rhs: replace(condition.rhs)
+  };
 }
 
 function cloneCycle(cycle: CycleAst, index: number): CycleAst {
@@ -823,6 +861,20 @@ function chooseJumpColumn(controlCol: number, bodyCol?: number): number {
     }
   }
   return controlCol;
+}
+
+function buildRuntimeNoUnrollExitBranch(
+  variable: string,
+  end: number,
+  endLabel: string,
+  step: number
+): string {
+  if (step > 0) {
+    return `BGE ${variable}, IMM(${end}), ${endLabel}`;
+  }
+
+  // Descending ranges must terminate when variable <= end.
+  return `BGE IMM(${end}), ${variable}, ${endLabel}`;
 }
 
 function pickRuntimeRelayRegister(loopRegister: string, instructionText: string): string {
@@ -926,17 +978,6 @@ function expandForLoopIntoKernel(
       return;
     }
 
-    if (header.step <= 0) {
-      diagnostics.push(makeDiagnostic(
-        ErrorCodes.Semantic.UnsupportedOperation,
-        'error',
-        spanAt(lineNo, 1, lineLength),
-        `#pragma no_unroll currently supports positive step only, got step=${header.step}.`,
-        'Use a positive step or switch to compile-time unrolling.'
-      ));
-      return;
-    }
-
     const controlRow = header.control?.row ?? 0;
     const controlCol = header.control?.col ?? 0;
     const suffix = controlFlowCounter.value++;
@@ -982,7 +1023,7 @@ function expandForLoopIntoKernel(
       lineNo,
       controlRow,
       controlCol,
-      `BGE ${header.variable}, IMM(${header.end}), ${endLabel}`,
+      buildRuntimeNoUnrollExitBranch(header.variable, header.end, endLabel, header.step),
       startLabel
     ));
 
@@ -1118,13 +1159,13 @@ function expandForLoopIntoKernel(
   if (collapseRequested) {
     const hasControlFlow = perIterationCycles.some((iterCycles) => iterCycles.some(cycleHasControlFlow));
     if (hasControlFlow) {
-      diagnostics.push(makeDiagnostic(
-        ErrorCodes.Semantic.UnsupportedOperation,
-        'error',
-        pendingPragmas?.span ?? spanAt(lineNo, 1, lineLength),
-        '#pragma parallel collapse currently supports loop bodies without control-flow labels/branches.',
-        'Use plain cycle blocks in collapsed loops.'
-      ));
+      // Keep compatibility with v1: when control-flow exists, preserve semantics
+      // by falling back to deterministic per-iteration expansion.
+      for (const iterCycles of perIterationCycles) {
+        for (const cycle of iterCycles) {
+          kernel.cycles.push(cloneCycle(cycle, cycleCounter.value++));
+        }
+      }
       return;
     }
 
@@ -1453,6 +1494,83 @@ function parseFunctionCallLine(cleanLine: string): { name: string; args: string[
   };
 }
 
+function bindFunctionCallArgs(
+  def: FunctionDefinitionLite,
+  args: string[],
+  callLineNo: number,
+  diagnostics: Diagnostic[]
+): Map<string, string> | null {
+  const byParam = new Map<string, string>();
+  let positionalIndex = 0;
+  let seenNamed = false;
+
+  for (const rawArg of args) {
+    const named = rawArg.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$/s);
+    if (named && def.params.includes(named[1])) {
+      const paramName = named[1];
+      const value = named[2].trim();
+      seenNamed = true;
+
+      if (byParam.has(paramName)) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(callLineNo, 1, 1),
+          `Parameter '${paramName}' specified multiple times in call to '${def.name}'.`,
+          'Specify each function parameter at most once.'
+        ));
+        return null;
+      }
+
+      byParam.set(paramName, value);
+      continue;
+    }
+
+    if (seenNamed) {
+      const usagePreview = def.params.length > 1
+        ? `${def.name}(${def.params[0]}, ${def.params[1]}: value)`
+        : `${def.name}(${def.params[0]}: value)`;
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(callLineNo, 1, 1),
+        `Positional arguments must come before named arguments in call to '${def.name}'.`,
+        `Use positional args first, then named args like ${usagePreview}.`
+      ));
+      return null;
+    }
+
+    if (positionalIndex >= def.params.length) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(callLineNo, 1, 1),
+        `Function '${def.name}' expects ${def.params.length} argument(s), got ${args.length}.`,
+        `Call it as: ${def.name}(${def.params.join(', ')})`
+      ));
+      return null;
+    }
+
+    byParam.set(def.params[positionalIndex], rawArg);
+    positionalIndex++;
+  }
+
+  for (const param of def.params) {
+    if (!byParam.has(param)) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(callLineNo, 1, 1),
+        `Missing argument for parameter '${param}' in call to '${def.name}'.`,
+        `Call it as: ${def.name}(${def.params.join(', ')})`
+      ));
+      return null;
+    }
+  }
+
+  return byParam;
+}
+
 function parseLabeledCycleLine(cleanLine: string): ParsedLabeledCycle | null {
   const inline = cleanLine.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*cycle\s*\{\s*(.+)\s*\}\s*$/i);
   if (inline) {
@@ -1582,21 +1700,8 @@ function instantiateFunctionBody(
   diagnostics: Diagnostic[],
   expansionCounter: { value: number }
 ): SourceLineEntry[] | null {
-  if (args.length !== def.params.length) {
-    diagnostics.push(makeDiagnostic(
-      ErrorCodes.Parse.InvalidSyntax,
-      'error',
-      spanAt(callLineNo, 1, 1),
-      `Function '${def.name}' expects ${def.params.length} argument(s), got ${args.length}.`,
-      `Call it as: ${def.name}(${def.params.join(', ')})`
-    ));
-    return null;
-  }
-
-  const argsByParam = new Map<string, string>();
-  for (let i = 0; i < def.params.length; i++) {
-    argsByParam.set(def.params[i], args[i]);
-  }
+  const argsByParam = bindFunctionCallArgs(def, args, callLineNo, diagnostics);
+  if (!argsByParam) return null;
 
   const expansionId = expansionCounter.value++;
   const labelMap = new Map<string, string>();
@@ -1935,12 +2040,19 @@ function expandFunctionBodyIntoKernel(
         controlFlowCounter
       );
 
+      const fusionPlan = !disableFuse
+        ? buildWhileFusionPlan(loopKernel.cycles, whileHeader.row, whileHeader.col)
+        : null;
+      const branchCondition = fusionPlan
+        ? rewriteConditionForWhileFusion(whileHeader.condition, fusionPlan.incomingRegister)
+        : whileHeader.condition;
+
       kernel.cycles.push(makeControlCycle(
         cycleCounter.value++,
         entry.lineNo,
         whileHeader.row,
         whileHeader.col,
-        buildFalseBranchInstruction(whileHeader.condition, endLabel),
+        buildFalseBranchInstruction(branchCondition, endLabel),
         startLabel
       ));
 
@@ -1949,11 +2061,7 @@ function expandFunctionBodyIntoKernel(
       }
 
       let fusedBackEdge = false;
-      const lastBodyCycle = loopKernel.cycles[loopKernel.cycles.length - 1];
-      if (!disableFuse &&
-          lastBodyCycle &&
-          !cycleHasControlFlow(lastBodyCycle) &&
-          !cycleTargetsPoint(lastBodyCycle, whileHeader.row, whileHeader.col)) {
+      if (fusionPlan) {
         const jumpText = `JUMP ${startLabel}, ZERO`;
         kernel.cycles[kernel.cycles.length - 1].statements.push({
           kind: 'at',
@@ -2167,6 +2275,24 @@ export function parseSource(source: string): ParseResult {
     if (!clean) continue;
 
     if (!inKernel) {
+      const topPragma = clean.match(/^#pragma\s+([A-Za-z_][A-Za-z0-9_]*)(?:\s+.*)?$/i);
+      if (topPragma) {
+        const pragmaName = topPragma[1].toLowerCase();
+        if (pragmaName === 'inline') {
+          // Functions are inlined by default in v1/v2. Accept top-level pragma for compatibility.
+          continue;
+        }
+
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(lineNo, 1, clean.length),
+          `Unexpected top-level pragma '${clean}'.`,
+          'Only #pragma inline is allowed at top level before function declarations.'
+        ));
+        continue;
+      }
+
       const functionHeader = parseFunctionHeader(clean);
       if (functionHeader) {
         const params = parseFunctionParams(functionHeader.paramsText, lineNo, diagnostics);
@@ -2791,12 +2917,19 @@ export function parseSource(source: string): ParseResult {
           controlFlowCounter
         );
 
+        const fusionPlan = !disableFuse
+          ? buildWhileFusionPlan(loopKernel.cycles, whileHeader.row, whileHeader.col)
+          : null;
+        const branchCondition = fusionPlan
+          ? rewriteConditionForWhileFusion(whileHeader.condition, fusionPlan.incomingRegister)
+          : whileHeader.condition;
+
         kernel.cycles.push(makeControlCycle(
           cycleIndex++,
           lineNo,
           whileHeader.row,
           whileHeader.col,
-          buildFalseBranchInstruction(whileHeader.condition, endLabel),
+          buildFalseBranchInstruction(branchCondition, endLabel),
           startLabel
         ));
 
@@ -2805,11 +2938,7 @@ export function parseSource(source: string): ParseResult {
         }
 
         let fusedBackEdge = false;
-        const lastBodyCycle = loopKernel.cycles[loopKernel.cycles.length - 1];
-        if (!disableFuse &&
-            lastBodyCycle &&
-            !cycleHasControlFlow(lastBodyCycle) &&
-            !cycleTargetsPoint(lastBodyCycle, whileHeader.row, whileHeader.col)) {
+        if (fusionPlan) {
           const jumpText = `JUMP ${startLabel}, ZERO`;
           kernel.cycles[kernel.cycles.length - 1].statements.push({
             kind: 'at',

@@ -465,6 +465,25 @@ kernel "kernel_for_unroll_default" {
     expect(result.artifacts.csv).toContain('3,0,0,EXIT');
   });
 
+  it('supports descending compile-time unrolling with negative range step', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_for_unroll_desc" {
+  for i in range(3, 0, -1) {
+    cycle { @0,0: SADD R0, ZERO, IMM(i); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R0 ZERO IMM(3)');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R0 ZERO IMM(2)');
+    expect(result.artifacts.csv).toContain('2,0,0,SADD R0 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('3,0,0,EXIT');
+  });
+
   it('applies #pragma unroll(N) truncation in baseline behavior', () => {
     const source = `
 target "uma-cgra-v1";
@@ -529,6 +548,27 @@ kernel "kernel_for_no_unroll_aggressive" {
     expect(result.stats.cycles).toBe(5);
   });
 
+  it('supports #pragma no_unroll for descending ranges (negative step)', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_for_no_unroll_desc" {
+  #pragma no_unroll
+  for R0 in range(3, 0, -1) @0,0 {
+    cycle { @0,0: SADD R1, R1, R0; }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('SADD R0 ZERO IMM(3)');
+    expect(result.artifacts.csv).toContain('BGE IMM(0) R0');
+    expect(result.artifacts.csv).toContain('SADD R0 R0 IMM(-1)');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R0');
+    expect(result.artifacts.csv).toContain('EXIT');
+  });
+
   it('rejects #pragma no_unroll when loop variable is not a register', () => {
     const source = `
 target "uma-cgra-v1";
@@ -550,6 +590,28 @@ kernel "kernel_for_no_unroll_invalid_var" {
 target "uma-cgra-v1";
 kernel "kernel_for_parallel_collapse" {
   #pragma parallel collapse
+  for i in range(2) {
+    cycle { @0,i: SADD R0, ZERO, IMM(i); }
+    cycle { @1,i: SADD R1, ZERO, IMM(i); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R0 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('0,0,1,SADD R0 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('1,1,0,SADD R1 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('1,1,1,SADD R1 ZERO IMM(1)');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('applies #pragma parallel without collapse to the outer loop level', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_for_parallel_plain" {
+  #pragma parallel
   for i in range(2) {
     cycle { @0,i: SADD R0, ZERO, IMM(i); }
     cycle { @1,i: SADD R1, ZERO, IMM(i); }
@@ -595,6 +657,29 @@ kernel "kernel_for_parallel_collapse2" {
     expect(result.artifacts.csv).toContain('2,0,0,EXIT');
   });
 
+  it('falls back to deterministic unrolled order for #pragma parallel collapse with control-flow bodies', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_parallel_collapse_ctrl_flow" {
+  #pragma parallel collapse
+  for i in range(2) {
+    if (R0 == IMM(0)) @0,0 {
+      cycle { @0,0: SADD R1, R1, IMM(i); }
+    }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,BNE R0 IMM(0) 2');
+    expect(result.artifacts.csv).toContain('3,0,0,BNE R0 IMM(0) 5');
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R1 R1 IMM(0)');
+    expect(result.artifacts.csv).toContain('4,0,0,SADD R1 R1 IMM(1)');
+    expect(result.artifacts.csv).toContain('6,0,0,EXIT');
+  });
+
   it('makes #pragma no_fuse affect while-loop lowering', () => {
     const baseSource = `
 target "uma-cgra-v1";
@@ -623,6 +708,56 @@ kernel "kernel_while_no_fuse" {
     expect(fused.stats.cycles).toBeLessThan(noFuse.stats.cycles);
     expect(noFuse.artifacts.csv).toContain('JUMP');
     expect(fused.artifacts.csv).toContain('JUMP');
+  });
+
+  it('rewrites fused while-loop branch operands to incoming neighbor registers when needed', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_while_fused_neighbor_cond" {
+  while (R0 < IMM(2)) @0,0 {
+    cycle { @0,1: SADD R0, R0, IMM(1); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+    const noFuseSource = `
+target "uma-cgra-v1";
+kernel "kernel_while_no_fuse_neighbor_cond" {
+  #pragma no_fuse
+  while (R0 < IMM(2)) @0,0 {
+    cycle { @0,1: SADD R0, R0, IMM(1); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const fused = compile(source);
+    const noFuse = compile(noFuseSource);
+    expect(fused.success).toBe(true);
+    expect(noFuse.success).toBe(true);
+    expect(fused.artifacts.csv).toContain('0,0,0,BGE RCR IMM(2)');
+    expect(noFuse.artifacts.csv).toContain('0,0,0,BGE R0 IMM(2)');
+  });
+
+  it('keeps non-adjacent or multi-cycle while bodies on standard non-fused lowering', () => {
+    const source = `
+target "uma-cgra-v1";
+kernel "kernel_while_non_adjacent" {
+  while (R0 < IMM(2)) @0,0 {
+    cycle { @2,2: SADD R1, R1, IMM(1); }
+    cycle { @2,2: SADD R1, R1, IMM(1); }
+  }
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,BGE R0 IMM(2) 4');
+    expect(result.artifacts.csv).toContain('1,2,2,SADD R1 R1 IMM(1)');
+    expect(result.artifacts.csv).toContain('2,2,2,SADD R1 R1 IMM(1)');
+    expect(result.artifacts.csv).toContain('3,0,0,JUMP 0 ZERO');
+    expect(result.artifacts.csv).toContain('5,0,0,EXIT');
   });
 
   it('expands function calls with parameter substitution into kernel cycles', () => {
@@ -663,6 +798,67 @@ kernel "nested_fn_call" {
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,0,0,SADD R1 ZERO IMM(7)');
     expect(result.artifacts.csv).toContain('1,0,0,SADD R2 ZERO IMM(9)');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('supports named function arguments and positional-then-named mixing', () => {
+    const source = `
+target "uma-cgra-v1";
+function load_pair(a: reg, b: reg, v0: imm, v1: imm) {
+  cycle { @0,0: SADD a, ZERO, IMM(v0); }
+  cycle { @0,1: SADD b, ZERO, IMM(v1); }
+}
+kernel "fn_named_args" {
+  load_pair(R2, b: R3, v1: 9, v0: 7);
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R2 ZERO IMM(7)');
+    expect(result.artifacts.csv).toContain('1,0,1,SADD R3 ZERO IMM(9)');
+    expect(result.artifacts.csv).toContain('2,0,0,EXIT');
+  });
+
+  it('preserves all: statements inside expanded function bodies', () => {
+    const source = `
+target "uma-cgra-v1";
+function load_all(v) {
+  cycle { all: SADD R0, ZERO, IMM(v); }
+}
+kernel "fn_all_broadcast" {
+  load_all(7);
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    const saddCount = result.artifacts.csv!.split('\n')
+      .filter((line) => line.includes('SADD R0 ZERO IMM(7)'))
+      .length;
+    expect(saddCount).toBe(16);
+    expect(result.artifacts.csv).toContain('1,0,0,EXIT');
+  });
+
+  it('accepts top-level #pragma inline before function declarations for compatibility', () => {
+    const source = `
+target "uma-cgra-v1";
+#pragma inline
+function copy(dst, src) {
+  cycle { @0,0: dst = src; }
+}
+kernel "fn_inline_pragma" {
+  cycle { @0,0: SADD R1, ZERO, IMM(4); }
+  copy(R2, R1);
+  cycle { @0,0: EXIT; }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.csv).toContain('1,0,0,SADD R2 R1 ZERO');
     expect(result.artifacts.csv).toContain('2,0,0,EXIT');
   });
 
@@ -1170,7 +1366,7 @@ kernel "reduce_sum_row" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
-    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R3');
     expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
@@ -1187,8 +1383,8 @@ kernel "reduce_max_row" {
 
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('SSUB R6 R1 R7');
-    expect(result.artifacts.csv).toContain('BSFA R1 R7 R1 SELF');
+    expect(result.artifacts.csv).toContain('SSUB R2 R1 R3');
+    expect(result.artifacts.csv).toContain('BSFA R1 R3 R1 SELF');
     expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
@@ -1206,7 +1402,7 @@ kernel "reduce_col_axis" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
-    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R3');
     expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
@@ -1225,7 +1421,7 @@ kernel "reduce_grid_unsupported" {
       grid: { rows: 4, cols: 8, topology: 'mesh' }
     });
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R3');
     expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
@@ -1318,7 +1514,7 @@ kernel "allreduce_sum_row" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
-    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R3');
     expect(result.artifacts.csv).toContain('SADD ROUT R1 ZERO');
     expect(result.artifacts.csv).toContain('SADD R1 RCL ZERO');
     expect(result.artifacts.csv).toContain(',0,0,EXIT');
@@ -1338,7 +1534,7 @@ kernel "allreduce_col_axis" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
-    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R3');
     expect(result.artifacts.csv).toContain('SADD ROUT R1 ZERO');
     expect(result.artifacts.csv).toContain('SADD R1 RCT ZERO');
     expect(result.artifacts.csv).toContain(',0,0,EXIT');
@@ -1378,10 +1574,10 @@ kernel "transpose_row_col_swap" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('SADD ROUT R0 ZERO');
-    expect(result.artifacts.csv).toContain('SADD R7');
-    expect(result.artifacts.csv).toContain('SADD R6');
-    expect(result.artifacts.csv).toContain('SADD R0 R7 ZERO');
-    expect(result.artifacts.csv).toContain('SADD R0 R6 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R3');
+    expect(result.artifacts.csv).toContain('SADD R2');
+    expect(result.artifacts.csv).toContain('SADD R0 R3 ZERO');
+    expect(result.artifacts.csv).toContain('SADD R0 R2 ZERO');
     expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
@@ -1417,8 +1613,8 @@ kernel "gather_add_row0" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 ZERO');
-    expect(result.artifacts.csv).toContain('SADD R7');
-    expect(result.artifacts.csv).toContain('SADD R1 R1 R7');
+    expect(result.artifacts.csv).toContain('SADD R3');
+    expect(result.artifacts.csv).toContain('SADD R1 R1 R3');
     expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
@@ -1436,7 +1632,7 @@ kernel "gather_xor_dest_col2" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,0,2,SADD R1 R0 ZERO');
-    expect(result.artifacts.csv).toContain('LXOR R1 R1 R7');
+    expect(result.artifacts.csv).toContain('LXOR R1 R1 R3');
     expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 
@@ -1454,8 +1650,8 @@ kernel "gather_full_grid" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('0,1,1,SADD R2 R0 ZERO');
-    expect(result.artifacts.csv).toContain('SADD R7');
-    expect(result.artifacts.csv).toContain('SADD R2 R2 R7');
+    expect(result.artifacts.csv).toContain('SADD R3');
+    expect(result.artifacts.csv).toContain('SADD R2 R2 R3');
     expect(result.artifacts.csv).toContain(',0,0,EXIT');
   });
 

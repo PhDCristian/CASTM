@@ -1569,7 +1569,8 @@ function buildAllreduceCycles(
 }
 
 function pickScratchRegisters(excludes: string[]): [string, string] | null {
-  const candidates = ['R7', 'R6', 'R5', 'R4', 'R3', 'R2', 'R1', 'R0'];
+  // Match uma-cgra-v1 target profile register file (R0..R3 only).
+  const candidates = ['R3', 'R2', 'R1', 'R0'];
   const excludeSet = new Set(excludes.map((reg) => reg.toUpperCase()));
   const filtered = candidates.filter((reg) => !excludeSet.has(reg));
   if (filtered.length < 2) return null;
