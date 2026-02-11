@@ -184,6 +184,21 @@ kernel "structured_boundary" {
     expect(result.artifacts.structuredAst?.kernel?.body.some((stmt) => stmt.kind === 'cycle')).toBe(true);
   });
 
+  it('records semantic and staged lowering phases in compile stats', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "phase_trace" {
+  cycle { @0,0: NOP; }
+}
+`;
+    const result = compile(source, { emitArtifacts: ['ast', 'hir', 'mir', 'lir'] });
+    expect(result.success).toBe(true);
+    expect(result.stats.loweredPasses).toContain('semantic-checker');
+    expect(result.stats.loweredPasses).toContain('semantic-resolver');
+    expect(result.stats.loweredPasses.some((name) => name.startsWith('desugar+pragmas:'))).toBe(true);
+    expect(result.stats.loweredPasses.some((name) => name.startsWith('resolve+validate:'))).toBe(true);
+  });
+
   it('rejects legacy declarations', () => {
     const source = `
 target "uma-cgra-base";

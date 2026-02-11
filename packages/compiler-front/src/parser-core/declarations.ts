@@ -76,9 +76,10 @@ export function parseDirective(clean: string, line: number): DirectiveAst | null
 
   const rawDirectiveMatch = clean.match(/^\.(io_load|io_store|limit|assert)\b/i);
   if (rawDirectiveMatch) {
+    const kind = rawDirectiveMatch[1].toLowerCase() as 'io_load' | 'io_store' | 'limit' | 'assert';
     return {
-      kind: 'raw',
-      name: rawDirectiveMatch[1].toLowerCase(),
+      kind,
+      name: kind,
       value: clean,
       span: spanAt(line, 1, clean.length)
     };

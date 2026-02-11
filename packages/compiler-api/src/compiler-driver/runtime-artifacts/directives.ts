@@ -40,9 +40,7 @@ export function collectDirectiveArtifacts(
       continue;
     }
 
-    if (directive.kind !== 'raw') continue;
-
-    if (directive.name === 'io_load' || directive.name === 'io_store') {
+    if (directive.kind === 'io_load' || directive.kind === 'io_store') {
       const payloadMatch = directive.value.match(/^\.io_(?:load|store)\s+(.+)$/i);
       const payload = payloadMatch ? payloadMatch[1].trim() : '';
       const parsed = parseNumericList(payload);
@@ -51,7 +49,7 @@ export function collectDirectiveArtifacts(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
           directive.span,
-          `Invalid ${directive.name} directive payload '${payload}'.`,
+          `Invalid ${directive.kind} directive payload '${payload}'.`,
           'Expected numeric addresses separated by commas or spaces.'
         ));
         continue;
@@ -61,7 +59,7 @@ export function collectDirectiveArtifacts(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
           directive.span,
-          `Invalid ${directive.name} directive payload '${payload}'.`,
+          `Invalid ${directive.kind} directive payload '${payload}'.`,
           'Expected at least one address: .io_load 100, 104'
         ));
         continue;
@@ -71,13 +69,13 @@ export function collectDirectiveArtifacts(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
           directive.span,
-          `Invalid ${directive.name} directive payload '${payload}'.`,
+          `Invalid ${directive.kind} directive payload '${payload}'.`,
           'I/O addresses must be non-negative integers.'
         ));
         continue;
       }
 
-      if (directive.name === 'io_load') {
+      if (directive.kind === 'io_load') {
         ioConfig.loadAddrs.push(...parsed);
       } else {
         ioConfig.storeAddrs.push(...parsed);
@@ -85,7 +83,7 @@ export function collectDirectiveArtifacts(
       continue;
     }
 
-    if (directive.name === 'assert') {
+    if (directive.kind === 'assert') {
       const parsedAssertion = parseAssertionDirectiveValue(ast, directive.span, directive.value);
       if ('message' in parsedAssertion) {
         diagnostics.push(makeDiagnostic(
@@ -110,7 +108,7 @@ export function collectDirectiveArtifacts(
       continue;
     }
 
-    if (directive.name === 'limit') {
+    if (directive.kind === 'limit') {
       const payloadMatch = directive.value.match(/^\.limit\s*(?:=\s*)?(.+)$/i);
       const payload = payloadMatch ? payloadMatch[1].trim() : '';
       const parsed = parseNumericLiteral(payload);

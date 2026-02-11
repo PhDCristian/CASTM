@@ -15,6 +15,7 @@ import {
   createEmptyRuntimeArtifacts
 } from '../packages/compiler-api/src/compiler-driver/runtime-artifacts.js';
 import { resolveGrid } from '../packages/compiler-api/src/compiler-driver/grid-resolver.js';
+import { runSemanticChecker } from '../packages/compiler-api/src/compiler-driver/semantic.js';
 
 function makeAst(): AstProgram {
   const span = spanAt(1, 1, 1);
@@ -83,10 +84,10 @@ describe('compiler-api compiler-driver modules', () => {
     ast.kernel!.directives.push(
       { kind: 'const', name: 'MASK', value: '0xFFFF', span: spanAt(2, 1, 1) },
       { kind: 'alias', name: 'acc', value: 'R1', span: spanAt(3, 1, 1) },
-      { kind: 'raw', name: 'io_load', value: '.io_load 100, 104', span: spanAt(4, 1, 1) },
-      { kind: 'raw', name: 'io_store', value: '.io_store 200', span: spanAt(5, 1, 1) },
-      { kind: 'raw', name: 'limit', value: '.limit 12', span: spanAt(6, 1, 1) },
-      { kind: 'raw', name: 'assert', value: '.assert cycle=0 @0,0 R1 == 42', span: spanAt(7, 1, 1) }
+      { kind: 'io_load', name: 'io_load', value: '.io_load 100, 104', span: spanAt(4, 1, 1) },
+      { kind: 'io_store', name: 'io_store', value: '.io_store 200', span: spanAt(5, 1, 1) },
+      { kind: 'limit', name: 'limit', value: '.limit 12', span: spanAt(6, 1, 1) },
+      { kind: 'assert', name: 'assert', value: '.assert cycle=0 @0,0 R1 == 42', span: spanAt(7, 1, 1) }
     );
 
     const diagnostics: Diagnostic[] = [];
@@ -128,5 +129,18 @@ describe('compiler-api compiler-driver modules', () => {
     expect(empty.ioConfig).toEqual({ loadAddrs: [], storeAddrs: [] });
     expect(empty.assertions).toEqual([]);
     expect(empty.symbols.constants).toEqual({});
+  });
+
+  it('semantic checker reports duplicate declaration symbols', () => {
+    const ast = makeAst();
+    ast.kernel!.directives.push(
+      { kind: 'const', name: 'A', value: '1', span: spanAt(2, 1, 1) },
+      { kind: 'alias', name: 'A', value: 'R1', span: spanAt(3, 1, 1) }
+    );
+
+    const diagnostics: Diagnostic[] = [];
+    const result = runSemanticChecker(ast, diagnostics);
+    expect(result.loweredPasses).toEqual(['semantic-checker']);
+    expect(diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 });

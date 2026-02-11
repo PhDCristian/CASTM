@@ -45,7 +45,7 @@ export interface CycleAst {
 }
 
 export interface DirectiveAst {
-  kind: 'const' | 'alias' | 'data' | 'data2d' | 'raw';
+  kind: 'const' | 'alias' | 'data' | 'data2d' | 'io_load' | 'io_store' | 'limit' | 'assert';
   name: string;
   value: string;
   span: SourceSpan;
@@ -103,6 +103,8 @@ export interface StructuredCycleStmtAst {
 
 export interface StructuredAdvancedStmtAst {
   kind: 'advanced';
+  name: string;
+  args: string;
   text: string;
   span: SourceSpan;
 }

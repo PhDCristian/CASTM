@@ -49,5 +49,5 @@ jobs:
       - name: Generate docs
         run: npm run docs:generate
 
-      - name: Run tests
-        run: npm test
+      - name: Run tests with coverage gate
+        run: npm run test:coverage

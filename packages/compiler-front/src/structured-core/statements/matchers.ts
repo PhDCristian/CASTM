@@ -13,12 +13,23 @@ export function shouldSkipStructuredLine(cleanLine: string): boolean {
   );
 }
 
-export function parseAdvancedStatement(cleanLine: string): string | null {
+export interface ParsedAdvancedStatement {
+  name: string;
+  args: string;
+  text: string;
+}
+
+export function parseAdvancedStatement(cleanLine: string): ParsedAdvancedStatement | null {
   const match = cleanLine.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\((.+)\)\s*;?\s*$/);
   if (!match) return null;
   const name = match[1].toLowerCase();
   if (!ADVANCED_NAMES.has(name)) return null;
-  return `${name}(${match[2].trim()})`;
+  const args = match[2].trim();
+  return {
+    name,
+    args,
+    text: `${name}(${args})`
+  };
 }
 
 export function parseFunctionCall(cleanLine: string): StructuredFnCallStmtAst | null {

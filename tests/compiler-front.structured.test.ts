@@ -37,6 +37,9 @@ kernel "structured" {
 
     const ifStmt = result.structuredAst?.kernel?.body.find((stmt) => stmt.kind === 'if');
     expect(ifStmt && 'elseBody' in ifStmt && ifStmt.elseBody?.length).toBeGreaterThan(0);
+    const advanced = result.structuredAst?.kernel?.body.find((stmt) => stmt.kind === 'advanced');
+    expect(advanced && 'name' in advanced ? advanced.name : null).toBe('route');
+    expect(advanced && 'args' in advanced ? advanced.args : '').toContain('payload=R3');
   });
 
   it('lowers structured program to flat ast projection', () => {
@@ -57,7 +60,7 @@ kernel "structured_lower" {
 
     expect(lowered.kernel?.pragmas).toHaveLength(1);
     expect(lowered.kernel?.pragmas[0].text).toContain('route(');
-    expect(lowered.kernel?.cycles).toHaveLength(1);
+    expect(lowered.kernel?.cycles).toHaveLength(3);
     expect(lowered.kernel?.cycles[0].index).toBe(0);
   });
 });

@@ -16,6 +16,20 @@ export default defineConfig({
     }
   },
   test: {
-    include: ['tests/**/*.test.ts']
+    include: ['tests/**/*.test.ts'],
+    coverage: {
+      provider: 'v8',
+      include: [
+        'packages/compiler-api/src/**/*.ts',
+        'packages/compiler-front/src/**/*.ts',
+        'packages/compiler-ir/src/**/*.ts'
+      ],
+      thresholds: {
+        lines: 70,
+        statements: 70,
+        functions: 80,
+        branches: 60
+      }
+    }
   }
 });

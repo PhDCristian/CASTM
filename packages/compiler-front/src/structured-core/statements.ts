@@ -30,7 +30,9 @@ export function parseStructuredStatements(
     if (advanced) {
       out.push({
         kind: 'advanced',
-        text: advanced,
+        name: advanced.name,
+        args: advanced.args,
+        text: advanced.text,
         span: spanAt(entry.lineNo, clean.length)
       });
       continue;

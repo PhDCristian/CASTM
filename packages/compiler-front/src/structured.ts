@@ -22,9 +22,7 @@ export interface StructuredParseResult extends ParseResult {
 
 export function parseStructuredSource(source: string): StructuredParseResult {
   const parsed = parseSource(source);
-  const structuredAst = parsed.ast
-    ? parseStructuredProgramFromSource(source, parsed.ast)
-    : undefined;
+  const structuredAst = parseStructuredProgramFromSource(source);
 
   return {
     ...parsed,
