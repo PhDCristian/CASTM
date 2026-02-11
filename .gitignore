@@ -9,7 +9,6 @@ node_modules/
 .idea/
 *.swp
 *.swo
-editors/
 
 # OS
 .DS_Store

@@ -67,7 +67,7 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 | Item | Status | Owner | Exit Condition |
 |---|---|---|---|
 | Replace path alias imports to v2 internals | done | Simulator | `UMA-CGRA-Simulator/package.json` now consumes `@openedge/*` via fixed semver (`2.0.0-alpha.1`) rather than `file:` paths. |
-| Remove legacy fallback for stable feature set | done | Simulator | Wrapper default and `auto` mode are now v2-first without silent fallback; legacy remains explicit opt-in (`backend: 'legacy'`). |
+| Remove legacy fallback for stable feature set | done | Simulator | Wrapper default and `auto` mode are v2-only. `backend: 'legacy'` is preserved only as a backwards-compatible alias to v2 (no legacy compiler path). |
 | Cross-repo parity workflow | done | OpenEdgeDSL + Simulator | Automated in `.github/workflows/cross-repo-parity.yml` via `scripts/run-simulator-parity.mjs` against simulator parity fixtures (`dsl-compiler-parity` + `dsl-compiler-v2-adapter`). |
 
 ## Executable Snippet

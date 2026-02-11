@@ -5,8 +5,8 @@ This policy defines how legacy integration paths are phased out after v2 cutover
 ## Current transition state
 
 - v2 packages (`@openedge/*`) are the primary integration surface.
-- Root compatibility exports in `compat/*` remain available for migration support.
-- Legacy backend usage in simulator is allowed only as explicit opt-in during transition.
+- Root compatibility exports in `compat/*` have been removed.
+- Simulator no longer uses a legacy compiler fallback path.
 
 ## Policy rules
 
@@ -18,15 +18,15 @@ This policy defines how legacy integration paths are phased out after v2 cutover
 ## Removal milestones
 
 ### Milestone M1 (current + migration window)
-- Compatibility exports remain.
+- Compatibility exports are removed.
 - CI parity must stay green for stable feature set.
 
 ### Milestone M2 (after sustained parity)
-- Legacy backend in simulator remains explicit opt-in only.
+- Legacy backend setting (if present in UI) remains only as alias to v2.
 - Begin warning on compatibility entrypoint usage in integration docs/tooling.
 
 ### Milestone M3 (major release boundary)
-- Remove compatibility exports and legacy backend fallback paths.
+- Remove any remaining alias paths and references to legacy backend options.
 - Keep migration docs archived for reference.
 
 ## Decision gate to remove compatibility layer

@@ -2,18 +2,6 @@
   "name": "@phdcristian/openedge-dsl",
   "private": true,
   "type": "module",
-  "main": "./compat/index.ts",
-  "types": "./compat/index.ts",
-  "exports": {
-    ".": {
-      "types": "./compat/index.ts",
-      "import": "./compat/index.ts"
-    },
-    "./compiler": {
-      "types": "./compat/compiler.ts",
-      "import": "./compat/compiler.ts"
-    }
-  },
   "workspaces": [
     "packages/*"
   ],

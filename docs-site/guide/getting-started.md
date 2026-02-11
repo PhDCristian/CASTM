@@ -24,11 +24,9 @@ npm run build:cli
 npm link  # Optional: install globally
 ```
 
-### From npm
+### Package-based Usage
 
-```bash
-npm install -g @phdcristian/openedge-dsl
-```
+OpenEdgeDSL v2 is consumed through `@openedge/*` packages (for example `@openedge/compiler-api` and `@openedge/cli`).
 
 ## Quick Start
 

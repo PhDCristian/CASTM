@@ -9,6 +9,14 @@ The format follows Keep a Changelog and Semantic Versioning intent for package r
 ### Added
 - Release documentation for v2 cutover (`docs/migration-v1-to-v2.md`, `docs/release-cutover-checklist.md`, `docs/deprecation-policy.md`).
 
+### Changed
+- Simulator integration no longer imports `@phdcristian/openedge-dsl` compatibility entrypoints.
+- Simulator `backend: "legacy"` option is now a compatibility alias to v2 (no legacy compiler fallback path).
+
+### Removed
+- Root compatibility layer (`compat/index.ts`, `compat/compiler.ts`).
+- Local residual directories from transition phase (`v2/`, `editors/`).
+
 ## [2.0.0-alpha.1] - 2026-02-11
 
 ### Added
@@ -33,9 +41,6 @@ The format follows Keep a Changelog and Semantic Versioning intent for package r
 - Root workflows renamed and aligned with v2:
   - `.github/workflows/ci.yml`
   - `.github/workflows/cross-repo-parity.yml`
-- Root package now provides compatibility exports for simulator integrations through:
-  - `compat/index.ts`
-  - `compat/compiler.ts`
 
 ### Removed
 - Legacy v1 active compiler tree from root (`src/`), legacy editor extension sources, and old build flow from active development.

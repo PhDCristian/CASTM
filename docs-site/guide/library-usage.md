@@ -5,18 +5,18 @@ outline: deep
 
 # Library Usage
 
-OpenEdge DSL can be used as a TypeScript/JavaScript library for programmatic compilation.
+OpenEdge DSL v2 can be used as a TypeScript/JavaScript library for programmatic compilation.
 
 ## Installation
 
 ```bash
-npm install @phdcristian/openedge-dsl
+npm install @openedge/compiler-api
 ```
 
 ## Basic Usage
 
 ```typescript
-import { compileDslToCsv } from '@phdcristian/openedge-dsl';
+import { compile } from '@openedge/compiler-api';
 
 const source = `
 .data values { 1, 2, 3 }
@@ -28,16 +28,15 @@ kernel "Test" {
 }
 `;
 
-const result = compileDslToCsv(source);
+const result = compile(source);
 
 if (result.success) {
-  console.log(result.csv);
-  console.log('Cycles:', result.maxCycles);
-  console.log('Grid:', result.suggestedGridSize);
-  console.log('Memory:', result.memoryRegions);
+  console.log(result.artifacts.csv);
+  console.log('Cycles:', result.stats.cycles);
+  console.log('Grid:', result.artifacts.mir?.grid);
+  console.log('Memory:', result.artifacts.memoryRegions);
 } else {
-  console.error('Error:', result.error);
-  console.error('Line:', result.line);
+  console.error('Errors:', result.diagnostics);
 }
 ```
 
@@ -47,37 +46,31 @@ if (result.success) {
 
 | Export | Description |
 |--------|-------------|
-| `compileDslToCsv(code)` | Compile DSL source to CSV |
-| `tokenize(code)` | Tokenize source code |
-| `TokenType` | Enum of token types |
-| `generateCsv(ast, symbols)` | Generate CSV from AST |
+| `parse(source, options?)` | Parse source to AST with diagnostics |
+| `analyze(ast, options?)` | Semantic analysis and lowering pipeline |
+| `compile(source, options?)` | Compile source and emit selected artifacts |
+| `emit(program, options?)` | Emit output formats (`flat-csv`, `sim-matrix-csv`) |
 
-### `compileDslToCsv(code: string): CompileResult`
+### `compile(source: string): CompileResult`
 
 Compiles a complete DSL source string and returns a result object:
 
 ```typescript
 interface CompileResult {
   success: boolean;
-  csv?: string;           // Generated CSV output
-  maxCycles?: number;     // Number of cycles in the kernel
-  suggestedGridSize?: { rows: number; cols: number };
-  memoryRegions?: MemoryRegion[];
-  error?: string;         // Error message if compilation failed
-  line?: number;          // Line number of the error
-}
-```
-
-### `tokenize(code: string): Token[]`
-
-Low-level tokenizer that returns an array of tokens:
-
-```typescript
-interface Token {
-  type: TokenType;
-  value: string;
-  line: number;
-  column: number;
+  artifacts: {
+    csv?: string;
+    ast?: AstProgram;
+    hir?: HirProgram;
+    mir?: MirProgram;
+    lir?: LirProgram;
+    memoryRegions?: MemoryRegionInfo[];
+  };
+  diagnostics: Diagnostic[];
+  stats: {
+    cycles: number;
+    instructions: number;
+  };
 }
 ```
 
@@ -85,17 +78,10 @@ interface Token {
 
 ```json
 {
-  ".": {
-    "types": "./dist/index.d.ts",
-    "import": "./dist/index.js"
-  },
-  "./compiler": {
-    "types": "./dist/compiler.d.ts",
-    "import": "./dist/compiler.js"
-  },
-  "./cli": {
-    "types": "./dist/cli/index.d.ts",
-    "import": "./dist/cli/index.js"
-  }
+  "@openedge/compiler-api": "parse/analyze/compile/emit",
+  "@openedge/compiler-ir": "shared IR and diagnostics types",
+  "@openedge/compiler-front": "tokenizer/parser",
+  "@openedge/compiler-backend-csv": "CSV emitters",
+  "@openedge/lang-spec": "instruction and target metadata"
 }
 ```

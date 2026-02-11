@@ -42,7 +42,7 @@ Expected:
 ## Gate D: Simulator default backend cutover
 
 1. Set v2 as default backend.
-2. Keep legacy backend as explicit opt-in only (temporary).
+2. Remove legacy backend fallback path; keep only optional setting alias if needed for backwards-compatible UI config.
 3. Re-run simulator integration and parity suites.
 
 ## Gate E: Post-cutover hardening
@@ -54,5 +54,5 @@ Expected:
 ## Exit Criteria
 
 - v2 is default in simulator with parity CI green.
-- Stable feature set compiles/runs without legacy fallback.
+- Stable feature set compiles/runs without legacy fallback path.
 - Versioned package consumption is enforced in downstream integrations.

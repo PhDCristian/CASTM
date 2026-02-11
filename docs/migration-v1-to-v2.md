@@ -62,11 +62,11 @@ Key points:
 2. Pin package versions (example: `2.0.0-alpha.1`).
 3. Run parity tests against shared fixtures.
 4. Switch default backend to v2 after CI parity is green.
-5. Keep legacy backend only as explicit opt-in during transition.
+5. Remove legacy fallback path; if UI keeps `legacy` setting compatibility, map it explicitly to v2.
 
 ## 5. Compatibility layer note
 
-The root package `@phdcristian/openedge-dsl` currently exposes compatibility entrypoints under `compat/*` for transition support. New integrations should target `@openedge/*` packages directly.
+The temporary root compatibility entrypoints (`compat/*`) were removed. Integrations must target `@openedge/*` packages directly.
 
 ## 6. Validation commands
 
