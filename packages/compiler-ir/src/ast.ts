@@ -140,6 +140,13 @@ export interface StructuredFnCallStmtAst {
   span: SourceSpan;
 }
 
+export interface StructuredFunctionDefAst {
+  name: string;
+  params: string[];
+  body: StructuredKernelStmtAst[];
+  span: SourceSpan;
+}
+
 export type StructuredKernelStmtAst =
   | StructuredCycleStmtAst
   | StructuredAdvancedStmtAst
@@ -159,5 +166,6 @@ export interface StructuredKernelAst {
 export interface StructuredProgramAst {
   targetProfileId: string | null;
   kernel: StructuredKernelAst | null;
+  functions: StructuredFunctionDefAst[];
   span: SourceSpan;
 }

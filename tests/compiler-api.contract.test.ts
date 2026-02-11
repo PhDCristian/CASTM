@@ -155,6 +155,18 @@ kernel "route_custom_stmt" {
     expect(result.artifacts.csv).toContain('SMUL R1');
   });
 
+  it('rejects non-canonical route coordinates', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "route_non_canonical" {
+  route((0,1) -> (0,0), payload=R3, accum=R1);
+}
+`;
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
+  });
+
   it('supports key-value reduce and scan statements', () => {
     const source = `
 target "uma-cgra-base";

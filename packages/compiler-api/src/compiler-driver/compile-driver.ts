@@ -2,7 +2,6 @@ import {
   CompileOptions,
   CompileResult,
   Diagnostic,
-  StructuredKernelStmtAst,
   StructuredProgramAst
 } from '@openedge/compiler-ir';
 import { lowerStructuredProgramToAst } from '@openedge/compiler-front';
@@ -15,23 +14,8 @@ import { analyze } from './analyze-driver.js';
 import { emit } from './emit-driver.js';
 import { parse } from './parse-driver.js';
 
-function containsFunctionCalls(stmts: StructuredKernelStmtAst[]): boolean {
-  for (const stmt of stmts) {
-    if (stmt.kind === 'fn-call') return true;
-    if (stmt.kind === 'for' && containsFunctionCalls(stmt.body)) return true;
-    if (stmt.kind === 'if') {
-      if (containsFunctionCalls(stmt.thenBody)) return true;
-      if (stmt.elseBody && containsFunctionCalls(stmt.elseBody)) return true;
-    }
-    if (stmt.kind === 'while' && containsFunctionCalls(stmt.body)) return true;
-  }
-  return false;
-}
-
 function canLowerStructuredDirectly(structured: StructuredProgramAst | undefined): boolean {
-  const body = structured?.kernel?.body;
-  if (!body) return false;
-  return !containsFunctionCalls(body);
+  return Boolean(structured?.kernel);
 }
 
 export function compile(source: string, options: CompileOptions = {}): CompileResult {

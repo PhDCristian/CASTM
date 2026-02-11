@@ -40,43 +40,22 @@ function parseRouteCoordinate(text: string, index: number): { point: RoutePoint;
   let pos = skipWhitespace(text, index);
   if (pos >= text.length) return null;
 
-  if (text[pos] === '@') {
-    pos++;
-    pos = skipWhitespace(text, pos);
-    const row = readInteger(text, pos);
-    if (!row) return null;
-    pos = skipWhitespace(text, row.next);
-    if (text[pos] !== ',') return null;
-    pos++;
-    pos = skipWhitespace(text, pos);
-    const col = readInteger(text, pos);
-    if (!col) return null;
-    return {
-      point: { row: row.value, col: col.value },
-      next: col.next
-    };
-  }
+  if (text[pos] !== '@') return null;
+  pos++;
+  pos = skipWhitespace(text, pos);
+  const row = readInteger(text, pos);
+  if (!row) return null;
+  pos = skipWhitespace(text, row.next);
+  if (text[pos] !== ',') return null;
+  pos++;
+  pos = skipWhitespace(text, pos);
+  const col = readInteger(text, pos);
+  if (!col) return null;
+  return {
+    point: { row: row.value, col: col.value },
+    next: col.next
+  };
 
-  if (text[pos] === '(') {
-    pos++;
-    pos = skipWhitespace(text, pos);
-    const row = readInteger(text, pos);
-    if (!row) return null;
-    pos = skipWhitespace(text, row.next);
-    if (text[pos] !== ',') return null;
-    pos++;
-    pos = skipWhitespace(text, pos);
-    const col = readInteger(text, pos);
-    if (!col) return null;
-    pos = skipWhitespace(text, col.next);
-    if (text[pos] !== ')') return null;
-    return {
-      point: { row: row.value, col: col.value },
-      next: pos + 1
-    };
-  }
-
-  return null;
 }
 
 export function parseCoordinateLiteral(text: string): RoutePoint | null {

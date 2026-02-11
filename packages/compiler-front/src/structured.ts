@@ -1,4 +1,3 @@
-import { parseSource } from './parser.js';
 import {
   AstProgram,
   Diagnostic,
@@ -21,34 +20,6 @@ export interface StructuredParseResult extends ParseResult {
   structuredAst?: StructuredProgramAst;
   ast?: AstProgram;
   diagnostics: Diagnostic[];
-}
-
-function hasFunctionCalls(structuredAst: StructuredProgramAst | undefined): boolean {
-  const body = structuredAst?.kernel?.body ?? [];
-  const visit = (nodes: typeof body): boolean => {
-    for (const node of nodes) {
-      if (node.kind === 'fn-call') return true;
-      if (node.kind === 'for' && visit(node.body)) return true;
-      if (node.kind === 'if') {
-        if (visit(node.thenBody)) return true;
-        if (node.elseBody && visit(node.elseBody)) return true;
-      }
-      if (node.kind === 'while' && visit(node.body)) return true;
-    }
-    return false;
-  };
-  return visit(body);
-}
-
-function needsClassicParserFallback(source: string): boolean {
-  if (/(^|\n)\s*#pragma\b/i.test(source)) return true;
-  if (/(^|\n)\s*\.(const|alias|data|data2d|io_load|io_store|limit|assert)\b/i.test(source)) return true;
-  if (/(^|\n)\s*function\b/i.test(source)) return true;
-  if (/(?<!\bat\s)\b(?:row|col)\s+\d+\s*:/i.test(source)) return true;
-  if (/(?<!\bat\s)\ball\s*:/i.test(source)) return true;
-  if (/(^|\n)\s*(?:if|while)\s*\([^\n]+\)\s*@\s*[^,\s]+\s*,\s*[^\s\{]+\s*\{/i.test(source)) return true;
-  if (/(^|\n)\s*for\s+[^\n]*\)\s*@\s*[^,\s]+\s*,\s*[^\s\{]+\s*(?:runtime\s*)?\{/i.test(source)) return true;
-  return false;
 }
 
 function validateStructuredMinimum(structuredAst: StructuredProgramAst): Diagnostic[] {
@@ -75,24 +46,15 @@ function validateStructuredMinimum(structuredAst: StructuredProgramAst): Diagnos
 }
 
 export function parseStructuredSource(source: string): StructuredParseResult {
-  const structuredAst = parseStructuredProgramFromSource(source);
-  const shouldFallback = needsClassicParserFallback(source) || hasFunctionCalls(structuredAst);
-  if (!shouldFallback) {
-    const diagnostics = validateStructuredMinimum(structuredAst);
-    const ast = lowerStructuredProgramToAst(structuredAst);
-    return {
-      success: diagnostics.every((d) => d.severity !== 'error'),
-      diagnostics,
-      structuredAst,
-      ast
-    };
-  }
-
-  const parsed = parseSource(source);
+  const parsed = parseStructuredProgramFromSource(source);
+  const structuredAst = parsed.program;
+  const diagnostics = [...parsed.diagnostics, ...validateStructuredMinimum(structuredAst)];
+  const hasErrors = diagnostics.some((d) => d.severity === 'error');
 
   return {
-    ...parsed,
+    success: !hasErrors,
+    ast: hasErrors ? undefined : lowerStructuredProgramToAst(structuredAst),
+    diagnostics,
     structuredAst,
-    ast: parsed.ast
   };
 }

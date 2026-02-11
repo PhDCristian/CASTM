@@ -14,8 +14,7 @@ OpenEdgeDSL now uses a single architecture based on the new multi-package compil
 - `packages/testkit`: test helpers.
 - `tests`: contract and docs-snippet tests.
 - `scripts`: repo checks and simulator parity runner.
-- `docs`: ADRs, parity matrix and generated instruction reference.
-- `docs-legacy`: archived historical documentation.
+- `docs`: ADRs, compiler contracts, parity matrix, and generated instruction reference.
 
 ## Quick start
 
@@ -35,12 +34,11 @@ npx openedge program.dsl -o out.csv
 
 ## Notes
 
-- The previous compiler tree (`src`, legacy CLI/TUI, VSCode extension sources) has been removed from active development.
 - Simulator integration is validated through `scripts/run-simulator-parity.mjs` and CI workflow `cross-repo-parity.yml`.
 
-## Release and migration docs
+## Architecture docs
 
 - `CHANGELOG.md`
-- `docs/migration-from-legacy.md`
-- `docs/release-cutover-checklist.md`
-- `docs/deprecation-policy.md`
+- `docs/compiler-contracts.md`
+- `docs/feature-parity-matrix.md`
+- `docs/language/language-spec.md`

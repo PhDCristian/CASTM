@@ -1,4 +1,5 @@
 import {
+  Diagnostic,
   StructuredIfStmtAst,
   StructuredKernelStmtAst,
   StructuredWhileStmtAst
@@ -23,7 +24,12 @@ export function tryParseControlStatement(
   cleanLine: string,
   lineNo: number,
   cycleCounter: { value: number },
-  parseNestedStatements: (entries: SourceLineEntry[], cycleCounter: { value: number }) => StructuredKernelStmtAst[]
+  diagnostics: Diagnostic[],
+  parseNestedStatements: (
+    entries: SourceLineEntry[],
+    cycleCounter: { value: number },
+    diagnostics: Diagnostic[]
+  ) => StructuredKernelStmtAst[]
 ): StructuredControlParseResult {
   const forHeader = cleanLine.match(
     /^for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+range\s*\((.*)\)\s*(?:at\s+@\s*([^,\{\s]+)\s*,\s*([^\{\s]+))?\s*(runtime)?\s*\{\s*$/i
@@ -40,7 +46,7 @@ export function tryParseControlStatement(
       node: {
         kind: 'for',
         header: cleanLine.slice(0, cleanLine.lastIndexOf('{')).trim(),
-        body: parseNestedStatements(block.body, cycleCounter),
+        body: parseNestedStatements(block.body, cycleCounter, diagnostics),
         span: spanAt(lineNo, cleanLine.length)
       }
     };
@@ -55,14 +61,14 @@ export function tryParseControlStatement(
 
     const row = parseInteger(ifHeader[2]) ?? 0;
     const col = parseInteger(ifHeader[3]) ?? 0;
-    const thenBody = parseNestedStatements(thenBlock.body, cycleCounter);
+    const thenBody = parseNestedStatements(thenBlock.body, cycleCounter, diagnostics);
     let elseBody: StructuredKernelStmtAst[] | undefined;
     let consumedEnd = thenBlock.endIndex;
 
     if (thenBlock.trailingAfterClose && isElseOpenLine(thenBlock.trailingAfterClose)) {
       const parsedElse = collectBlockAfterOpenFromEntries(entries, thenBlock.endIndex + 1);
       if (parsedElse.endIndex !== null) {
-        elseBody = parseNestedStatements(parsedElse.body, cycleCounter);
+        elseBody = parseNestedStatements(parsedElse.body, cycleCounter, diagnostics);
         consumedEnd = parsedElse.endIndex;
       }
     } else {
@@ -70,7 +76,7 @@ export function tryParseControlStatement(
       if (maybeElse < entries.length && isElseOpenLine(entries[maybeElse].cleanLine)) {
         const parsedElse = collectBlockFromEntries(entries, maybeElse);
         if (parsedElse.endIndex !== null) {
-          elseBody = parseNestedStatements(parsedElse.body, cycleCounter);
+          elseBody = parseNestedStatements(parsedElse.body, cycleCounter, diagnostics);
           consumedEnd = parsedElse.endIndex;
         }
       }
@@ -107,7 +113,7 @@ export function tryParseControlStatement(
     kind: 'while',
     condition: whileHeader[1].trim(),
     control: { row, col },
-    body: parseNestedStatements(block.body, cycleCounter),
+    body: parseNestedStatements(block.body, cycleCounter, diagnostics),
     span: spanAt(lineNo, cleanLine.length)
   };
 

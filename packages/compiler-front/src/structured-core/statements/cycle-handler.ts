@@ -40,17 +40,19 @@ export function tryParseCycleStatement(
   index: number,
   cleanLine: string,
   lineNo: number,
-  cycleCounter: { value: number }
+  cycleCounter: { value: number },
+  diagnostics: Diagnostic[]
 ): StructuredCycleParseResult {
   const inlineCycle = cleanLine.match(/^cycle\s*\{\s*(.+)\s*\}\s*$/i);
   if (inlineCycle) {
-    const diagnostics: Diagnostic[] = [];
+    const cycleDiagnostics: Diagnostic[] = [];
     const statements = parseInlineCycleStatements(
       inlineCycle[1],
       lineNo,
       new Map(),
-      diagnostics
+      cycleDiagnostics
     );
+    diagnostics.push(...cycleDiagnostics);
     return {
       handled: true,
       nextIndex: index,
@@ -64,8 +66,9 @@ export function tryParseCycleStatement(
   }
 
   const block = collectBlockFromEntries(entries, index);
-  const diagnostics: Diagnostic[] = [];
-  const statements = expandLoopBody(block.body, new Map(), new Map(), diagnostics);
+  const cycleDiagnostics: Diagnostic[] = [];
+  const statements = expandLoopBody(block.body, new Map(), new Map(), cycleDiagnostics);
+  diagnostics.push(...cycleDiagnostics);
   const node = makeCycleNode(lineNo, cleanLine.length, cycleCounter.value++, statements);
   return {
     handled: true,

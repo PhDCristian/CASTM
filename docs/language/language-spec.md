@@ -9,9 +9,11 @@ Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas 
 ## Core
 
 - `let` unified declarations
+- top-level `function` definitions + kernel call sites
 - explicit spatial namespace (`at ...`)
 - advanced statements (`route(...)`, `reduce(...)`, `scan(...)`, etc.)
 - explicit runtime loop form
+- runtime directives (`.io_load`, `.io_store`, `.limit`, `.assert`)
 
 ## Example (executable)
 

@@ -1,4 +1,7 @@
 import {
+  Diagnostic,
+  ErrorCodes,
+  makeDiagnostic,
   StructuredKernelStmtAst
 } from '@openedge/compiler-ir';
 import {
@@ -15,7 +18,8 @@ import { tryParseControlStatement } from './statements/control-handler.js';
 
 export function parseStructuredStatements(
   entries: SourceLineEntry[],
-  cycleCounter: { value: number }
+  cycleCounter: { value: number },
+  diagnostics: Diagnostic[]
 ): StructuredKernelStmtAst[] {
   const out: StructuredKernelStmtAst[] = [];
 
@@ -38,7 +42,7 @@ export function parseStructuredStatements(
       continue;
     }
 
-    const cycleResult = tryParseCycleStatement(entries, i, clean, entry.lineNo, cycleCounter);
+    const cycleResult = tryParseCycleStatement(entries, i, clean, entry.lineNo, cycleCounter, diagnostics);
     if (cycleResult.handled) {
       if (cycleResult.node) out.push(cycleResult.node);
       if (cycleResult.stop) break;
@@ -52,6 +56,7 @@ export function parseStructuredStatements(
       clean,
       entry.lineNo,
       cycleCounter,
+      diagnostics,
       parseStructuredStatements
     );
     if (controlResult.handled) {
@@ -69,6 +74,14 @@ export function parseStructuredStatements(
       });
       continue;
     }
+
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(entry.lineNo, clean.length),
+      `Unrecognized kernel statement: '${clean}'.`,
+      'Use canonical statements (cycle, at, for, if, while, route/reduce/scan/broadcast/...).'
+    ));
   }
 
   return out;

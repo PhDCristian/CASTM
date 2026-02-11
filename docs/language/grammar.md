@@ -5,10 +5,10 @@ This grammar defines the canonical OpenEdgeDSL syntax profile.
 ## Program
 
 ```text
-program          ::= target_decl declaration* kernel_decl
+program          ::= target_decl declaration* function_def* kernel_decl
 target_decl      ::= "target" string_lit ";"
 kernel_decl      ::= "kernel" string_lit "{" kernel_item* "}"
-kernel_item      ::= config_stmt | cycle_block | control_stmt | for_stmt | advanced_stmt | function_call
+kernel_item      ::= config_stmt | runtime_directive | cycle_block | control_stmt | for_stmt | advanced_stmt | function_call
 ```
 
 ## Declarations
@@ -21,6 +21,11 @@ let_data         ::= "let" ident "=" "{" int_list "}" ";"
 let_data_fixed   ::= "let" ident "@" int_expr "=" "{" int_list "}" ";"
 let_data2d       ::= "let" ident "[" int_expr "]" "[" int_expr "]" "=" "{" int_list "}" ";"
 let_data2d_zero  ::= "let" ident "[" int_expr "]" "[" int_expr "]" ";"
+runtime_directive ::= io_load | io_store | limit | assert
+io_load          ::= ".io_load" int_expr "," int_expr ("," int_expr)* 
+io_store         ::= ".io_store" int_expr "," int_expr ("," int_expr)* 
+limit            ::= ".limit" int_expr
+assert           ::= ".assert" assert_expr
 ```
 
 ## Spatial / Cycle
@@ -44,6 +49,8 @@ while_stmt       ::= "while" "(" cond_expr ")" "at" "@" int_expr "," int_expr "{
 for_stmt         ::= "for" ident "in" "range" "(" range_args ")" "{" kernel_item* "}"
                   | "for" register "in" "range" "(" range_args ")" "at" "@" int_expr "," int_expr "runtime" "{" kernel_item* "}"
 range_args       ::= int_expr | int_expr "," int_expr | int_expr "," int_expr "," int_expr
+function_def     ::= "function" ident "(" ident_list? ")" "{" kernel_item* "}"
+function_call    ::= ident "(" arg_list? ")" ";"
 ```
 
 ## Advanced Statements

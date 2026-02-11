@@ -1,6 +1,6 @@
 # OpenEdgeDSL Feature Parity Matrix
 
-This matrix is the closure baseline for the current compiler. Source of truth is stable legacy behavior validated by tests and stable docs (excluding `docs/future/*`).
+This matrix is the closure baseline for the canonical compiler. Source of truth is behavior validated by tests and stable docs (excluding `docs/future/*`).
 
 ## Status Legend
 
@@ -21,13 +21,13 @@ This matrix is the closure baseline for the current compiler. Source of truth is
 | `while` / `if` | done | `tests/compiler-api.contract.test.ts` | Kernel/function lowering to branch+jump labeled cycles is in place, including `#pragma no_fuse` control and fused-while neighbor-operand rewriting for control conditions. |
 | `for ... in range(...)` (kernel + `cycle`) | done | `tests/compiler-api.contract.test.ts` | Supports compile-time unroll (including descending ranges) in kernel/cycle scopes, plus `#pragma unroll(N)`, `#pragma no_unroll`, `#pragma parallel`, and `#pragma parallel collapse(N)` with nested propagation. |
 
-## Directives
+## Declarations & Runtime Directives
 
 | Feature | Status | Tests | Notes |
 |---|---|---|---|
-| `.const`, `.alias` parse | done | indirect (`compile` contracts) | Exposed via `artifacts.symbols`. |
-| `.data` parse + regions | done | `tests/compiler-api.contract.test.ts` | Also exposed in `memoryRegions`. |
-| `.data2d` | done | `tests/compiler-api.contract.test.ts` | Supports declaration, region allocation, literal and dynamic 2D index lowering to address expressions. |
+| `let` const/alias parse | done | indirect (`compile` contracts) | Exposed via `artifacts.symbols`. |
+| `let` 1D arrays + regions | done | `tests/compiler-api.contract.test.ts` | Also exposed in `memoryRegions`. |
+| `let` 2D arrays | done | `tests/compiler-api.contract.test.ts` | Supports declaration, region allocation, literal and dynamic 2D index lowering to address expressions. |
 | `.io_load`, `.io_store` | done | `tests/compiler-api.contract.test.ts` | Parsed into `ioConfig` with non-negative validation and propagated through simulator adapter contract tests. |
 | `.assert` | done | `tests/compiler-api.contract.test.ts` | Structured assertion artifacts parsed and propagated to simulator adapter/runtime contract tests. |
 | `.limit` | done | `tests/compiler-api.contract.test.ts` | Parsed from directives, exposed in `artifacts.cycleLimit`, and enforced against expanded cycle count. |
@@ -36,10 +36,10 @@ This matrix is the closure baseline for the current compiler. Source of truth is
 
 | Feature | Status | Tests | Notes |
 |---|---|---|---|
-| Pragma parsing (`#pragma ...`) | done | `tests/compiler-api.contract.test.ts` | Preserves text + span in AST. |
+| Legacy pragma rejection (`#pragma ...`) | done | `tests/compiler-api.contract.test.ts` | Rejected with explicit parse diagnostics; canonical form is statement-based (`route(...)`, `reduce(...)`, ...). |
 | Strict unsupported validation | done | `tests/compiler-api.contract.test.ts` | `strictUnsupported` default is `true` (`E3008`). |
 | `unroll` / `no_unroll` / `parallel` / `no_fuse` | done | `tests/compiler-api.contract.test.ts` | Control pragmas lower through parser passes: unroll factor truncation, runtime `no_unroll` standard/aggressive paths, default `parallel` outer-level collapse behavior, nested `parallel collapse(N)` propagation, and no_fuse-controlled while fusion. |
-| `route` lowering | done | `tests/compiler-api.contract.test.ts` | Compact `@r,c` and legacy `(r,c)` lower to route cycles with topology-aware paths, including custom-op destination forms with `INCOMING` resolution. |
+| `route` lowering | done | `tests/compiler-api.contract.test.ts` | Canonical `@r,c` coordinates lower to topology-aware route cycles, including custom-op destination forms with `INCOMING` resolution. |
 | `broadcast` lowering | done | `tests/compiler-api.contract.test.ts` | Fanout implemented via route-style lowering for `row`/`column`/`all` scopes (including NxM grids). |
 | `rotate`/`shift` lowering | done | `tests/compiler-api.contract.test.ts` | Lowering applies across all grid rows; `rotate` remains torus-only by design and `shift` supports fill values. |
 | `scan` lowering | done | `tests/compiler-api.contract.test.ts` | Supports `add/and/or/xor/max/min`, `inclusive/exclusive`, and `left/right/up/down` across all rows/cols lanes. |
@@ -67,7 +67,7 @@ This matrix is the closure baseline for the current compiler. Source of truth is
 | Item | Status | Owner | Exit Condition |
 |---|---|---|---|
 | Replace path alias imports to package internals | done | Simulator | `UMA-CGRA-Simulator/package.json` now consumes `@openedge/*` via fixed semver (`2.0.0-alpha.1`) rather than `file:` paths. |
-| Remove legacy fallback for stable feature set | done | Simulator | Wrapper default and `auto` mode use the package-based compiler. `backend: 'legacy'` is preserved only as a backwards-compatible alias (no legacy compiler path). |
+| Remove legacy fallback for stable feature set | done | Simulator | Wrapper default and `auto` mode use the package-based compiler (no legacy compiler path). |
 | Cross-repo parity workflow | done | OpenEdgeDSL + Simulator | Automated in `.github/workflows/cross-repo-parity.yml` via `scripts/run-simulator-parity.mjs` against simulator parity fixtures (`dsl-compiler-parity` + adapter suite). |
 
 ## Executable Snippet

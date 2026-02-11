@@ -133,7 +133,7 @@ describe('compiler-api passes shared utils', () => {
 
   it('parses route arguments and coordinate literals', () => {
     expect(parseCoordinateLiteral('@0,3')).toEqual({ row: 0, col: 3 });
-    expect(parseCoordinateLiteral('(1, 2)')).toEqual({ row: 1, col: 2 });
+    expect(parseCoordinateLiteral('(1, 2)')).toBeNull();
 
     const simple = parseRoutePragmaArgs('route(@0,1 -> @0,0, payload=R3, accum=R1)');
     expect(simple).toMatchObject({

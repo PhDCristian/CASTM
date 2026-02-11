@@ -97,10 +97,25 @@ function lowerStructuredBodyWithExpansionKernel(structured: StructuredProgramAst
   const diagnostics: Diagnostic[] = [];
   const constants = buildConstantMap(loweredKernel.directives, diagnostics);
   const cycleCounter = { value: 0 };
+  const functions = new Map(
+    structured.functions.map((fn) => {
+      const fnEntries: SourceLineEntry[] = [];
+      emitStructuredBodyAsEntries(fn.body, fnEntries);
+      return [
+        fn.name,
+        {
+          name: fn.name,
+          params: fn.params,
+          body: fnEntries,
+          span: fn.span
+        }
+      ] as const;
+    })
+  );
   expandFunctionBodyIntoKernel(
     entries,
     loweredKernel,
-    new Map(),
+    functions,
     constants,
     diagnostics,
     cycleCounter,
@@ -119,6 +134,7 @@ export function toStructuredProgramAst(ast: AstProgram): StructuredProgramAst {
     return {
       targetProfileId: cloned.targetProfileId,
       kernel: null,
+      functions: [],
       span: cloned.span
     };
   }
@@ -155,6 +171,7 @@ export function toStructuredProgramAst(ast: AstProgram): StructuredProgramAst {
       body,
       span: cloned.kernel.span
     },
+    functions: [],
     span: cloned.span
   };
 }
