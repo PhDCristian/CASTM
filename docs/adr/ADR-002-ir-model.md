@@ -4,7 +4,7 @@
 Accepted
 
 ## Decision
-v2 defines separate `AST`, `HIR`, and `MIR` structures:
+The compiler defines separate `AST`, `HIR`, and `MIR` structures:
 - `AST`: syntactic representation of source.
 - `HIR`: normalized semantic statements.
 - `MIR`: grid-normalized per-cycle per-PE operations.

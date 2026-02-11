@@ -1,10 +1,10 @@
-# v2 Release and Cutover Checklist
+# Release and Cutover Checklist
 
-This checklist defines the release gate for making v2 the operational default across repositories.
+This checklist defines the release gate for making the package-based compiler the operational default across repositories.
 
 ## Preconditions
 
-- `docs/feature-parity-matrix.md` shows stable v1 set as `done`.
+- `docs/feature-parity-matrix.md` shows stable feature set as `done`.
 - Cross-repo parity fixtures are green.
 - No direct imports to OpenEdgeDSL internal `src` paths in downstream repos.
 
@@ -31,7 +31,7 @@ npm run test:simulator-parity -- --simulator /path/to/UMA-CGRA-Simulator --skip-
 
 Expected:
 - `dsl-compiler-parity` suite green.
-- `dsl-compiler-v2-adapter` suite green.
+- Adapter parity suite green.
 
 ## Gate C: Package publication readiness
 
@@ -41,7 +41,7 @@ Expected:
 
 ## Gate D: Simulator default backend cutover
 
-1. Set v2 as default backend.
+1. Set package-based compiler backend as default.
 2. Remove legacy backend fallback path; keep only optional setting alias if needed for backwards-compatible UI config.
 3. Re-run simulator integration and parity suites.
 
@@ -53,6 +53,6 @@ Expected:
 
 ## Exit Criteria
 
-- v2 is default in simulator with parity CI green.
+- Package-based compiler backend is default in simulator with parity CI green.
 - Stable feature set compiles/runs without legacy fallback path.
 - Versioned package consumption is enforced in downstream integrations.

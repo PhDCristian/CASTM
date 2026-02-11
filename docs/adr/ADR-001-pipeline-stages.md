@@ -4,7 +4,7 @@
 Accepted
 
 ## Decision
-The v2 compiler pipeline is explicitly staged:
+The compiler pipeline is explicitly staged:
 
 `Source -> Tokens -> AST -> HIR -> MIR -> LIR(target) -> Backend artifacts`
 

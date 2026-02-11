@@ -74,7 +74,7 @@ export function isRegister(register: string, profileId: string): boolean {
 
 export function generateInstructionReferenceMarkdown(): string {
   const lines: string[] = [];
-  lines.push('# OpenEdge v2 Instruction Reference');
+  lines.push('# OpenEdge Instruction Reference');
   lines.push('');
   lines.push('| Opcode | Category | Operands | Description |');
   lines.push('|---|---|---|---|');

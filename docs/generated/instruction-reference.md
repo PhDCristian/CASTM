@@ -1,4 +1,4 @@
-# OpenEdge v2 Instruction Reference
+# OpenEdge Instruction Reference
 
 | Opcode | Category | Operands | Description |
 |---|---|---|---|
@@ -31,5 +31,5 @@
 
 ## Target Profiles
 
-- `uma-cgra-v1`: UMA CGRA baseline profile (4x4, torus, wrap)
-- `uma-cgra-v2`: Portable mesh-oriented profile for larger arrays (8x8, mesh, clamp)
+- `uma-cgra-base`: UMA CGRA baseline profile (4x4, torus, wrap)
+- `uma-cgra-mesh`: Portable mesh-oriented profile for larger arrays (8x8, mesh, clamp)

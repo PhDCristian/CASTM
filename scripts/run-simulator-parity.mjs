@@ -1,14 +1,11 @@
 #!/usr/bin/env node
 
-import { existsSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 
-const DEFAULT_TESTS = [
-  'src/__tests__/dsl-compiler-parity.test.ts',
-  'src/__tests__/dsl-compiler-v2-adapter.test.ts'
-];
+const PARITY_TEST = 'src/__tests__/dsl-compiler-parity.test.ts';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 
@@ -34,7 +31,7 @@ function parseArgs(argv) {
   const options = {
     simulatorPath: resolveSimulatorPath(process.env.OPENEDGE_SIMULATOR_PATH),
     install: true,
-    tests: [...DEFAULT_TESTS]
+    tests: []
   };
 
   for (let i = 0; i < argv.length; i += 1) {
@@ -72,6 +69,27 @@ function run(command, args, cwd) {
   }
 }
 
+function discoverDefaultTests(simulatorPath) {
+  const tests = [PARITY_TEST];
+  const testsDir = path.join(simulatorPath, 'src', '__tests__');
+  if (!existsSync(testsDir)) {
+    return tests;
+  }
+
+  const entries = readdirSync(testsDir).filter((name) => name.endsWith('.test.ts'));
+  const adapterCandidates = entries
+    .filter((name) => /^dsl-compiler-.*adapter.*\.test\.ts$/i.test(name))
+    .sort((a, b) => a.localeCompare(b));
+
+  const preferred = adapterCandidates.find((name) => /^dsl-compiler-adapter\.test\.ts$/i.test(name))
+    ?? adapterCandidates[0];
+  if (preferred) {
+    tests.push(`src/__tests__/${preferred}`);
+  }
+
+  return tests;
+}
+
 function linkLocalOpenEdgePackages(simulatorPath) {
   const localPackages = [
     `@openedge/lang-spec@file:${path.join(projectRoot, 'packages/lang-spec')}`,
@@ -104,7 +122,7 @@ function main() {
   console.log('[openedge] Linking local @openedge/* packages into simulator...');
   linkLocalOpenEdgePackages(options.simulatorPath);
 
-  const tests = options.tests.length > 0 ? options.tests : DEFAULT_TESTS;
+  const tests = options.tests.length > 0 ? options.tests : discoverDefaultTests(options.simulatorPath);
   console.log(`[openedge] Running parity tests: ${tests.join(', ')}`);
   run('npm', ['test', '--', '--run', ...tests], options.simulatorPath);
 }

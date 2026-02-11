@@ -1,12 +1,12 @@
-# OpenEdgeDSL v2 Feature Parity Matrix
+# OpenEdgeDSL Feature Parity Matrix
 
-This matrix is the v2 closure baseline. Source of truth is stable v1 behavior validated by tests and stable docs (excluding `docs/future/*`).
+This matrix is the closure baseline for the current compiler. Source of truth is stable legacy behavior validated by tests and stable docs (excluding `docs/future/*`).
 
 ## Status Legend
 
-- `done`: Implemented in v2 with tests.
-- `partial`: Implemented subset in v2; explicit gap tracked.
-- `pending`: Not implemented in v2 yet.
+- `done`: Implemented in the current compiler with tests.
+- `partial`: Implemented subset; explicit gap tracked.
+- `pending`: Not implemented yet.
 
 ## Language Core
 
@@ -28,8 +28,8 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 | `.const`, `.alias` parse | done | indirect (`compile` contracts) | Exposed via `artifacts.symbols`. |
 | `.data` parse + regions | done | `tests/compiler-api.contract.test.ts` | Also exposed in `memoryRegions`. |
 | `.data2d` | done | `tests/compiler-api.contract.test.ts` | Supports declaration, region allocation, literal and dynamic 2D index lowering to address expressions. |
-| `.io_load`, `.io_store` | done | `tests/compiler-api.contract.test.ts` | Parsed into `ioConfig` with non-negative validation and propagated through simulator v2 adapter contract tests. |
-| `.assert` | done | `tests/compiler-api.contract.test.ts` | Structured assertion artifacts parsed and propagated to simulator v2 adapter/runtime contract tests. |
+| `.io_load`, `.io_store` | done | `tests/compiler-api.contract.test.ts` | Parsed into `ioConfig` with non-negative validation and propagated through simulator adapter contract tests. |
+| `.assert` | done | `tests/compiler-api.contract.test.ts` | Structured assertion artifacts parsed and propagated to simulator adapter/runtime contract tests. |
 | `.limit` | done | `tests/compiler-api.contract.test.ts` | Parsed from directives, exposed in `artifacts.cycleLimit`, and enforced against expanded cycle count. |
 
 ## Pragmas
@@ -66,14 +66,14 @@ This matrix is the v2 closure baseline. Source of truth is stable v1 behavior va
 
 | Item | Status | Owner | Exit Condition |
 |---|---|---|---|
-| Replace path alias imports to v2 internals | done | Simulator | `UMA-CGRA-Simulator/package.json` now consumes `@openedge/*` via fixed semver (`2.0.0-alpha.1`) rather than `file:` paths. |
-| Remove legacy fallback for stable feature set | done | Simulator | Wrapper default and `auto` mode are v2-only. `backend: 'legacy'` is preserved only as a backwards-compatible alias to v2 (no legacy compiler path). |
-| Cross-repo parity workflow | done | OpenEdgeDSL + Simulator | Automated in `.github/workflows/cross-repo-parity.yml` via `scripts/run-simulator-parity.mjs` against simulator parity fixtures (`dsl-compiler-parity` + `dsl-compiler-v2-adapter`). |
+| Replace path alias imports to package internals | done | Simulator | `UMA-CGRA-Simulator/package.json` now consumes `@openedge/*` via fixed semver (`2.0.0-alpha.1`) rather than `file:` paths. |
+| Remove legacy fallback for stable feature set | done | Simulator | Wrapper default and `auto` mode use the package-based compiler. `backend: 'legacy'` is preserved only as a backwards-compatible alias (no legacy compiler path). |
+| Cross-repo parity workflow | done | OpenEdgeDSL + Simulator | Automated in `.github/workflows/cross-repo-parity.yml` via `scripts/run-simulator-parity.mjs` against simulator parity fixtures (`dsl-compiler-parity` + adapter suite). |
 
 ## Executable Snippet
 
 ```openedge
-target "uma-cgra-v1";
+target "uma-cgra-base";
 kernel "snippet_ok" {
   cycle {
     @0,0: EXIT;

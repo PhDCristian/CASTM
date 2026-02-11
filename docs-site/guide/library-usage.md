@@ -5,7 +5,7 @@ outline: deep
 
 # Library Usage
 
-OpenEdge DSL v2 can be used as a TypeScript/JavaScript library for programmatic compilation.
+OpenEdge DSL can be used as a TypeScript/JavaScript library for programmatic compilation.
 
 ## Installation
 
@@ -19,11 +19,11 @@ npm install @openedge/compiler-api
 import { compile } from '@openedge/compiler-api';
 
 const source = `
-.data values { 1, 2, 3 }
+target "uma-cgra-base";
+let values = { 1, 2, 3 };
 kernel "Test" {
-    config(0xF, 0);
     cycle {
-        @0,0: LWI R0, values[0];
+        at @0,0: R0 = values[0];
     }
 }
 `;

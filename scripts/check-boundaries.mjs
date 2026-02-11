@@ -6,6 +6,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const root = path.resolve(__dirname, '..');
 const packagesDir = path.join(root, 'packages');
+const MAX_SOURCE_FILE_LINES = 600;
 
 const rules = {
   'lang-spec': [],
@@ -46,6 +47,13 @@ for (const pkg of Object.keys(rules)) {
 
   for (const file of walkTsFiles(srcDir)) {
     const text = fs.readFileSync(file, 'utf8');
+    const lineCount = text.split(/\r?\n/).length;
+    if (lineCount > MAX_SOURCE_FILE_LINES) {
+      violations.push(
+        `${path.relative(root, file)} has ${lineCount} lines (max ${MAX_SOURCE_FILE_LINES})`
+      );
+    }
+
     const importRe = /from\s+['"](@openedge\/[a-z-]+)['"]/g;
     let m;
     while ((m = importRe.exec(text)) !== null) {

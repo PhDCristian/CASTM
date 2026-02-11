@@ -10,12 +10,12 @@ OpenEdgeDSL now uses a single architecture based on the new multi-package compil
 - `packages/compiler-api`: facade (`parse`, `analyze`, `compile`, `emit`) and passes.
 - `packages/compiler-backend-csv`: CSV emitters (`flat-csv`, `sim-matrix-csv`).
 - `packages/lsp-server`: language-server package.
-- `packages/cli`: CLI (`openedge` / `openedge-v2`).
+- `packages/cli`: CLI (`openedge`).
 - `packages/testkit`: test helpers.
 - `tests`: contract and docs-snippet tests.
 - `scripts`: repo checks and simulator parity runner.
 - `docs`: ADRs, parity matrix and generated instruction reference.
-- `docs-legacy-v1`: archived v1 documentation.
+- `docs-legacy`: archived historical documentation.
 
 ## Quick start
 
@@ -35,12 +35,12 @@ npx openedge program.dsl -o out.csv
 
 ## Notes
 
-- The previous v1 compiler tree (`src`, legacy CLI/TUI, VSCode extension sources) has been removed from active development.
+- The previous compiler tree (`src`, legacy CLI/TUI, VSCode extension sources) has been removed from active development.
 - Simulator integration is validated through `scripts/run-simulator-parity.mjs` and CI workflow `cross-repo-parity.yml`.
 
 ## Release and migration docs
 
 - `CHANGELOG.md`
-- `docs/migration-v1-to-v2.md`
+- `docs/migration-from-legacy.md`
 - `docs/release-cutover-checklist.md`
 - `docs/deprecation-policy.md`

@@ -5,7 +5,7 @@ outline: deep
 
 # Getting Started
 
-OpenEdge DSL is a high-level structured assembly language designed for the **OpenEdgeCGRA architecture** (4×4 mesh of Reconfigurable Cells with Shared PC per Column). It bridges the gap between the physical spatial nature of CGRAs and the logical flow of software development.
+OpenEdge DSL is a high-level structured assembly language designed for the **OpenEdgeCGRA architecture**. It bridges the gap between the physical spatial nature of CGRAs and the logical flow of software development.
 
 ## Prerequisites
 
@@ -26,7 +26,7 @@ npm link  # Optional: install globally
 
 ### Package-based Usage
 
-OpenEdgeDSL v2 is consumed through `@openedge/*` packages (for example `@openedge/compiler-api` and `@openedge/cli`).
+OpenEdgeDSL is consumed through `@openedge/*` packages (for example `@openedge/compiler-api` and `@openedge/cli`).
 
 ## Quick Start
 
@@ -35,27 +35,26 @@ OpenEdgeDSL v2 is consumed through `@openedge/*` packages (for example `@openedg
 Create a file called `hello.edsl`:
 
 ```c
-.data input { 10, 20 }
-.data output { 0 }
+target "uma-cgra-base";
+let input = { 10, 20 };
+let output = { 0 };
 
 kernel "Hello" {
-    config(0xF, 0);
-
     cycle {
-        @0,0: LWI R0, input[0];
-        @0,1: LWI R1, input[1];
+        at @0,0: R0 = input[0];
+        at @0,1: R1 = input[1];
     }
 
     cycle {
-        @0,0: SADD R2, R0, R1;
+        at @0,0: R2 = R0 + R1;
     }
 
     cycle {
-        @0,0: SWI R2, output[0];
+        at @0,0: output[0] = R2;
     }
 
     cycle {
-        @0,0: EXIT;
+        at @0,0: EXIT;
     }
 }
 ```
@@ -63,44 +62,14 @@ kernel "Hello" {
 ### 2. Compile It
 
 ```bash
-openedge compile hello.edsl -o hello.csv
+openedge emit hello.edsl -o hello.csv
 ```
 
-### 3. Inspect the Output
+### 3. Validate and Analyze
 
 ```bash
-openedge info hello.edsl
-```
-
-```
-  ✓ Program: hello.edsl
-
-    Status:      Valid
-    Cycles:      4
-    Grid:        2×2
-    Memory:      2 region(s)
-        input: 0x0 (2 values)
-        output: 0x8 (1 values)
-```
-
-## Using the TUI
-
-OpenEdge DSL features a modern Terminal UI with side-by-side preview:
-
-```bash
-openedge tui  # or just 'openedge t'
-```
-
-```
- ┌──────────────────────────────────────┐┌────────────────────────────────────┐
- │ Browse > /projects/cgra              ││ ◇ kernel.dsl                       │
- │                                      ││ 1 │ .data input { 10 }             │
- │ ❯ ▪ examples                         ││ 2 │ kernel "Test" {                │
- │   ▫ simple.dsl                       ││ 3 │   cycle {                      │
- │   ▫ matrix_mul.dsl                   ││ 4 │     @0,0: LWI R0, input[0];    │
- │   ..                                 ││ 5 │   }                            │
- └──────────────────────────────────────┘└────────────────────────────────────┘
-   ↑↓ navigate   ⏎ select   ESC back   ^C exit
+openedge check hello.edsl
+openedge analyze hello.edsl
 ```
 
 ## What Next?

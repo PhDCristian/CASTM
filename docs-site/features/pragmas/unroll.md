@@ -48,7 +48,7 @@ for i in range(16) {
 
 **Compiled:** 4 cycles (i = 0, 1, 2, 3). Remaining iterations truncated.
 
-**Note:** In v1.1, partial unrolling truncates extra iterations.
+**Note:** Partial unrolling truncates extra iterations.
 
 ---
 

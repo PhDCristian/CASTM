@@ -7,15 +7,15 @@ The format follows Keep a Changelog and Semantic Versioning intent for package r
 ## [Unreleased]
 
 ### Added
-- Release documentation for v2 cutover (`docs/migration-v1-to-v2.md`, `docs/release-cutover-checklist.md`, `docs/deprecation-policy.md`).
+- Release documentation for cutover (`docs/migration-from-legacy.md`, `docs/release-cutover-checklist.md`, `docs/deprecation-policy.md`).
 
 ### Changed
 - Simulator integration no longer imports `@phdcristian/openedge-dsl` compatibility entrypoints.
-- Simulator `backend: "legacy"` option is now a compatibility alias to v2 (no legacy compiler fallback path).
+- Simulator `backend: "legacy"` option is now a compatibility alias to the package-based compiler (no legacy compiler fallback path).
 
 ### Removed
 - Root compatibility layer (`compat/index.ts`, `compat/compiler.ts`).
-- Local residual directories from transition phase (`v2/`, `editors/`).
+- Local residual directories from transition phase (versioned staging tree and `editors/`).
 
 ## [2.0.0-alpha.1] - 2026-02-11
 
@@ -30,21 +30,21 @@ The format follows Keep a Changelog and Semantic Versioning intent for package r
   - `@openedge/cli`
   - `@openedge/testkit`
 - Structured compiler pipeline (`AST -> HIR -> MIR -> LIR`) with typed diagnostics and artifacts.
-- Pragmas and directives parity implementation for stable v1 feature set (see `docs/feature-parity-matrix.md`).
+- Pragmas and directives parity implementation for the stable feature set (see `docs/feature-parity-matrix.md`).
 - CSV emission formats:
   - `flat-csv`
   - `sim-matrix-csv`
 - Cross-repo parity workflow and simulator parity runner.
 
 ### Changed
-- Repository root now hosts the v2 architecture directly.
-- Root workflows renamed and aligned with v2:
+- Repository root now hosts the package-based architecture directly.
+- Root workflows renamed and aligned with the package-based architecture:
   - `.github/workflows/ci.yml`
   - `.github/workflows/cross-repo-parity.yml`
 
 ### Removed
-- Legacy v1 active compiler tree from root (`src/`), legacy editor extension sources, and old build flow from active development.
+- Legacy active compiler tree from root (`src/`), legacy editor extension sources, and old build flow from active development.
 
 ### Notes
-- Legacy documentation is archived under `docs-legacy-v1/`.
+- Legacy documentation is archived under `docs-legacy/`.
 - Simulator consumption is expected through versioned `@openedge/*` packages.

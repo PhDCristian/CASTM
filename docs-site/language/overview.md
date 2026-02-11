@@ -1,12 +1,14 @@
 # Introduction
 
+> Legacy reference notice: the canonical private source of truth is now `docs/language/*`. This section documents legacy syntax and is kept for historical context only.
+
 [← Back to Index](../README.md) | [Next: Program Structure →](02-program-structure.md)
 
 ---
 
 ## Overview
 
-OpenEdge-DSL v1 is a high-level structured assembly language designed for the OpenEdgeCGRA architecture. It bridges the gap between the physical spatial nature of CGRAs and the logical flow of software development.
+OpenEdge-DSL is a high-level structured assembly language designed for the OpenEdgeCGRA architecture. It bridges the gap between the physical spatial nature of CGRAs and the logical flow of software development.
 
 ## Design Philosophy
 

@@ -1,4 +1,4 @@
-import { Diagnostic, DiagnosticSeverity, SourceSpan } from './types.js';
+import { Diagnostic, DiagnosticSeverity, SourceSpan } from './common.js';
 
 export const ErrorCodes = {
   Parse: {
@@ -37,7 +37,8 @@ export function makeDiagnostic(
   severity: DiagnosticSeverity,
   span: SourceSpan,
   message: string,
-  hint?: string
+  hint?: string,
+  hintCode?: string
 ): Diagnostic {
-  return { code, severity, span, message, hint };
+  return { code, severity, span, message, hint, hintCode };
 }

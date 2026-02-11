@@ -6,6 +6,16 @@ export interface FrontToken {
 }
 
 const TOKEN_RE = /#pragma|\.\w+|"(?:\\.|[^"])*"|0x[0-9a-fA-F]+|-?\d+|[A-Za-z_][A-Za-z0-9_]*|==|!=|<=|>=|->|[{}()\[\],:;|=+\-*/%&^@]/g;
+const KEYWORDS = new Set([
+  'target', 'kernel', 'config', 'cycle',
+  'let', 'at', 'row', 'col', 'all',
+  'if', 'else', 'while', 'for', 'in', 'range', 'runtime',
+  'function'
+]);
+const ADVANCED_STATEMENTS = new Set([
+  'route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce',
+  'stencil', 'allreduce', 'transpose', 'gather', 'stream_load', 'stream_store'
+]);
 
 export function tokenizeSource(source: string): FrontToken[] {
   const tokens: FrontToken[] = [];
@@ -23,7 +33,14 @@ export function tokenizeSource(source: string): FrontToken[] {
       else if (value.startsWith('.')) type = 'directive';
       else if (/^"/.test(value)) type = 'string';
       else if (/^-?\d+$/.test(value) || /^0x/.test(value)) type = 'number';
-      else if (/^[A-Za-z_]/.test(value)) type = 'identifier';
+      else if (/^[A-Za-z_]/.test(value)) {
+        const normalized = value.toLowerCase();
+        if (KEYWORDS.has(normalized) || ADVANCED_STATEMENTS.has(normalized)) {
+          type = 'keyword';
+        } else {
+          type = 'identifier';
+        }
+      }
       else if (/^(==|!=|<=|>=|->|=|\+|-|\*|\/|%|&|\^|\|)$/.test(value)) type = 'operator';
       tokens.push({ type, value, line: i + 1, column });
     }

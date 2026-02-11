@@ -1,4 +1,4 @@
-import { Diagnostic } from './types.js';
+import { Diagnostic } from './common.js';
 
 export interface PassContext {
   diagnostics: Diagnostic[];

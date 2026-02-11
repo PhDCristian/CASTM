@@ -27,7 +27,7 @@ on:
       - '.github/workflows/ci.yml'
 
 jobs:
-  v2-ci:
+  compiler-ci:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

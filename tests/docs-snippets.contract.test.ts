@@ -36,7 +36,7 @@ describe('docs snippets contracts', () => {
   it('compiles executable DSL snippets from docs', () => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
-    const docsRoot = path.resolve(__dirname, '../docs');
+    const docsRoot = path.resolve(__dirname, '../docs/language');
     const markdownFiles = collectMarkdownFiles(docsRoot);
 
     const snippets: Array<{ file: string; source: string }> = [];
