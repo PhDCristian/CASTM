@@ -21,8 +21,10 @@ Two adjacent cycles are compacted only when all conditions hold:
 
 1. No PE occupancy collision between both cycles.
 2. No branch/control barrier instructions in either cycle.
-3. No route boundary hazard (`ROUT` writers or incoming-neighbor readers such as `RCL/RCR/RCT/RCB/INCOMING`).
+3. No direct route hop dependency (a neighbor-reader in one cycle consuming a `ROUT` write from the other cycle).
 4. Not both cycles containing memory operations.
+
+Independent route steps on disjoint PEs can now be compacted (OPT-B baseline), while direct hop dependencies remain separated.
 
 When merged, statements are preserved in lexical order and cycle indices are re-numbered deterministically.
 
@@ -58,3 +60,4 @@ Executable contract tests:
 
 - `tests/issues/feat-01-latency-hide.test.ts`
 - `tests/compiler-api.latency-hide.test.ts`
+- `tests/issues/opt-b-route-parallel-pack.test.ts`

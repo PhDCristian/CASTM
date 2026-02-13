@@ -31,7 +31,7 @@ target "uma-cgra-base";
 kernel "feat01_latency_dependency" {
   latency_hide(window=1, mode=conservative);
   cycle { @0,0: SADD ROUT, R1, ZERO; }
-  cycle { @0,1: SADD R2, RCR, ZERO; }
+  cycle { @0,1: SADD R2, RCL, ZERO; }
 }
 `;
 
@@ -39,7 +39,7 @@ kernel "feat01_latency_dependency" {
     expect(result.success).toBe(true);
     const rows = csvRows(result.artifacts.csv ?? '');
     expect(rows.some((line) => line === '0,0,0,SADD ROUT R1 ZERO')).toBe(true);
-    expect(rows.some((line) => line === '1,0,1,SADD R2 RCR ZERO')).toBe(true);
+    expect(rows.some((line) => line === '1,0,1,SADD R2 RCL ZERO')).toBe(true);
   });
 
   it('rejects malformed latency_hide options', () => {

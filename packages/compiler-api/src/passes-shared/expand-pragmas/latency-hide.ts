@@ -43,8 +43,7 @@ const INCOMING_IDENTIFIERS = new Set([
   'RCL',
   'RCR',
   'RCT',
-  'RCB',
-  'INCOMING'
+  'RCB'
 ]);
 
 interface Placement {
@@ -54,11 +53,19 @@ interface Placement {
   span: CycleStatementAst['span'];
 }
 
+type IncomingDirection = 'RCL' | 'RCR' | 'RCT' | 'RCB';
+
+interface IncomingRead {
+  row: number;
+  col: number;
+  direction: IncomingDirection;
+}
+
 interface AccessSummary {
   reads: Set<string>;
   writes: Set<string>;
   hasMemory: boolean;
-  readsIncoming: boolean;
+  incomingDirections: IncomingDirection[];
   writesRoute: boolean;
 }
 
@@ -68,7 +75,8 @@ interface CycleSummary {
   reads: Set<string>;
   writes: Set<string>;
   hasMemory: boolean;
-  readsIncoming: boolean;
+  incomingReads: IncomingRead[];
+  routeWrites: Set<string>;
   writesRoute: boolean;
 }
 
@@ -149,12 +157,14 @@ function summarizeInstruction(instruction: InstructionAst): AccessSummary | null
   const reads = new Set<string>();
   const writes = new Set<string>();
   const operands = instruction.operands.map((operand) => operand.trim());
-  let readsIncoming = false;
+  const incomingDirections: IncomingDirection[] = [];
 
   const addReads = (operand: string) => {
     for (const token of extractIdentifierTokens(operand)) {
       reads.add(token);
-      if (INCOMING_IDENTIFIERS.has(token)) readsIncoming = true;
+      if (INCOMING_IDENTIFIERS.has(token)) {
+        incomingDirections.push(token as IncomingDirection);
+      }
     }
   };
 
@@ -166,7 +176,7 @@ function summarizeInstruction(instruction: InstructionAst): AccessSummary | null
       reads,
       writes,
       hasMemory: true,
-      readsIncoming,
+      incomingDirections,
       writesRoute: false
     };
   }
@@ -178,7 +188,7 @@ function summarizeInstruction(instruction: InstructionAst): AccessSummary | null
       reads,
       writes,
       hasMemory: true,
-      readsIncoming,
+      incomingDirections,
       writesRoute: false
     };
   }
@@ -192,7 +202,7 @@ function summarizeInstruction(instruction: InstructionAst): AccessSummary | null
       reads,
       writes,
       hasMemory: true,
-      readsIncoming,
+      incomingDirections,
       writesRoute: false
     };
   }
@@ -204,7 +214,7 @@ function summarizeInstruction(instruction: InstructionAst): AccessSummary | null
       reads,
       writes,
       hasMemory: true,
-      readsIncoming,
+      incomingDirections,
       writesRoute: false
     };
   }
@@ -222,7 +232,7 @@ function summarizeInstruction(instruction: InstructionAst): AccessSummary | null
     reads,
     writes,
     hasMemory: false,
-    readsIncoming,
+    incomingDirections,
     writesRoute: dest === 'ROUT'
   };
 }
@@ -239,7 +249,8 @@ function summarizeCycle(cycle: CycleAst, grid: GridSpec): CycleSummary | null {
   const reads = new Set<string>();
   const writes = new Set<string>();
   let hasMemory = false;
-  let readsIncoming = false;
+  const incomingReads: IncomingRead[] = [];
+  const routeWrites = new Set<string>();
   let writesRoute = false;
 
   for (const placement of placements) {
@@ -249,8 +260,17 @@ function summarizeCycle(cycle: CycleAst, grid: GridSpec): CycleSummary | null {
     const access = summarizeInstruction(placement.instruction);
     if (!access) return null;
     if (access.hasMemory) hasMemory = true;
-    if (access.readsIncoming) readsIncoming = true;
-    if (access.writesRoute) writesRoute = true;
+    if (access.writesRoute) {
+      writesRoute = true;
+      routeWrites.add(`${placement.row},${placement.col}`);
+    }
+    for (const direction of access.incomingDirections) {
+      incomingReads.push({
+        row: placement.row,
+        col: placement.col,
+        direction
+      });
+    }
     for (const token of access.reads) reads.add(token);
     for (const token of access.writes) writes.add(token);
   }
@@ -261,19 +281,63 @@ function summarizeCycle(cycle: CycleAst, grid: GridSpec): CycleSummary | null {
     reads,
     writes,
     hasMemory,
-    readsIncoming,
+    incomingReads,
+    routeWrites,
     writesRoute
   };
 }
 
-function canMergeCycles(current: CycleSummary, next: CycleSummary): boolean {
+function wrapIndex(value: number, size: number): number {
+  return ((value % size) + size) % size;
+}
+
+function incomingSourceCoordinate(
+  row: number,
+  col: number,
+  direction: IncomingDirection,
+  grid: GridSpec
+): string | null {
+  let sourceRow = row;
+  let sourceCol = col;
+  if (direction === 'RCL') sourceCol -= 1;
+  if (direction === 'RCR') sourceCol += 1;
+  if (direction === 'RCT') sourceRow -= 1;
+  if (direction === 'RCB') sourceRow += 1;
+
+  if (grid.wrapPolicy === 'wrap') {
+    sourceRow = wrapIndex(sourceRow, grid.rows);
+    sourceCol = wrapIndex(sourceCol, grid.cols);
+    return `${sourceRow},${sourceCol}`;
+  }
+
+  if (sourceRow < 0 || sourceRow >= grid.rows || sourceCol < 0 || sourceCol >= grid.cols) {
+    return null;
+  }
+  return `${sourceRow},${sourceCol}`;
+}
+
+function hasRouteDependency(
+  producer: CycleSummary,
+  consumer: CycleSummary,
+  grid: GridSpec
+): boolean {
+  if (!producer.writesRoute || consumer.incomingReads.length === 0) return false;
+  for (const incoming of consumer.incomingReads) {
+    const source = incomingSourceCoordinate(incoming.row, incoming.col, incoming.direction, grid);
+    if (!source) continue;
+    if (producer.routeWrites.has(source)) return true;
+  }
+  return false;
+}
+
+function canMergeCycles(current: CycleSummary, next: CycleSummary, grid: GridSpec): boolean {
   for (const coordinate of next.occupied) {
     if (current.occupied.has(coordinate)) return false;
   }
 
-  if (current.readsIncoming || current.writesRoute) return false;
-  if (next.readsIncoming || next.writesRoute) return false;
   if (current.hasMemory && next.hasMemory) return false;
+  if (hasRouteDependency(current, next, grid)) return false;
+  if (hasRouteDependency(next, current, grid)) return false;
   return true;
 }
 
@@ -316,7 +380,7 @@ export function applyLatencyHide(
       const currentSummary = summarizeCycle(compacted[cycleIndex], grid);
       const nextSummary = summarizeCycle(compacted[cycleIndex + 1], grid);
       if (!currentSummary || !nextSummary) break;
-      if (!canMergeCycles(currentSummary, nextSummary)) break;
+      if (!canMergeCycles(currentSummary, nextSummary, grid)) break;
 
       compacted[cycleIndex] = mergedCycleFromSummaries(
         compacted[cycleIndex],

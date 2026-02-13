@@ -34,7 +34,7 @@ target "uma-cgra-base";
 kernel "opt_a_route_guard" {
   latency_hide(window=2, mode=conservative);
   cycle { @0,0: SADD ROUT, R1, ZERO; }
-  cycle { @0,1: SADD R2, RCR, ZERO; }
+  cycle { @0,1: SADD R2, RCL, ZERO; }
 }
 `;
 
@@ -43,6 +43,6 @@ kernel "opt_a_route_guard" {
 
     const rows = csvRows(result.artifacts.csv ?? '');
     expect(rows).toContain('0,0,0,SADD ROUT R1 ZERO');
-    expect(rows).toContain('1,0,1,SADD R2 RCR ZERO');
+    expect(rows).toContain('1,0,1,SADD R2 RCL ZERO');
   });
 });

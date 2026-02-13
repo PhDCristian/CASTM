@@ -11,6 +11,13 @@ const grid: any = {
   wrapPolicy: 'wrap'
 };
 
+const meshGrid: any = {
+  rows: 4,
+  cols: 4,
+  topology: 'mesh',
+  wrapPolicy: 'clamp'
+};
+
 function instruction(opcode: string | null, text: string, operands: string[]): any {
   return {
     opcode,
@@ -103,7 +110,7 @@ describe('compiler-api latency_hide parser + scheduler', () => {
 
     const routeHazard = applyLatencyHide([
       cycle(0, [at(0, 0, instruction('SADD', 'SADD ROUT, R1, ZERO', ['ROUT', 'R1', 'ZERO']))]),
-      cycle(1, [at(0, 1, instruction('SADD', 'SADD R2, RCR, ZERO', ['R2', 'RCR', 'ZERO']))])
+      cycle(1, [at(0, 1, instruction('SADD', 'SADD R2, RCL, ZERO', ['R2', 'RCL', 'ZERO']))])
     ], grid, 1);
     expect(routeHazard).toHaveLength(2);
 
@@ -112,6 +119,66 @@ describe('compiler-api latency_hide parser + scheduler', () => {
       cycle(1, [at(0, 1, instruction('SWI', 'SWI R2, 8', ['R2', '8']))])
     ], grid, 1);
     expect(dualMemory).toHaveLength(2);
+  });
+
+  it('packs independent route-writes and independent incoming-reads', () => {
+    const routeWrites = applyLatencyHide([
+      cycle(0, [at(0, 0, instruction('SADD', 'SADD ROUT, R1, ZERO', ['ROUT', 'R1', 'ZERO']))]),
+      cycle(1, [at(2, 2, instruction('SADD', 'SADD ROUT, R3, ZERO', ['ROUT', 'R3', 'ZERO']))])
+    ], grid, 1);
+    expect(routeWrites).toHaveLength(1);
+
+    const incomingReads = applyLatencyHide([
+      cycle(0, [at(0, 1, instruction('SADD', 'SADD R2, RCL, ZERO', ['R2', 'RCL', 'ZERO']))]),
+      cycle(1, [at(2, 3, instruction('SADD', 'SADD R4, RCL, ZERO', ['R4', 'RCL', 'ZERO']))])
+    ], grid, 1);
+    expect(incomingReads).toHaveLength(1);
+  });
+
+  it('handles non-wrap incoming dependency checks for mesh boundaries', () => {
+    const noSourceAtBoundary = applyLatencyHide([
+      cycle(0, [at(0, 2, instruction('SADD', 'SADD ROUT, R1, ZERO', ['ROUT', 'R1', 'ZERO']))]),
+      cycle(1, [at(0, 0, instruction('SADD', 'SADD R2, RCL, ZERO', ['R2', 'RCL', 'ZERO']))])
+    ], meshGrid, 1);
+    expect(noSourceAtBoundary).toHaveLength(1);
+
+    const inBoundsDependency = applyLatencyHide([
+      cycle(0, [at(0, 0, instruction('SADD', 'SADD ROUT, R1, ZERO', ['ROUT', 'R1', 'ZERO']))]),
+      cycle(1, [at(0, 1, instruction('SADD', 'SADD R2, RCL, ZERO', ['R2', 'RCL', 'ZERO']))])
+    ], meshGrid, 1);
+    expect(inBoundsDependency).toHaveLength(2);
+  });
+
+  it('covers route incoming directions and reverse-dependency guard', () => {
+    const rcrDependency = applyLatencyHide([
+      cycle(0, [at(0, 2, instruction('SADD', 'SADD ROUT, R1, ZERO', ['ROUT', 'R1', 'ZERO']))]),
+      cycle(1, [at(0, 1, instruction('SADD', 'SADD R2, RCR, ZERO', ['R2', 'RCR', 'ZERO']))])
+    ], grid, 1);
+    expect(rcrDependency).toHaveLength(2);
+
+    const rctDependency = applyLatencyHide([
+      cycle(0, [at(0, 0, instruction('SADD', 'SADD ROUT, R1, ZERO', ['ROUT', 'R1', 'ZERO']))]),
+      cycle(1, [at(1, 0, instruction('SADD', 'SADD R2, RCT, ZERO', ['R2', 'RCT', 'ZERO']))])
+    ], grid, 1);
+    expect(rctDependency).toHaveLength(2);
+
+    const rcbDependency = applyLatencyHide([
+      cycle(0, [at(2, 0, instruction('SADD', 'SADD ROUT, R1, ZERO', ['ROUT', 'R1', 'ZERO']))]),
+      cycle(1, [at(1, 0, instruction('SADD', 'SADD R2, RCB, ZERO', ['R2', 'RCB', 'ZERO']))])
+    ], grid, 1);
+    expect(rcbDependency).toHaveLength(2);
+
+    const incomingToken = applyLatencyHide([
+      cycle(0, [at(0, 0, instruction('SADD', 'SADD ROUT, R1, ZERO', ['ROUT', 'R1', 'ZERO']))]),
+      cycle(1, [at(2, 2, instruction('SADD', 'SADD R2, INCOMING, ZERO', ['R2', 'INCOMING', 'ZERO']))])
+    ], grid, 1);
+    expect(incomingToken).toHaveLength(1);
+
+    const reverseDependency = applyLatencyHide([
+      cycle(0, [at(0, 1, instruction('SADD', 'SADD R2, RCL, ZERO', ['R2', 'RCL', 'ZERO']))]),
+      cycle(1, [at(0, 0, instruction('SADD', 'SADD ROUT, R1, ZERO', ['ROUT', 'R1', 'ZERO']))])
+    ], grid, 1);
+    expect(reverseDependency).toHaveLength(2);
   });
 
   it('treats control/unknown instructions and unresolved spatial forms as non-compactable', () => {

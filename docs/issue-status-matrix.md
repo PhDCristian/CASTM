@@ -52,7 +52,7 @@ These IDs are proposal/backlog items, not active correctness defects in canonica
 | id | ambito | estado | evidencia-test | owner |
 |---|---|---|---|---|
 | OPT-A | compiler | resolved-verified | `tests/issues/opt-a-cycle-packing.test.ts`, `tests/issues/feat-01-latency-hide.test.ts`, `tests/compiler-api.latency-hide.test.ts` | openedge-dsl |
-| OPT-B | compiler | canonical-intentional | proposal only | backlog |
+| OPT-B | compiler | resolved-verified | `tests/issues/opt-b-route-parallel-pack.test.ts`, `tests/compiler-api.latency-hide.test.ts` | openedge-dsl |
 | OPT-C | compiler | canonical-intentional | proposal only | backlog |
 | OPT-D | compiler | resolved-verified | `tests/compiler-api.contract.test.ts`, `tests/issues/resolved-and-legacy.test.ts` | openedge-dsl |
 | OPT-E | simulator/algo | canonical-intentional | algorithmic optimization (outside compiler correctness scope) | backlog |

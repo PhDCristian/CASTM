@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`19` validated, `5` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`20` validated, `4` in backlog)
 
 ## Workstreams
 
@@ -507,7 +507,8 @@ Status: `pending-backlog`
 Subtasks:
 
 - [x] Prioritize and land `OPT-A` baseline via canonical `latency_hide(window=..., mode=conservative)` cycle packing.
-- [ ] Prioritize `OPT-B`, `OPT-C` by measurable cycle/latency impact.
+- [x] Land `OPT-B` baseline for disjoint route-step overlap under conservative route-dependency guards.
+- [ ] Prioritize `OPT-C` by measurable cycle/latency impact.
 - [ ] Define benchmark corpus and acceptance thresholds.
 - [ ] Convert selected proposal(s) into ADR + implementation plan.
 

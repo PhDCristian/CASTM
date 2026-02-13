@@ -494,7 +494,7 @@ cycle {
 
 ---
 
-### OPT-B: Parallel Route Generation — Multi-Source `#pragma route`
+### OPT-B: Parallel Route Generation — Multi-Source Route Overlap — ✅ RESOLVED (2026-02-13)
 
 **Problem it solves:** When multiple `#pragma route` directives share intermediate hops, the compiler generates them sequentially. If routes don't share PEs or can overlap in time, they could execute in parallel.
 
@@ -514,16 +514,16 @@ cycle {
 2. Routes that share PEs at any timestep are serialized only for those specific timesteps
 3. The total cycle count equals the **critical path** (longest single route) rather than the sum
 
-**Implementation in DSL compiler:**
-- New directive: `#pragma route_group { ... }` or automatic detection of consecutive route pragmas
-- Route scheduler: for each timestep, place as many non-conflicting hop instructions as possible
-- Output: merged cycles with multiple PEs active per cycle
+**Implementation in canonical compiler:**
+- Implemented in conservative scheduler (`latency_hide`) with route-dependency-aware packing.
+- Adjacent route steps from disjoint paths can be merged when PE occupancy and hop dependencies are safe.
+- Direct hop dependencies (`RCL/RCR/RCT/RCB` source from previous `ROUT`) remain non-mergeable.
 
 **Estimated impact:** -4 to -8 cycles (1-3% reduction). In SBOX K7, the route section uses hand-optimized parallel ROUT chains (4 cycles) which already outperforms serial `#pragma route` (which would be ~20 cycles). This proposal would let the compiler match the hand-optimized version automatically.
 
-**Complexity:** Medium-High — requires a spatial-temporal scheduling algorithm. The benefit is more in ergonomics (declarative routes instead of hand-optimized ROUT chains) than in raw latency reduction.
+**Complexity:** Medium baseline delivered; advanced global route-group scheduling remains optional future optimization.
 
-**Note:** In v7, `route_c_to_row0()` is already hand-optimized to 4 cycles. This proposal would make the hand-optimization unnecessary.
+**Evidence:** `tests/issues/opt-b-route-parallel-pack.test.ts`, `tests/compiler-api.latency-hide.test.ts`, `tests/compiler-api.contract.test.ts`.
 
 ---
 

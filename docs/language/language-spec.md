@@ -74,7 +74,7 @@ kernel "canonical_example" {
 - `triangle(...)` expands deterministically in row-major order over the active grid (`shape=upper|lower`, optional `inclusive=true|false`) and emits one canonical cycle with per-PE placements.
 - `guard(...)` applies a compile-time predicate (`cond`) over `row`, `col`, `idx`, `rows`, `cols` and emits deterministic row-major placements for matching PEs only.
 - `route(...)` lowering preserves lexical position relative to neighboring cycles (no global hoisting).
-- `latency_hide(...)` applies conservative post-expansion cycle compaction with explicit hazard guards (PE overlap, route boundary, control barriers, dual-memory adjacency).
+- `latency_hide(...)` applies conservative post-expansion cycle compaction with explicit hazard guards (PE overlap, direct route-hop dependency, control barriers, dual-memory adjacency), and can overlap disjoint route steps safely.
 - `stash(...)` provides deterministic explicit spill/restore lowering to `SWI/LWI` for selected spatial targets (`all`, `row`, `col`, `point`).
 - Inside `cycle { ... }`, semicolon-separated placements on the same line are supported.
 - Computed spatial coordinates in loops (for example `@k/4,k%4`) are valid canonical syntax.
