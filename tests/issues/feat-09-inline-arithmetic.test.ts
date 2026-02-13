@@ -106,4 +106,20 @@ kernel "feat9_invalid_inline" {
     expect(csv).toContain('0,0,0,SADD R1 ZERO 1 < 2');
     expect(csv).toContain('0,0,1,SADD R2 ZERO 1 +');
   });
+
+  it('keeps malformed IMM(...) inline arithmetic untouched', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "feat9_invalid_imm_inline" {
+  cycle {
+    @0,0: SADD R1, ZERO, IMM(1 +);
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    const csv = result.artifacts.csv ?? '';
+    expect(csv).toContain('0,0,0,SADD R1 ZERO 1 +');
+  });
 });

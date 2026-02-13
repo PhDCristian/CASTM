@@ -130,6 +130,42 @@ kernel "runtime_for" {
     expect(result.artifacts.csv).toContain('BGE R0 3');
   });
 
+  it('supports static loop modifiers unroll/collapse in canonical headers', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "loop_modifiers" {
+  for i in range(0, 2) unroll(2) collapse(2) {
+    for j in range(0, 2) {
+      cycle { @i,j: NOP; }
+    }
+  }
+}
+`;
+    const result = compile(source, { emitArtifacts: ['mir'] });
+    expect(result.success).toBe(true);
+    expect(result.stats.cycles).toBe(4);
+    expect(result.stats.instructions).toBe(4);
+    expect(result.stats.activeSlots).toBe(4);
+    expect(result.stats.totalSlots).toBe(64);
+    expect(result.stats.utilization).toBe(4 / 64);
+    expect(result.stats.estimatedCriticalCycles).toBe(4);
+    expect(result.stats.schedulerMode).toBe('safe');
+  });
+
+  it('rejects collapse(n) when nested static loops are insufficient', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "bad_collapse" {
+  for i in range(0, 2) collapse(2) {
+    cycle { @0,i: NOP; }
+  }
+}
+`;
+    const result = compile(source);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.message.includes('collapse(2)'))).toBe(true);
+  });
+
   it('lowers route statement syntax to existing route engine', () => {
     const source = `
 target "uma-cgra-base";
@@ -209,6 +245,29 @@ kernel "phase_trace" {
     expect(result.stats.loweredPasses).toContain('semantic-resolver');
     expect(result.stats.loweredPasses.some((name) => name.startsWith('desugar+pragmas:'))).toBe(true);
     expect(result.stats.loweredPasses.some((name) => name.startsWith('resolve+validate:'))).toBe(true);
+    expect(result.stats.schedulerMode).toBe('safe');
+    expect(result.stats.totalSlots).toBeGreaterThanOrEqual(result.stats.activeSlots);
+  });
+
+  it('reports deterministic scheduler mode in compile stats', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "scheduler_mode_trace" {
+  cycle { @0,0: SADD R1, R0, 1; }
+  cycle { @0,1: SADD R2, R0, 1; }
+}
+`;
+    const first = compile(source, { schedulerMode: 'balanced' });
+    const second = compile(source, { schedulerMode: 'balanced' });
+    expect(first.success).toBe(true);
+    expect(second.success).toBe(true);
+    expect(first.stats.schedulerMode).toBe('balanced');
+    expect(first.stats.loweredPasses).toContain('scheduler:balanced');
+    expect(first.artifacts.csv).toBe(second.artifacts.csv);
+
+    const safe = compile(source, { schedulerMode: 'safe' });
+    expect(safe.success).toBe(true);
+    expect(first.stats.cycles).toBeLessThanOrEqual(safe.stats.cycles);
   });
 
   it('rejects legacy declarations', () => {

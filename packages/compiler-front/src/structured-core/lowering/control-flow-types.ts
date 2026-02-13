@@ -3,6 +3,9 @@ export interface ForHeader {
   start: number;
   end: number;
   step: number;
+  unrollFactor?: number;
+  collapseLevels?: number;
+  collapseOrder?: 'row_major';
   runtime?: boolean;
   control?: {
     row: number;

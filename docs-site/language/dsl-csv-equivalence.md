@@ -78,7 +78,45 @@ NOP,NOP,NOP,NOP
 ```
 :::
 
-## 4) Runtime Loop Lowering (Representative)
+## 4) Static Loop Modifiers (`unroll` / `collapse`)
+
+::: code-group
+```openedge [OpenEdgeDSL]
+target "uma-cgra-base";
+kernel "eq_loop_mods" {
+  for r in range(0, 2) collapse(2) {
+    for c in range(0, 2) {
+      cycle { at @r,c: R3 = R1 + R2; }
+    }
+  }
+}
+```
+
+```csv [CSV matrix excerpt]
+0,,,
+"SADD R3, R1, R2",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+NOP,"SADD R3, R1, R2",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+2,,,
+NOP,NOP,NOP,NOP
+"SADD R3, R1, R2",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+3,,,
+NOP,NOP,NOP,NOP
+NOP,"SADD R3, R1, R2",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+```
+:::
+
+## 5) Runtime Loop Lowering (Representative)
 
 ::: code-group
 ```openedge [OpenEdgeDSL]
@@ -114,7 +152,7 @@ NOP,NOP,NOP,NOP
 ```
 :::
 
-## 5) Scan + Reduce (Representative)
+## 6) Scan + Reduce (Representative)
 
 ::: code-group
 ```openedge [OpenEdgeDSL]
@@ -149,7 +187,7 @@ NOP,"SADD ROUT, R2, ZERO",NOP,NOP
 ```
 :::
 
-## 6) Advanced Statements Coverage
+## 7) Advanced Statements Coverage
 
 All advanced statement pages include an executable `OpenEdgeDSL -> sim-matrix-csv` section with real compiler output.
 
@@ -176,3 +214,8 @@ All advanced statement pages include an executable `OpenEdgeDSL -> sim-matrix-cs
 - `sim-matrix-csv`: matrix per cycle (shown above)
 
 Use `openedge emit --format sim-matrix-csv` for simulator-oriented output.
+
+Matrix note:
+
+- `NOP` cells in `sim-matrix-csv` are empty slots for that PE/cycle.
+- They are not automatically inserted control barriers unless a pass emits explicit `NOP` instructions.

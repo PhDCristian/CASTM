@@ -21,7 +21,12 @@ import {
   parseFunctionParams
 } from '../packages/compiler-front/src/structured-core/lowering/functions.js';
 import { parseInstruction } from '../packages/compiler-front/src/structured-core/lowering/instructions.js';
-import { parseAdvancedStatementAsPragma, parseCycleStatement } from '../packages/compiler-front/src/structured-core/lowering/statements.js';
+import {
+  parseAdvancedNamespaceIssue,
+  parseAdvancedStatementAsPragma,
+  parseCycleStatement,
+  parseStandardAdvancedCall
+} from '../packages/compiler-front/src/structured-core/lowering/statements.js';
 import { collectBlockFromEntries } from '../packages/compiler-front/src/structured-core/parser-utils/blocks.js';
 import { evaluateNumericExpression } from '../packages/compiler-front/src/structured-core/parser-utils/numbers.js';
 import { splitTopLevel } from '../packages/compiler-front/src/structured-core/parser-utils/strings.js';
@@ -84,6 +89,13 @@ describe('compiler-front lowering module contracts', () => {
     expect(parseAdvancedStatementAsPragma('latency_hide(window=1, mode=conservative);')).toBe(
       'latency_hide(window=1, mode=conservative)'
     );
+    expect(parseAdvancedStatementAsPragma('foo();')).toBeNull();
+    expect(parseStandardAdvancedCall('std::unknown(x);')).toBeNull();
+    expect(parseAdvancedNamespaceIssue('vendor::unknown(x);')).toBeNull();
+    expect(parseAdvancedNamespaceIssue('vendor::route(@0,1 -> @0,0, payload=R3, accum=R1);')).toMatchObject({
+      namespace: 'vendor',
+      name: 'route'
+    });
 
     const cycleStmt = parseCycleStatement(
       'at @0,1: SADD R1, R2, R3;',

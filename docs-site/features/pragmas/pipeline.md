@@ -29,7 +29,7 @@ function stage_mix(dst) {
 }
 
 kernel "pipeline_doc" {
-  std::pipeline(stage_load(R0), stage_mix(R3));
+  pipeline(stage_load(R0), stage_mix(R3));
 }
 ```
 

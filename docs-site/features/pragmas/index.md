@@ -4,6 +4,8 @@ Advanced statements provide high-level canonical operations that lower to determ
 
 Canonical standard form uses `std::` (for example `std::route(...)`).
 
+Loop-level parallel strategy is expressed with canonical `for` modifiers (`unroll(k)`, `collapse(n)`), not with legacy pragma syntax.
+
 ## Statement Matrix
 
 | Statement | Main Use | Key Options |

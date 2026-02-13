@@ -15,6 +15,7 @@ Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas 
 - conservative cycle compaction statement (`latency_hide(...)`)
 - explicit stash statement (`stash(...)`) for deterministic register spill/restore placement
 - explicit runtime loop form
+- static loop strategy modifiers in headers: `unroll(k)` and `collapse(n)`
 - runtime directives (`.io_load`, `.io_store`, `.limit`, `.assert`)
 
 ## Example (executable)
@@ -50,6 +51,14 @@ kernel "canonical_example" {
   std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
   std::triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 
+  for i in range(0, 2) unroll(2) collapse(2) {
+    for j in range(0, 2) {
+      cycle {
+        at @i,j: NOP;
+      }
+    }
+  }
+
   for R0 in range(0, 2) at @0,0 runtime {
     cycle {
       at @0,0: R2 = input[R0];
@@ -74,6 +83,9 @@ kernel "canonical_example" {
 - `triangle(...)` expands deterministically in row-major order over the active grid (`shape=upper|lower`, optional `inclusive=true|false`) and emits one canonical cycle with per-PE placements.
 - `guard(...)` applies a compile-time predicate (`cond`) over `row`, `col`, `idx`, `rows`, `cols` and emits deterministic row-major placements for matching PEs only.
 - `std::route(...)` lowering preserves lexical position relative to neighboring cycles (no global hoisting).
+- Static `for` modifiers are deterministic:
+  - `unroll(k)` controls static expansion chunking.
+  - `collapse(n)` currently requires perfectly nested static loops and applies row-major mapping.
 - `latency_hide(...)` applies conservative post-expansion cycle compaction with explicit hazard guards (PE overlap, direct route-hop dependency, control barriers, dual-memory adjacency), and can overlap disjoint route steps safely.
 - `stash(...)` provides deterministic explicit spill/restore lowering to `SWI/LWI` for selected spatial targets (`all`, `row`, `col`, `point`).
 - Inside `cycle { ... }`, semicolon-separated placements on the same line are supported.

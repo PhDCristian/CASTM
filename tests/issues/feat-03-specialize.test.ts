@@ -95,4 +95,24 @@ kernel "feat3_keep" {
     expect(csv).toContain('0,0,3,LOR R4 R2 5');
     expect(csv).toContain('0,1,0,LXOR R5 R1 R2');
   });
+
+  it('specializes identities when immediates are written as IMM(...)', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "feat3_imm_wrapped" {
+  cycle {
+    @0,0: SADD R1, R0, IMM(0);
+    @0,1: SMUL R2, R0, IMM(1);
+    @0,2: LAND R3, R0, IMM(0);
+  }
+}
+`;
+
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    const csv = result.artifacts.csv ?? '';
+    expect(csv).toContain('0,0,0,SADD R1 R0 ZERO');
+    expect(csv).toContain('0,0,1,SADD R2 R0 ZERO');
+    expect(csv).toContain('0,0,2,SADD R3 ZERO ZERO');
+  });
 });

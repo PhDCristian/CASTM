@@ -11,6 +11,11 @@ import { SourceLineEntry } from './parser-utils/blocks.js';
 import { buildConstantMap } from './lowering/top-level-scope/constants.js';
 import { expandFunctionBodyIntoKernel } from './lowering/function-expand.js';
 
+export interface LowerStructuredProgramResult {
+  ast: AstProgram;
+  diagnostics: Diagnostic[];
+}
+
 function renderCycleStatement(statement: CycleStatementAst): string {
   if (statement.kind === 'at') {
     return `@${statement.row},${statement.col}: ${statement.instruction.text};`;
@@ -41,7 +46,11 @@ function emitStructuredBodyAsEntries(
 
   for (const stmt of body) {
     if (stmt.kind === 'advanced') {
-      pushLine(`${stmt.text};`);
+      if (stmt.sourceForm === 'qualified' || stmt.namespace === 'std') {
+        pushLine(`std::${stmt.name}(${stmt.args});`);
+      } else {
+        pushLine(`${stmt.text};`);
+      }
       continue;
     }
 
@@ -84,7 +93,9 @@ function emitStructuredBodyAsEntries(
   }
 }
 
-function lowerStructuredBodyWithExpansionKernel(structured: StructuredProgramAst): KernelAst {
+function lowerStructuredBodyWithExpansionKernel(
+  structured: StructuredProgramAst
+): { kernel: KernelAst; diagnostics: Diagnostic[] } {
   const kernel = structured.kernel!;
   const loweredKernel: KernelAst = {
     name: kernel.name,
@@ -128,7 +139,10 @@ function lowerStructuredBodyWithExpansionKernel(structured: StructuredProgramAst
   );
 
   loweredKernel.cycles = loweredKernel.cycles.map((cycle, index) => ({ ...cycle, index }));
-  return loweredKernel;
+  return {
+    kernel: loweredKernel,
+    diagnostics
+  };
 }
 
 export function toStructuredProgramAst(ast: AstProgram): StructuredProgramAst {
@@ -180,19 +194,31 @@ export function toStructuredProgramAst(ast: AstProgram): StructuredProgramAst {
 }
 
 export function lowerStructuredProgramToAst(structured: StructuredProgramAst): AstProgram {
+  return lowerStructuredProgramToAstDetailed(structured).ast;
+}
+
+export function lowerStructuredProgramToAstDetailed(
+  structured: StructuredProgramAst
+): LowerStructuredProgramResult {
   if (!structured.kernel) {
     return {
-      targetProfileId: structured.targetProfileId,
-      kernel: null,
-      span: structured.span
+      ast: {
+        targetProfileId: structured.targetProfileId,
+        kernel: null,
+        span: structured.span
+      },
+      diagnostics: []
     };
   }
 
-  const loweredKernel = lowerStructuredBodyWithExpansionKernel(structured);
+  const lowered = lowerStructuredBodyWithExpansionKernel(structured);
 
   return {
-    targetProfileId: structured.targetProfileId,
-    kernel: loweredKernel,
-    span: structured.span
+    ast: {
+      targetProfileId: structured.targetProfileId,
+      kernel: lowered.kernel,
+      span: structured.span
+    },
+    diagnostics: lowered.diagnostics
   };
 }

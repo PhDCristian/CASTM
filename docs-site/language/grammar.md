@@ -43,9 +43,16 @@ at_all_stmt      ::= "at" "all" ":" instruction ";"
 ```text
 if_stmt          ::= "if" "(" cond_expr ")" "at" "@" int_expr "," int_expr "{" kernel_item* "}" [ "else" "{" kernel_item* "}" ]
 while_stmt       ::= "while" "(" cond_expr ")" "at" "@" int_expr "," int_expr "{" kernel_item* "}"
-for_stmt         ::= "for" ident "in" "range" "(" range_args ")" "{" kernel_item* "}"
+for_stmt         ::= "for" ident "in" "range" "(" range_args ")" loop_mod* "{" kernel_item* "}"
                   | "for" register "in" "range" "(" range_args ")" "at" "@" int_expr "," int_expr "runtime" "{" kernel_item* "}"
+loop_mod         ::= "unroll" "(" int_expr ")" | "collapse" "(" int_expr ")"
 ```
+
+Loop modifiers:
+
+- `unroll(k)` and `collapse(n)` are canonical static-loop modifiers.
+- `collapse(n)` applies deterministic row-major linearization for nested static loops.
+- `runtime` loops do not accept loop modifiers in this phase.
 
 ## Advanced Statements
 

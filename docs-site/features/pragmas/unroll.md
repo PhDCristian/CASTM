@@ -1,26 +1,29 @@
 # Loop Expansion Model
 
-OpenEdgeDSL supports both static and runtime loop expansion in canonical syntax.
+OpenEdgeDSL supports static loop expansion plus canonical loop strategy modifiers.
 
 ## Static Expansion
 
-`for i in range(a, b[, step]) { ... }` expands at compile time.
+- `for i in range(a, b[, step]) { ... }`
+- `for i in range(a, b[, step]) unroll(k) { ... }`
+- `for i in range(a, b[, step]) collapse(n) { ... }`
+- `for i in range(a, b[, step]) unroll(k) collapse(n) { ... }`
 
 ## Runtime Expansion
 
-`for Rn in range(a, b[, step]) at @r,c runtime { ... }` lowers with explicit control logic.
+- `for Rn in range(a, b[, step]) at @r,c runtime { ... }`
 
-## Example
+Runtime loops require explicit control PE and currently do not accept `unroll(...)` or `collapse(...)`.
+
+## Example (`collapse(2)`)
 
 ```openedge
 target "uma-cgra-base";
 kernel "loop_model" {
-  for i in range(0, 4) {
-    cycle { @0,i: NOP; }
-  }
-
-  for R0 in range(0, 2) at @0,0 runtime {
-    cycle { at @0,1: R2 = R0 + 1; }
+  for r in range(0, 2) collapse(2) {
+    for c in range(0, 2) {
+      cycle { at @r,c: R3 = R1 + R2; }
+    }
   }
 }
 ```
@@ -29,32 +32,56 @@ kernel "loop_model" {
 
 ```csv [CSV matrix excerpt]
 0,,,
-NOP,NOP,NOP,NOP
+"SADD R3, R1, R2",NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 1,,,
-NOP,NOP,NOP,NOP
+NOP,"SADD R3, R1, R2",NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 2,,,
 NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
+"SADD R3, R1, R2",NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 3,,,
 NOP,NOP,NOP,NOP
+NOP,"SADD R3, R1, R2",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+```
+
+## Example (`unroll(2)`)
+
+```openedge
+target "uma-cgra-base";
+kernel "loop_model_unroll" {
+  for i in range(0, 4) unroll(2) {
+    cycle { at @0,i: R2 = R0 + 1; }
+  }
+}
+```
+
+```csv [CSV matrix excerpt]
+0,,,
+"SADD R2, R0, 1",NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
-4,,,
-"SADD R0, ZERO, ZERO",NOP,NOP,NOP
+1,,,
+NOP,"SADD R2, R0, 1",NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
-5,,,
-"BGE R0, 2, 7","SADD R3, RCL, ZERO",NOP,NOP
+2,,,
+NOP,NOP,"SADD R2, R0, 1",NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+3,,,
+NOP,NOP,NOP,"SADD R2, R0, 1"
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP

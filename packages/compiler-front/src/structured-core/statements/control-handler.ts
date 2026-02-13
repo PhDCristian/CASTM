@@ -1,8 +1,10 @@
 import {
   Diagnostic,
+  ErrorCodes,
   StructuredIfStmtAst,
   StructuredKernelStmtAst,
-  StructuredWhileStmtAst
+  StructuredWhileStmtAst,
+  makeDiagnostic
 } from '@openedge/compiler-ir';
 import {
   collectBlockAfterOpenFromEntries,
@@ -16,6 +18,21 @@ export interface StructuredControlParseResult {
   nextIndex: number;
   stop: boolean;
   node?: StructuredKernelStmtAst;
+}
+
+function skipMalformedControlRegion(
+  entries: SourceLineEntry[],
+  index: number,
+  cleanLine: string
+): Pick<StructuredControlParseResult, 'nextIndex' | 'stop'> {
+  if (!cleanLine.includes('{')) {
+    return { nextIndex: index, stop: false };
+  }
+  const block = collectBlockFromEntries(entries, index);
+  if (block.endIndex === null) {
+    return { nextIndex: index, stop: true };
+  }
+  return { nextIndex: block.endIndex, stop: false };
 }
 
 export function tryParseControlStatement(
@@ -32,7 +49,7 @@ export function tryParseControlStatement(
   ) => StructuredKernelStmtAst[]
 ): StructuredControlParseResult {
   const forHeader = cleanLine.match(
-    /^for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+range\s*\((.*)\)\s*(?:at\s+@\s*([^,\{\s]+)\s*,\s*([^\{\s]+))?\s*(runtime)?\s*\{\s*$/i
+    /^for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+range\s*\(([^)]*)\)\s*(?:at\s+@\s*([^,\{\s]+)\s*,\s*([^\{\s]+))?\s*(?:runtime\s*)?(?:(?:unroll|collapse)\s*\([^)]*\)\s*)*\{\s*$/i
   );
   if (forHeader) {
     const block = collectBlockFromEntries(entries, index);
@@ -52,15 +69,49 @@ export function tryParseControlStatement(
     };
   }
 
+  if (/^for\b/i.test(cleanLine)) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(lineNo, cleanLine.length),
+      `Invalid for-loop header '${cleanLine}'.`,
+      'Use: for i in range(...) { ... } or for R0 in range(...) at @row,col runtime { ... }.'
+    ));
+    const malformed = skipMalformedControlRegion(entries, index, cleanLine);
+    return { handled: true, nextIndex: malformed.nextIndex, stop: malformed.stop };
+  }
+
   const ifHeader = cleanLine.match(/^if\s*\((.+)\)\s*at\s+@\s*([^,]+)\s*,\s*([^\{]+)\{\s*$/i);
+  if (!ifHeader && /^if\s*\(/i.test(cleanLine)) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(lineNo, cleanLine.length),
+      `Invalid if header '${cleanLine}'.`,
+      'Use: if (cond) at @row,col { ... } with explicit control location.'
+    ));
+    const malformed = skipMalformedControlRegion(entries, index, cleanLine);
+    return { handled: true, nextIndex: malformed.nextIndex, stop: malformed.stop };
+  }
   if (ifHeader) {
     const thenBlock = collectBlockFromEntries(entries, index);
     if (thenBlock.endIndex === null) {
       return { handled: true, nextIndex: index, stop: true };
     }
 
-    const row = parseInteger(ifHeader[2]) ?? 0;
-    const col = parseInteger(ifHeader[3]) ?? 0;
+    const parsedRow = parseInteger(ifHeader[2]);
+    const parsedCol = parseInteger(ifHeader[3]);
+    if (parsedRow === null || parsedCol === null) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(lineNo, cleanLine.length),
+        `Invalid if control location '@${ifHeader[2].trim()},${ifHeader[3].trim()}'.`,
+        'Control coordinates must be integer literals (decimal or hex).'
+      ));
+    }
+    const row = parsedRow ?? 0;
+    const col = parsedCol ?? 0;
     const thenBody = parseNestedStatements(thenBlock.body, cycleCounter, diagnostics);
     let elseBody: StructuredKernelStmtAst[] | undefined;
     let consumedEnd = thenBlock.endIndex;
@@ -99,6 +150,17 @@ export function tryParseControlStatement(
   }
 
   const whileHeader = cleanLine.match(/^while\s*\((.+)\)\s*at\s+@\s*([^,]+)\s*,\s*([^\{]+)\{\s*$/i);
+  if (!whileHeader && /^while\s*\(/i.test(cleanLine)) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(lineNo, cleanLine.length),
+      `Invalid while header '${cleanLine}'.`,
+      'Use: while (cond) at @row,col { ... } with explicit control location.'
+    ));
+    const malformed = skipMalformedControlRegion(entries, index, cleanLine);
+    return { handled: true, nextIndex: malformed.nextIndex, stop: malformed.stop };
+  }
   if (!whileHeader) {
     return { handled: false, nextIndex: index, stop: false };
   }
@@ -107,8 +169,19 @@ export function tryParseControlStatement(
   if (block.endIndex === null) {
     return { handled: true, nextIndex: index, stop: true };
   }
-  const row = parseInteger(whileHeader[2]) ?? 0;
-  const col = parseInteger(whileHeader[3]) ?? 0;
+  const parsedRow = parseInteger(whileHeader[2]);
+  const parsedCol = parseInteger(whileHeader[3]);
+  if (parsedRow === null || parsedCol === null) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(lineNo, cleanLine.length),
+      `Invalid while control location '@${whileHeader[2].trim()},${whileHeader[3].trim()}'.`,
+      'Control coordinates must be integer literals (decimal or hex).'
+    ));
+  }
+  const row = parsedRow ?? 0;
+  const col = parsedCol ?? 0;
   const whileNode: StructuredWhileStmtAst = {
     kind: 'while',
     condition: whileHeader[1].trim(),

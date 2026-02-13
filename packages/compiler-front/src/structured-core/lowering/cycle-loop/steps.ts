@@ -74,6 +74,28 @@ export function tryExpandNestedForLoopStep(
     return { handled: true, nextIndex: input.index, shouldBreak: false, statements: [] };
   }
 
+  if ((loopHeader.collapseLevels ?? 1) > 1) {
+    input.diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(input.entry.lineNo, 1, input.clean.length),
+      'collapse(n) is not supported for for-loops inside cycle blocks.',
+      'Use collapse(n) at kernel/function scope where loops expand into cycles.'
+    ));
+    return { handled: true, nextIndex: input.index, shouldBreak: false, statements: [] };
+  }
+
+  if (loopHeader.unrollFactor !== undefined) {
+    input.diagnostics.push(makeDiagnostic(
+      ErrorCodes.Parse.InvalidSyntax,
+      'error',
+      spanAt(input.entry.lineNo, 1, input.clean.length),
+      'unroll(k) is not supported for for-loops inside cycle blocks.',
+      'Use unroll(k) at kernel/function scope where loops expand into cycles.'
+    ));
+    return { handled: true, nextIndex: input.index, shouldBreak: false, statements: [] };
+  }
+
   const nested = collectBlockFromEntries(input.body, input.index);
   if (nested.endIndex === null) {
     input.diagnostics.push(makeDiagnostic(

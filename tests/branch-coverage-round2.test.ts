@@ -190,6 +190,19 @@ describe('branch coverage round 2', () => {
     expect(advancedHandled).toBe(true);
     expect(kernel.pragmas).toHaveLength(1);
 
+    const badNamespaceHandled = consumeFunctionPreludeStatement(
+      {
+        lineNo: 2,
+        cleanLine: 'vendor::route(@0,1 -> @0,0, payload=R1, accum=R0);',
+        rawLine: 'vendor::route(@0,1 -> @0,0, payload=R1, accum=R0);'
+      },
+      'vendor::route(@0,1 -> @0,0, payload=R1, accum=R0);',
+      kernel,
+      diagnostics
+    );
+    expect(badNamespaceHandled).toBe(true);
+    expect(diagnostics.some((d) => d.message.includes('Unsupported advanced namespace'))).toBe(true);
+
     const ignored = consumeFunctionPreludeStatement(
       { lineNo: 3, cleanLine: 'not advanced', rawLine: 'not advanced' },
       'not advanced',

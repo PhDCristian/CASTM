@@ -7,11 +7,16 @@ import {
   spanAt,
   StructuredProgramAst
 } from '@openedge/compiler-ir';
-import { lowerStructuredProgramToAst, toStructuredProgramAst } from './structured-core/conversion.js';
+import {
+  lowerStructuredProgramToAst,
+  lowerStructuredProgramToAstDetailed,
+  toStructuredProgramAst
+} from './structured-core/conversion.js';
 import { parseStructuredProgramFromSource } from './structured-core/parse-source.js';
 
 export {
   lowerStructuredProgramToAst,
+  lowerStructuredProgramToAstDetailed,
   parseStructuredProgramFromSource,
   toStructuredProgramAst
 };
@@ -48,12 +53,25 @@ function validateStructuredMinimum(structuredAst: StructuredProgramAst): Diagnos
 export function parseStructuredSource(source: string): StructuredParseResult {
   const parsed = parseStructuredProgramFromSource(source);
   const structuredAst = parsed.program;
-  const diagnostics = [...parsed.diagnostics, ...validateStructuredMinimum(structuredAst)];
+  const baseDiagnostics = [...parsed.diagnostics, ...validateStructuredMinimum(structuredAst)];
+  const hasBaseErrors = baseDiagnostics.some((d) => d.severity === 'error');
+
+  if (hasBaseErrors) {
+    return {
+      success: false,
+      ast: undefined,
+      diagnostics: baseDiagnostics,
+      structuredAst,
+    };
+  }
+
+  const lowered = lowerStructuredProgramToAstDetailed(structuredAst);
+  const diagnostics = [...baseDiagnostics, ...lowered.diagnostics];
   const hasErrors = diagnostics.some((d) => d.severity === 'error');
 
   return {
     success: !hasErrors,
-    ast: hasErrors ? undefined : lowerStructuredProgramToAst(structuredAst),
+    ast: hasErrors ? undefined : lowered.ast,
     diagnostics,
     structuredAst,
   };

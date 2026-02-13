@@ -27,7 +27,8 @@ kernel "lib_example" {
 
 const result = compile(source, {
   grid: { rows: 4, cols: 4, topology: 'torus' },
-  emitArtifacts: ['structured', 'ast', 'hir', 'mir', 'lir', 'csv']
+  emitArtifacts: ['structured', 'ast', 'hir', 'mir', 'lir', 'csv'],
+  schedulerMode: 'safe'
 });
 
 if (!result.success) {
@@ -43,8 +44,15 @@ if (!result.success) {
 import { parse, analyze, emit } from '@openedge/compiler-api';
 
 const parsed = parse(source);
-const analyzed = analyze(parsed.artifacts.structuredAst!);
-const emitted = emit(analyzed.artifacts.lir!, { format: 'flat-csv' });
+if (!parsed.success || !parsed.ast) throw new Error('Parse failed');
+
+const analyzed = analyze({
+  ast: parsed.ast,
+  structuredAst: parsed.structuredAst
+});
+if (!analyzed.success || !analyzed.lir) throw new Error('Analysis failed');
+
+const emitted = emit(analyzed.lir, { format: 'flat-csv' });
 ```
 
 ## Artifacts
@@ -65,3 +73,17 @@ const emitted = emit(analyzed.artifacts.lir!, { format: 'flat-csv' });
 - `grid?: { rows?: number; cols?: number; topology?: "torus" | "mesh" }`
 - `emitArtifacts?: Array<'structured' | 'ast' | 'hir' | 'mir' | 'lir' | 'csv'>`
 - `strictUnsupported?: boolean`
+- `schedulerMode?: "safe" | "balanced" | "aggressive"`
+
+## Compile Stats
+
+`CompileResult.stats` includes:
+
+- `cycles`
+- `instructions`
+- `activeSlots`
+- `totalSlots`
+- `utilization`
+- `estimatedCriticalCycles`
+- `schedulerMode`
+- `loweredPasses`

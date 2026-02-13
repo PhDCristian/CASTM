@@ -25,7 +25,7 @@ function entry(lineNo: number, cleanLine: string) {
 }
 
 describe('compiler-front lowering cycle/function step handlers', () => {
-  it('handles nested for-loop step paths (no-match, control error, unterminated, expanded)', () => {
+  it('handles nested for-loop step paths (no-match, control/modifier errors, unterminated, expanded)', () => {
     const noMatch = tryExpandNestedForLoopStep(
       {
         body: [entry(1, 'noop')],
@@ -58,6 +58,24 @@ describe('compiler-front lowering cycle/function step handlers', () => {
     expect(controlResult.handled).toBe(true);
     expect(controlDiagnostics[0].code).toBe(ErrorCodes.Parse.InvalidSyntax);
     expect(controlDiagnostics[0].message).toContain('Control location @row,col is not supported');
+
+    const unrollDiagnostics: any[] = [];
+    const unrollResult = tryExpandNestedForLoopStep(
+      {
+        body: [entry(2, 'for i in range(0, 4) unroll(2) {')],
+        index: 0,
+        entry: entry(2, 'for i in range(0, 4) unroll(2) {'),
+        clean: 'for i in range(0, 4) unroll(2) {',
+        raw: 'for i in range(0, 4) unroll(2) {',
+        constants: new Map(),
+        bindings: new Map(),
+        diagnostics: unrollDiagnostics
+      },
+      () => []
+    );
+    expect(unrollResult.handled).toBe(true);
+    expect(unrollDiagnostics[0].code).toBe(ErrorCodes.Parse.InvalidSyntax);
+    expect(unrollDiagnostics[0].message).toContain('unroll(k) is not supported');
 
     const unterminatedDiagnostics: any[] = [];
     const unterminated = tryExpandNestedForLoopStep(

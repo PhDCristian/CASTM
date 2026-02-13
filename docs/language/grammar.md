@@ -54,14 +54,21 @@ Notes:
 control_stmt     ::= if_stmt | while_stmt
 if_stmt          ::= "if" "(" cond_expr ")" "at" "@" int_expr "," int_expr "{" kernel_item* "}" [ "else" "{" kernel_item* "}" ]
 while_stmt       ::= "while" "(" cond_expr ")" "at" "@" int_expr "," int_expr "{" kernel_item* "}"
-for_stmt         ::= "for" ident "in" "range" "(" range_args ")" "{" kernel_item* "}"
+for_stmt         ::= "for" ident "in" "range" "(" range_args ")" loop_mod* "{" kernel_item* "}"
                   | "for" register "in" "range" "(" range_args ")" "at" "@" int_expr "," int_expr "runtime" "{" kernel_item* "}"
 range_args       ::= int_expr | int_expr "," int_expr | int_expr "," int_expr "," int_expr
+loop_mod         ::= "unroll" "(" int_expr ")" | "collapse" "(" int_expr ")"
 function_def     ::= "function" ident "(" ident_list? ")" "{" kernel_item* "}"
 function_call    ::= ident "(" arg_list? ")" ";"
 pipeline_stmt    ::= "pipeline" "(" function_call_inline ( "," function_call_inline )* ")" ";"
 function_call_inline ::= ident "(" arg_list? ")"
 ```
+
+Loop modifier semantics:
+
+- `unroll(k)` and `collapse(n)` are canonical modifiers for static loops.
+- `collapse(n)` uses deterministic row-major linearization for nested static loops.
+- `runtime` loops do not support `unroll(...)` or `collapse(...)` in this phase.
 
 ## Advanced Statements
 

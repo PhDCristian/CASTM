@@ -5,6 +5,7 @@ export interface CompileOptions {
   grid?: Partial<Pick<GridSpec, 'rows' | 'cols' | 'topology'>>;
   emitArtifacts?: Array<'structured' | 'ast' | 'hir' | 'mir' | 'lir' | 'csv'>;
   strictUnsupported?: boolean;
+  schedulerMode?: 'safe' | 'balanced' | 'aggressive';
 }
 
 export interface EmitOptions {

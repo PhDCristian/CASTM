@@ -74,7 +74,7 @@ export default defineConfig({
           text: 'Advanced Statements',
           collapsed: false,
           items: [
-            { text: 'Overview', link: '/features/pragmas/' },
+            { text: 'Overview', link: '/features/pragmas/index' },
             { text: 'route(...)', link: '/features/pragmas/route' },
             { text: 'broadcast(...)', link: '/features/pragmas/broadcast' },
             { text: 'reduce(...)', link: '/features/pragmas/reduce' },
@@ -114,6 +114,9 @@ export default defineConfig({
           items: [
             { text: 'Basic Kernel', link: '/examples/basic' },
             { text: 'Loop Patterns', link: '/examples/loops' },
+            { text: 'Loop Strategies', link: '/examples/loop-strategies' },
+            { text: 'For + Control-Flow', link: '/examples/for-control-flow' },
+            { text: 'Scheduler Modes', link: '/examples/scheduler-modes' },
             { text: 'Pipeline + Functions', link: '/examples/parallel' },
             { text: 'Stencil + Guard', link: '/examples/stencil' },
             { text: 'Scan + Reduce', link: '/examples/scan' },
@@ -163,11 +166,14 @@ export default defineConfig({
     },
     languageAlias: {
       openedge: 'ts',
+      openedgedsl: 'ts',
+      'openedge-fail': 'ts',
       dsl: 'ts',
+      'dsl-fail': 'ts',
       edsl: 'ts',
       cgra: 'ts'
     },
-    defaultHighlightLang: 'txt',
+    defaultHighlightLang: 'ts',
     lineNumbers: true,
   },
 })

@@ -22,6 +22,7 @@ import {
   lowerToLirPass,
   lowerToMirPass
 } from '../passes.js';
+import { applyLatencyHide } from '../passes-shared/expand-pragmas/latency-hide.js';
 import { collectDataRegions } from './data-regions.js';
 import { resolveGrid } from './grid-resolver.js';
 import { collectRuntimeArtifacts } from './runtime-artifacts.js';
@@ -48,6 +49,7 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
   const runtime = collectRuntimeArtifacts(semaAst, memory.regions, diagnostics);
   const target = resolveGrid(semaAst, options, diagnostics);
   const strictUnsupported = options.strictUnsupported !== false;
+  const schedulerMode = options.schedulerMode ?? 'safe';
 
   if (!target) {
     return {
@@ -77,7 +79,21 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
     [{ name: 'desugar+pragmas', passes: astPasses }],
     diagnostics
   );
-  const loweredAst = astPipeline.output as AstProgram;
+  let loweredAst = astPipeline.output as AstProgram;
+  const schedulerPasses: string[] = [];
+  if (schedulerMode !== 'safe' && loweredAst.kernel) {
+    const window = schedulerMode === 'balanced' ? 1 : 2;
+    const compacted = applyLatencyHide(loweredAst.kernel.cycles, target.grid, window)
+      .map((cycle, index) => ({ ...cycle, index }));
+    loweredAst = {
+      ...loweredAst,
+      kernel: {
+        ...loweredAst.kernel,
+        cycles: compacted
+      }
+    };
+    schedulerPasses.push(`scheduler:${schedulerMode}`);
+  }
 
   const hirPasses = [
     createResolveSymbolsPass(target.targetProfileId, target.grid),
@@ -131,6 +147,7 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
       ...semanticChecked.loweredPasses,
       ...semanticResolved.loweredPasses,
       ...astPipeline.loweredPasses,
+      ...schedulerPasses,
       ...hirPipeline.loweredPasses,
       ...mirPipeline.loweredPasses,
       ...lirPipeline.loweredPasses

@@ -26,6 +26,7 @@ OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifact
 | `grid` | `{ rows?, cols?, topology? }` | override effective grid at compile time |
 | `emitArtifacts` | `Array<'structured'|'ast'|'hir'|'mir'|'lir'|'csv'>` | request phase artifacts |
 | `strictUnsupported` | `boolean` | enforce strict validation for unsupported forms |
+| `schedulerMode` | `"safe" \| "balanced" \| "aggressive"` | deterministic scheduling profile selection |
 
 ## Compile Result Artifacts
 
@@ -38,6 +39,14 @@ OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifact
 - `lir`
 - `csv`
 - runtime metadata: `memoryRegions`, `ioConfig`, `assertions`, `symbols`
+
+`compile(...).stats` includes:
+
+- `cycles`, `instructions`
+- `activeSlots`, `totalSlots`, `utilization`
+- `estimatedCriticalCycles`
+- `schedulerMode`
+- `loweredPasses`
 
 ## Diagnostics Contract
 

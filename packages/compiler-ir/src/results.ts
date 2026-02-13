@@ -47,6 +47,11 @@ export interface CompileResult {
   stats: {
     cycles: number;
     instructions: number;
+    activeSlots: number;
+    totalSlots: number;
+    utilization: number;
+    estimatedCriticalCycles: number;
+    schedulerMode: 'safe' | 'balanced' | 'aggressive';
     loweredPasses: string[];
   };
 }

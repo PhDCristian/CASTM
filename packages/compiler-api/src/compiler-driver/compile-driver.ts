@@ -2,9 +2,8 @@ import {
   CompileOptions,
   CompileResult,
   Diagnostic,
-  StructuredProgramAst
+  MirProgram
 } from '@openedge/compiler-ir';
-import { lowerStructuredProgramToAst } from '@openedge/compiler-front';
 import {
   collectRuntimeArtifacts,
   createEmptyRuntimeArtifacts
@@ -14,14 +13,44 @@ import { analyze } from './analyze-driver.js';
 import { emit } from './emit-driver.js';
 import { parse } from './parse-driver.js';
 
-function canLowerStructuredDirectly(structured: StructuredProgramAst | undefined): boolean {
-  return Boolean(structured?.kernel);
+function normalizeSchedulerMode(
+  mode: CompileOptions['schedulerMode']
+): 'safe' | 'balanced' | 'aggressive' {
+  return mode ?? 'safe';
+}
+
+function computeMirStats(mir: MirProgram | undefined) {
+  if (!mir) {
+    return {
+      cycles: 0,
+      instructions: 0,
+      activeSlots: 0,
+      totalSlots: 0,
+      utilization: 0,
+      estimatedCriticalCycles: 0
+    };
+  }
+
+  const cycles = mir.cycles.length;
+  const activeSlots = mir.cycles.reduce((acc, cycle) => acc + cycle.slots.length, 0);
+  const totalSlots = cycles * mir.grid.rows * mir.grid.cols;
+  const utilization = totalSlots > 0 ? activeSlots / totalSlots : 0;
+
+  return {
+    cycles,
+    instructions: activeSlots,
+    activeSlots,
+    totalSlots,
+    utilization,
+    estimatedCriticalCycles: cycles
+  };
 }
 
 export function compile(source: string, options: CompileOptions = {}): CompileResult {
   const parseResult = parse(source, options);
   const diagnostics: Diagnostic[] = [...parseResult.diagnostics];
   const want = new Set(options.emitArtifacts ?? ['structured', 'ast', 'hir', 'mir', 'lir', 'csv']);
+  const schedulerMode = normalizeSchedulerMode(options.schedulerMode);
   const parsedRuntime = parseResult.ast
     ? collectRuntimeArtifacts(parseResult.ast, [], diagnostics)
     : createEmptyRuntimeArtifacts();
@@ -34,6 +63,11 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       stats: {
         cycles: 0,
         instructions: 0,
+        activeSlots: 0,
+        totalSlots: 0,
+        utilization: 0,
+        estimatedCriticalCycles: 0,
+        schedulerMode,
         loweredPasses: []
       }
     };
@@ -55,14 +89,17 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       stats: {
         cycles: parseResult.ast.kernel?.cycles.length ?? 0,
         instructions: 0,
+        activeSlots: 0,
+        totalSlots: 0,
+        utilization: 0,
+        estimatedCriticalCycles: parseResult.ast.kernel?.cycles.length ?? 0,
+        schedulerMode,
         loweredPasses: []
       }
     };
   }
 
-  const analysisAst = parseResult.structuredAst && canLowerStructuredDirectly(parseResult.structuredAst)
-    ? lowerStructuredProgramToAst(parseResult.structuredAst)
-    : parseResult.ast;
+  const analysisAst = parseResult.ast;
 
   const analysis = analyze({
     ast: analysisAst,
@@ -80,9 +117,8 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
     csv = emitted.csv;
   }
 
-  const instructions = analysis.mir
-    ? analysis.mir.cycles.reduce((acc, cycle) => acc + cycle.slots.length, 0)
-    : 0;
+  const mirStats = computeMirStats(analysis.mir);
+  const astCycleCount = analysis.ast?.kernel?.cycles.length ?? 0;
 
   return {
     success: !hasErrors(diagnostics),
@@ -101,8 +137,13 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       symbols: analysis.symbols
     },
     stats: {
-      cycles: analysis.mir?.cycles.length ?? analysis.ast?.kernel?.cycles.length ?? 0,
-      instructions,
+      cycles: analysis.mir ? mirStats.cycles : astCycleCount,
+      instructions: analysis.mir ? mirStats.instructions : 0,
+      activeSlots: analysis.mir ? mirStats.activeSlots : 0,
+      totalSlots: analysis.mir ? mirStats.totalSlots : 0,
+      utilization: analysis.mir ? mirStats.utilization : 0,
+      estimatedCriticalCycles: analysis.mir ? mirStats.estimatedCriticalCycles : astCycleCount,
+      schedulerMode,
       loweredPasses: analysis.loweredPasses
     }
   };

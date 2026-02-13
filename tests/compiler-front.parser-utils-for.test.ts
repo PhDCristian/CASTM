@@ -117,6 +117,20 @@ describe('compiler-front parser utils and for header parsing', () => {
       step: 2
     });
 
+    const withModifiers = parseForHeader(
+      'for i in range(0, N) unroll(2) collapse(2) {',
+      3,
+      constants,
+      new Map(),
+      diagnostics
+    );
+    expect(withModifiers).toMatchObject({
+      variable: 'i',
+      unrollFactor: 2,
+      collapseLevels: 2,
+      collapseOrder: 'row_major'
+    });
+
     const badArgCountDiagnostics: any[] = [];
     const badArgCount = parseForHeader(
       'for i in range() {',
@@ -172,5 +186,60 @@ describe('compiler-front parser utils and for header parsing', () => {
     );
     expect(runtimeNoControl).toBeNull();
     expect(runtimeNoControlDiagnostics[0].message).toContain('require an explicit control location');
+
+    const runtimeCollapseDiagnostics: any[] = [];
+    const runtimeCollapse = parseForHeader(
+      'for R0 in range(0, 4) at @0,0 runtime collapse(2) {',
+      9,
+      constants,
+      new Map(),
+      runtimeCollapseDiagnostics
+    );
+    expect(runtimeCollapse).toBeNull();
+    expect(runtimeCollapseDiagnostics[0].message).toContain('collapse(n) is not supported');
+
+    const runtimeUnrollDiagnostics: any[] = [];
+    const runtimeUnroll = parseForHeader(
+      'for R0 in range(0, 4) at @0,0 runtime unroll(2) {',
+      10,
+      constants,
+      new Map(),
+      runtimeUnrollDiagnostics
+    );
+    expect(runtimeUnroll).toBeNull();
+    expect(runtimeUnrollDiagnostics[0].message).toContain('unroll(k) is not supported');
+
+    const invalidModifierDiagnostics: any[] = [];
+    const invalidModifier = parseForHeader(
+      'for i in range(0, 4) collapse(0) {',
+      11,
+      constants,
+      new Map(),
+      invalidModifierDiagnostics
+    );
+    expect(invalidModifier).toBeNull();
+    expect(invalidModifierDiagnostics[0].message).toContain('collapse(0)');
+
+    const invalidModifierListDiagnostics: any[] = [];
+    const invalidModifierList = parseForHeader(
+      'for i in range(0, 4) chunk(2) {',
+      12,
+      constants,
+      new Map(),
+      invalidModifierListDiagnostics
+    );
+    expect(invalidModifierList).toBeNull();
+    expect(invalidModifierListDiagnostics[0].message).toContain('Invalid for-loop modifier list');
+
+    const invalidModifierResidueDiagnostics: any[] = [];
+    const invalidModifierResidue = parseForHeader(
+      'for i in range(0, 4) unroll(2) junk {',
+      13,
+      constants,
+      new Map(),
+      invalidModifierResidueDiagnostics
+    );
+    expect(invalidModifierResidue).toBeNull();
+    expect(invalidModifierResidueDiagnostics[0].message).toContain('Invalid for-loop modifier segment');
   });
 });

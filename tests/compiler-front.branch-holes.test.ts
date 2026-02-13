@@ -353,6 +353,57 @@ describe('compiler-front branch holes', () => {
     expect(kernel.cycles.at(-1)?.label).toBe('L_END');
   });
 
+  it('reports malformed structured control headers with explicit diagnostics', () => {
+    const diagnostics: Diagnostic[] = [];
+    const parseNested = () => [];
+    const entries = [
+      entry(1, 'for i in range(0, 2) chunk(2) {'),
+      entry(2, 'cycle { @0,0: NOP; }'),
+      entry(3, '}'),
+      entry(4, 'if (R0 == IMM(0)) {'),
+      entry(5, 'cycle { @0,0: NOP; }'),
+      entry(6, '}'),
+      entry(7, 'while (R0 < IMM(4)) at @x,0 {'),
+      entry(8, 'cycle { @0,0: NOP; }'),
+      entry(9, '}'),
+      entry(10, 'while (R0 < IMM(4)) at @0,0')
+    ];
+
+    const malformedFor = tryParseControlStatement(entries, 0, entries[0].cleanLine, 1, { value: 0 }, diagnostics, parseNested);
+    expect(malformedFor.handled).toBe(true);
+    expect(malformedFor.nextIndex).toBe(2);
+
+    const malformedIf = tryParseControlStatement(entries, 3, entries[3].cleanLine, 4, { value: 0 }, diagnostics, parseNested);
+    expect(malformedIf.handled).toBe(true);
+    expect(malformedIf.nextIndex).toBe(5);
+
+    const badWhileCoord = tryParseControlStatement(entries, 6, entries[6].cleanLine, 7, { value: 0 }, diagnostics, parseNested);
+    expect(badWhileCoord.handled).toBe(true);
+    expect(badWhileCoord.node?.kind).toBe('while');
+
+    const malformedWhileNoBrace = tryParseControlStatement(entries, 9, entries[9].cleanLine, 10, { value: 0 }, diagnostics, parseNested);
+    expect(malformedWhileNoBrace.handled).toBe(true);
+    expect(malformedWhileNoBrace.nextIndex).toBe(9);
+    expect(malformedWhileNoBrace.stop).toBe(false);
+
+    const unterminatedMalformedIf = tryParseControlStatement(
+      [entry(1, 'if (R0 == IMM(0)) {'), entry(2, 'cycle { @0,0: NOP; }')],
+      0,
+      'if (R0 == IMM(0)) {',
+      1,
+      { value: 0 },
+      diagnostics,
+      parseNested
+    );
+    expect(unterminatedMalformedIf.handled).toBe(true);
+    expect(unterminatedMalformedIf.stop).toBe(true);
+
+    expect(diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax && d.message.includes('Invalid for-loop header'))).toBe(true);
+    expect(diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax && d.message.includes('Invalid if header'))).toBe(true);
+    expect(diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax && d.message.includes('Invalid while control location'))).toBe(true);
+    expect(diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax && d.message.includes('Invalid while header'))).toBe(true);
+  });
+
   it('converts ast <-> structured and covers null-kernel branches', () => {
     const noKernelAst = { targetProfileId: 'uma-cgra-base', kernel: null, span } as any;
     const structuredNoKernel = toStructuredProgramAst(noKernelAst);

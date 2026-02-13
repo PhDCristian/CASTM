@@ -4,6 +4,12 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { compile } from '@openedge/compiler-api';
 
+interface DslSnippet {
+  source: string;
+  mode: 'pass' | 'fail';
+  expectedErrorCodes: string[];
+}
+
 function collectMarkdownFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   const files: string[] = [];
@@ -26,13 +32,41 @@ function collectMarkdownFiles(dir: string): string[] {
   return files;
 }
 
-function extractDslSnippets(markdown: string): string[] {
-  const snippets: string[] = [];
-  const regex = /```(?:openedge|dsl)\n([\s\S]*?)```/gi;
+function extractDslSnippets(markdown: string): DslSnippet[] {
+  const snippets: DslSnippet[] = [];
+  const regex = /```([^\n]*)\n([\s\S]*?)```/g;
   let match: RegExpExecArray | null;
+
   while ((match = regex.exec(markdown)) !== null) {
-    snippets.push(match[1].trim());
+    const info = match[1].trim();
+    const language = info.split(/\s+/)[0]?.toLowerCase();
+    if (!language) continue;
+
+    const source = match[2].trim();
+    if (!source) continue;
+
+    if (language === 'openedge' || language === 'dsl') {
+      snippets.push({
+        source,
+        mode: 'pass',
+        expectedErrorCodes: []
+      });
+      continue;
+    }
+
+    if (language === 'openedge-fail' || language === 'dsl-fail') {
+      const expectedErrorCodes = Array.from(
+        source.matchAll(/^\s*\/\/\s*expect-error:\s*([A-Z]\d{4})\s*$/gim)
+      ).map((codeMatch) => codeMatch[1]);
+
+      snippets.push({
+        source,
+        mode: 'fail',
+        expectedErrorCodes
+      });
+    }
   }
+
   return snippets;
 }
 
@@ -46,19 +80,33 @@ describe('docs snippets contracts', () => {
     ];
     const markdownFiles = docsRoots.flatMap((root) => collectMarkdownFiles(root));
 
-    const snippets: Array<{ file: string; source: string }> = [];
+    const snippets: Array<{ file: string; snippet: DslSnippet }> = [];
     for (const file of markdownFiles) {
       const content = fs.readFileSync(file, 'utf8');
-      for (const source of extractDslSnippets(content)) {
-        snippets.push({ file, source });
+      for (const snippet of extractDslSnippets(content)) {
+        snippets.push({ file, snippet });
       }
     }
 
     expect(snippets.length).toBeGreaterThan(0);
+    expect(snippets.some(({ snippet }) => snippet.mode === 'pass')).toBe(true);
 
-    for (const snippet of snippets) {
-      const result = compile(snippet.source, { strictUnsupported: false });
-      expect(result.success, `Snippet failed in ${snippet.file}\n${snippet.source}`).toBe(true);
+    for (const item of snippets) {
+      const result = compile(item.snippet.source, { strictUnsupported: false });
+      if (item.snippet.mode === 'pass') {
+        expect(result.success, `Snippet failed in ${item.file}\n${item.snippet.source}`).toBe(true);
+        continue;
+      }
+
+      expect(result.success, `Fail-snippet unexpectedly succeeded in ${item.file}\n${item.snippet.source}`).toBe(
+        false
+      );
+      for (const expectedCode of item.snippet.expectedErrorCodes) {
+        expect(
+          result.diagnostics.some((diag) => diag.code === expectedCode),
+          `Missing expected diagnostic ${expectedCode} in ${item.file}\n${item.snippet.source}`
+        ).toBe(true);
+      }
     }
   });
 });
