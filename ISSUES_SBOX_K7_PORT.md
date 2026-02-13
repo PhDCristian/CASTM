@@ -1455,3 +1455,431 @@ function extract_bytes_col(src, dst) {
 1. **Move desugaring after function expansion** — desugarer would see `R0`, `R1` etc. after parameter substitution. Requires pipeline restructuring.
 2. **Add function parameter names to `VALID_OPERAND_IDENTIFIERS`** — quick but fragile; would need to dynamically detect parameter names from function definitions.
 3. **Accept any identifier as a valid operand in expressions** — broadest fix, but risks false-positive matching on non-register identifiers (array names, constants, etc.).
+
+---
+
+## BUG-7: v3 Compiler Rejects Computed Loop-Variable Coordinates in `for { cycle {} }`
+
+**Severity:** Critical — blocks all parallel-collapse patterns in the SBOX K7 kernel.
+
+**Status:** 🔴 **OPEN**
+
+**Description:** The v3 structured parser (`E2002`) rejects `for` loop variables used as coordinates in `@row,col` placement inside cycle blocks. Both the short form (`@0,i:`) and canonical form (`at @0,i:`) fail.
+
+**Reproduction:**
+
+```dsl
+target "uma-cgra-base";
+kernel "T" {
+  for i in range(4) {
+    cycle { @0,i: NOP; }          // E2002: Invalid inline cycle statement
+  }
+  cycle { @0,0: EXIT; }
+}
+```
+
+Also fails with computed expressions:
+
+```dsl
+for k in range(16) {
+  cycle { @k/4,k%4: NOP; }       // E2002: Invalid inline cycle statement
+}
+```
+
+**What works:**
+
+| Pattern | Status |
+|---|---|
+| `for i in range(N) { cycle { @0,0: ... } }` (fixed coords) | ✅ OK |
+| `for R0 in range(0,N) at @0,0 runtime { ... }` (runtime form) | ✅ OK |
+| `for i in range(N) { cycle { at row 0: ... } }` (row broadcast) | ✅ OK |
+| `for i in range(N) { cycle { @0,i: ... } }` (variable coord) | ❌ FAIL |
+| `for k in range(16) { cycle { @k/4,k%4: ... } }` (computed coord) | ❌ FAIL |
+
+**Impact:** The SBOX K7 kernel uses `for k in range(16) { cycle { @k/4,k%4: ... } }` extensively (6 occurrences via `#pragma parallel collapse` in v2) to distribute work across the 4×4 PE grid. Without this pattern, all 16-PE parallel operations must be manually unrolled to explicit `@r,c:` placements.
+
+**Affected kernel functions:**
+- `load_all(reg, addr)` — loads value into all 16 PEs
+- `extract_bytes_col(src, dst)` — extracts bytes with column-dependent shifts
+- `extract_bytes_row(src, dst)` — extracts bytes with row-dependent shifts
+- `compute_qhat_inregs()` — 12-PE convolution (3×4)
+- `mul_qhat_p_inregs()` — 4-PE copy and normalize
+- `compute_r_inregs()` — 2-PE remainder
+
+**Workaround:** Manual unrolling — replace each `for k in range(N) { cycle { @k/4,k%4: ... } }` with N explicit cycle+PE lines.
+
+**Root cause (likely):** The v3 structured parser validates cycle statement coordinates as numeric literals or `@row,col` constants during parsing, before the for-loop expansion pass has substituted the loop variable values. The v2 parser performed for-loop expansion at the token level before spatial validation.
+
+**Fix:** The for-expansion pass should run before (or be integrated with) the cycle statement validator, so that computed coordinates like `@k/4,k%4` are resolved to concrete `@0,0`, `@0,1`, etc. before validation.
+
+---
+
+## BUG-8: v3 Compiler Hoists `route()` Statement to Beginning of Kernel
+
+**Severity:** High — breaks data-dependent routing in all kernels using inline `route()`.
+
+**Status:** 🔴 **OPEN**
+
+**Description:** The v3 compiler's `route()` statement expands to ROUT chain cycles that are placed at the **very beginning** of the kernel, before any user-defined cycles. This breaks data dependencies when `route()` is called mid-kernel (e.g., after computing values that need to be routed).
+
+**Reproduction:**
+
+```dsl
+target "uma-cgra-base";
+kernel "T" {
+    cycle { @0,0: SADD R0, ZERO, IMM(1); }   // C0: R0 = 1
+    cycle { @0,0: SADD R1, ZERO, IMM(2); }   // C1: R1 = 2
+    route(@0,0 -> @0,1, payload=R0, dest=R2, op=SADD(R2, INCOMING, ZERO));
+    cycle { @0,0: EXIT; }
+}
+```
+
+**Expected:** Route expands at C2-C3 (after R0 and R1 are set).
+**Actual:** Route expands at C0-C1 (before R0 and R1 are set), using uninitialized registers.
+
+**Impact:** In the SBOX K7 kernel, `route(@0,1 -> @0,3, payload=R1, dest=R0, ...)` inside `compute_qhat_inregs()` runs before the quotient limbs are computed, routing garbage values.
+
+**Workaround:** Replace `route()` with manual ROUT chain cycles:
+
+```dsl
+// route(@0,1 -> @0,3, payload=R1, dest=R0, op=SADD(R0, INCOMING, ZERO));
+// becomes:
+cycle { @0,1: ROUT = R1; }
+cycle { @0,2: ROUT = RCL; }
+cycle { @0,3: R0 = RCL; }
+```
+
+---
+
+## BUG-9: v3 Structured Parser is Line-Oriented — Multi-Statement Lines Break Function Expansion
+
+**Severity:** Medium — affects code style and readability, not functionality if rules are followed.
+
+**Status:** 🔴 **OPEN**
+
+**Description:** The v3 structured parser requires **one `@r,c:` statement per line** inside cycle blocks. Multiple semicolon-separated statements on the same line are treated as a single instruction text, causing concatenated instruction strings in the MIR output.
+
+**Reproduction:**
+
+```dsl
+// WRONG: multiple @r,c: per line
+cycle { @0,0: NOP; @0,1: NOP; @0,2: NOP; @0,3: NOP; }
+
+// CORRECT: one @r,c: per line
+cycle {
+    @0,0: NOP;
+    @0,1: NOP;
+    @0,2: NOP;
+    @0,3: NOP;
+}
+```
+
+**Impact:** Kernel code formatting must follow one-statement-per-line convention. Multi-PE cycle blocks become significantly more verbose.
+
+**Workaround:** Write all cycle blocks with one `@r,c:` per line.
+
+---
+
+# v8 → v9 Regression Analysis
+
+> **Context:** The SBOX K7 kernel was ported from v8 (expression syntax + v2 `#pragma` compiler, 332 lines) to v9 (OpenEdgeDSL v3 canonical syntax, 615 lines). Both produce identical CSV output (269 cycles). This section documents every aspect that **got worse** in the transition.
+
+## Summary
+
+| Metric | v8 | v9 | Delta |
+|---|---|---|---|
+| Source lines | 332 | 615 | **+85%** |
+| Source bytes | 12,135 | 13,979 | +15% |
+| Cycle blocks with ≥4 PEs | ~18 | ~32 | +78% |
+| Max statements per cycle block | 4 (one `row`) | 16 (explicit PEs) | **4× worse** |
+| Bugs introduced during porting | — | 1 (PE placement) | — |
+| Compiler workarounds needed | 0 | 3 (BUG-7, BUG-8, BUG-9) | — |
+
+---
+
+## REG-1: Loss of `#pragma parallel collapse` + Computed Coordinates
+
+**Severity:** 🔴 Critical — largest single contributor to code bloat and error-proneness.
+
+The v2 compiler supported `#pragma parallel collapse` with computed coordinates (`@k/4,k%4`), allowing a single `for` loop to address all 16 PEs. The v3 compiler rejects computed coordinates in `for` loops (BUG-7), forcing **manual unrolling** of every parallel pattern.
+
+**v8 — 4 lines:**
+```dsl
+function load_all(reg, addr) {
+    #pragma parallel collapse
+    for k in range(16) {
+        cycle { @k/4,k%4: LWI reg, addr; }
+    }
+}
+```
+
+**v9 — 20 lines:**
+```dsl
+function load_all(reg, addr) {
+    cycle {
+        @0,0: LWI reg, addr;
+        @0,1: LWI reg, addr;
+        @0,2: LWI reg, addr;
+        @0,3: LWI reg, addr;
+        @1,0: LWI reg, addr;
+        @1,1: LWI reg, addr;
+        @1,2: LWI reg, addr;
+        @1,3: LWI reg, addr;
+        @2,0: LWI reg, addr;
+        @2,1: LWI reg, addr;
+        @2,2: LWI reg, addr;
+        @2,3: LWI reg, addr;
+        @3,0: LWI reg, addr;
+        @3,1: LWI reg, addr;
+        @3,2: LWI reg, addr;
+        @3,3: LWI reg, addr;
+    }
+}
+```
+
+**Impact:**
+- `load_all`: 4 → 20 lines (5×)
+- `extract_bytes_col`: 6 → 38 lines (6.3×)
+- `extract_bytes_row`: 6 → 38 lines (6.3×)
+- `compute_qhat_inregs` (LWI block): 4 → 14 lines (3.5×)
+- `compute_qhat_inregs` (SMUL block): 4 → 14 lines (3.5×)
+- `mul_qhat_p_inregs` (RCT block): 4 → 6 lines (1.5×)
+
+Total: ~28 lines v8 → ~130 lines v9 just from this one regression.
+
+The manual unrolling also **directly caused the porting bug** — the v9 `accumulate_c_square` had `@1,3` instead of `@1,1` because PE coordinates had to be written out by hand rather than computed. This bug would have been impossible with `#pragma parallel collapse`.
+
+---
+
+## REG-2: Loss of Row Broadcast Syntax (`row N: A | B | C | D`)
+
+**Severity:** 🟠 High — significant readability loss for row-uniform or per-column patterns.
+
+The v2 pipe syntax `row N: A | B | C | D` expressed a 4-PE row in a single line. The v3 compiler requires 4 separate `@r,c:` lines (BUG-9), each on its own source line.
+
+**v8 — 1 line:**
+```dsl
+cycle { row 0: SADD R3, ZERO, RCL | SADD R3, R2, RCL | SADD R3, R2, RCL | SADD R3, R2, RCL; }
+```
+
+**v9 — 6 lines:**
+```dsl
+cycle {
+    @0,0: R3 = ZERO + RCL;
+    @0,1: R3 = R2 + RCL;
+    @0,2: R3 = R2 + RCL;
+    @0,3: R3 = R2 + RCL;
+}
+```
+
+**Why it's worse:**
+- You lose the ability to see the entire row pattern at a glance
+- You lose the visual alignment of the pipe `|` separators that makes it obvious which column does what
+- Mixed patterns (`_ | A | A | _` for selective NOP columns) become harder to spot because NOP columns are simply absent from the v9 source
+
+**Lines affected:** `build_limbs` (2 occurrences), `compute_qhat` (4 occurrences), `mul_qhat_p` (5 occurrences), `accumulate_c_multiply` (6 occurrences) — ~17 `row` statements in v8 expand to ~68 `@r,c:` lines in v9.
+
+---
+
+## REG-3: Loss of Multi-Row Cycle Blocks
+
+**Severity:** 🟠 High — destroys visual compactness of multi-row orchestration.
+
+The v8 `row N: ... | ...` syntax allowed **multiple rows** in a single cycle block with each row on its own line. In v9, each PE must have its own `@r,c:` line.
+
+**v8 — 5 lines:**
+```dsl
+cycle {
+    row 0: SRT R3, R0, 16 | LWI R1, mu[0] | LWI R1, mu[0] | LWI R1, mu[0];
+    row 1: LWI R1, mu[1] | LWI R1, mu[1] | LWI R1, mu[1] | LWI R1, mu[1];
+    row 2: LWI R1, mu[2] | LWI R1, mu[2] | LWI R1, mu[2] | LWI R1, mu[2];
+}
+```
+
+**v9 — 15 lines:**
+```dsl
+cycle {
+    @0,0: R3 = R0 >> 16;
+    @0,1: R1 = mu[0];
+    @0,2: R1 = mu[0];
+    @0,3: R1 = mu[0];
+    @1,0: R1 = mu[1];
+    @1,1: R1 = mu[1];
+    @1,2: R1 = mu[1];
+    @1,3: R1 = mu[1];
+    @2,0: R1 = mu[2];
+    @2,1: R1 = mu[2];
+    @2,2: R1 = mu[2];
+    @2,3: R1 = mu[2];
+}
+```
+
+**Why it's worse:**
+- The v8 version immediately shows "row 0 does something different from rows 1-2" — v9 requires counting lines
+- Row-level intent (`row 0: shift | load | load | load`) is lost; you must scan 12 PE addresses to infer the pattern
+- The v8 `row` keyword served as documentation — it stated the architectural intent
+
+---
+
+## REG-4: Loss of `#pragma route` → Manual ROUT Relay
+
+**Severity:** 🟠 High — replaces a declarative intent statement with error-prone manual wiring.
+
+The v2 `#pragma route (src) -> (dst) payload(R) dest(R) op(...)` expressed inter-PE data movement as a **single declarative statement**. The v3 `route()` exists but is hoisted to the kernel start (BUG-8), forcing manual relay coding.
+
+**v8 — 1 line:**
+```dsl
+#pragma route (0,1) -> (0,3) payload(R1) dest(R0) op(SADD R0, INCOMING, ZERO)
+```
+
+**v9 — 9 lines:**
+```dsl
+// BUG-8 workaround: route() hoisted to kernel start
+cycle {
+    @0,1: ROUT = R1;
+}
+cycle {
+    @0,2: ROUT = RCL;
+}
+cycle {
+    @0,3: R0 = RCL;
+}
+```
+
+**Why it's worse:**
+- The programmer must manually compute the relay path (source → intermediate PEs → destination)
+- No verification that the payload reaches the correct destination register
+- The v8 pragma encoded **intent** (what data, where from, where to, what operation); the v9 manual chain encodes **mechanism** (raw ROUT/RCL instructions)
+- Off-by-one errors in relay chain are invisible until runtime
+
+---
+
+## REG-5: Expression Syntax Forbidden in Function Bodies with Parameters
+
+**Severity:** 🟡 Medium — forces mixing of syntax styles within the kernel.
+
+The v3 expression desugarer does not handle function parameter names (`src`, `dst`, `reg`, `addr`) as valid operands (BUG-6). Functions that use parameters in arithmetic must use native ISA instead of expression syntax.
+
+**v8 — expression syntax everywhere:**
+```dsl
+function extract_bytes_col(src, dst) {
+    #pragma parallel collapse
+    for k in range(16) {
+        cycle { @k/4,k%4: dst = src >> k%4*8; }
+        cycle { @k/4,k%4: dst = dst & 255; }
+    }
+}
+```
+
+**v9 — native ISA in function bodies:**
+```dsl
+function extract_bytes_col(src, dst) {
+    cycle {
+        @0,0: SRT dst, src, 0;
+        @0,1: SRT dst, src, 8;
+        // ... 14 more lines
+    }
+    cycle {
+        @0,0: LAND dst, dst, 255;
+        // ... 15 more lines
+    }
+}
+```
+
+**Why it's worse:**
+- Functions that take register parameters cannot use expression sugar (`R1 = R0 >> 8` → must write `SRT R1, R0, 8`)
+- This creates an inconsistent style within the same file: kernel body uses expressions, function bodies use native ISA
+- The kernel body CAN use expressions because it uses concrete register names (`R0`, `R1`), not parameters
+
+---
+
+## REG-6: Loss of Selective NOP in Row Broadcast (`_` placeholder)
+
+**Severity:** 🟡 Medium — reduces clarity of intentional NOP placement.
+
+The v8 pipe syntax used `_` as a visual placeholder for intentional NOPs within a row. In v9, a NOP column is simply **absent** from the source, making it harder to verify that the omission is intentional.
+
+**v8 — NOPs are visible:**
+```dsl
+cycle { row 0: SADD ROUT, R1, ZERO | SADD ROUT, R1, ZERO | SADD ROUT, R1, ZERO | _; }
+cycle { row 0: _ | SADD R3, R3, RCL | SADD R3, R3, RCL | SADD R3, R3, RCL; }
+```
+
+**v9 — NOPs are invisible:**
+```dsl
+cycle {
+    @0,0: ROUT = R1;
+    @0,1: ROUT = R1;
+    @0,2: ROUT = R1;
+}
+cycle {
+    @0,1: R3 = R3 + RCL;
+    @0,2: R3 = R3 + RCL;
+    @0,3: R3 = R3 + RCL;
+}
+```
+
+**Why it's worse:**
+- In v8, `_` at column 3 signals "col 3 is intentionally idle" — the reader knows all 4 columns were considered
+- In v9, column 3 is simply missing; the reader cannot distinguish "intentionally skipped" from "accidentally forgotten"
+- This directly contributed to the PE placement bug (REG-1) — it's much harder to verify completeness when absent columns look identical to omitted ones
+
+---
+
+## REG-7: Loss of `config()` Statement
+
+**Severity:** 🟢 Low — replaced by `target` declaration, which serves the same purpose.
+
+The v2 `config(0xF, 0)` set the active column mask and DMA base address. In v3, the `target "uma-cgra-base"` declaration implicitly configures the grid. No functional regression, but the explicit `config()` call was more self-documenting for the active columns.
+
+**v8:**
+```dsl
+kernel "SBox_k7_Full" {
+    config(0xF, 0);
+    ...
+}
+```
+
+**v9:**
+```dsl
+target "uma-cgra-base";
+// (implicit: all columns active, default DMA base)
+kernel "SBox_k7_Full" {
+    ...
+}
+```
+
+---
+
+## REG-8: Increased Bug Surface from Manual Unrolling
+
+**Severity:** 🔴 Critical — the porting process itself introduced a correctness bug.
+
+The v9 port introduced a PE placement bug (`@1,3` instead of `@1,1`) in the square accumulation function that made 8/12 tests fail. This bug was **structurally impossible** in v8 because computed coordinates (`@k/4,k%4`) are generated by the compiler, not typed by hand.
+
+**The bug:**
+```diff
+- @1,2: R3 = R2 + RCT;    // WRONG: should be @1,1
+- @1,3: R3 = R2 + RCT;    // WRONG: should be @1,2
++ @1,1: R3 = R2 + RCT;    // CORRECT
++ @1,2: R3 = R2 + RCT;    // CORRECT
+```
+
+**Root cause:** When manually expanding the v8 `row 1: _ | SADD R3, R2, RCT | SADD R3, R2, RCT | _` pattern to explicit `@r,c:` statements, the coordinates were mistyped. The `_` placeholders in v8 made the active columns (1,2) obvious; their absence in v9 made the error invisible.
+
+**Lesson:** Every computed coordinate that must be manually unrolled in v3 is a potential bug site. The v3 syntax traded compiler complexity for programmer error surface.
+
+---
+
+## Overall Assessment
+
+The v8→v9 port demonstrates a significant **expressiveness regression** in OpenEdgeDSL v3 for CGRA kernels that need:
+1. **Parallel iteration** over PE grids (16-PE `for` loops)
+2. **Row broadcast** patterns (per-column variation within a row)
+3. **Declarative routing** (`#pragma route`)
+4. **Selective NOP** visibility (`_` placeholders)
+
+The v3 canonical syntax trades **conciseness and clarity** for **parser simplicity and regularity**. For this particular kernel, the cost is an 85% increase in source lines, 3 compiler workarounds, and 1 silently introduced bug that required several hours of debugging.
+
+> [!IMPORTANT]
+> The most impactful fix would be **BUG-7** (computed coordinates in `for` loops). Resolving this single issue would recover most of the lost expressiveness — `load_all`, `extract_bytes_col/row`, `compute_qhat_inregs`, and `mul_qhat_p_inregs` could all return to compact `for` loop form, eliminating ~100 lines of manual unrolling and the bug surface that comes with it.
