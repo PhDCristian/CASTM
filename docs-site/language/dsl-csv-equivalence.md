@@ -60,7 +60,7 @@ NOP,NOP,NOP,NOP
 ```openedge [OpenEdgeDSL]
 target "uma-cgra-base";
 kernel "eq_route" {
-  route(@0,1 -> @0,0, payload=R3, accum=R1);
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
 }
 ```
 
@@ -85,7 +85,7 @@ NOP,NOP,NOP,NOP
 target "uma-cgra-base";
 kernel "eq_runtime_for" {
   for R0 in range(0, 3) at @0,0 runtime {
-    cycle { at @0,1: R1 = R0 + IMM(1); }
+    cycle { at @0,1: R1 = R0 + 1; }
   }
 }
 ```
@@ -97,12 +97,17 @@ NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 1,,,
-"BGE R0, IMM(3), __loop_end",NOP,NOP,NOP
+"BGE R0, 3, 3","SADD R3, RCL, ZERO",NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 2,,,
-NOP,"SADD R1, R0, IMM(1)",NOP,NOP
+"SADD R0, R0, 1","SADD R1, R3, 1","JUMP 1, ZERO",NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+3,,,
+NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
@@ -115,24 +120,55 @@ NOP,NOP,NOP,NOP
 ```openedge [OpenEdgeDSL]
 target "uma-cgra-base";
 kernel "eq_scan_reduce" {
-  scan(op=add, src=R0, dest=R2, dir=right, mode=exclusive);
-  reduce(op=add, dest=R1, src=R0, axis=row);
+  std::scan(op=add, src=R0, dest=R2, dir=right, mode=exclusive);
+  std::reduce(op=add, dest=R1, src=R0, axis=row);
 }
 ```
 
 ```csv [CSV matrix excerpt]
 0,,,
-"SADD R2, ZERO, IMM(0)","SADD R2, R0, RCL",...,...
-...,...,...,...
-...,...,...,...
-...,...,...,...
+"SADD R2, ZERO, 0",NOP,NOP,NOP
+"SADD R2, ZERO, 0",NOP,NOP,NOP
+"SADD R2, ZERO, 0",NOP,NOP,NOP
+"SADD R2, ZERO, 0",NOP,NOP,NOP
 1,,,
-"SADD R1, R0, ZERO","SADD R1, R1, RCL",...,...
-...,...,...,...
-...,...,...,...
-...,...,...,...
+"SADD ROUT, R0, ZERO",NOP,NOP,NOP
+"SADD ROUT, R0, ZERO",NOP,NOP,NOP
+"SADD ROUT, R0, ZERO",NOP,NOP,NOP
+"SADD ROUT, R0, ZERO",NOP,NOP,NOP
+2,,,
+NOP,"SADD R2, R2, RCL",NOP,NOP
+NOP,"SADD R2, R2, RCL",NOP,NOP
+NOP,"SADD R2, R2, RCL",NOP,NOP
+NOP,"SADD R2, R2, RCL",NOP,NOP
+3,,,
+NOP,"SADD ROUT, R2, ZERO",NOP,NOP
+NOP,"SADD ROUT, R2, ZERO",NOP,NOP
+NOP,"SADD ROUT, R2, ZERO",NOP,NOP
+NOP,"SADD ROUT, R2, ZERO",NOP,NOP
 ```
 :::
+
+## 6) Advanced Statements Coverage
+
+All advanced statement pages include an executable `OpenEdgeDSL -> sim-matrix-csv` section with real compiler output.
+
+| Statement | CSV-backed page |
+|---|---|
+| `std::route(...)` | [/features/pragmas/route](/features/pragmas/route) |
+| `std::broadcast(...)` | [/features/pragmas/broadcast](/features/pragmas/broadcast) |
+| `std::reduce(...)` | [/features/pragmas/reduce](/features/pragmas/reduce) |
+| `std::scan(...)` | [/features/pragmas/scan](/features/pragmas/scan) |
+| `std::rotate(...)` / `std::shift(...)` | [/features/pragmas/rotate](/features/pragmas/rotate), [/features/pragmas/shift](/features/pragmas/shift) |
+| `std::stencil(...)` / `std::allreduce(...)` | [/features/pragmas/stencil](/features/pragmas/stencil), [/features/pragmas/allreduce](/features/pragmas/allreduce) |
+| `std::transpose(...)` / `std::gather(...)` | [/features/pragmas/transpose](/features/pragmas/transpose), [/features/pragmas/gather](/features/pragmas/gather) |
+| `std::stream_load/store(...)` | [/features/pragmas/stream](/features/pragmas/stream) |
+| `std::accumulate(...)` / `std::carry_chain(...)` | [/features/pragmas/accumulate](/features/pragmas/accumulate), [/features/pragmas/carry-chain](/features/pragmas/carry-chain) |
+| `std::conditional_sub(...)` / `std::collect(...)` | [/features/pragmas/conditional-sub](/features/pragmas/conditional-sub), [/features/pragmas/collect](/features/pragmas/collect) |
+| `std::normalize(...)` / `std::extract_bytes(...)` | [/features/pragmas/normalize](/features/pragmas/normalize), [/features/pragmas/extract-bytes](/features/pragmas/extract-bytes) |
+| `std::guard(...)` / `std::triangle(...)` | [/features/pragmas/guard](/features/pragmas/guard), [/features/pragmas/triangle](/features/pragmas/triangle) |
+| `std::latency_hide(...)` / `std::stash(...)` | [/features/pragmas/auto-cycle](/features/pragmas/auto-cycle), [/features/pragmas/stash](/features/pragmas/stash) |
+| loop composition helpers | [/features/pragmas/parallel](/features/pragmas/parallel), [/features/pragmas/unroll](/features/pragmas/unroll) |
 
 ## Output Modes
 

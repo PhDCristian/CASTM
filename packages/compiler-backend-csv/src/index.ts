@@ -19,6 +19,10 @@ function quoteCell(value: string): string {
   return `"${value.replace(/"/g, '""')}"`;
 }
 
+function formatMatrixCell(value: string): string {
+  return /[",\n]/.test(value) ? quoteCell(value) : value;
+}
+
 function formatInstruction(opcode: string, operands: string[]): string {
   if (!operands.length) return opcode;
   return `${opcode} ${operands.join(', ')}`;
@@ -48,7 +52,8 @@ function emitSimMatrixCsv(program: CsvProgram): string {
 
   const cycles = [...program.cycles].sort((a, b) => a.index - b.index);
   for (const cycle of cycles) {
-    lines.push(String(cycle.index));
+    const cycleHeader = [String(cycle.index), ...Array.from({ length: Math.max(0, cols - 1) }, () => '')];
+    lines.push(cycleHeader.join(','));
 
     const grid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => 'NOP'));
     for (const slot of cycle.slots) {
@@ -60,7 +65,7 @@ function emitSimMatrixCsv(program: CsvProgram): string {
     }
 
     for (let row = 0; row < rows; row++) {
-      lines.push(grid[row].map(quoteCell).join(', '));
+      lines.push(grid[row].map(formatMatrixCell).join(','));
     }
   }
 

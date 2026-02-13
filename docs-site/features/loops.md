@@ -19,7 +19,7 @@ kernel "for_static" {
 target "uma-cgra-base";
 kernel "for_runtime" {
   for R0 in range(0, 3) at @0,0 runtime {
-    cycle { at @0,1: R1 = R0 + IMM(1); }
+    cycle { at @0,1: R1 = R0 + 1; }
   }
 }
 ```

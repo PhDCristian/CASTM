@@ -35,7 +35,7 @@ Inside `kernel { ... }`, canonical items are:
 - runtime directives (`.io_load`, `.io_store`, `.limit`, `.assert`)
 - `cycle { ... }`
 - `if/else`, `while`, `for`
-- advanced statements (`route(...)`, `scan(...)`, `latency_hide(...)`, etc.)
+- advanced statements (`std::route(...)`, `std::scan(...)`, `std::latency_hide(...)`, etc.)
 - function calls and `pipeline(...)`
 
 ## Notes

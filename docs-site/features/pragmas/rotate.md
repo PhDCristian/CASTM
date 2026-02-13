@@ -1,11 +1,11 @@
-# `rotate(...)`
+# `std::rotate(...)`
 
 Toroidal lane rotation using route relay steps.
 
 ## Syntax
 
 ```text
-rotate(reg=R0, direction=left|right[, distance=N]);
+std::rotate(reg=R0, direction=left|right[, distance=N]);
 ```
 
 ## Options
@@ -23,17 +23,32 @@ Each rotation step emits two cycles:
 1. `SADD ROUT, reg, ZERO` on all placements
 2. `SADD reg, incoming, ZERO` with directional incoming register
 
-`rotate(...)` requires torus topology.
+`std::rotate(...)` requires torus topology.
 
 ## Executable Example
 
 ```openedge
 target "uma-cgra-base";
 kernel "rotate_doc" {
-  rotate(reg=R0, direction=left, distance=1);
+  std::rotate(reg=R0, direction=left, distance=1);
 }
+```
+
+## DSL to CSV Example (Matrix)
+
+```csv [CSV matrix excerpt]
+0,,,
+"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
+"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
+"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
+"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
+1,,,
+"SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO"
+"SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO"
+"SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO"
+"SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO"
 ```
 
 ## Diagnostics
 
-Using `rotate(...)` on non-torus topology emits `UnsupportedOperation` diagnostics.
+Using `std::rotate(...)` on non-torus topology emits `UnsupportedOperation` diagnostics.

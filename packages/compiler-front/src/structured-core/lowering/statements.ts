@@ -2,41 +2,15 @@ import { CycleStatementAst, InstructionAst, spanAt } from '@openedge/compiler-ir
 import { parseInstruction } from './instructions.js';
 import { evaluateCoordinateExpression, evaluateNumericExpression } from '../parser-utils/numbers.js';
 import { splitTopLevel } from '../parser-utils/strings.js';
-
-const ADVANCED_NAMES = new Set([
-  'route',
-  'broadcast',
-  'accumulate',
-  'carry_chain',
-  'conditional_sub',
-  'collect',
-  'stash',
-  'extract_bytes',
-  'normalize',
-  'rotate',
-  'shift',
-  'scan',
-  'reduce',
-  'stencil',
-  'guard',
-  'triangle',
-  'allreduce',
-  'transpose',
-  'gather',
-  'stream_load',
-  'stream_store',
-  'latency_hide'
-]);
+import { parseAdvancedNamespaceIssue, parseStandardAdvancedCall } from '../advanced.js';
 
 export function parseAdvancedStatementAsPragma(clean: string): string | null {
-  const match = clean.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\(([\s\S]*)\)\s*;?\s*$/);
-  if (!match) return null;
-
-  const name = match[1].toLowerCase();
-  const body = match[2].trim();
-  if (!ADVANCED_NAMES.has(name)) return null;
-  return `${name}(${body})`;
+  const parsed = parseStandardAdvancedCall(clean);
+  if (!parsed) return null;
+  return parsed.text;
 }
+
+export { parseAdvancedNamespaceIssue, parseStandardAdvancedCall };
 
 function findTopLevelRangeSeparator(expr: string): number {
   let paren = 0;

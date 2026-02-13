@@ -4,6 +4,7 @@ import {
 import { splitTopLevel } from '../parser-utils/strings.js';
 import { ADVANCED_NAMES, RESERVED_KEYWORDS } from '../constants.js';
 import { spanAt } from '../utils.js';
+import { parseAdvancedNamespaceIssue, parseStandardAdvancedCall } from '../advanced.js';
 
 export function shouldSkipStructuredLine(cleanLine: string): boolean {
   return (
@@ -17,6 +18,8 @@ export interface ParsedAdvancedStatement {
   name: string;
   args: string;
   text: string;
+  sourceForm: 'qualified' | 'unqualified';
+  namespace: 'std' | null;
 }
 
 export interface ParsedPipelineCall {
@@ -25,17 +28,19 @@ export interface ParsedPipelineCall {
 }
 
 export function parseAdvancedStatement(cleanLine: string): ParsedAdvancedStatement | null {
-  const match = cleanLine.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\((.+)\)\s*;?\s*$/);
-  if (!match) return null;
-  const name = match[1].toLowerCase();
-  if (!ADVANCED_NAMES.has(name)) return null;
-  const args = match[2].trim();
+  const parsed = parseStandardAdvancedCall(cleanLine);
+  if (!parsed) return null;
+
   return {
-    name,
-    args,
-    text: `${name}(${args})`
+    name: parsed.name,
+    args: parsed.args,
+    text: parsed.text,
+    sourceForm: parsed.sourceForm,
+    namespace: parsed.namespace
   };
 }
+
+export { parseAdvancedNamespaceIssue };
 
 export function parseFunctionCall(cleanLine: string): StructuredFnCallStmtAst | null {
   const match = cleanLine.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*;?\s*$/);

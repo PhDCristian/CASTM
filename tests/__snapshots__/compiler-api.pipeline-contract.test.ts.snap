@@ -34,7 +34,7 @@ exports[`compiler-api pipeline contracts > keeps deterministic snapshots across 
         {
           "col": 1,
           "row": 0,
-          "text": "SADD R2, R0, IMM(1)",
+          "text": "SADD R2, R0, 1",
         },
       ],
     },
@@ -44,7 +44,7 @@ exports[`compiler-api pipeline contracts > keeps deterministic snapshots across 
     "0,0,1,SADD ROUT R3 ZERO",
     "1,0,0,SADD R1 R1 RCR",
     "2,0,0,LWI R0 4",
-    "2,0,1,SADD R2 R0 IMM(1)",
+    "2,0,1,SADD R2 R0 1",
   ],
   "hir": [
     {
@@ -78,7 +78,7 @@ exports[`compiler-api pipeline contracts > keeps deterministic snapshots across 
         {
           "col": 1,
           "row": 0,
-          "text": "SADD R2 R0 IMM(1)",
+          "text": "SADD R2 R0 1",
         },
       ],
     },
@@ -115,7 +115,7 @@ exports[`compiler-api pipeline contracts > keeps deterministic snapshots across 
         {
           "col": 1,
           "row": 0,
-          "text": "SADD R2 R0 IMM(1)",
+          "text": "SADD R2 R0 1",
         },
       ],
     },
@@ -152,7 +152,7 @@ exports[`compiler-api pipeline contracts > keeps deterministic snapshots across 
         {
           "col": 1,
           "row": 0,
-          "text": "SADD R2 R0 IMM(1)",
+          "text": "SADD R2 R0 1",
         },
       ],
     },

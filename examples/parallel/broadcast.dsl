@@ -8,7 +8,7 @@ kernel "Broadcast" {
 
     // Load value at PE(0,0) only
     cycle {
-        @0,0: SADD R0, ZERO, IMM(99);
+        @0,0: SADD R0, ZERO, 99;
     }
 
     // Broadcast R0 from PE(0,0) to all PEs in the row

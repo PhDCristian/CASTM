@@ -17,7 +17,18 @@ export function getCompletions(prefix: string, targetProfileId = 'uma-cgra-base'
   const out: CompletionItem[] = [];
 
   const keywords = ['let', 'target', 'kernel', 'cycle', 'at', 'if', 'else', 'while', 'for', 'range', 'runtime', 'pipeline'];
-  const advancedStatements = getPragmas().map((pragma) => `${pragma.name}(...);`);
+  const advancedStatements = getPragmas().flatMap((pragma) => [
+    {
+      label: `std::${pragma.name}(...);`,
+      detail: 'standard advanced statement',
+      canonical: true
+    },
+    {
+      label: `${pragma.name}(...);`,
+      detail: 'compatibility form (deprecated)',
+      canonical: false
+    }
+  ]);
 
   for (const keyword of keywords) {
     if (!needle || keyword.toUpperCase().startsWith(needle)) {
@@ -39,11 +50,11 @@ export function getCompletions(prefix: string, targetProfileId = 'uma-cgra-base'
   }
 
   for (const statement of advancedStatements) {
-    if (!needle || statement.toUpperCase().includes(needle)) {
+    if (!needle || statement.label.toUpperCase().includes(needle)) {
       out.push({
-        label: statement,
+        label: statement.label,
         kind: 'advanced',
-        detail: 'advanced statement'
+        detail: statement.detail
       });
     }
   }

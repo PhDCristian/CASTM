@@ -1,11 +1,11 @@
-# `stash(...)`
+# `std::stash(...)`
 
 Explicit deterministic spill/restore placement using `SWI/LWI`.
 
 ## Syntax
 
 ```text
-stash(action=save|restore, reg=R0, addr=<memory-or-address>[, target=all|row(N)|col(N)|point(r,c)]);
+std::stash(action=save|restore, reg=R0, addr=<memory-or-address>[, target=all|row(N)|col(N)|point(r,c)]);
 ```
 
 ## Options
@@ -30,7 +30,22 @@ target "uma-cgra-base";
 let L @360 = { 0, 0, 0, 0 };
 
 kernel "stash_doc" {
-  stash(action=save, reg=R0, addr=L[0], target=point(3,0));
-  stash(action=restore, reg=R1, addr=L[0], target=point(3,0));
+  std::stash(action=save, reg=R0, addr=L[0], target=point(3,0));
+  std::stash(action=restore, reg=R1, addr=L[0], target=point(3,0));
 }
+```
+
+## DSL to CSV Example (Matrix)
+
+```csv [CSV matrix excerpt]
+0,,,
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+"SWI R0, L[0]",NOP,NOP,NOP
+1,,,
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+"LWI R1, L[0]",NOP,NOP,NOP
 ```

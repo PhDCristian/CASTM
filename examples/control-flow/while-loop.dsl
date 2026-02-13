@@ -12,9 +12,9 @@ kernel "WhileLoop" {
     }
 
     // Count from 0 to 9
-    while (R0 < IMM(10)) @0,0 {
+    while (R0 < 10) @0,0 {
         cycle {
-            @0,0: SADD R0, R0, IMM(1);
+            @0,0: SADD R0, R0, 1;
         }
     }
     // R0 = 10 after loop

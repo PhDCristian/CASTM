@@ -1,11 +1,11 @@
-# `conditional_sub(...)`
+# `std::conditional_sub(...)`
 
 Branchless conditional subtraction over configurable spatial targets.
 
 ## Syntax
 
 ```text
-conditional_sub(value=RV, sub=RS, dest=RD[, target=all|row(N)|col(N)|point(r,c)]);
+std::conditional_sub(value=RV, sub=RS, dest=RD[, target=all|row(N)|col(N)|point(r,c)]);
 ```
 
 ## Options
@@ -29,7 +29,7 @@ Always emits two deterministic stages over selected placements:
 ```openedge
 target "uma-cgra-base";
 kernel "conditional_sub_doc" {
-  conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
+  std::conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
 }
 ```
 
@@ -38,12 +38,12 @@ kernel "conditional_sub_doc" {
 ```csv
 0,,,
 NOP,NOP,NOP,NOP
-"SSUB R2, R0, R1","SSUB R2, R0, R1",...,...
+"SSUB R2, R0, R1","SSUB R2, R0, R1",NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 1,,,
 NOP,NOP,NOP,NOP
-"BSFA R2, R0, R2, SELF","BSFA R2, R0, R2, SELF",...,...
+"BSFA R2, R0, R2, SELF","BSFA R2, R0, R2, SELF",NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 ```

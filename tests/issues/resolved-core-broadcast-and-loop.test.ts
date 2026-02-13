@@ -7,7 +7,7 @@ describe('issues resolved core regressions (broadcast + loop vars)', () => {
 target "uma-cgra-base";
 function fill_all() {
   cycle {
-    at all: SADD R0, ZERO, IMM(99);
+    at all: SADD R0, ZERO, 99;
   }
 }
 kernel "issue1_all_in_fn" {
@@ -19,8 +19,8 @@ kernel "issue1_all_in_fn" {
     expect(result.success).toBe(true);
 
     const csv = result.artifacts.csv ?? '';
-    expect(csv).toContain('0,0,0,SADD R0 ZERO IMM(99)');
-    expect(csv).toContain('0,3,3,SADD R0 ZERO IMM(99)');
+    expect(csv).toContain('0,0,0,SADD R0 ZERO 99');
+    expect(csv).toContain('0,3,3,SADD R0 ZERO 99');
   });
 
   it('keeps Issue-5 fixed: at row single instruction broadcasts across columns', () => {
@@ -69,7 +69,7 @@ target "uma-cgra-base";
 kernel "issue10_col_var" {
   for col in range(1, 3) {
     cycle {
-      @0,0: SADD R1, ZERO, IMM(col);
+      @0,0: SADD R1, ZERO, col;
     }
   }
 }
@@ -79,8 +79,8 @@ kernel "issue10_col_var" {
     expect(result.success).toBe(true);
 
     const csv = result.artifacts.csv ?? '';
-    expect(csv).toContain('0,0,0,SADD R1 ZERO IMM(1)');
-    expect(csv).toContain('1,0,0,SADD R1 ZERO IMM(2)');
+    expect(csv).toContain('0,0,0,SADD R1 ZERO 1');
+    expect(csv).toContain('1,0,0,SADD R1 ZERO 2');
   });
 
   it('keeps BUG-1 fixed: mixed row/at styles in same cycle do not corrupt output', () => {
@@ -88,9 +88,9 @@ kernel "issue10_col_var" {
 target "uma-cgra-base";
 kernel "bug1_mixed_broadcast" {
   cycle {
-    at row 0: SADD R0, ZERO, IMM(1);
-    @1,1: SADD R1, ZERO, IMM(2);
-    @2,3: SADD R2, ZERO, IMM(3);
+    at row 0: SADD R0, ZERO, 1;
+    @1,1: SADD R1, ZERO, 2;
+    @2,3: SADD R2, ZERO, 3;
   }
 }
 `;
@@ -99,8 +99,8 @@ kernel "bug1_mixed_broadcast" {
     expect(result.success).toBe(true);
 
     const csv = result.artifacts.csv ?? '';
-    expect(csv).toContain('0,0,0,SADD R0 ZERO IMM(1)');
-    expect(csv).toContain('0,1,1,SADD R1 ZERO IMM(2)');
-    expect(csv).toContain('0,2,3,SADD R2 ZERO IMM(3)');
+    expect(csv).toContain('0,0,0,SADD R0 ZERO 1');
+    expect(csv).toContain('0,1,1,SADD R1 ZERO 2');
+    expect(csv).toContain('0,2,3,SADD R2 ZERO 3');
   });
 });

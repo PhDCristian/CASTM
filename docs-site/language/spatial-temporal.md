@@ -21,7 +21,7 @@ Coordinate expressions and ranges are supported:
 
 - Each `cycle { ... }` contributes one or more placements at a cycle index.
 - Advanced statements can emit multiple generated cycles.
-- `latency_hide(...)` may compact adjacent cycles conservatively when hazards are absent.
+- `std::latency_hide(...)` may compact adjacent cycles conservatively when hazards are absent.
 
 ## Executable Snippet
 

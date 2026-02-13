@@ -1,11 +1,11 @@
-# `collect(...)`
+# `std::collect(...)`
 
 Aligned single-hop lane collection for row or column lanes.
 
 ## Syntax
 
 ```text
-collect(from=row(N)|col(N), to=row(M)|col(M), via=SELF|RCT|RCB|RCL|RCR, local=RL, into=RD[, combine=copy|add|sum|sub|and|or|xor|mul|shift_add]);
+std::collect(from=row(N)|col(N), to=row(M)|col(M), via=SELF|RCT|RCB|RCL|RCR, local=RL, into=RD[, combine=copy|add|sum|sub|and|or|xor|mul|shift_add]);
 ```
 
 ## Options
@@ -30,7 +30,7 @@ collect(from=row(N)|col(N), to=row(M)|col(M), via=SELF|RCT|RCB|RCL|RCR, local=RL
 ```openedge
 target "uma-cgra-base";
 kernel "collect_doc" {
-  collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
+  std::collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
 }
 ```
 
@@ -38,15 +38,15 @@ kernel "collect_doc" {
 
 ```csv
 0,,,
-"SADD R3, RCB, ZERO","SADD R3, RCB, ZERO",...,...
-...,...,...,...
-...,...,...,...
-...,...,...,...
+"SADD R3, RCB, ZERO","SADD R3, RCB, ZERO",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 1,,,
-"SADD R3, R2, R3","SADD R3, R2, R3",...,...
-...,...,...,...
-...,...,...,...
-...,...,...,...
+"SADD R3, R2, R3","SADD R3, R2, R3",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 
 ## Diagnostics

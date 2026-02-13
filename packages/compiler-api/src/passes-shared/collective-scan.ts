@@ -73,7 +73,7 @@ export function buildScanCycles(
           stagePlacements.push({
             row,
             col,
-            instruction: createInstruction('SADD', [pragma.dstReg, 'ZERO', `IMM(${identity})`], span)
+            instruction: createInstruction('SADD', [pragma.dstReg, 'ZERO', String(identity)], span)
           });
         }
         continue;

@@ -99,20 +99,20 @@ kernel "spatial" {
     const source = `
 target "uma-cgra-base";
 kernel "ctrl" {
-  if (R0 == IMM(0)) at @0,0 {
+  if (R0 == 0) at @0,0 {
     cycle { @0,1: R1 = R1 + 1; }
   } else {
     cycle { @0,1: R1 = R1 + 2; }
   }
-  while (R1 < IMM(3)) at @0,0 {
+  while (R1 < 3) at @0,0 {
     cycle { @0,1: R1 = R1 + 1; }
   }
 }
 `;
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('BNE R0 IMM(0)');
-    expect(result.artifacts.csv).toContain('BGE RCR IMM(3)');
+    expect(result.artifacts.csv).toContain('BNE R0 0');
+    expect(result.artifacts.csv).toContain('BGE RCR 3');
   });
 
   it('supports runtime for loops as explicit syntax', () => {
@@ -120,14 +120,14 @@ kernel "ctrl" {
 target "uma-cgra-base";
 kernel "runtime_for" {
   for R0 in range(0, 3) at @0,0 runtime {
-    cycle { @0,1: R1 = R0 + IMM(1); }
+    cycle { @0,1: R1 = R0 + 1; }
   }
 }
 `;
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('SADD R0 ZERO ZERO');
-    expect(result.artifacts.csv).toContain('BGE R0 IMM(3)');
+    expect(result.artifacts.csv).toContain('BGE R0 3');
   });
 
   it('lowers route statement syntax to existing route engine', () => {
@@ -178,7 +178,7 @@ kernel "advanced" {
     const result = compile(source);
     expect(result.success).toBe(true);
     expect(result.artifacts.csv).toContain('SADD R1 R0 ZERO');
-    expect(result.artifacts.csv).toContain('SADD R2 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('SADD R2 ZERO 0');
   });
 
   it('emits structuredAst artifact for canonical pipeline phase boundary', () => {

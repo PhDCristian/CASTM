@@ -242,7 +242,7 @@ describe('compiler-api collective/route builders', () => {
     expect(shiftCycles).toHaveLength(4);
     expect(shiftCycles[0].index).toBe(10);
     const hasFill = shiftCycles.some((cycle) =>
-      cycle.statements.some((stmt) => stmt.kind === 'at' && stmt.instruction.text.includes('IMM(7)'))
+      cycle.statements.some((stmt) => stmt.kind === 'at' && stmt.instruction.text.includes('ZERO, 7'))
     );
     expect(hasFill).toBe(true);
   });

@@ -1,11 +1,11 @@
-# `carry_chain(...)`
+# `std::carry_chain(...)`
 
 Deterministic limb-wise carry propagation with staged memory stores.
 
 ## Syntax
 
 ```text
-carry_chain(src=RS, carry=RC, store=ARRAY, limbs=N, width=W, row=R[, mask=M, start=C, dir=right|left]);
+std::carry_chain(src=RS, carry=RC, store=ARRAY, limbs=N, width=W, row=R[, mask=M, start=C, dir=right|left]);
 ```
 
 ## Options
@@ -40,7 +40,7 @@ target "uma-cgra-base";
 let L = { 0, 0, 0, 0 };
 
 kernel "carry_chain_doc" {
-  carry_chain(src=R0, carry=R3, store=L, limbs=3, width=16, row=0, start=0, dir=right);
+  std::carry_chain(src=R0, carry=R3, store=L, limbs=3, width=16, row=0, start=0, dir=right);
 }
 ```
 

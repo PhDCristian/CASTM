@@ -24,6 +24,12 @@ export const ErrorCodes = {
   }
 } as const;
 
+export const WarningCodes = {
+  Style: {
+    UnqualifiedStdBuiltin: 'W1101'
+  }
+} as const;
+
 export function spanAt(line: number, column: number, length = 1): SourceSpan {
   return {
     startLine: line,

@@ -1,11 +1,11 @@
-# `gather(...)`
+# `std::gather(...)`
 
 Gather values from all source points to one destination point with selectable combiner.
 
 ## Syntax
 
 ```text
-gather(src=RS, dest=@r,c, destReg=RD, op=add|sum|sub|and|or|xor|mul);
+std::gather(src=RS, dest=@r,c, destReg=RD, op=add|sum|sub|and|or|xor|mul);
 ```
 
 ## Options
@@ -28,8 +28,33 @@ gather(src=RS, dest=@r,c, destReg=RD, op=add|sum|sub|and|or|xor|mul);
 ```openedge
 target "uma-cgra-base";
 kernel "gather_doc" {
-  gather(src=R0, dest=@0,0, destReg=R1, op=add);
+  std::gather(src=R0, dest=@0,0, destReg=R1, op=add);
 }
+```
+
+## DSL to CSV Example (Matrix)
+
+```csv [CSV matrix excerpt]
+0,,,
+"SADD R1, R0, ZERO",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+NOP,"SADD ROUT, R0, ZERO",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+2,,,
+"SADD R3, RCR, ZERO",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+3,,,
+"SADD R1, R1, R3",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 
 ## Diagnostics

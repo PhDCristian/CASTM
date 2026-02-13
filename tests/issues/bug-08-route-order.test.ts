@@ -6,7 +6,7 @@ describe('issues/BUG-8 route ordering', () => {
     const source = `
 target "uma-cgra-base";
 kernel "bug8_route_order" {
-  cycle { @0,0: SADD R0, ZERO, IMM(7); }
+  cycle { @0,0: SADD R0, ZERO, 7; }
   route(@0,0 -> @0,1, payload=R0, accum=R1);
   cycle { @0,1: SADD R2, R1, ZERO; }
 }
@@ -27,7 +27,7 @@ kernel "bug8_route_order" {
       );
     };
 
-    const producerIdx = findCycleIndex((text) => text.includes('0,0,SADD R0 ZERO IMM(7)'));
+    const producerIdx = findCycleIndex((text) => text.includes('0,0,SADD R0 ZERO 7'));
     const routeTransferIdx = findCycleIndex((text) => text.includes('0,0,SADD ROUT R0 ZERO'));
     const consumerIdx = findCycleIndex((text) => text.includes('0,1,SADD R2 R1 ZERO'));
 

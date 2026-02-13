@@ -1,11 +1,11 @@
-# `accumulate(...)`
+# `std::accumulate(...)`
 
 Deterministic NxM accumulation pattern over row, column, or anti-diagonal topology.
 
 ## Syntax
 
 ```text
-accumulate(pattern=row|col|anti_diagonal, products=RS, accum=RA, out=RD[, combine=add|sum|sub|and|or|xor|mul]);
+std::accumulate(pattern=row|col|anti_diagonal, products=RS, accum=RA, out=RD[, combine=add|sum|sub|and|or|xor|mul]);
 ```
 
 ## Options
@@ -32,7 +32,7 @@ accumulate(pattern=row|col|anti_diagonal, products=RS, accum=RA, out=RD[, combin
 ```openedge
 target "uma-cgra-base";
 kernel "accumulate_doc" {
-  accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
+  std::accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
 }
 ```
 
@@ -40,25 +40,25 @@ kernel "accumulate_doc" {
 
 ```csv
 0,,,
-"SADD R3, R2, ZERO","SADD R3, R2, ZERO",...,...
-...,...,...,...
-...,...,...,...
-...,...,...,...
+"SADD R3, R2, ZERO","SADD R3, R2, ZERO",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 1,,,
-...,"SADD R3, R3, RCT",...,...
-...,...,...,...
-...,...,...,...
-...,...,...,...
+NOP,"SADD R3, R3, RCT",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 2,,,
-...,"SADD R3, R3, RCR",...,...
-...,...,...,...
-...,...,...,...
-...,...,...,...
+NOP,"SADD R3, R3, RCR",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 3,,,
-"SADD ROUT, R3, ZERO","SADD ROUT, R3, ZERO",...,...
-...,...,...,...
-...,...,...,...
-...,...,...,...
+"SADD ROUT, R3, ZERO","SADD ROUT, R3, ZERO",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 
 ## Diagnostics

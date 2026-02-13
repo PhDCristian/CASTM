@@ -4,6 +4,7 @@ import { getCompletions, validateSource } from '@openedge/lsp-server';
 describe('lsp canonical contracts', () => {
   it('provides canonical keyword and statement completions', () => {
     const completions = getCompletions('ro');
+    expect(completions.some((c) => c.label === 'std::route(...);' && c.kind === 'advanced')).toBe(true);
     expect(completions.some((c) => c.label === 'route(...);' && c.kind === 'advanced')).toBe(true);
     expect(completions.some((c) => c.label === 'ROUT' && c.kind === 'register')).toBe(true);
 

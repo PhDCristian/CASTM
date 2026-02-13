@@ -115,6 +115,8 @@ export interface StructuredAdvancedStmtAst {
   name: string;
   args: string;
   text: string;
+  namespace?: 'std' | null;
+  sourceForm?: 'qualified' | 'unqualified';
   span: SourceSpan;
 }
 

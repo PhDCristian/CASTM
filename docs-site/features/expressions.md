@@ -5,7 +5,7 @@ OpenEdgeDSL supports C-like assignment expressions in cycle placements.
 ## Supported Forms
 
 - `R2 = R0 + R1;`
-- `R2 = R0 - IMM(1);`
+- `R2 = R0 - 1;`
 - `R2 = R0 << 2;`
 - `R2 = R0 >> 8;`
 - `R2 = R0 & MASK;`
@@ -20,7 +20,7 @@ Resolvable arithmetic in operands is folded at compile time.
 target "uma-cgra-base";
 kernel "expr" {
   cycle {
-    at @0,0: SRT R1, R0, IMM((2+3)*2);
+    at @0,0: SRT R1, R0, (2+3)*2;
     at @0,1: LWI R2, 360 + 2*4;
   }
 }

@@ -170,14 +170,14 @@ describe('compiler-front branch holes', () => {
 
   it('parses control headers and false-branch instruction mapping', () => {
     const diagnostics: Diagnostic[] = [];
-    const ifOk = parseControlHeader('if (R0 == IMM(1)) at @0,1 {', 'if', 1, new Map(), diagnostics);
+    const ifOk = parseControlHeader('if (R0 == 1) at @0,1 {', 'if', 1, new Map(), diagnostics);
     expect(ifOk).toMatchObject({ row: 0, col: 1 });
 
     const badCondition = parseControlHeader('if (R0) at @0,1 {', 'if', 2, new Map(), diagnostics);
     expect(badCondition).toBeNull();
     expect(diagnostics.at(-1)?.message).toContain('Invalid if condition');
 
-    const badLocation = parseControlHeader('while (R0 < IMM(3)) at @x,1 {', 'while', 3, new Map(), diagnostics);
+    const badLocation = parseControlHeader('while (R0 < 3) at @x,1 {', 'while', 3, new Map(), diagnostics);
     expect(badLocation).toBeNull();
     expect(diagnostics.at(-1)?.message).toContain('Invalid while control location');
 
@@ -193,7 +193,7 @@ describe('compiler-front branch holes', () => {
     expect(chooseJumpColumn(0)).toBe(1);
     expect(chooseJumpColumn(0, 1)).toBe(2);
     expect(buildRuntimeNoUnrollExitBranch('R0', 10, 'L_END', 1)).toContain('BGE R0');
-    expect(buildRuntimeNoUnrollExitBranch('R0', 10, 'L_END', -1)).toContain('BGE IMM(10)');
+    expect(buildRuntimeNoUnrollExitBranch('R0', 10, 'L_END', -1)).toContain('BGE 10, R0');
 
     const loopCycle = {
       index: 0,

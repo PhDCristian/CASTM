@@ -1,12 +1,12 @@
-# `stream_load(...)` and `stream_store(...)`
+# `std::stream_load(...)` and `std::stream_store(...)`
 
 Stream-pointer memory operations lowered to `LWD`/`SWD` over selected rows.
 
 ## Syntax
 
 ```text
-stream_load(dest=RD[, row=N][, count=N]);
-stream_store(src=RS[, row=N][, count=N]);
+std::stream_load(dest=RD[, row=N][, count=N]);
+std::stream_store(src=RS[, row=N][, count=N]);
 ```
 
 ## Options
@@ -23,8 +23,8 @@ stream_store(src=RS[, row=N][, count=N]);
 ```openedge [OpenEdgeDSL]
 target "uma-cgra-base";
 kernel "stream_doc" {
-  stream_load(dest=R0, row=0, count=2);
-  stream_store(src=R0, row=0, count=2);
+  std::stream_load(dest=R0, row=0, count=2);
+  std::stream_store(src=R0, row=0, count=2);
 }
 ```
 

@@ -13,10 +13,10 @@ kernel "CLikeArithmetic" {
 
     // Cycle 0: Load initial values using assembly syntax
     cycle {
-        @0,0: SADD R0, ZERO, IMM(10);   // R0 = 10
-        @0,1: SADD R0, ZERO, IMM(20);   // R0 = 20
-        @0,2: SADD R0, ZERO, IMM(3);    // R0 = 3
-        @0,3: SADD R0, ZERO, IMM(7);    // R0 = 7
+        @0,0: SADD R0, ZERO, 10;   // R0 = 10
+        @0,1: SADD R0, ZERO, 20;   // R0 = 20
+        @0,2: SADD R0, ZERO, 3;    // R0 = 3
+        @0,3: SADD R0, ZERO, 7;    // R0 = 7
     }
 
     // Cycle 1: Arithmetic using C-like expressions

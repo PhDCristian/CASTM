@@ -11,7 +11,7 @@ Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas 
 - top-level `function` definitions + kernel call sites
 - `pipeline(...)` function-call sequencing macro
 - explicit spatial namespace (`at ...`)
-- advanced statements (`route(...)`, `reduce(...)`, `scan(...)`, etc.)
+- standard advanced statements (`std::route(...)`, `std::reduce(...)`, `std::scan(...)`, etc.)
 - conservative cycle compaction statement (`latency_hide(...)`)
 - explicit stash statement (`stash(...)`) for deterministic register spill/restore placement
 - explicit runtime loop form
@@ -38,17 +38,17 @@ function helper_stage_b(src) {
 kernel "canonical_example" {
   latency_hide(window=1, mode=conservative);
   stash(action=save, reg=R0, addr=output[0], target=point(3,0));
-  route(@0,1 -> @0,0, payload=R3, accum=R1);
-  accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
-  carry_chain(src=R0, carry=R3, store=output, limbs=2, width=16, row=0);
-  conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
+  std::accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
+  std::carry_chain(src=R0, carry=R3, store=output, limbs=2, width=16, row=0);
+  std::conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
   pipeline(helper_stage_a(), helper_stage_b(R0));
-  collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
-  normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
-  extract_bytes(src=R0, dest=R1, axis=col);
-  reduce(op=add, dest=R1, src=R0, axis=row);
-  guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
-  triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  std::collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
+  std::normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
+  std::extract_bytes(src=R0, dest=R1, axis=col);
+  std::reduce(op=add, dest=R1, src=R0, axis=row);
+  std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  std::triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 
   for R0 in range(0, 2) at @0,0 runtime {
     cycle {
@@ -63,7 +63,7 @@ kernel "canonical_example" {
 ## Notes
 
 - Memory sugar in `cycle {}` lowers to existing ISA (`LWI/SWI`) without changing CSV format.
-- Advanced statements lower to existing codegen passes.
+- `std::` advanced statements lower to existing codegen passes. Unqualified forms are temporary compatibility syntax and emit migration warnings.
 - `accumulate(...)` provides deterministic NxM accumulation patterns (`row`, `col`, `anti_diagonal`) and removes manual ROUT-graph boilerplate from kernels.
 - `carry_chain(...)` provides deterministic limb carry propagation + store staging without manual repeated cycles.
 - `conditional_sub(...)` provides deterministic branchless subtraction/select (`SSUB` + `BSFA`) scoped to `all`, `row`, `col`, or one point target (`point(r,c)`).
@@ -73,14 +73,14 @@ kernel "canonical_example" {
 - `extract_bytes(...)` unifies row/column byte-lane extraction as a canonical two-cycle pattern (`SRT` + `LAND`) over the active grid.
 - `triangle(...)` expands deterministically in row-major order over the active grid (`shape=upper|lower`, optional `inclusive=true|false`) and emits one canonical cycle with per-PE placements.
 - `guard(...)` applies a compile-time predicate (`cond`) over `row`, `col`, `idx`, `rows`, `cols` and emits deterministic row-major placements for matching PEs only.
-- `route(...)` lowering preserves lexical position relative to neighboring cycles (no global hoisting).
+- `std::route(...)` lowering preserves lexical position relative to neighboring cycles (no global hoisting).
 - `latency_hide(...)` applies conservative post-expansion cycle compaction with explicit hazard guards (PE overlap, direct route-hop dependency, control barriers, dual-memory adjacency), and can overlap disjoint route steps safely.
 - `stash(...)` provides deterministic explicit spill/restore lowering to `SWI/LWI` for selected spatial targets (`all`, `row`, `col`, `point`).
 - Inside `cycle { ... }`, semicolon-separated placements on the same line are supported.
 - Computed spatial coordinates in loops (for example `@k/4,k%4`) are valid canonical syntax.
 - Coordinate ranges are valid in canonical placements: `@r,c0..c1`, `@r0..r1,c`, and `@r0..r1,c0..c1` (inclusive expansion).
 - Row placements auto-broadcast when a single instruction is provided: `at row 1: INSTR;` expands to every column in row `1`.
-- Inline arithmetic in instruction operands is supported and folded when resolvable at compile time (for example `IMM((2+3)*4)` or `LWI R0, 360 + 2*4`).
+- Inline arithmetic in instruction operands is supported and folded when resolvable at compile time (for example `(2+3)*4` or `LWI R0, 360 + 2*4`).
 - Canonical optimization includes specialization of algebraic identities (`SMUL * 1/0`, `SADD +0`, `SSUB -0`, `LAND/LOR/LXOR` with neutral constants, shifts by `0`).
 - Triangle spatial-pattern reference: `docs/language/triangle-statement.md`.
 - Guard spatial-pattern reference: `docs/language/guard-statement.md`.

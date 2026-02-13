@@ -28,9 +28,9 @@ function foldOperand(token: string): string {
   const imm = token.match(/^IMM\(([\s\S]+)\)$/i);
   if (imm) {
     const inner = imm[1].trim();
-    if (!hasInlineArithmetic(inner)) return token;
+    if (!hasInlineArithmetic(inner)) return inner;
     const folded = evaluateInlineInteger(inner);
-    return folded === null ? token : `IMM(${folded})`;
+    return folded === null ? inner : String(folded);
   }
 
   if (!hasInlineArithmetic(token)) return token;

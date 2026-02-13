@@ -38,7 +38,7 @@ kernel "mem_sugar" {
 
 ```csv [CSV matrix excerpt]
 0,,,
-"LWI R0, 4","SWI R0, 108","SWI R1, 360 + 2*4","LWI R2, 360 + 2*4"
+"LWI R0, 4","SWI R0, 108","SWI R1, 368","LWI R2, 368"
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP

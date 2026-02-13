@@ -1,11 +1,11 @@
-# `normalize(...)`
+# `std::normalize(...)`
 
 Lane normalization with carry extraction and directional relay.
 
 ## Syntax
 
 ```text
-normalize(reg=R, carry=RC, width=W, lane=N[, mask=M, axis=row|col, dir=right|left|down|up]);
+std::normalize(reg=R, carry=RC, width=W, lane=N[, mask=M, axis=row|col, dir=right|left|down|up]);
 ```
 
 ## Options
@@ -36,8 +36,33 @@ Four deterministic cycles on selected lane:
 ```openedge
 target "uma-cgra-base";
 kernel "normalize_doc" {
-  normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
+  std::normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
 }
+```
+
+## DSL to CSV Example (Matrix)
+
+```csv [CSV matrix excerpt]
+0,,,
+"SRT R1, R3, 16","SRT R1, R3, 16","SRT R1, R3, 16","SRT R1, R3, 16"
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+"LAND R3, R3, 65535","LAND R3, R3, 65535","LAND R3, R3, 65535","LAND R3, R3, 65535"
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+2,,,
+"SADD ROUT, R1, ZERO","SADD ROUT, R1, ZERO","SADD ROUT, R1, ZERO","SADD ROUT, R1, ZERO"
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+3,,,
+"SADD R3, R3, ZERO","SADD R3, R3, RCL","SADD R3, R3, RCL","SADD R3, R3, RCL"
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 
 ## Diagnostics

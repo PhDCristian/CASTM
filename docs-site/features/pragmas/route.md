@@ -1,12 +1,12 @@
-# `route(...)`
+# `std::route(...)`
 
 Deterministic point-to-point transfer with optional custom combine operation.
 
 ## Syntax
 
 ```text
-route(@r1,c1 -> @r2,c2, payload=Rx, accum=Ry);
-route(@r1,c1 -> @r2,c2, payload=Rx, dest=Rd, op=OP(Rd, Ra, Rb));
+std::route(@r1,c1 -> @r2,c2, payload=Rx, accum=Ry);
+std::route(@r1,c1 -> @r2,c2, payload=Rx, dest=Rd, op=OP(Rd, Ra, Rb));
 ```
 
 ## Options
@@ -24,7 +24,7 @@ route(@r1,c1 -> @r2,c2, payload=Rx, dest=Rd, op=OP(Rd, Ra, Rb));
 ```openedge [OpenEdgeDSL]
 target "uma-cgra-base";
 kernel "route_doc" {
-  route(@0,1 -> @0,0, payload=R3, accum=R1);
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
 }
 ```
 
@@ -47,7 +47,7 @@ NOP,NOP,NOP,NOP
 ```openedge
 target "uma-cgra-base";
 kernel "route_custom_doc" {
-  route(@1,0 -> @2,2, payload=R0, dest=R2, op=SMUL(R2, R1, INCOMING));
+  std::route(@1,0 -> @2,2, payload=R0, dest=R2, op=SMUL(R2, R1, INCOMING));
 }
 ```
 

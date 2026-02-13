@@ -1,11 +1,11 @@
-# `transpose(...)`
+# `std::transpose(...)`
 
 In-place matrix transpose lowering for square grids.
 
 ## Syntax
 
 ```text
-transpose(reg=R0);
+std::transpose(reg=R0);
 ```
 
 ## Semantics
@@ -23,8 +23,33 @@ Requires a square grid and available scratch registers.
 ```openedge
 target "uma-cgra-base";
 kernel "transpose_doc" {
-  transpose(reg=R0);
+  std::transpose(reg=R0);
 }
+```
+
+## DSL to CSV Example (Matrix)
+
+```csv [CSV matrix excerpt]
+0,,,
+NOP,"SADD ROUT, R0, ZERO",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+"SADD ROUT, RCR, ZERO",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+2,,,
+NOP,NOP,NOP,NOP
+"SADD R3, RCT, ZERO",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+3,,,
+NOP,NOP,NOP,NOP
+"SADD ROUT, R0, ZERO",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 
 ## Diagnostics

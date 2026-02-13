@@ -8,16 +8,16 @@ kernel "ReduceVertical" {
 
     // Load values into column 0 across all rows
     cycle {
-        @0,0: SADD R0, ZERO, IMM(10);
+        @0,0: SADD R0, ZERO, 10;
     }
     cycle {
-        @1,0: SADD R0, ZERO, IMM(20);
+        @1,0: SADD R0, ZERO, 20;
     }
     cycle {
-        @2,0: SADD R0, ZERO, IMM(30);
+        @2,0: SADD R0, ZERO, 30;
     }
     cycle {
-        @3,0: SADD R0, ZERO, IMM(40);
+        @3,0: SADD R0, ZERO, 40;
     }
 
     // Vertical reduce: R1 at (0,0) = 10 + 20 + 30 + 40 = 100

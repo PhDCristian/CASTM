@@ -8,10 +8,10 @@ kernel "Scan" {
 
     // Load values into row 0
     cycle {
-        @0,0: SADD R0, ZERO, IMM(1);
-        @0,1: SADD R0, ZERO, IMM(2);
-        @0,2: SADD R0, ZERO, IMM(3);
-        @0,3: SADD R0, ZERO, IMM(4);
+        @0,0: SADD R0, ZERO, 1;
+        @0,1: SADD R0, ZERO, 2;
+        @0,2: SADD R0, ZERO, 3;
+        @0,3: SADD R0, ZERO, 4;
     }
 
     // Prefix sum: scan right with add operation

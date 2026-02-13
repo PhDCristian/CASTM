@@ -23,14 +23,14 @@ kernel "issue3_multi_statement" {
 target "uma-cgra-base";
 kernel "issue3_multi_statement_expr" {
   cycle {
-    @0,0: R3 = R2 >> IMM(16); @0,1: R4 = R2 & IMM(255);
+    @0,0: R3 = R2 >> 16; @0,1: R4 = R2 & 255;
   }
 }
 `;
 
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('0,0,0,SRT R3 R2 IMM(16)');
-    expect(result.artifacts.csv).toContain('0,0,1,LAND R4 R2 IMM(255)');
+    expect(result.artifacts.csv).toContain('0,0,0,SRT R3 R2 16');
+    expect(result.artifacts.csv).toContain('0,0,1,LAND R4 R2 255');
   });
 });

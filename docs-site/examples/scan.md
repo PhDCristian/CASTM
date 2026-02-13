@@ -6,8 +6,8 @@ Collective statements over lanes.
 target "uma-cgra-base";
 
 kernel "scan_reduce_example" {
-  scan(op=add, src=R0, dest=R1, dir=right, mode=inclusive);
-  reduce(op=add, dest=R2, src=R1, axis=row);
-  allreduce(op=add, dest=R3, src=R2, axis=col);
+  std::scan(op=add, src=R0, dest=R1, dir=right, mode=inclusive);
+  std::reduce(op=add, dest=R2, src=R1, axis=row);
+  std::allreduce(op=add, dest=R3, src=R2, axis=col);
 }
 ```

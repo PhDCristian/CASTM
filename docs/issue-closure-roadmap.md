@@ -182,7 +182,7 @@ Why:
 Subtasks:
 
 - [x] Add pass-level folding for resolvable arithmetic in instruction operands.
-- [x] Support `IMM(expr)` and direct `LWI/SWI` address expressions.
+- [x] Support inline immediate arithmetic (`expr`) and direct `LWI/SWI` address expressions.
 - [x] Keep unresolved symbolic expressions unchanged (no false errors).
 - [x] Add dedicated feature regression suite.
 

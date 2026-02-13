@@ -51,7 +51,8 @@ for_stmt         ::= "for" ident "in" "range" "(" range_args ")" "{" kernel_item
 
 ```text
 advanced_stmt    ::= route_stmt | reduce_stmt | scan_stmt | broadcast_stmt | ...
-route_stmt       ::= "route" "(" route_edge "," "payload" "=" register "," ( "accum" "=" register | "dest" "=" register "," "op" "=" op_call ) ")" ";"
+std_prefix       ::= "std::" | ""
+route_stmt       ::= std_prefix "route" "(" route_edge "," "payload" "=" register "," ( "accum" "=" register | "dest" "=" register "," "op" "=" op_call ) ")" ";"
 latency_hide_stmt ::= "latency_hide" "(" ( "window" "=" int_expr ["," "mode" "=" "conservative"] | "mode" "=" "conservative" ) ")" ";"
 stash_stmt       ::= "stash" "(" "action" "=" ("save"|"restore") "," "reg" "=" register "," "addr" "=" operand ["," "target" "=" stash_target] ")" ";"
 ```

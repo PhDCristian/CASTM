@@ -1,11 +1,11 @@
-# `reduce(...)`
+# `std::reduce(...)`
 
 Lane-wise reduction over row or column axis.
 
 ## Syntax
 
 ```text
-reduce(op=add|sum|sub|and|or|xor|mul, dest=RD, src=RS[, axis=row|col]);
+std::reduce(op=add|sum|sub|and|or|xor|mul, dest=RD, src=RS[, axis=row|col]);
 ```
 
 ## Options
@@ -23,20 +23,20 @@ reduce(op=add|sum|sub|and|or|xor|mul, dest=RD, src=RS[, axis=row|col]);
 ```openedge [OpenEdgeDSL]
 target "uma-cgra-base";
 kernel "reduce_doc" {
-  reduce(op=add, dest=R1, src=R0, axis=row);
+  std::reduce(op=add, dest=R1, src=R0, axis=row);
 }
 ```
 
 ```csv [CSV matrix excerpt]
 0,,,
-"SADD R1, R0, ZERO","SADD R1, R0, ZERO",...,...
-...,...,...,...
-...,...,...,...
-...,...,...,...
+"SADD R1, R0, ZERO","SADD R1, R0, ZERO",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 1,,,
-"SADD R1, R1, RCL","SADD R1, R1, RCL",...,...
-...,...,...,...
-...,...,...,...
-...,...,...,...
+"SADD R1, R1, RCL","SADD R1, R1, RCL",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 :::

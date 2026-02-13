@@ -7,7 +7,7 @@ Canonical control-flow uses explicit control PE location via `at @r,c`.
 ```openedge
 target "uma-cgra-base";
 kernel "if_else" {
-  if (R0 == IMM(0)) at @0,0 {
+  if (R0 == 0) at @0,0 {
     cycle { at @0,1: R1 = R1 + 1; }
   } else {
     cycle { at @0,1: R1 = R1 + 2; }
@@ -20,7 +20,7 @@ kernel "if_else" {
 ```openedge
 target "uma-cgra-base";
 kernel "while_loop" {
-  while (R1 < IMM(3)) at @0,0 {
+  while (R1 < 3) at @0,0 {
     cycle { at @0,1: R1 = R1 + 1; }
   }
 }

@@ -11,8 +11,8 @@ kernel "NestedLoops" {
         for j in range(2) {
             cycle {
                 // Load i and j into separate registers
-                @0,0: SADD R0, ZERO, IMM(i);
-                @0,1: SADD R0, ZERO, IMM(j);
+                @0,0: SADD R0, ZERO, i;
+                @0,1: SADD R0, ZERO, j;
             }
         }
     }

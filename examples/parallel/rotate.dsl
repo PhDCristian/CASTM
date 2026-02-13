@@ -8,10 +8,10 @@ kernel "Rotate" {
 
     // Load different values into each PE
     cycle {
-        @0,0: SADD R0, ZERO, IMM(10);
-        @0,1: SADD R0, ZERO, IMM(20);
-        @0,2: SADD R0, ZERO, IMM(30);
-        @0,3: SADD R0, ZERO, IMM(40);
+        @0,0: SADD R0, ZERO, 10;
+        @0,1: SADD R0, ZERO, 20;
+        @0,2: SADD R0, ZERO, 30;
+        @0,3: SADD R0, ZERO, 40;
     }
 
     // Rotate R0 left by 1 position

@@ -8,10 +8,10 @@ kernel "Reduce" {
 
     // Load values into each PE of row 0
     cycle {
-        @0,0: SADD R0, ZERO, IMM(10);
-        @0,1: SADD R0, ZERO, IMM(20);
-        @0,2: SADD R0, ZERO, IMM(30);
-        @0,3: SADD R0, ZERO, IMM(40);
+        @0,0: SADD R0, ZERO, 10;
+        @0,1: SADD R0, ZERO, 20;
+        @0,2: SADD R0, ZERO, 30;
+        @0,3: SADD R0, ZERO, 40;
     }
 
     // Reduce: sum all R0 values into R1

@@ -2,19 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { compile } from '@openedge/compiler-api';
 
 describe('issues/FEAT-9 inline operand arithmetic', () => {
-  it('folds arithmetic in IMM(...) operands', () => {
+  it('folds arithmetic in immediate operands', () => {
     const source = `
 target "uma-cgra-base";
-kernel "feat9_imm" {
+kernel "feat9_inline" {
   cycle {
-    @0,0: SADD R1, ZERO, IMM((2 + 3) * 4);
+    @0,0: SADD R1, ZERO, (2 + 3) * 4;
   }
 }
 `;
 
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 ZERO IMM(20)');
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 ZERO 20');
   });
 
   it('folds inline arithmetic in explicit LWI/SWI operands', () => {
@@ -59,7 +59,7 @@ target "uma-cgra-base";
 kernel "feat9_loop_bound" {
   for i in range(4) {
     cycle {
-      @0,i: SRT R1, R0, IMM(i*8);
+      @0,i: SRT R1, R0, i*8;
     }
   }
 }
@@ -69,9 +69,9 @@ kernel "feat9_loop_bound" {
     expect(result.success).toBe(true);
     const csv = result.artifacts.csv ?? '';
     expect(csv).toContain('0,0,0,SADD R1 R0 ZERO');
-    expect(csv).toContain('1,0,1,SRT R1 R0 IMM(8)');
-    expect(csv).toContain('2,0,2,SRT R1 R0 IMM(16)');
-    expect(csv).toContain('3,0,3,SRT R1 R0 IMM(24)');
+    expect(csv).toContain('1,0,1,SRT R1 R0 8');
+    expect(csv).toContain('2,0,2,SRT R1 R0 16');
+    expect(csv).toContain('3,0,3,SRT R1 R0 24');
   });
 
   it('keeps unresolved symbolic arithmetic untouched', () => {
@@ -94,8 +94,8 @@ kernel "feat9_symbolic" {
 target "uma-cgra-base";
 kernel "feat9_invalid_inline" {
   cycle {
-    @0,0: SADD R1, ZERO, IMM(1 < 2);
-    @0,1: SADD R2, ZERO, IMM(1 + );
+    @0,0: SADD R1, ZERO, 1 < 2;
+    @0,1: SADD R2, ZERO, 1 +;
   }
 }
 `;
@@ -103,7 +103,7 @@ kernel "feat9_invalid_inline" {
     const result = compile(source);
     expect(result.success).toBe(true);
     const csv = result.artifacts.csv ?? '';
-    expect(csv).toContain('0,0,0,SADD R1 ZERO IMM(1 < 2)');
-    expect(csv).toContain('0,0,1,SADD R2 ZERO IMM(1 + )');
+    expect(csv).toContain('0,0,0,SADD R1 ZERO 1 < 2');
+    expect(csv).toContain('0,0,1,SADD R2 ZERO 1 +');
   });
 });

@@ -8,7 +8,7 @@ kernel "Route" {
 
     // Load value at PE(0,0)
     cycle {
-        @0,0: SADD R0, ZERO, IMM(42);
+        @0,0: SADD R0, ZERO, 42;
     }
 
     // Route value from PE(0,0) to PE(0,2)

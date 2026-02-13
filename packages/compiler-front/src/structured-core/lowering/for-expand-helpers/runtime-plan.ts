@@ -39,10 +39,10 @@ export function buildRuntimeNoUnrollExitBranch(
   step: number
 ): string {
   if (step > 0) {
-    return `BGE ${variable}, IMM(${end}), ${endLabel}`;
+    return `BGE ${variable}, ${end}, ${endLabel}`;
   }
 
-  return `BGE IMM(${end}), ${variable}, ${endLabel}`;
+  return `BGE ${end}, ${variable}, ${endLabel}`;
 }
 
 function pickRuntimeRelayRegister(loopRegister: string, instructionText: string): string {

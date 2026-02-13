@@ -7,7 +7,7 @@ describe('issues resolved/non-regression and canonical legacy rejection', () => 
     const source = `
 target "uma-cgra-base";
 function extract(dst, src) {
-  cycle { @0,0: dst = src >> IMM(16); }
+  cycle { @0,0: dst = src >> 16; }
 }
 kernel "bug6_regression" {
   extract(R1, R0);
@@ -16,7 +16,7 @@ kernel "bug6_regression" {
 
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('0,0,0,SRT R1 R0 IMM(16)');
+    expect(result.artifacts.csv).toContain('0,0,0,SRT R1 R0 16');
   });
 
   it('keeps canonical spatial forms and for-in-cycle behavior', () => {

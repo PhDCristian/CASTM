@@ -1,11 +1,11 @@
-# `guard(...)`
+# `std::guard(...)`
 
 Predicate-driven spatial activation for one canonical instruction template.
 
 ## Syntax
 
 ```text
-guard(cond=<boolean-expr>, op=OPCODE, dest=RD, srcA=RA, srcB=RB);
+std::guard(cond=<boolean-expr>, op=OPCODE, dest=RD, srcA=RA, srcB=RB);
 ```
 
 ## Predicate Variables
@@ -27,8 +27,18 @@ Supported operators include arithmetic (`+ - * / %`) and comparators (`== != < <
 ```openedge
 target "uma-cgra-base";
 kernel "guard_doc" {
-  guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 }
+```
+
+## DSL to CSV Example (Matrix)
+
+```csv [CSV matrix excerpt]
+0,,,
+"SMUL R2, R0, R1","SMUL R2, R0, R1","SMUL R2, R0, R1","SMUL R2, R0, R1"
+NOP,"SMUL R2, R0, R1","SMUL R2, R0, R1","SMUL R2, R0, R1"
+NOP,NOP,"SMUL R2, R0, R1","SMUL R2, R0, R1"
+NOP,NOP,NOP,"SMUL R2, R0, R1"
 ```
 
 ## Diagnostics

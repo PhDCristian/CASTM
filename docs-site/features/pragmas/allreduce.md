@@ -1,11 +1,11 @@
-# `allreduce(...)`
+# `std::allreduce(...)`
 
 Grid-wide reduction followed by deterministic broadcast of reduced value.
 
 ## Syntax
 
 ```text
-allreduce(op=add|sum|sub|and|or|xor|mul, dest=RD, src=RS[, axis=row|col]);
+std::allreduce(op=add|sum|sub|and|or|xor|mul, dest=RD, src=RS[, axis=row|col]);
 ```
 
 ## Options
@@ -19,7 +19,7 @@ allreduce(op=add|sum|sub|and|or|xor|mul, dest=RD, src=RS[, axis=row|col]);
 
 ## Lowering Shape
 
-1. Apply lane reduction (`reduce(...)`) on selected axis.
+1. Apply lane reduction (`std::reduce(...)`) on selected axis.
 2. Broadcast reduced value from canonical source point over same axis scope.
 
 ## Executable Example
@@ -27,8 +27,33 @@ allreduce(op=add|sum|sub|and|or|xor|mul, dest=RD, src=RS[, axis=row|col]);
 ```openedge
 target "uma-cgra-base";
 kernel "allreduce_doc" {
-  allreduce(op=add, dest=R1, src=R0, axis=row);
+  std::allreduce(op=add, dest=R1, src=R0, axis=row);
 }
+```
+
+## DSL to CSV Example (Matrix)
+
+```csv [CSV matrix excerpt]
+0,,,
+"SADD R1, R0, ZERO",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+NOP,"SADD ROUT, R0, ZERO",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+2,,,
+"SADD R3, RCR, ZERO",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+3,,,
+"SADD R1, R1, R3",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 
 ## Diagnostics

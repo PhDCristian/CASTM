@@ -68,7 +68,7 @@ export function buildRotateShiftCycles(
           recvPlacements.push({
             row,
             col,
-            instruction: createInstruction('SADD', [pragma.reg, 'ZERO', `IMM(${fillValue})`], span)
+            instruction: createInstruction('SADD', [pragma.reg, 'ZERO', String(fillValue)], span)
           });
           continue;
         }

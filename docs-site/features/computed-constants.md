@@ -6,7 +6,7 @@ Integer expressions are supported in canonical source where numeric expressions 
 
 - `let` numeric values
 - coordinate expressions (`@k/4,k%4`)
-- immediate expressions (`IMM((2+3)*4)`)
+- immediate expressions (`(2+3)*4`)
 - raw memory addresses (`[360 + i*4]`)
 
 ## Executable Snippet

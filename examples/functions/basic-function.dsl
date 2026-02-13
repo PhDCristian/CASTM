@@ -6,7 +6,7 @@
 // Function to initialize a register with an immediate value
 function init_reg(reg, val) {
     cycle {
-        @0,0: SADD reg, ZERO, IMM(val);
+        @0,0: SADD reg, ZERO, val;
     }
 }
 

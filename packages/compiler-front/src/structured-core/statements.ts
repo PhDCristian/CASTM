@@ -1,6 +1,7 @@
 import {
   Diagnostic,
   ErrorCodes,
+  WarningCodes,
   makeDiagnostic,
   StructuredKernelStmtAst
 } from '@openedge/compiler-ir';
@@ -10,6 +11,7 @@ import {
 import { spanAt } from './utils.js';
 import {
   parseAdvancedStatement,
+  parseAdvancedNamespaceIssue,
   parsePipelineCallSequence,
   parseFunctionCall,
   shouldSkipStructuredLine
@@ -31,13 +33,37 @@ export function parseStructuredStatements(
 
     if (shouldSkipStructuredLine(clean)) continue;
 
+    const namespaceIssue = parseAdvancedNamespaceIssue(clean);
+    if (namespaceIssue) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(entry.lineNo, clean.length),
+        `Unsupported advanced namespace '${namespaceIssue.namespace}::${namespaceIssue.name}(...)'.`,
+        `Use std::${namespaceIssue.name}(...) for standard advanced statements.`
+      ));
+      continue;
+    }
+
     const advanced = parseAdvancedStatement(clean);
     if (advanced) {
+      if (advanced.sourceForm === 'unqualified') {
+        diagnostics.push(makeDiagnostic(
+          WarningCodes.Style.UnqualifiedStdBuiltin,
+          'warning',
+          spanAt(entry.lineNo, clean.length),
+          `Unqualified standard statement '${advanced.name}(...)' is deprecated.`,
+          `Use std::${advanced.name}(...) instead.`,
+          'MIG-STD-001'
+        ));
+      }
       out.push({
         kind: 'advanced',
         name: advanced.name,
         args: advanced.args,
         text: advanced.text,
+        namespace: advanced.namespace,
+        sourceForm: advanced.sourceForm,
         span: spanAt(entry.lineNo, clean.length)
       });
       continue;

@@ -8,17 +8,17 @@ kernel "IfElse" {
 
     // Set R0 = 5
     cycle {
-        @0,0: SADD R0, ZERO, IMM(5);
+        @0,0: SADD R0, ZERO, 5;
     }
 
     // If R0 == 5, set R1 = 1; else R1 = 0
-    if (R0 == IMM(5)) @0,0 {
+    if (R0 == 5) @0,0 {
         cycle {
-            @0,0: SADD R1, ZERO, IMM(1);   // true branch
+            @0,0: SADD R1, ZERO, 1;   // true branch
         }
     } else {
         cycle {
-            @0,0: SADD R1, ZERO, IMM(0);   // false branch
+            @0,0: SADD R1, ZERO, 0;   // false branch
         }
     }
 

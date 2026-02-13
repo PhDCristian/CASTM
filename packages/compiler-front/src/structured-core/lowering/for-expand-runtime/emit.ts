@@ -31,7 +31,7 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
     lineNo,
     controlRow,
     controlCol,
-    `SADD ${header.variable}, ZERO, IMM(${header.start})`
+    `SADD ${header.variable}, ZERO, ${header.start}`
   ));
 
   kernel.cycles.push(callbacks.makeControlCycle(
@@ -73,7 +73,7 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
           row: controlRow,
           col: controlCol,
           instruction: callbacks.parseInstruction(
-            `SADD ${header.variable}, ${header.variable}, IMM(${header.step})`,
+            `SADD ${header.variable}, ${header.variable}, ${header.step}`,
             lineNo,
             1
           ),
@@ -103,7 +103,7 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
           row: controlRow,
           col: controlCol,
           instruction: callbacks.parseInstruction(
-            `SADD ${header.variable}, ${header.variable}, IMM(${header.step})`,
+            `SADD ${header.variable}, ${header.variable}, ${header.step}`,
             lineNo,
             1
           ),

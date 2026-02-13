@@ -9,7 +9,7 @@ kernel "Hello" {
     config(0xF, 0);
 
     cycle {
-        @0,0: SADD R0, ZERO, IMM(42);  // Load answer to life
+        @0,0: SADD R0, ZERO, 42;  // Load answer to life
     }
 
     cycle {
