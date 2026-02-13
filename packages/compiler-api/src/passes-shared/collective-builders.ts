@@ -10,6 +10,7 @@ export {
   buildConditionalSubCycles,
   buildCollectCycles,
   buildExtractBytesCycles,
+  buildStashCycles,
   buildGuardCycles,
   buildGatherCycles,
   buildNormalizeCycles,

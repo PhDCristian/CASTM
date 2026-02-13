@@ -1,6 +1,7 @@
 export { buildStencilCycles } from './collective/stencil.js';
 export { buildTriangleCycles } from './collective/triangle.js';
 export { buildGuardCycles } from './collective/guard.js';
+export { buildStashCycles } from './collective/stash.js';
 export { buildAccumulateCycles } from './collective/accumulate.js';
 export { buildCarryChainCycles } from './collective/carry-chain.js';
 export { buildConditionalSubCycles } from './collective/conditional-sub.js';

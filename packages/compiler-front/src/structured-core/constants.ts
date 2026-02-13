@@ -5,6 +5,7 @@ export const ADVANCED_NAMES = new Set([
   'carry_chain',
   'conditional_sub',
   'collect',
+  'stash',
   'extract_bytes',
   'normalize',
   'rotate',

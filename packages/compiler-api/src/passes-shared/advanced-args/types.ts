@@ -151,3 +151,16 @@ export interface LatencyHidePragmaArgs {
   window: number;
   mode: 'conservative';
 }
+
+export type StashTarget =
+  | { kind: 'all' }
+  | { kind: 'row'; index: number }
+  | { kind: 'col'; index: number }
+  | { kind: 'point'; row: number; col: number };
+
+export interface StashPragmaArgs {
+  action: 'save' | 'restore';
+  reg: string;
+  addr: string;
+  target: StashTarget;
+}

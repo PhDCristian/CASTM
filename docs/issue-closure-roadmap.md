@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`15` validated, `9` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`16` validated, `8` in backlog)
 
 ## Workstreams
 
@@ -458,7 +458,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT-7 `broadcast` implementation | advanced statement | `resolved-verified` | advanced statement coverage in `tests/compiler-api.contract.test.ts` | Extend benchmarks for route-vs-memory cost decisions (optional optimization track). |
 | FEAT-8 range coordinates | language core | `resolved-verified` | `tests/issues/feat-08-range-coordinates.test.ts` | Keep contract tests for descending/rectangular and unresolved-axis diagnostics. |
 | FEAT-9 inline operand arithmetic | desugar pass | `resolved-verified` | `tests/issues/feat-09-inline-arithmetic.test.ts` | Keep folding deterministic and side-effect free; extend with additional safe operators as needed. |
-| FEAT-10 `stash` | scheduling/lifetime | `pending-backlog` | proposal only | Define spill-vs-route decision model and artifact visibility in compile stats. |
+| FEAT-10 `stash` | scheduling/lifetime | `resolved-verified` | `tests/issues/feat-10-stash.test.ts` | Keep deterministic explicit spill/restore lowering (`SWI/LWI`) over canonical spatial targets; extend optimizer heuristics only with contract-backed cost models. |
 | FEAT-11 `extract_bytes(axis)` | language abstraction | `resolved-verified` | `tests/issues/feat-11-extract-bytes.test.ts` | Extend only with semantically explicit variants (no hidden control-flow or implicit routing). |
 | FEAT-12 `collect` | lane pattern | `resolved-verified` | `tests/issues/feat-12-collect.test.ts` | Extend to multi-hop path synthesis only if deterministic cost model is documented. |
 | FEAT-13 `accumulate` | domain pattern | `resolved-verified` | `tests/issues/feat-13-accumulate.test.ts` | Extend only with explicit additional patterns that preserve deterministic stage ordering and diagnostics. |
@@ -476,7 +476,7 @@ Status: `pending`
 Subtasks:
 
 - [x] FEAT-1 conservative scheduler + legality checker.
-- [ ] FEAT-10 lifetime/stash cost model draft.
+- [x] FEAT-10 deterministic stash lowering baseline (`stash(action=save|restore, reg=..., addr=..., target=...)`) with contracts.
 - [ ] Extend FEAT-3 beyond identity set only when semantic proofs are documented.
 
 #### Block B — Canonical Language Ergonomics Track
@@ -520,7 +520,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-10`.
+- [x] Prioritize and land `FEAT-10` canonical baseline.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

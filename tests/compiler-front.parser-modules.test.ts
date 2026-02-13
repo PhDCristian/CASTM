@@ -72,6 +72,9 @@ describe('compiler-front lowering module contracts', () => {
     expect(parseAdvancedStatementAsPragma('collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);')).toBe(
       'collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add)'
     );
+    expect(parseAdvancedStatementAsPragma('stash(action=save, reg=R0, addr=L[0], target=point(3,0));')).toBe(
+      'stash(action=save, reg=R0, addr=L[0], target=point(3,0))'
+    );
     expect(parseAdvancedStatementAsPragma('normalize(reg=R3, carry=R1, width=16, lane=0);')).toBe(
       'normalize(reg=R3, carry=R1, width=16, lane=0)'
     );

@@ -13,6 +13,7 @@ Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas 
 - explicit spatial namespace (`at ...`)
 - advanced statements (`route(...)`, `reduce(...)`, `scan(...)`, etc.)
 - conservative cycle compaction statement (`latency_hide(...)`)
+- explicit stash statement (`stash(...)`) for deterministic register spill/restore placement
 - explicit runtime loop form
 - runtime directives (`.io_load`, `.io_store`, `.limit`, `.assert`)
 
@@ -36,6 +37,7 @@ function helper_stage_b(src) {
 
 kernel "canonical_example" {
   latency_hide(window=1, mode=conservative);
+  stash(action=save, reg=R0, addr=output[0], target=point(3,0));
   route(@0,1 -> @0,0, payload=R3, accum=R1);
   accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
   carry_chain(src=R0, carry=R3, store=output, limbs=2, width=16, row=0);
@@ -73,6 +75,7 @@ kernel "canonical_example" {
 - `guard(...)` applies a compile-time predicate (`cond`) over `row`, `col`, `idx`, `rows`, `cols` and emits deterministic row-major placements for matching PEs only.
 - `route(...)` lowering preserves lexical position relative to neighboring cycles (no global hoisting).
 - `latency_hide(...)` applies conservative post-expansion cycle compaction with explicit hazard guards (PE overlap, route boundary, control barriers, dual-memory adjacency).
+- `stash(...)` provides deterministic explicit spill/restore lowering to `SWI/LWI` for selected spatial targets (`all`, `row`, `col`, `point`).
 - Inside `cycle { ... }`, semicolon-separated placements on the same line are supported.
 - Computed spatial coordinates in loops (for example `@k/4,k%4`) are valid canonical syntax.
 - Coordinate ranges are valid in canonical placements: `@r,c0..c1`, `@r0..r1,c`, and `@r0..r1,c0..c1` (inclusive expansion).
@@ -86,6 +89,7 @@ kernel "canonical_example" {
 - Conditional-subtraction reference: `docs/language/conditional-sub-statement.md`.
 - Pipeline-macro reference: `docs/language/pipeline-statement.md`.
 - Latency-hide scheduler reference: `docs/language/latency-hide-statement.md`.
+- Stash statement reference: `docs/language/stash-statement.md`.
 - Collect lane-pattern reference: `docs/language/collect-statement.md`.
 - Normalize lane-pattern reference: `docs/language/normalize-statement.md`.
 - Byte-extraction reference: `docs/language/extract-bytes-statement.md`.

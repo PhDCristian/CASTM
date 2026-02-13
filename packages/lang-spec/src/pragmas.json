@@ -14,6 +14,7 @@
   { "name": "carry_chain", "kind": "codegen" },
   { "name": "conditional_sub", "kind": "codegen" },
   { "name": "collect", "kind": "codegen" },
+  { "name": "stash", "kind": "codegen" },
   { "name": "extract_bytes", "kind": "codegen" },
   { "name": "normalize", "kind": "codegen" },
   { "name": "auto_cycle", "kind": "codegen" },

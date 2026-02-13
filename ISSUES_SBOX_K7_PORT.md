@@ -738,7 +738,7 @@ Snapshot sync (2026-02-13):
 | FEAT-7 | resolved-verified | portfolio |
 | FEAT-8 | resolved-verified | WS-07 |
 | FEAT-9 | resolved-verified | WS-08 |
-| FEAT-10 | pending-backlog | Block A |
+| FEAT-10 | resolved-verified | Block A |
 | FEAT-11 | resolved-verified | WS-15 |
 | FEAT-12 | resolved-verified | WS-13 |
 | FEAT-13 | resolved-verified | WS-16 |
@@ -940,17 +940,24 @@ function load_all(reg, addr) {
 
 ---
 
-### FEAT-10: `#pragma stash` — Register Lifetime Extension
+### FEAT-10: `stash(...)` — Register Lifetime Extension Baseline — ✅ RESOLVED (2026-02-13)
 
-**Problem:** Values like `L[0..1]` and `mu[0]` are needed across function boundaries but get overwritten by intermediate operations. Manual stashing to row 3 (which is idle) takes 6-8 routing cycles, more expensive than LWI. The compiler could optimize this by analyzing register lifetimes across functions.
+**Problem:** Values like `L[0..1]` and `mu[0]` are needed across function boundaries but get overwritten by intermediate operations. Manual stashing to an idle row/column was verbose and error-prone.
 
-**Proposed:**
+**Canonical statement (implemented):**
 ```c
-#pragma stash(R0@(0,0), into=@(3,0), lifetime=until(compute_r))
-// Compiler generates optimal route+retrieval or decides memory is cheaper
+stash(action=save, reg=R0, addr=L[0], target=point(3,0));
+stash(action=restore, reg=R1, addr=L[0], target=point(3,0));
 ```
 
-**Impact:** 0 to -8 hwcc (compiler decides the cheapest approach: register route vs memory spill).
+Implemented semantics:
+
+- deterministic one-cycle lowering per statement;
+- `save` -> `SWI reg, addr`, `restore` -> `LWI reg, addr`;
+- target selection supports `all`, `row(N)`, `col(N)`, `point(r,c)`;
+- strict coordinate diagnostics for out-of-bounds targets.
+
+**Evidence:** `tests/issues/feat-10-stash.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
 
 ---
 

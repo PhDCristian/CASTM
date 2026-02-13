@@ -9,6 +9,7 @@ import {
   buildExtractBytesCycles,
   buildGatherCycles,
   buildNormalizeCycles,
+  buildStashCycles,
   buildStencilCycles,
   buildStreamCycles,
   buildTransposeCycles
@@ -994,6 +995,161 @@ describe('compiler-api collective/route builders', () => {
         axis: 'col',
         byteWidth: 8,
         mask: 255
+      },
+      0,
+      { rows: 0, cols: 4, topology: 'mesh', wrapPolicy: 'clamp' },
+      span,
+      zeroGridDiagnostics
+    );
+    expect(zeroGridDiagnostics).toHaveLength(0);
+    expect(zeroGridCycles).toHaveLength(0);
+  });
+
+  it('builds stash cycles and validates target bounds', () => {
+    const pointDiagnostics: any[] = [];
+    const pointCycles = buildStashCycles(
+      {
+        action: 'save',
+        reg: 'R0',
+        addr: 'L[0]',
+        target: { kind: 'point', row: 3, col: 0 }
+      },
+      2,
+      torusGrid,
+      span,
+      pointDiagnostics
+    );
+    expect(pointDiagnostics).toHaveLength(0);
+    expect(pointCycles).toHaveLength(1);
+    expect(pointCycles[0].index).toBe(2);
+    expect(pointCycles[0].statements[0]).toMatchObject({
+      row: 3,
+      col: 0,
+      instruction: { opcode: 'SWI', operands: ['R0', 'L[0]'] }
+    });
+
+    const rowDiagnostics: any[] = [];
+    const rowCycles = buildStashCycles(
+      {
+        action: 'restore',
+        reg: 'R1',
+        addr: 'L[0]',
+        target: { kind: 'row', index: 1 }
+      },
+      0,
+      torusGrid,
+      span,
+      rowDiagnostics
+    );
+    expect(rowDiagnostics).toHaveLength(0);
+    expect(rowCycles).toHaveLength(1);
+    expect(rowCycles[0].statements).toHaveLength(torusGrid.cols);
+
+    const colDiagnostics: any[] = [];
+    const colCycles = buildStashCycles(
+      {
+        action: 'save',
+        reg: 'R2',
+        addr: 'L[1]',
+        target: { kind: 'col', index: 2 }
+      },
+      0,
+      torusGrid,
+      span,
+      colDiagnostics
+    );
+    expect(colDiagnostics).toHaveLength(0);
+    expect(colCycles).toHaveLength(1);
+    expect(colCycles[0].statements).toHaveLength(torusGrid.rows);
+
+    const allDiagnostics: any[] = [];
+    const allCycles = buildStashCycles(
+      {
+        action: 'restore',
+        reg: 'R3',
+        addr: 'L[2]',
+        target: { kind: 'all' }
+      },
+      0,
+      torusGrid,
+      span,
+      allDiagnostics
+    );
+    expect(allDiagnostics).toHaveLength(0);
+    expect(allCycles).toHaveLength(1);
+    expect(allCycles[0].statements).toHaveLength(torusGrid.rows * torusGrid.cols);
+
+    const oobDiagnostics: any[] = [];
+    const oobCycles = buildStashCycles(
+      {
+        action: 'save',
+        reg: 'R0',
+        addr: 'L[0]',
+        target: { kind: 'point', row: 9, col: 0 }
+      },
+      0,
+      torusGrid,
+      span,
+      oobDiagnostics
+    );
+    expect(oobCycles).toHaveLength(0);
+    expect(oobDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
+
+    const oobRowDiagnostics: any[] = [];
+    const oobRowCycles = buildStashCycles(
+      {
+        action: 'save',
+        reg: 'R0',
+        addr: 'L[0]',
+        target: { kind: 'row', index: -1 }
+      },
+      0,
+      torusGrid,
+      span,
+      oobRowDiagnostics
+    );
+    expect(oobRowCycles).toHaveLength(0);
+    expect(oobRowDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
+
+    const oobColDiagnostics: any[] = [];
+    const oobColCycles = buildStashCycles(
+      {
+        action: 'restore',
+        reg: 'R1',
+        addr: 'L[0]',
+        target: { kind: 'col', index: 9 }
+      },
+      0,
+      torusGrid,
+      span,
+      oobColDiagnostics
+    );
+    expect(oobColCycles).toHaveLength(0);
+    expect(oobColDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
+
+    const oobPointColDiagnostics: any[] = [];
+    const oobPointColCycles = buildStashCycles(
+      {
+        action: 'save',
+        reg: 'R2',
+        addr: 'L[3]',
+        target: { kind: 'point', row: 0, col: 9 }
+      },
+      0,
+      torusGrid,
+      span,
+      oobPointColDiagnostics
+    );
+    expect(oobPointColCycles).toHaveLength(0);
+    expect(oobPointColDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
+
+    const zeroGridDiagnostics: any[] = [];
+    const zeroGridCycles = buildStashCycles(
+      {
+        action: 'save',
+        reg: 'R0',
+        addr: 'L[0]',
+        target: { kind: 'all' }
       },
       0,
       { rows: 0, cols: 4, topology: 'mesh', wrapPolicy: 'clamp' },

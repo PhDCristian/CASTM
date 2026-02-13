@@ -21,6 +21,7 @@ import {
   handleExtractBytes,
   handleGather,
   handleGuard,
+  handleStash,
   handleNormalize,
   handleReduce,
   handleScan,
@@ -77,6 +78,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(SUPPORTED_PRAGMAS.has('extract_bytes')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('normalize')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('guard')).toBe(true);
+    expect(SUPPORTED_PRAGMAS.has('stash')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('triangle')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('latency_hide')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('unknown')).toBe(false);
@@ -88,6 +90,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(PRAGMA_HANDLERS.get('conditional_sub')).toBe(handleConditionalSub);
     expect(PRAGMA_HANDLERS.get('collect')).toBe(handleCollect);
     expect(PRAGMA_HANDLERS.get('extract_bytes')).toBe(handleExtractBytes);
+    expect(PRAGMA_HANDLERS.get('stash')).toBe(handleStash);
     expect(PRAGMA_HANDLERS.get('normalize')).toBe(handleNormalize);
     expect(PRAGMA_HANDLERS.get('guard')).toBe(handleGuard);
     expect(PRAGMA_HANDLERS.has('latency_hide')).toBe(false);
@@ -170,6 +173,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
       { fn: handleAccumulate, text: 'accumulate(nope)' },
       { fn: handleCarryChain, text: 'carry_chain(nope)' },
       { fn: handleCollect, text: 'collect(nope)' },
+      { fn: handleStash, text: 'stash(nope)' },
       { fn: handleConditionalSub, text: 'conditional_sub(nope)' },
       { fn: handleExtractBytes, text: 'extract_bytes(nope)' },
       { fn: handleNormalize, text: 'normalize(nope)' },
@@ -211,6 +215,14 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     );
     expect(collectContext.diagnostics).toHaveLength(0);
     expect(collectContext.generatedCycles.length).toBe(2);
+
+    const stashContext = ctx();
+    handleStash(
+      pragma('stash(action=save, reg=R0, addr=L[0], target=point(3,0))'),
+      stashContext
+    );
+    expect(stashContext.diagnostics).toHaveLength(0);
+    expect(stashContext.generatedCycles.length).toBe(1);
 
     const conditionalSubContext = ctx();
     handleConditionalSub(

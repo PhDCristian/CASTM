@@ -67,7 +67,7 @@ These IDs are proposal/backlog items, not active correctness defects in canonica
 | FEAT-7 | compiler | resolved-verified | advanced statement coverage in `tests/compiler-api.contract.test.ts` | openedge-dsl |
 | FEAT-8 | compiler | resolved-verified | `tests/issues/feat-08-range-coordinates.test.ts` | openedge-dsl |
 | FEAT-9 | compiler | resolved-verified | `tests/issues/feat-09-inline-arithmetic.test.ts` | openedge-dsl |
-| FEAT-10 | compiler | canonical-intentional | proposal only | backlog |
+| FEAT-10 | compiler | resolved-verified | `tests/issues/feat-10-stash.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts` | openedge-dsl |
 | FEAT-11 | compiler | resolved-verified | `tests/issues/feat-11-extract-bytes.test.ts` | openedge-dsl |
 | FEAT-12 | compiler | resolved-verified | `tests/issues/feat-12-collect.test.ts` | openedge-dsl |
 | FEAT-13 | compiler | resolved-verified | `tests/issues/feat-13-accumulate.test.ts` | openedge-dsl |

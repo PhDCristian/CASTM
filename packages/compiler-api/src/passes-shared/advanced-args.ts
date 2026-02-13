@@ -16,6 +16,8 @@ export type {
   StencilPragmaArgs,
   StreamLoadPragmaArgs,
   StreamStorePragmaArgs,
+  StashPragmaArgs,
+  StashTarget,
   TrianglePragmaArgs,
   TransposePragmaArgs
 } from './advanced-args/types.js';
@@ -40,7 +42,10 @@ export {
   parseTrianglePragmaArgs,
   parseTransposePragmaArgs
 } from './advanced-args/collectives.js';
-export { parseLatencyHidePragmaArgs } from './advanced-args/optimizer.js';
+export {
+  parseLatencyHidePragmaArgs,
+  parseStashPragmaArgs
+} from './advanced-args/optimizer.js';
 export {
   parseStreamLoadPragmaArgs,
   parseStreamStorePragmaArgs

@@ -39,6 +39,7 @@ import {
   parseGuardPragmaArgs,
   parseGatherPragmaArgs,
   parseNormalizePragmaArgs,
+  parseStashPragmaArgs,
   parseReducePragmaArgs,
   parseRotateShiftPragmaArgs,
   parseScanPragmaArgs,
@@ -249,6 +250,24 @@ describe('compiler-api passes shared utils', () => {
     expect(parseCollectPragmaArgs('collect(from=row(1), via=RCB, local=R2, into=R3, combine=bad)')).toBeNull();
     expect(parseCollectPragmaArgs('collect(from=row(1), via=RCB, local=1, into=R3)')).toBeNull();
     expect(parseCollectPragmaArgs('foo(from=row(1), via=RCB, local=R2, into=R3)')).toBeNull();
+    expect(parseStashPragmaArgs('stash(action=save, reg=R0, addr=L[0], target=point(3,0))')).toMatchObject({
+      action: 'save',
+      reg: 'R0',
+      addr: 'L[0]',
+      target: { kind: 'point', row: 3, col: 0 }
+    });
+    expect(parseStashPragmaArgs('stash(action=restore, reg=R1, addr=L[0], target=row(1))')).toMatchObject({
+      action: 'restore',
+      target: { kind: 'row', index: 1 }
+    });
+    expect(parseStashPragmaArgs('stash(action=save, reg=R0, addr=L[0])')).toMatchObject({
+      target: { kind: 'all' }
+    });
+    expect(parseStashPragmaArgs('stash(action=bad, reg=R0, addr=L[0])')).toBeNull();
+    expect(parseStashPragmaArgs('stash(action=save, reg=1, addr=L[0])')).toBeNull();
+    expect(parseStashPragmaArgs('stash(action=save, reg=R0, addr=L[0], target=diag(1))')).toBeNull();
+    expect(parseStashPragmaArgs('stash(action=save, reg=R0, addr=L[0], extra=1)')).toBeNull();
+    expect(parseStashPragmaArgs('foo(action=save, reg=R0, addr=L[0])')).toBeNull();
     expect(parseAccumulatePragmaArgs('accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add)')).toMatchObject({
       pattern: 'anti_diagonal',
       productsReg: 'R2',

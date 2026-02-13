@@ -14,6 +14,7 @@ import {
   handleExtractBytes,
   handleGather,
   handleGuard,
+  handleStash,
   handleNormalize,
   handleReduce,
   handleScan,
@@ -55,6 +56,7 @@ export const SUPPORTED_PRAGMAS = new Set<string>([
   'allreduce',
   'transpose',
   'gather',
+  'stash',
   'stream_load',
   'stream_store',
   'latency_hide'
@@ -79,6 +81,7 @@ export const PRAGMA_HANDLERS = new Map<string, PragmaHandler>([
   ['allreduce', handleAllreduce],
   ['transpose', handleTranspose],
   ['gather', handleGather],
+  ['stash', handleStash],
   ['stream_load', handleStreamLoad],
   ['stream_store', handleStreamStore]
 ]);

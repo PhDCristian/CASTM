@@ -12,3 +12,4 @@ export { handleScan } from './handlers-collective/scan.js';
 export { handleStencil } from './handlers-collective/stencil.js';
 export { handleTriangle } from './handlers-collective/triangle.js';
 export { handleTranspose } from './handlers-collective/transpose.js';
+export { handleStash } from './handlers-collective/stash.js';
