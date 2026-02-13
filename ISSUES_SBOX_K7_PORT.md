@@ -730,7 +730,7 @@ Snapshot sync (2026-02-13):
 | FEAT | Operational status | Roadmap block |
 |---|---|---|
 | FEAT-1 | pending-backlog | Block A |
-| FEAT-2 | pending-backlog | Block A |
+| FEAT-2 | resolved-verified | WS-18 |
 | FEAT-3 | resolved-verified | WS-09 |
 | FEAT-4 | resolved-verified | WS-04 / portfolio |
 | FEAT-5 | resolved-verified | WS-14 |
@@ -775,7 +775,7 @@ cycle { @0,3: LWI R1, 4; }               // compiler moves this INTO the SMUL cy
 
 ---
 
-### FEAT-2: `#pragma carry_chain` — Carry Propagation Primitive
+### FEAT-2: `carry_chain(...)` — Carry Propagation Primitive — ✅ RESOLVED (2026-02-13)
 
 **Problem:** The `build_limbs` carry chain (lines 131-139) is 8 hand-written cycles with a repeating `LAND → SADD RCL → SWI → SRT` pattern. Data-dependent but structurally regular.
 
@@ -788,14 +788,15 @@ cycle { @0,1: SWI R0, L[1]; @0,2: SRT R3, R0, 16; }
 // ... repeats for L[2], L[3], L[4]
 ```
 
-**Proposed:**
+**Canonical implementation:**
 ```c
-#pragma carry_chain(src=R0, carry=R3, mask=65535, width=16, limbs=4, store=L)
+carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0);
+carry_chain(src=R4, carry=R5, store=L, limbs=2, width=8, mask=255, row=1, start=3, dir=left);
 ```
 
-The compiler generates the optimal interleaved schedule, potentially finding internal parallelism (e.g., overlapping SWI with the next iteration's LAND).
+**Impact:** -30 lines via a deterministic primitive that removes hand-written carry boilerplate.
 
-**Impact:** -30 lines. Potential -4 cycles if compiler finds better scheduling than hand-written.
+**Canonical implementation status:** available as deterministic per-limb staged lowering (`SADD`, `LAND`, `SWI`, `SRT`) with explicit geometry diagnostics.
 
 ---
 

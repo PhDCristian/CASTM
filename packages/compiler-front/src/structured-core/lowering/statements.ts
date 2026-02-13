@@ -7,6 +7,7 @@ const ADVANCED_NAMES = new Set([
   'route',
   'broadcast',
   'accumulate',
+  'carry_chain',
   'conditional_sub',
   'collect',
   'extract_bytes',

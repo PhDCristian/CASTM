@@ -41,6 +41,18 @@ export interface ConditionalSubPragmaArgs {
   target: ConditionalSubTarget;
 }
 
+export interface CarryChainPragmaArgs {
+  srcReg: string;
+  carryReg: string;
+  storeSymbol: string;
+  limbs: number;
+  width: number;
+  mask: number;
+  row: number;
+  startCol: number;
+  direction: 'right' | 'left';
+}
+
 export interface NormalizePragmaArgs {
   reg: string;
   carryReg: string;

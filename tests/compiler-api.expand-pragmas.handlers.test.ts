@@ -15,6 +15,7 @@ import {
 import {
   handleAllreduce,
   handleAccumulate,
+  handleCarryChain,
   handleCollect,
   handleConditionalSub,
   handleExtractBytes,
@@ -70,6 +71,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(SUPPORTED_PRAGMAS.has('stream_store')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('collect')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('accumulate')).toBe(true);
+    expect(SUPPORTED_PRAGMAS.has('carry_chain')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('conditional_sub')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('extract_bytes')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('normalize')).toBe(true);
@@ -80,6 +82,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(PRAGMA_HANDLERS.get('route')).toBe(handleRoute);
     expect(PRAGMA_HANDLERS.get('broadcast')).toBe(handleBroadcast);
     expect(PRAGMA_HANDLERS.get('accumulate')).toBe(handleAccumulate);
+    expect(PRAGMA_HANDLERS.get('carry_chain')).toBe(handleCarryChain);
     expect(PRAGMA_HANDLERS.get('conditional_sub')).toBe(handleConditionalSub);
     expect(PRAGMA_HANDLERS.get('collect')).toBe(handleCollect);
     expect(PRAGMA_HANDLERS.get('extract_bytes')).toBe(handleExtractBytes);
@@ -162,6 +165,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
       { fn: handleScan, text: 'scan(nope)' },
       { fn: handleStencil, text: 'stencil(nope)' },
       { fn: handleAccumulate, text: 'accumulate(nope)' },
+      { fn: handleCarryChain, text: 'carry_chain(nope)' },
       { fn: handleCollect, text: 'collect(nope)' },
       { fn: handleConditionalSub, text: 'conditional_sub(nope)' },
       { fn: handleExtractBytes, text: 'extract_bytes(nope)' },
@@ -212,6 +216,14 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     );
     expect(conditionalSubContext.diagnostics).toHaveLength(0);
     expect(conditionalSubContext.generatedCycles.length).toBe(2);
+
+    const carryChainContext = ctx();
+    handleCarryChain(
+      pragma('carry_chain(src=R0, carry=R3, store=L, limbs=2, width=16, row=0, start=0, dir=right)'),
+      carryChainContext
+    );
+    expect(carryChainContext.diagnostics).toHaveLength(0);
+    expect(carryChainContext.generatedCycles.length).toBe(8);
 
     const accumulateContext = ctx();
     handleAccumulate(

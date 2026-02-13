@@ -13,7 +13,7 @@ const KEYWORDS = new Set([
   'function'
 ]);
 const ADVANCED_STATEMENTS = new Set([
-  'route', 'broadcast', 'accumulate', 'conditional_sub', 'collect', 'extract_bytes', 'normalize', 'rotate', 'shift', 'scan', 'reduce',
+  'route', 'broadcast', 'accumulate', 'carry_chain', 'conditional_sub', 'collect', 'extract_bytes', 'normalize', 'rotate', 'shift', 'scan', 'reduce',
   'stencil', 'guard', 'triangle', 'allreduce', 'transpose', 'gather', 'stream_load', 'stream_store'
 ]);
 

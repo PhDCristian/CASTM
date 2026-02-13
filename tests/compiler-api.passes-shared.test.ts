@@ -32,6 +32,7 @@ import {
   parseAccumulatePragmaArgs,
   parseAllreducePragmaArgs,
   parseBroadcastPragmaArgs,
+  parseCarryChainPragmaArgs,
   parseCollectPragmaArgs,
   parseConditionalSubPragmaArgs,
   parseExtractBytesPragmaArgs,
@@ -49,6 +50,7 @@ import {
 } from '../packages/compiler-api/src/passes-shared/advanced-args.js';
 import {
   buildAccumulateCycles,
+  buildCarryChainCycles,
   buildCollectCycles,
   buildConditionalSubCycles,
   buildExtractBytesCycles,
@@ -281,6 +283,33 @@ describe('compiler-api passes shared utils', () => {
     expect(parseConditionalSubPragmaArgs('conditional_sub(value=R0, sub=R1, dest=1)')).toBeNull();
     expect(parseConditionalSubPragmaArgs('conditional_sub(value=R0, sub=R1, dest=R2, extra=1)')).toBeNull();
     expect(parseConditionalSubPragmaArgs('foo(value=R0, sub=R1, dest=R2)')).toBeNull();
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0)')).toMatchObject({
+      srcReg: 'R0',
+      carryReg: 'R3',
+      storeSymbol: 'L',
+      limbs: 4,
+      width: 16,
+      row: 0,
+      startCol: 0,
+      direction: 'right',
+      mask: 65535
+    });
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, store=L, limbs=2, width=8, row=1, start=3, dir=left, mask=255)')).toMatchObject({
+      startCol: 3,
+      direction: 'left',
+      mask: 255
+    });
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, store=L, limbs=0, width=16, row=0)')).toBeNull();
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, store=L, limbs=4, width=31, row=0)')).toBeNull();
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0, dir=diag)')).toBeNull();
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0, start=foo)')).toBeNull();
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, store=1, limbs=4, width=16, row=0)')).toBeNull();
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, limbs=4, width=16, row=0)')).toBeNull();
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16)')).toBeNull();
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=foo)')).toBeNull();
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0, mask=foo)')).toBeNull();
+    expect(parseCarryChainPragmaArgs('carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0, extra=1)')).toBeNull();
+    expect(parseCarryChainPragmaArgs('foo(src=R0, carry=R3, store=L, limbs=4, width=16, row=0)')).toBeNull();
     expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=0)')).toMatchObject({
       reg: 'R3',
       carryReg: 'R1',
@@ -541,6 +570,38 @@ describe('compiler-api passes shared utils', () => {
     });
     expect(conditionalSubCycles[1].statements[0]).toMatchObject({
       instruction: { opcode: 'BSFA', operands: ['R2', 'R0', 'R2', 'SELF'] }
+    });
+
+    const carryChainCycles = buildCarryChainCycles(
+      {
+        srcReg: 'R0',
+        carryReg: 'R3',
+        storeSymbol: 'L',
+        limbs: 2,
+        width: 16,
+        mask: 65535,
+        row: 0,
+        startCol: 1,
+        direction: 'right'
+      },
+      80,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(carryChainCycles).toHaveLength(8);
+    expect(carryChainCycles[0].statements[0]).toMatchObject({
+      row: 0,
+      col: 1,
+      instruction: { opcode: 'SADD', operands: ['R0', 'R0', 'R3'] }
+    });
+    expect(carryChainCycles[2].statements[0]).toMatchObject({
+      instruction: { opcode: 'SWI', operands: ['R0', 'L[0]'] }
+    });
+    expect(carryChainCycles[7].statements[0]).toMatchObject({
+      row: 0,
+      col: 2,
+      instruction: { opcode: 'SRT', operands: ['R3', 'R0', '16'] }
     });
 
     const badGuardCycles = buildGuardCycles(

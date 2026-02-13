@@ -59,7 +59,7 @@ These IDs are proposal/backlog items, not active correctness defects in canonica
 | OPT-F | simulator/algo | canonical-intentional | algorithmic optimization (outside compiler correctness scope) | backlog |
 | OPT-G | simulator/algo | canonical-intentional | algorithmic optimization (outside compiler correctness scope) | backlog |
 | FEAT-1 | compiler | canonical-intentional | proposal only | backlog |
-| FEAT-2 | compiler | canonical-intentional | proposal only | backlog |
+| FEAT-2 | compiler | resolved-verified | `tests/issues/feat-02-carry-chain.test.ts` | openedge-dsl |
 | FEAT-3 | compiler | resolved-verified | `tests/issues/feat-03-specialize.test.ts` | openedge-dsl |
 | FEAT-4 | compiler | resolved-verified | `tests/compiler-api.contract.test.ts`, `tests/issues/resolved-and-legacy.test.ts` | openedge-dsl |
 | FEAT-5 | compiler | resolved-verified | `tests/issues/feat-05-normalize.test.ts` | openedge-dsl |

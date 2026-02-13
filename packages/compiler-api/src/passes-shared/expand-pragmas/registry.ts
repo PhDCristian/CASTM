@@ -8,6 +8,7 @@ import {
 import {
   handleAllreduce,
   handleAccumulate,
+  handleCarryChain,
   handleCollect,
   handleConditionalSub,
   handleExtractBytes,
@@ -38,6 +39,7 @@ export const SUPPORTED_PRAGMAS = new Set<string>([
   'route',
   'broadcast',
   'accumulate',
+  'carry_chain',
   'conditional_sub',
   'collect',
   'extract_bytes',
@@ -60,6 +62,7 @@ export const PRAGMA_HANDLERS = new Map<string, PragmaHandler>([
   ['route', handleRoute],
   ['broadcast', handleBroadcast],
   ['accumulate', handleAccumulate],
+  ['carry_chain', handleCarryChain],
   ['conditional_sub', handleConditionalSub],
   ['collect', handleCollect],
   ['extract_bytes', handleExtractBytes],

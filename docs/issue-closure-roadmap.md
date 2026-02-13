@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`13` validated, `11` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`14` validated, `10` in backlog)
 
 ## Workstreams
 
@@ -380,6 +380,27 @@ Evidence:
 - Tests: `tests/issues/feat-14-conditional-sub.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
 - Docs: `docs/language/conditional-sub-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
 
+### WS-18 — FEAT-2 Carry Chain Primitive
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- replace repeated limb carry cycles with one canonical primitive.
+- keep behavior deterministic and parameterized (width/mask/direction/start column) without domain hardcoding.
+
+Subtasks:
+
+- [x] Add canonical `carry_chain(src=..., carry=..., store=..., limbs=..., width=..., row=...)` statement.
+- [x] Implement deterministic per-limb 4-stage lowering (`SADD`, `LAND`, `SWI`, `SRT`) with explicit bounds checks.
+- [x] Add parser/handler/builder/issue tests and language docs.
+
+Evidence:
+
+- Tests: `tests/issues/feat-02-carry-chain.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
+- Docs: `docs/language/carry-chain-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
+
 ## FEAT Portfolio (1..17)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
@@ -387,7 +408,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT | Scope | Status | Evidence | Next subtask |
 |---|---|---|---|---|
 | FEAT-1 `latency_hide` | scheduling/optimizer | `pending-backlog` | proposal only | Define scheduler contract and stall-slot legality model for NxM + neighbor hazards. |
-| FEAT-2 `carry_chain` | arithmetic primitive | `pending-backlog` | proposal only | Specify canonical statement shape and lowering equivalence vs hand-written carry chains. |
+| FEAT-2 `carry_chain` | arithmetic primitive | `resolved-verified` | `tests/issues/feat-02-carry-chain.test.ts` | Keep per-limb stage order deterministic and explicit; extend only with contract-backed scheduling variants. |
 | FEAT-3 `specialize` | compile-time optimization | `resolved-verified` | `tests/issues/feat-03-specialize.test.ts` | Extend identity catalog conservatively and keep deterministic rewrites. |
 | FEAT-4 `for` inside `cycle` | language core | `resolved-verified` | `tests/compiler-api.contract.test.ts`, `tests/issues/resolved-and-legacy.test.ts` | Keep regression guardrails for collision diagnostics and nested expansion. |
 | FEAT-5 `normalize` | arithmetic primitive | `resolved-verified` | `tests/issues/feat-05-normalize.test.ts` | Extend with optional multi-lane orchestration only when deterministic cost model is defined. |
@@ -457,7 +478,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1..2`, `FEAT-10`, `FEAT-16`.
+- [ ] Prioritize `FEAT-1`, `FEAT-10`, `FEAT-16`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

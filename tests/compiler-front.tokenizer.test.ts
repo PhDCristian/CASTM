@@ -31,6 +31,7 @@ kernel "k" {
   reduce(op=add, dest=R1, src=R0, axis=row);
   guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
   accumulate(pattern=row, products=R2, accum=R3, out=ROUT);
+  carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0);
   conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
   collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
   normalize(reg=R3, carry=R1, width=16, lane=0);
@@ -45,6 +46,7 @@ kernel "k" {
     expect(tokenByValue.get('reduce')).toBe('keyword');
     expect(tokenByValue.get('guard')).toBe('keyword');
     expect(tokenByValue.get('accumulate')).toBe('keyword');
+    expect(tokenByValue.get('carry_chain')).toBe('keyword');
     expect(tokenByValue.get('conditional_sub')).toBe('keyword');
     expect(tokenByValue.get('collect')).toBe('keyword');
     expect(tokenByValue.get('normalize')).toBe('keyword');

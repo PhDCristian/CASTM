@@ -27,6 +27,7 @@ let matrix[2][2] = { 1, 2, 3, 4 };
 kernel "canonical_example" {
   route(@0,1 -> @0,0, payload=R3, accum=R1);
   accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
+  carry_chain(src=R0, carry=R3, store=output, limbs=2, width=16, row=0);
   conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
   collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
   normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
@@ -50,6 +51,7 @@ kernel "canonical_example" {
 - Memory sugar in `cycle {}` lowers to existing ISA (`LWI/SWI`) without changing CSV format.
 - Advanced statements lower to existing codegen passes.
 - `accumulate(...)` provides deterministic NxM accumulation patterns (`row`, `col`, `anti_diagonal`) and removes manual ROUT-graph boilerplate from kernels.
+- `carry_chain(...)` provides deterministic limb carry propagation + store staging without manual repeated cycles.
 - `conditional_sub(...)` provides deterministic branchless subtraction/select (`SSUB` + `BSFA`) scoped to `all`, `row`, `col`, or one point target (`point(r,c)`).
 - `collect(...)` provides aligned single-hop lane collection (`row/col`) with deterministic lowering and explicit geometry checks.
 - `normalize(...)` provides canonical carry-normalization over one row/column lane using deterministic multi-cycle lowering (`SRT` + `LAND` + carry relay + lane add).
@@ -66,6 +68,7 @@ kernel "canonical_example" {
 - Triangle spatial-pattern reference: `docs/language/triangle-statement.md`.
 - Guard spatial-pattern reference: `docs/language/guard-statement.md`.
 - Accumulation-pattern reference: `docs/language/accumulate-statement.md`.
+- Carry-chain reference: `docs/language/carry-chain-statement.md`.
 - Conditional-subtraction reference: `docs/language/conditional-sub-statement.md`.
 - Collect lane-pattern reference: `docs/language/collect-statement.md`.
 - Normalize lane-pattern reference: `docs/language/normalize-statement.md`.

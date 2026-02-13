@@ -62,6 +62,9 @@ describe('compiler-front lowering module contracts', () => {
     expect(parseAdvancedStatementAsPragma('accumulate(pattern=row, products=R2, accum=R3, out=ROUT);')).toBe(
       'accumulate(pattern=row, products=R2, accum=R3, out=ROUT)'
     );
+    expect(parseAdvancedStatementAsPragma('carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0);')).toBe(
+      'carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0)'
+    );
     expect(parseAdvancedStatementAsPragma('conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));')).toBe(
       'conditional_sub(value=R0, sub=R1, dest=R2, target=row(1))'
     );

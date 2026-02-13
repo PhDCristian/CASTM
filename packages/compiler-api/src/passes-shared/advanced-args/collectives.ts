@@ -7,6 +7,7 @@ import {
 import { parseCoordinateLiteral } from '../route-args.js';
 import {
   AccumulatePragmaArgs,
+  CarryChainPragmaArgs,
   CollectAxisRef,
   CollectPragmaArgs,
   ConditionalSubPragmaArgs,
@@ -266,6 +267,56 @@ export function parseConditionalSubPragmaArgs(text: string): ConditionalSubPragm
     subReg,
     destReg,
     target
+  };
+}
+
+export function parseCarryChainPragmaArgs(text: string): CarryChainPragmaArgs | null {
+  const match = text.trim().match(/^carry_chain\s*\((.+)\)\s*;?\s*$/i);
+  if (!match) return null;
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+  for (const key of args.keys()) {
+    if (!['src', 'carry', 'store', 'limbs', 'width', 'mask', 'row', 'start', 'dir'].includes(key)) return null;
+  }
+
+  const srcReg = args.get('src')?.trim();
+  const carryReg = args.get('carry')?.trim();
+  const storeSymbol = args.get('store')?.trim();
+  if (!srcReg || !carryReg || !storeSymbol) return null;
+  if (!isIdentifier(srcReg) || !isIdentifier(carryReg) || !isIdentifier(storeSymbol)) return null;
+
+  const limbsRaw = args.get('limbs');
+  const widthRaw = args.get('width');
+  const rowRaw = args.get('row');
+  if (!limbsRaw || !widthRaw || !rowRaw) return null;
+
+  const limbs = parseIntegerLiteral(limbsRaw);
+  const width = parseIntegerLiteral(widthRaw);
+  const row = parseIntegerLiteral(rowRaw);
+  if (limbs === null || width === null || row === null) return null;
+  if (limbs <= 0 || width <= 0 || width > 30) return null;
+
+  const startColRaw = args.get('start');
+  const startCol = startColRaw ? parseIntegerLiteral(startColRaw) : 0;
+  if (startCol === null) return null;
+
+  const dirRaw = (args.get('dir') ?? 'right').trim().toLowerCase();
+  if (dirRaw !== 'right' && dirRaw !== 'left') return null;
+
+  const maskRaw = args.get('mask');
+  const mask = maskRaw ? parseIntegerLiteral(maskRaw) : ((1 << width) - 1);
+  if (mask === null) return null;
+
+  return {
+    srcReg,
+    carryReg,
+    storeSymbol,
+    limbs,
+    width,
+    mask,
+    row,
+    startCol,
+    direction: dirRaw as 'right' | 'left'
   };
 }
 

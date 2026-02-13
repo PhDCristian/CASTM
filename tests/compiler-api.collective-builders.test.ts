@@ -3,6 +3,7 @@ import { ErrorCodes, spanAt } from '@openedge/compiler-ir';
 import {
   buildAccumulateCycles,
   buildAllreduceCycles,
+  buildCarryChainCycles,
   buildCollectCycles,
   buildConditionalSubCycles,
   buildExtractBytesCycles,
@@ -692,6 +693,102 @@ describe('compiler-api collective/route builders', () => {
     );
     expect(badPointCycles).toHaveLength(0);
     expect(badPointDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
+  });
+
+  it('builds carry_chain cycles and validates geometry bounds', () => {
+    const okDiagnostics: any[] = [];
+    const okCycles = buildCarryChainCycles(
+      {
+        srcReg: 'R0',
+        carryReg: 'R3',
+        storeSymbol: 'L',
+        limbs: 3,
+        width: 16,
+        mask: 65535,
+        row: 0,
+        startCol: 0,
+        direction: 'right'
+      },
+      0,
+      torusGrid,
+      span,
+      okDiagnostics
+    );
+    expect(okDiagnostics).toHaveLength(0);
+    expect(okCycles).toHaveLength(12);
+    expect(okCycles[0].statements[0]).toMatchObject({
+      instruction: { opcode: 'SADD', operands: ['R0', 'R0', 'R3'] }
+    });
+    expect(okCycles[2].statements[0]).toMatchObject({
+      instruction: { opcode: 'SWI', operands: ['R0', 'L[0]'] }
+    });
+    expect(okCycles[11].statements[0]).toMatchObject({
+      instruction: { opcode: 'SRT', operands: ['R3', 'R0', '16'] }
+    });
+
+    const leftDiagnostics: any[] = [];
+    const leftCycles = buildCarryChainCycles(
+      {
+        srcReg: 'R4',
+        carryReg: 'R5',
+        storeSymbol: 'M',
+        limbs: 2,
+        width: 8,
+        mask: 255,
+        row: 1,
+        startCol: 3,
+        direction: 'left'
+      },
+      0,
+      torusGrid,
+      span,
+      leftDiagnostics
+    );
+    expect(leftDiagnostics).toHaveLength(0);
+    expect(leftCycles).toHaveLength(8);
+    expect(leftCycles[4].statements[0]).toMatchObject({ row: 1, col: 2 });
+
+    const badRowDiagnostics: any[] = [];
+    const badRowCycles = buildCarryChainCycles(
+      {
+        srcReg: 'R0',
+        carryReg: 'R3',
+        storeSymbol: 'L',
+        limbs: 2,
+        width: 16,
+        mask: 65535,
+        row: 9,
+        startCol: 0,
+        direction: 'right'
+      },
+      0,
+      torusGrid,
+      span,
+      badRowDiagnostics
+    );
+    expect(badRowCycles).toHaveLength(0);
+    expect(badRowDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
+
+    const badColDiagnostics: any[] = [];
+    const badColCycles = buildCarryChainCycles(
+      {
+        srcReg: 'R0',
+        carryReg: 'R3',
+        storeSymbol: 'L',
+        limbs: 5,
+        width: 16,
+        mask: 65535,
+        row: 0,
+        startCol: 1,
+        direction: 'right'
+      },
+      0,
+      torusGrid,
+      span,
+      badColDiagnostics
+    );
+    expect(badColCycles).toHaveLength(0);
+    expect(badColDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
   });
 
   it('builds normalize cycles and validates lane/width constraints', () => {
