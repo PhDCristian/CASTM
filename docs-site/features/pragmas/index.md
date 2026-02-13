@@ -19,6 +19,7 @@ Loop-level parallel strategy is expressed with canonical `for` modifiers (`unrol
 | `std::collect(...)` | single-hop lane collection | `from`, `to`, `via`, `combine` |
 | `std::normalize(...)` | carry normalization per lane | `reg`, `carry`, `width`, `lane`, `axis` |
 | `std::extract_bytes(...)` | byte-lane extraction | `src`, `dest`, `axis`, `byteWidth` |
+| `std::mulacc_chain(...)` | lane multiply-accumulate propagation | `src`, `coeff`, `acc`, `out`, `target`, `width` |
 | `std::carry_chain(...)` | multi-limb carry propagation | `src`, `carry`, `store`, `limbs`, `width` |
 | `std::conditional_sub(...)` | branchless conditional subtraction | `value`, `sub`, `dest`, `target` |
 | `std::guard(...)` | predicate-based spatial activation | `cond`, `op`, `dest`, `srcA`, `srcB` |

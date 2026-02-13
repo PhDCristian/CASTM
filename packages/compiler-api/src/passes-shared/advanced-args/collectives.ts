@@ -14,6 +14,7 @@ import {
   ExtractBytesPragmaArgs,
   GuardPragmaArgs,
   GatherPragmaArgs,
+  MulaccChainPragmaArgs,
   NormalizePragmaArgs,
   StencilPragmaArgs,
   TrianglePragmaArgs,
@@ -40,6 +41,13 @@ const ACCUMULATE_COMBINE_VALUES = new Set([
   'or',
   'xor',
   'mul'
+]);
+
+const MULACC_DIRECTIONS = new Set([
+  'left',
+  'right',
+  'up',
+  'down'
 ]);
 
 function parseAccumulateScope(value: string): AccumulatePragmaArgs['scope'] | null {
@@ -71,6 +79,83 @@ function parseCollectAxisRef(value: string): CollectAxisRef | null {
   return {
     axis: match[1].toLowerCase() as 'row' | 'col',
     index: Number(match[2])
+  };
+}
+
+function defaultMaskForWidth(width: number): number | null {
+  if (!Number.isInteger(width) || width <= 0 || width >= 31) return null;
+  return (1 << width) - 1;
+}
+
+function parseMulaccTarget(value: string): MulaccChainPragmaArgs['target'] | null {
+  const normalized = value.trim();
+  if (normalized.toLowerCase() === 'all') return { kind: 'all' };
+
+  const rowMatch = normalized.match(/^row\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
+  if (rowMatch) {
+    const index = parseIntegerLiteral(rowMatch[1]);
+    if (index === null) return null;
+    return { kind: 'row', index };
+  }
+
+  const colMatch = normalized.match(/^col\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
+  if (colMatch) {
+    const index = parseIntegerLiteral(colMatch[1]);
+    if (index === null) return null;
+    return { kind: 'col', index };
+  }
+
+  return null;
+}
+
+export function parseMulaccChainPragmaArgs(text: string): MulaccChainPragmaArgs | null {
+  const match = text.trim().match(/^mulacc_chain\s*\((.+)\)\s*;?\s*$/i);
+  if (!match) return null;
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+
+  for (const key of args.keys()) {
+    if (!['src', 'coeff', 'acc', 'out', 'target', 'lanes', 'width', 'mask', 'dir'].includes(key)) {
+      return null;
+    }
+  }
+
+  const srcReg = args.get('src')?.trim();
+  const coeffReg = args.get('coeff')?.trim();
+  const accReg = args.get('acc')?.trim();
+  const outReg = args.get('out')?.trim();
+  const targetRaw = args.get('target');
+  const widthRaw = args.get('width');
+  const dirRaw = args.get('dir')?.trim().toLowerCase();
+
+  if (!srcReg || !coeffReg || !accReg || !outReg || !targetRaw || !widthRaw || !dirRaw) return null;
+  if (!isIdentifier(srcReg) || !isIdentifier(coeffReg) || !isIdentifier(accReg) || !isIdentifier(outReg)) return null;
+  if (!MULACC_DIRECTIONS.has(dirRaw)) return null;
+
+  const target = parseMulaccTarget(targetRaw);
+  if (!target) return null;
+
+  const width = parseIntegerLiteral(widthRaw);
+  if (width === null || width <= 0 || width >= 31) return null;
+
+  const maskRaw = args.get('mask');
+  const mask = maskRaw ? parseIntegerLiteral(maskRaw) : defaultMaskForWidth(width);
+  if (mask === null) return null;
+
+  const lanesRaw = args.get('lanes');
+  const lanes = lanesRaw ? parseIntegerLiteral(lanesRaw) : undefined;
+  if (lanes !== undefined && lanes <= 0) return null;
+
+  return {
+    srcReg,
+    coeffReg,
+    accReg,
+    outReg,
+    target,
+    lanes: lanes ?? undefined,
+    width,
+    mask,
+    direction: dirRaw as MulaccChainPragmaArgs['direction']
   };
 }
 
@@ -355,11 +440,6 @@ export function parseCarryChainPragmaArgs(text: string): CarryChainPragmaArgs | 
     startCol,
     direction: dirRaw as 'right' | 'left'
   };
-}
-
-function defaultMaskForWidth(width: number): number | null {
-  if (!Number.isInteger(width) || width <= 0 || width >= 31) return null;
-  return (1 << width) - 1;
 }
 
 export function parseNormalizePragmaArgs(text: string): NormalizePragmaArgs | null {

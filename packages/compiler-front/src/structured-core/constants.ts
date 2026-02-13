@@ -2,6 +2,7 @@ export const ADVANCED_NAMES = new Set([
   'route',
   'broadcast',
   'accumulate',
+  'mulacc_chain',
   'carry_chain',
   'conditional_sub',
   'collect',

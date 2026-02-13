@@ -1,5 +1,6 @@
 export { handleAllreduce } from './handlers-collective/allreduce.js';
 export { handleAccumulate } from './handlers-collective/accumulate.js';
+export { handleMulaccChain } from './handlers-collective/mulacc-chain.js';
 export { handleCarryChain } from './handlers-collective/carry-chain.js';
 export { handleCollect } from './handlers-collective/collect.js';
 export { handleConditionalSub } from './handlers-collective/conditional-sub.js';

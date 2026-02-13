@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { compile } from '@openedge/compiler-api';
 
 describe('issues/FEAT-9 inline operand arithmetic', () => {
+  const hasInstructionAt = (csv: string, row: number, col: number, text: string): boolean => {
+    const normalized = text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`\\n\\d+,${row},${col},${normalized}(?:\\n|$)`).test(csv);
+  };
+
   it('folds arithmetic in immediate operands', () => {
     const source = `
 target "uma-cgra-base";
@@ -68,10 +73,10 @@ kernel "feat9_loop_bound" {
     const result = compile(source);
     expect(result.success).toBe(true);
     const csv = result.artifacts.csv ?? '';
-    expect(csv).toContain('0,0,0,SADD R1 R0 ZERO');
-    expect(csv).toContain('1,0,1,SRT R1 R0 8');
-    expect(csv).toContain('2,0,2,SRT R1 R0 16');
-    expect(csv).toContain('3,0,3,SRT R1 R0 24');
+    expect(hasInstructionAt(csv, 0, 0, 'SADD R1 R0 ZERO')).toBe(true);
+    expect(hasInstructionAt(csv, 0, 1, 'SRT R1 R0 8')).toBe(true);
+    expect(hasInstructionAt(csv, 0, 2, 'SRT R1 R0 16')).toBe(true);
+    expect(hasInstructionAt(csv, 0, 3, 'SRT R1 R0 24')).toBe(true);
   });
 
   it('keeps unresolved symbolic arithmetic untouched', () => {

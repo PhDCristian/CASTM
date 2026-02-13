@@ -6,6 +6,16 @@ function csvRows(csv: string): string[] {
   return csv.trim().split('\n').slice(1);
 }
 
+function parseCsvRow(row: string): { cycle: number; peRow: number; col: number; instruction: string } {
+  const [cycle, peRow, col, ...instruction] = row.split(',');
+  return {
+    cycle: Number(cycle),
+    peRow: Number(peRow),
+    col: Number(col),
+    instruction: instruction.join(',')
+  };
+}
+
 describe('issues/FEAT-16 pipeline macro statement', () => {
   it('expands pipeline(...) into ordered function call sequence', () => {
     const source = `
@@ -29,8 +39,15 @@ kernel "feat16_pipeline" {
 
     const rows = csvRows(result.artifacts.csv ?? '');
     expect(rows).toHaveLength(2);
-    expect(rows[0]).toBe('0,0,0,SADD R2 R0 ZERO');
-    expect(rows[1]).toBe('1,0,1,SADD R3 R2 ZERO');
+    const first = parseCsvRow(rows[0]);
+    const second = parseCsvRow(rows[1]);
+    expect(first.peRow).toBe(0);
+    expect(first.col).toBe(0);
+    expect(first.instruction).toBe('SADD R2 R0 ZERO');
+    expect(second.peRow).toBe(0);
+    expect(second.col).toBe(1);
+    expect(second.instruction).toBe('SADD R3 R2 ZERO');
+    expect(second.cycle).toBeGreaterThanOrEqual(first.cycle);
   });
 
   it('supports pipeline steps with mixed argument arity', () => {
@@ -53,8 +70,8 @@ kernel "feat16_arity" {
     const result = compile(source);
     expect(result.success).toBe(true);
     const csv = result.artifacts.csv ?? '';
-    expect(csv).toContain('0,0,0,NOP');
-    expect(csv).toContain('1,0,1,SADD R1 R0 R3');
+    expect(csv).toMatch(/\n\d+,0,0,NOP(?:\n|$)/);
+    expect(csv).toMatch(/\n\d+,0,1,SADD R1 R0 R3(?:\n|$)/);
   });
 
   it('rejects malformed pipeline statements and non-function entries', () => {

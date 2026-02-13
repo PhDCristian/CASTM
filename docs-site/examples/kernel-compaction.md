@@ -132,20 +132,20 @@ Current optimized v10 kernels in `UMA-CGRA-Simulator`:
 
 Measured cycle budget (2026-02-13):
 
-- `safe`: **225**
-- `balanced`: **225**
-- `aggressive`: **225**
+- `safe`: **205**
+- `balanced`: **205**
+- `aggressive`: **205**
 
 Reproduction:
 
 ```bash
-npx tsx scripts/stats_sbox_k7.ts --file ./examples/dsl_port/sbox_k7_v10_compact.edsl
-npx tsx scripts/stats_sbox_k7.ts --file ./examples/dsl_port/sbox_k7_v10_nocompact.edsl
+npx tsx scripts/sbox/stats.ts --file ./examples/dsl_port/sbox_k7_v10_compact.edsl --scheduler safe
+npx tsx scripts/sbox/stats.ts --file ./examples/dsl_port/sbox_k7_v10_nocompact.edsl --scheduler safe
 ```
 
 Hotspot and differential profiling:
 
 ```bash
-npx tsx scripts/profile_sbox_k7_hotspots.ts --file ./examples/dsl_port/sbox_k7_v10_compact.edsl --scheduler safe
-npx tsx scripts/profile_sbox_k7_deltas.ts --file ./examples/dsl_port/sbox_k7_v10_compact.edsl --scheduler safe
+npx tsx scripts/sbox/profile-hotspots.ts --file ./examples/dsl_port/sbox_k7_v10_compact.edsl --scheduler safe
+npx tsx scripts/sbox/profile-deltas.ts --file ./examples/dsl_port/sbox_k7_v10_compact.edsl --scheduler safe
 ```

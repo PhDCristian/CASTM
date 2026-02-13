@@ -20,6 +20,9 @@ describe('lsp canonical contracts', () => {
     const accumulateCompletions = getCompletions('ac');
     expect(accumulateCompletions.some((c) => c.label === 'accumulate(...);' && c.kind === 'advanced')).toBe(true);
 
+    const mulaccCompletions = getCompletions('mulacc');
+    expect(mulaccCompletions.some((c) => c.label === 'mulacc_chain(...);' && c.kind === 'advanced')).toBe(true);
+
     const carryChainCompletions = getCompletions('carry');
     expect(carryChainCompletions.some((c) => c.label === 'carry_chain(...);' && c.kind === 'advanced')).toBe(true);
 

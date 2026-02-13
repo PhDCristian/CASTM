@@ -7,3 +7,4 @@ export { desugarInlineArithmeticPass } from './desugar/inline-arithmetic-pass.js
 export { specializePass } from './desugar/specialize-pass.js';
 export { desugarAutoCyclePass } from './desugar/auto-cycle-pass.js';
 export { pruneNoopCyclesPass } from './desugar/prune-noop-cycles-pass.js';
+export { createSlotPackPass } from './desugar/slot-pack-pass.js';

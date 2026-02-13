@@ -15,6 +15,7 @@ import {
   createValidateGridPass,
   createDesugarMemoryPass,
   createExpandPragmasPass,
+  createSlotPackPass,
   desugarAutoCyclePass,
   desugarExpressionsPass,
   desugarInlineArithmeticPass,
@@ -23,7 +24,6 @@ import {
   lowerToLirPass,
   lowerToMirPass
 } from '../passes.js';
-import { applyLatencyHide } from '../passes-shared/expand-pragmas/latency-hide.js';
 import { collectDataRegions } from './data-regions.js';
 import { resolveGrid } from './grid-resolver.js';
 import { collectRuntimeArtifacts } from './runtime-artifacts.js';
@@ -38,6 +38,23 @@ export type AnalyzeInput =
       structuredAst?: StructuredProgramAst;
     };
 
+function defaultSchedulerWindow(mode: NonNullable<CompileOptions['schedulerMode']>): number {
+  if (mode === 'aggressive') return 4;
+  if (mode === 'balanced') return 2;
+  return 1;
+}
+
+function normalizeSchedulerWindow(
+  mode: NonNullable<CompileOptions['schedulerMode']>,
+  value: CompileOptions['schedulerWindow']
+): number {
+  if (value === undefined) return defaultSchedulerWindow(mode);
+  if (!Number.isFinite(value)) return defaultSchedulerWindow(mode);
+  const normalized = Math.floor(value);
+  if (normalized < 0) return 0;
+  return normalized;
+}
+
 export function analyze(input: AnalyzeInput, options: CompileOptions = {}): AnalysisResult {
   const ast = 'ast' in input ? input.ast : input;
   const structuredAst = 'ast' in input ? input.structuredAst : undefined;
@@ -51,6 +68,10 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
   const target = resolveGrid(semaAst, options, diagnostics);
   const strictUnsupported = options.strictUnsupported !== false;
   const schedulerMode = options.schedulerMode ?? 'safe';
+  const schedulerWindow = normalizeSchedulerWindow(schedulerMode, options.schedulerWindow);
+  const memoryReorderPolicy = options.memoryReorderPolicy
+    ?? (schedulerMode === 'safe' ? 'strict' : 'same-address-fence');
+  const effectiveSchedulerWindow = schedulerWindow;
   const pruneNoopCycles = options.pruneNoopCycles === true;
 
   if (!target) {
@@ -73,7 +94,11 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
     desugarInlineArithmeticPass,
     specializePass,
     desugarAutoCyclePass,
-    createExpandPragmasPass(strictUnsupported, target.grid)
+    createExpandPragmasPass(strictUnsupported, target.grid),
+    createSlotPackPass(target.grid, {
+      window: effectiveSchedulerWindow,
+      memoryReorderPolicy
+    })
   ];
 
   if (pruneNoopCycles) {
@@ -85,19 +110,9 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
     [{ name: 'desugar+pragmas', passes: astPasses }],
     diagnostics
   );
-  let loweredAst = astPipeline.output as AstProgram;
+  const loweredAst = astPipeline.output as AstProgram;
   const schedulerPasses: string[] = [];
-  if (schedulerMode !== 'safe' && loweredAst.kernel) {
-    const window = schedulerMode === 'balanced' ? 1 : 2;
-    const compacted = applyLatencyHide(loweredAst.kernel.cycles, target.grid, window)
-      .map((cycle, index) => ({ ...cycle, index }));
-    loweredAst = {
-      ...loweredAst,
-      kernel: {
-        ...loweredAst.kernel,
-        cycles: compacted
-      }
-    };
+  if (schedulerMode !== 'safe') {
     schedulerPasses.push(`scheduler:${schedulerMode}`);
   }
 

@@ -396,7 +396,10 @@ describe('branch coverage round 9 - compiler api helpers', () => {
       };
     });
     const { analyze } = await import('../packages/compiler-api/src/compiler-driver/analyze-driver.js');
-    const result = analyze(makeAst({ kernel: { ...makeAst().kernel!, cycles: [{ index: 0, span, statements: [] }] } }), {});
+    const result = analyze(
+      makeAst({ kernel: { ...makeAst().kernel!, cycles: [{ index: 0, span, statements: [] }] } }),
+      { schedulerWindow: 0 }
+    );
     expect(result.diagnostics.some((d) => d.message.includes('.limit'))).toBe(true);
   });
 

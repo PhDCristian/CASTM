@@ -8,6 +8,7 @@ import {
   buildConditionalSubCycles,
   buildExtractBytesCycles,
   buildGatherCycles,
+  buildMulaccChainCycles,
   buildNormalizeCycles,
   buildStashCycles,
   buildStencilCycles,
@@ -1303,5 +1304,75 @@ describe('compiler-api collective/route builders', () => {
     );
     expect(zeroGridDiagnostics).toHaveLength(0);
     expect(zeroGridCycles).toHaveLength(0);
+  });
+
+  it('builds mulacc_chain cycles and validates target/direction constraints', () => {
+    const okDiagnostics: any[] = [];
+    const okCycles = buildMulaccChainCycles(
+      {
+        srcReg: 'R0',
+        coeffReg: 'R1',
+        accReg: 'R3',
+        outReg: 'R2',
+        target: { kind: 'row', index: 0 },
+        lanes: 3,
+        width: 16,
+        mask: 65535,
+        direction: 'right'
+      },
+      7,
+      torusGrid,
+      span,
+      okDiagnostics
+    );
+    expect(okDiagnostics).toHaveLength(0);
+    expect(okCycles).toHaveLength(4);
+    expect(okCycles[0].index).toBe(7);
+    expect(okCycles[0].statements).toHaveLength(3);
+    const firstCycleStmt: any = okCycles[0].statements[0];
+    expect(firstCycleStmt.instruction.opcode).toBe('SMUL');
+    const secondCycleStmt: any = okCycles[1].statements[0];
+    expect(secondCycleStmt.instruction.operands[2]).toBe('ZERO');
+
+    const invalidDirectionDiagnostics: any[] = [];
+    const invalidDirectionCycles = buildMulaccChainCycles(
+      {
+        srcReg: 'R0',
+        coeffReg: 'R1',
+        accReg: 'R3',
+        outReg: 'R2',
+        target: { kind: 'row', index: 0 },
+        width: 16,
+        mask: 65535,
+        direction: 'up'
+      },
+      0,
+      torusGrid,
+      span,
+      invalidDirectionDiagnostics
+    );
+    expect(invalidDirectionCycles).toHaveLength(0);
+    expect(invalidDirectionDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const invalidLanesDiagnostics: any[] = [];
+    const invalidLanesCycles = buildMulaccChainCycles(
+      {
+        srcReg: 'R0',
+        coeffReg: 'R1',
+        accReg: 'R3',
+        outReg: 'R2',
+        target: { kind: 'col', index: 0 },
+        lanes: 99,
+        width: 16,
+        mask: 65535,
+        direction: 'down'
+      },
+      0,
+      torusGrid,
+      span,
+      invalidLanesDiagnostics
+    );
+    expect(invalidLanesCycles).toHaveLength(0);
+    expect(invalidLanesDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 });

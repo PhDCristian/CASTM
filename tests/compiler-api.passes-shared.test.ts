@@ -38,6 +38,7 @@ import {
   parseExtractBytesPragmaArgs,
   parseGuardPragmaArgs,
   parseGatherPragmaArgs,
+  parseMulaccChainPragmaArgs,
   parseNormalizePragmaArgs,
   parseStashPragmaArgs,
   parseReducePragmaArgs,
@@ -312,6 +313,23 @@ describe('compiler-api passes shared utils', () => {
     expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, scope=row(x))')).toBeNull();
     expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, extra=1)')).toBeNull();
     expect(parseAccumulatePragmaArgs('foo(pattern=row, products=R2, accum=R3, out=ROUT)')).toBeNull();
+    expect(parseMulaccChainPragmaArgs('mulacc_chain(src=R0, coeff=R1, acc=R3, out=R0, target=row(0), width=16, dir=right)')).toMatchObject({
+      srcReg: 'R0',
+      coeffReg: 'R1',
+      accReg: 'R3',
+      outReg: 'R0',
+      target: { kind: 'row', index: 0 },
+      width: 16,
+      mask: 65535,
+      direction: 'right'
+    });
+    expect(parseMulaccChainPragmaArgs('mulacc_chain(src=R0, coeff=R1, acc=R3, out=R0, target=col(1), lanes=2, width=16, mask=65535, dir=down)')).toMatchObject({
+      target: { kind: 'col', index: 1 },
+      lanes: 2,
+      direction: 'down'
+    });
+    expect(parseMulaccChainPragmaArgs('mulacc_chain(src=R0, coeff=R1, acc=R3, out=R0, target=diag(0), width=16, dir=right)')).toBeNull();
+    expect(parseMulaccChainPragmaArgs('mulacc_chain(src=R0, coeff=R1, acc=R3, out=R0, target=row(0), width=16, dir=bad)')).toBeNull();
     expect(parseConditionalSubPragmaArgs('conditional_sub(value=R0, sub=R1, dest=R2)')).toMatchObject({
       valueReg: 'R0',
       subReg: 'R1',

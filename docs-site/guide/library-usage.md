@@ -28,7 +28,9 @@ kernel "lib_example" {
 const result = compile(source, {
   grid: { rows: 4, cols: 4, topology: 'torus' },
   emitArtifacts: ['structured', 'ast', 'hir', 'mir', 'lir', 'csv'],
-  schedulerMode: 'safe'
+  schedulerMode: 'safe',
+  schedulerWindow: 1,
+  memoryReorderPolicy: 'strict'
 });
 
 if (!result.success) {
@@ -74,6 +76,8 @@ const emitted = emit(analyzed.lir, { format: 'flat-csv' });
 - `emitArtifacts?: Array<'structured' | 'ast' | 'hir' | 'mir' | 'lir' | 'csv'>`
 - `strictUnsupported?: boolean`
 - `schedulerMode?: "safe" | "balanced" | "aggressive"`
+- `schedulerWindow?: number`
+- `memoryReorderPolicy?: "strict" | "same-address-fence"`
 
 ## Compile Stats
 

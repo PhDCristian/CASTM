@@ -74,6 +74,7 @@ kernel "canonical_example" {
 - Memory sugar in `cycle {}` lowers to existing ISA (`LWI/SWI`) without changing CSV format.
 - `std::` advanced statements lower to existing codegen passes. Unqualified forms are temporary compatibility syntax and emit migration warnings.
 - `std::accumulate(...)` provides deterministic NxM accumulation patterns (`row`, `col`, `anti_diagonal`) with optional `steps=N` propagation depth and optional `scope=all|row(i)|col(j)` sub-grid targeting, removing manual ROUT-graph boilerplate from kernels.
+- `std::mulacc_chain(...)` provides deterministic lane-local multiply-accumulate propagation (`row(i)`/`col(j)`) with explicit `width`, `mask`, `lanes`, and direction (`dir`).
 - `std::accumulate(...)` omits redundant seed/final stages when `products == accum` and/or `accum == out` to reduce cycles without changing semantics.
 - `std::carry_chain(...)` provides deterministic limb carry propagation + store staging without manual repeated cycles.
 - `std::conditional_sub(...)` provides deterministic branchless subtraction/select (`SSUB` + `BSFA`) scoped to `all`, `row`, `col`, or one point target (`point(r,c)`).
@@ -88,6 +89,10 @@ kernel "canonical_example" {
   - `unroll(k)` controls static expansion chunking.
   - `collapse(n)` currently requires perfectly nested static loops and applies row-major mapping.
 - `std::latency_hide(...)` applies conservative post-expansion cycle compaction with explicit hazard guards (PE overlap, direct route-hop dependency, control barriers, dual-memory adjacency), and can overlap disjoint route steps safely.
+- Compiler scheduling options are explicit and deterministic:
+  - `schedulerMode`: `safe`, `balanced`, `aggressive`.
+  - `schedulerWindow`: slot-pack lookahead window override (`>=0`).
+  - `memoryReorderPolicy`: `"strict"` or `"same-address-fence"`.
 - `std::stash(...)` provides deterministic explicit spill/restore lowering to `SWI/LWI` for selected spatial targets (`all`, `row`, `col`, `point`).
 - Inside `cycle { ... }`, semicolon-separated placements on the same line are supported.
 - Computed spatial coordinates in loops (for example `@k/4,k%4`) are valid canonical syntax.

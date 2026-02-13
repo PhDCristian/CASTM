@@ -30,6 +30,23 @@ export interface AccumulatePragmaArgs {
   scope?: { kind: 'all' } | { kind: 'row'; index: number } | { kind: 'col'; index: number };
 }
 
+export type MulaccChainTarget =
+  | { kind: 'all' }
+  | { kind: 'row'; index: number }
+  | { kind: 'col'; index: number };
+
+export interface MulaccChainPragmaArgs {
+  srcReg: string;
+  coeffReg: string;
+  accReg: string;
+  outReg: string;
+  target: MulaccChainTarget;
+  lanes?: number;
+  width: number;
+  mask: number;
+  direction: 'left' | 'right' | 'up' | 'down';
+}
+
 export type ConditionalSubTarget =
   | { kind: 'all' }
   | { kind: 'row'; index: number }

@@ -27,6 +27,8 @@ OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifact
 | `emitArtifacts` | `Array<'structured'|'ast'|'hir'|'mir'|'lir'|'csv'>` | request phase artifacts |
 | `strictUnsupported` | `boolean` | enforce strict validation for unsupported forms |
 | `schedulerMode` | `"safe" \| "balanced" \| "aggressive"` | deterministic scheduling profile selection |
+| `schedulerWindow` | `number` | slot-pack lookahead window override (`>=0`) |
+| `memoryReorderPolicy` | `"strict" \| "same-address-fence"` | memory scheduling fence policy |
 
 ## Compile Result Artifacts
 

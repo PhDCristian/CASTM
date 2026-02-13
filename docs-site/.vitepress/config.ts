@@ -87,6 +87,7 @@ export default defineConfig({
             { text: 'gather(...)', link: '/features/pragmas/gather' },
             { text: 'stream_load/store(...)', link: '/features/pragmas/stream' },
             { text: 'accumulate(...)', link: '/features/pragmas/accumulate' },
+            { text: 'mulacc_chain(...)', link: '/features/pragmas/mulacc-chain' },
             { text: 'carry_chain(...)', link: '/features/pragmas/carry-chain' },
             { text: 'conditional_sub(...)', link: '/features/pragmas/conditional-sub' },
             { text: 'collect(...)', link: '/features/pragmas/collect' },

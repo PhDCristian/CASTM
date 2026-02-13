@@ -74,7 +74,7 @@ Loop modifier semantics:
 
 ```text
 advanced_stmt    ::= route_stmt | reduce_stmt | scan_stmt | broadcast_stmt
-                  | accumulate_stmt | carry_chain_stmt | conditional_sub_stmt | collect_stmt | normalize_stmt | extract_bytes_stmt | rotate_stmt | shift_stmt | stencil_stmt | guard_stmt | triangle_stmt | allreduce_stmt
+                  | accumulate_stmt | mulacc_chain_stmt | carry_chain_stmt | conditional_sub_stmt | collect_stmt | normalize_stmt | extract_bytes_stmt | rotate_stmt | shift_stmt | stencil_stmt | guard_stmt | triangle_stmt | allreduce_stmt
                   | transpose_stmt | gather_stmt | stream_load_stmt | stream_store_stmt | latency_hide_stmt | stash_stmt
 
 std_prefix       ::= "std::" | ""
@@ -83,6 +83,7 @@ route_edge       ::= "@" int_expr "," int_expr "->" "@" int_expr "," int_expr
 op_call          ::= ident "(" operand "," operand "," operand ")"
 
 accumulate_stmt  ::= std_prefix "accumulate" "(" "pattern" "=" ("row" | "col" | "anti_diagonal") "," "products" "=" register "," "accum" "=" register "," "out" "=" register [ "," "combine" "=" ("add" | "sum" | "sub" | "and" | "or" | "xor" | "mul") ] [ "," "steps" "=" int_expr ] [ "," "scope" "=" ("all" | "row(" int_expr ")" | "col(" int_expr ")") ] ")" ";"
+mulacc_chain_stmt ::= std_prefix "mulacc_chain" "(" "src" "=" register "," "coeff" "=" register "," "acc" "=" register "," "out" "=" register "," "target" "=" ("row(" int_expr ")" | "col(" int_expr ")") [ "," "lanes" "=" int_expr ] [ "," "width" "=" int_expr ] [ "," "mask" "=" int_expr ] [ "," "dir" "=" ("right" | "left" | "down" | "up") ] ")" ";"
 carry_chain_stmt ::= std_prefix "carry_chain" "(" "src" "=" register "," "carry" "=" register "," "store" "=" ident "," "limbs" "=" int_expr "," "width" "=" int_expr "," "row" "=" int_expr [ "," "mask" "=" int_expr ] [ "," "start" "=" int_expr ] [ "," "dir" "=" ("right" | "left") ] ")" ";"
 conditional_sub_stmt ::= std_prefix "conditional_sub" "(" "value" "=" register "," "sub" "=" register "," "dest" "=" register [ "," "target" "=" ("all" | "row(" int_expr ")" | "col(" int_expr ")" | "point(" int_expr "," int_expr ")") ] ")" ";"
 collect_stmt     ::= std_prefix "collect" "(" "from" "=" lane_ref [ "," "to" "=" lane_ref ] "," "via" "=" register "," "local" "=" register "," "into" "=" register [ "," "combine" "=" collect_combine ] ")" ";"

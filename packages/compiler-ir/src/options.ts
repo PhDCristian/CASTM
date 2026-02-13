@@ -6,6 +6,8 @@ export interface CompileOptions {
   emitArtifacts?: Array<'structured' | 'ast' | 'hir' | 'mir' | 'lir' | 'csv'>;
   strictUnsupported?: boolean;
   schedulerMode?: 'safe' | 'balanced' | 'aggressive';
+  schedulerWindow?: number;
+  memoryReorderPolicy?: 'strict' | 'same-address-fence';
   pruneNoopCycles?: boolean;
 }
 

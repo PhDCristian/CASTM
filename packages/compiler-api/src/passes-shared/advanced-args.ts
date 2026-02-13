@@ -9,6 +9,7 @@ export type {
   GuardPragmaArgs,
   GatherPragmaArgs,
   LatencyHidePragmaArgs,
+  MulaccChainPragmaArgs,
   NormalizePragmaArgs,
   ReducePragmaArgs,
   RotateShiftPragmaArgs,
@@ -31,6 +32,7 @@ export {
 } from './advanced-args/scan-reduce.js';
 export {
   parseAccumulatePragmaArgs,
+  parseMulaccChainPragmaArgs,
   parseCollectPragmaArgs,
   parseConditionalSubPragmaArgs,
   parseCarryChainPragmaArgs,

@@ -13,8 +13,8 @@ const KEYWORDS = new Set([
   'function'
 ]);
 const ADVANCED_STATEMENTS = new Set([
-  'route', 'broadcast', 'accumulate', 'carry_chain', 'conditional_sub', 'collect', 'extract_bytes', 'normalize', 'rotate', 'shift', 'scan', 'reduce',
-  'stencil', 'guard', 'triangle', 'allreduce', 'transpose', 'gather', 'stream_load', 'stream_store'
+  'route', 'broadcast', 'accumulate', 'mulacc_chain', 'carry_chain', 'conditional_sub', 'collect', 'extract_bytes', 'normalize', 'rotate', 'shift', 'scan', 'reduce',
+  'stencil', 'guard', 'triangle', 'allreduce', 'transpose', 'gather', 'stream_load', 'stream_store', 'stash', 'latency_hide'
 ]);
 
 export function tokenizeSource(source: string): FrontToken[] {
