@@ -44,14 +44,29 @@ kernel "carry_chain_doc" {
 }
 ```
 
-## CSV Excerpt
+## CSV Excerpt (Matrix)
 
 ```csv
-cycle,row,col,instruction
-0,0,0,SADD R0 R0 R3
-1,0,0,LAND R0 R0 65535
-2,0,0,SWI R0 L[0]
-3,0,0,SRT R3 R0 16
+0,,,
+"SADD R0, R0, R3",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+"LAND R0, R0, 65535",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+2,,,
+"SWI R0, L[0]",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+3,,,
+"SRT R3, R0, 16",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 
 ## Diagnostics

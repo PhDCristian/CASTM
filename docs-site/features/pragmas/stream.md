@@ -17,7 +17,7 @@ stream_store(src=RS[, row=N][, count=N]);
 | `row` | no | `0` | row where streaming op is placed |
 | `count` | no | `1` | number of emitted stream operations |
 
-## DSL to CSV Example
+## DSL to CSV Example (Matrix)
 
 ::: code-group
 ```openedge [OpenEdgeDSL]
@@ -28,11 +28,26 @@ kernel "stream_doc" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-0,0,0,LWD R0
-1,0,0,LWD R0
-2,0,0,SWD R0
-3,0,0,SWD R0
+```csv [CSV matrix excerpt]
+0,,,
+"LWD R0",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+"LWD R0",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+2,,,
+"SWD R0",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+3,,,
+"SWD R0",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 :::

@@ -14,7 +14,7 @@ pipeline(step0(), step1(arg0), step2(arg0, arg1), ...);
 - entries expand left-to-right
 - expansion keeps call-site order deterministic
 
-## DSL to CSV Example
+## DSL to CSV Example (Matrix)
 
 ::: code-group
 ```openedge [OpenEdgeDSL]
@@ -33,9 +33,16 @@ kernel "pipeline_doc" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-0,0,0,SADD R2 R0 ZERO
-1,0,1,SADD R3 R2 ZERO
+```csv [CSV matrix excerpt]
+0,,,
+"SADD R2, R0, ZERO",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+NOP,"SADD R3, R2, ZERO",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 :::

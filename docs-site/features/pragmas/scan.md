@@ -18,7 +18,7 @@ scan(op=add|sum|sub|and|or|xor|mul, src=RS, dest=RD, dir=left|right|up|down[, mo
 | `dir` | yes | - | scan direction |
 | `mode` | no | `inclusive` | scan mode |
 
-## DSL to CSV Example
+## DSL to CSV Example (Matrix)
 
 ::: code-group
 ```openedge [OpenEdgeDSL]
@@ -28,9 +28,11 @@ kernel "scan_doc" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-...,0,0,SADD R2 ZERO IMM(0)
-...,0,1,SADD R2 R0 RCL
+```csv [CSV matrix excerpt]
+0,,,
+"SADD R2, ZERO, IMM(0)","SADD R2, R0, RCL",...,...
+...,...,...,...
+...,...,...,...
+...,...,...,...
 ```
 :::

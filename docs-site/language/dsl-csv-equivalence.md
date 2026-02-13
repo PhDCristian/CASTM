@@ -1,8 +1,12 @@
 # DSL to CSV Equivalence
 
-This page shows representative canonical source snippets and the corresponding emitted CSV patterns.
+This page maps canonical DSL snippets to the simulator-oriented matrix CSV format (`sim-matrix-csv`).
 
-All CSV blocks are **abridged excerpts** focused on the instructions of interest.
+Format shape:
+
+- cycle header row (for example `0,,,`)
+- one row per PE row
+- one cell per PE column
 
 ## 1) Arithmetic in `cycle`
 
@@ -16,9 +20,12 @@ kernel "eq_arith" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-0,0,0,SADD R2 R0 R1
+```csv [CSV matrix excerpt]
+0,,,
+"SADD R2, R0, R1",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 :::
 
@@ -38,10 +45,12 @@ kernel "eq_mem" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-0,0,0,LWI R0 4
-0,0,1,SWI R0 108
+```csv [CSV matrix excerpt]
+0,,,
+"LWI R0, 4","SWI R0, 108",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 :::
 
@@ -55,14 +64,21 @@ kernel "eq_route" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-0,0,1,SADD ROUT R3 ZERO
-1,0,0,SADD R1 R1 RCR
+```csv [CSV matrix excerpt]
+0,,,
+NOP,"SADD ROUT, R3, ZERO",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+"SADD R1, R1, RCR",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 :::
 
-## 4) Runtime Loop Lowering
+## 4) Runtime Loop Lowering (Representative)
 
 ::: code-group
 ```openedge [OpenEdgeDSL]
@@ -74,15 +90,26 @@ kernel "eq_runtime_for" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-0,0,0,SADD R0 ZERO ZERO
-1,0,0,BGE R0 IMM(3) __loop_end
-...,0,1,SADD R1 R0 IMM(1)
+```csv [CSV matrix excerpt]
+0,,,
+"SADD R0, ZERO, ZERO",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+"BGE R0, IMM(3), __loop_end",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+2,,,
+NOP,"SADD R1, R0, IMM(1)",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 :::
 
-## 5) Scan + Reduce
+## 5) Scan + Reduce (Representative)
 
 ::: code-group
 ```openedge [OpenEdgeDSL]
@@ -93,15 +120,23 @@ kernel "eq_scan_reduce" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-...,0,0,SADD R2 ZERO IMM(0)
-...,0,1,SADD R2 R0 RCL
-...,0,0,SADD R1 R0 ZERO
+```csv [CSV matrix excerpt]
+0,,,
+"SADD R2, ZERO, IMM(0)","SADD R2, R0, RCL",...,...
+...,...,...,...
+...,...,...,...
+...,...,...,...
+1,,,
+"SADD R1, R0, ZERO","SADD R1, R1, RCL",...,...
+...,...,...,...
+...,...,...,...
+...,...,...,...
 ```
 :::
 
-## Notes
+## Output Modes
 
-- Emission can target `flat-csv` or `sim-matrix-csv` without changing DSL semantics.
-- Diagnostic spans and lowering artifacts are available through `compile(..., { emitArtifacts: [...] })`.
+- `flat-csv`: instruction list by `(cycle,row,col)`
+- `sim-matrix-csv`: matrix per cycle (shown above)
+
+Use `openedge emit --format sim-matrix-csv` for simulator-oriented output.

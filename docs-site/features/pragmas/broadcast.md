@@ -16,7 +16,7 @@ broadcast(value=R0, from=@r,c, to=row|column|all);
 | `from` | yes | source point |
 | `to` | yes | destination scope |
 
-## DSL to CSV Example
+## DSL to CSV Example (Matrix)
 
 ::: code-group
 ```openedge [OpenEdgeDSL]
@@ -26,10 +26,16 @@ kernel "broadcast_doc" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-...,0,0,SADD ROUT R1 ZERO
-...,0,1,SADD R1 R1 RCL
-...,0,2,SADD R1 R1 RCL
+```csv [CSV matrix excerpt]
+0,,,
+"SADD ROUT, R1, ZERO",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+"SADD R1, R1, RCR","SADD R1, R1, RCL",...,...
+...,...,...,...
+...,...,...,...
+...,...,...,...
 ```
 :::

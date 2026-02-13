@@ -33,12 +33,19 @@ kernel "conditional_sub_doc" {
 }
 ```
 
-## CSV Excerpt
+## CSV Excerpt (Matrix)
 
 ```csv
-cycle,row,col,instruction
-0,1,0,SSUB R2 R0 R1
-...,1,0,BSFA R2 R0 R2 SELF
+0,,,
+NOP,NOP,NOP,NOP
+"SSUB R2, R0, R1","SSUB R2, R0, R1",...,...
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+NOP,NOP,NOP,NOP
+"BSFA R2, R0, R2, SELF","BSFA R2, R0, R2, SELF",...,...
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 
 ## Diagnostics

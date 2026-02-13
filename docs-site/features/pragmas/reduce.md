@@ -17,7 +17,7 @@ reduce(op=add|sum|sub|and|or|xor|mul, dest=RD, src=RS[, axis=row|col]);
 | `src` | yes | - | source register |
 | `axis` | no | `row` | reduction orientation |
 
-## DSL to CSV Example
+## DSL to CSV Example (Matrix)
 
 ::: code-group
 ```openedge [OpenEdgeDSL]
@@ -27,9 +27,16 @@ kernel "reduce_doc" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-...,0,0,SADD R1 R0 ZERO
-...,0,1,SADD R1 R1 RCL
+```csv [CSV matrix excerpt]
+0,,,
+"SADD R1, R0, ZERO","SADD R1, R0, ZERO",...,...
+...,...,...,...
+...,...,...,...
+...,...,...,...
+1,,,
+"SADD R1, R1, RCL","SADD R1, R1, RCL",...,...
+...,...,...,...
+...,...,...,...
+...,...,...,...
 ```
 :::

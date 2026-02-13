@@ -18,7 +18,7 @@ Canonical memory sugar is available inside `cycle {}` and lowers to existing `LW
 | Memory-to-memory | not allowed |
 | Addressing | supports 1D, 2D, and raw-address expressions |
 
-## DSL to CSV Example
+## DSL to CSV Example (Matrix)
 
 ::: code-group
 ```openedge [OpenEdgeDSL]
@@ -36,11 +36,11 @@ kernel "mem_sugar" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-0,0,0,LWI R0 4
-0,0,1,SWI R0 108
-0,0,2,SWI R1 360 + 2*4
-0,0,3,LWI R2 360 + 2*4
+```csv [CSV matrix excerpt]
+0,,,
+"LWI R0, 4","SWI R0, 108","SWI R1, 360 + 2*4","LWI R2, 360 + 2*4"
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 :::

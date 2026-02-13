@@ -18,7 +18,7 @@ route(@r1,c1 -> @r2,c2, payload=Rx, dest=Rd, op=OP(Rd, Ra, Rb));
 | `dest` | yes (custom form) | destination register used by custom op |
 | `op` | yes (custom form) | operation expression `OP(Rd, Ra, Rb)` |
 
-## DSL to CSV Example
+## DSL to CSV Example (Matrix)
 
 ::: code-group
 ```openedge [OpenEdgeDSL]
@@ -28,10 +28,17 @@ kernel "route_doc" {
 }
 ```
 
-```csv [CSV (abridged)]
-cycle,row,col,instruction
-0,0,1,SADD ROUT R3 ZERO
-1,0,0,SADD R1 R1 RCR
+```csv [CSV matrix excerpt]
+0,,,
+NOP,"SADD ROUT, R3, ZERO",NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+1,,,
+"SADD R1, R1, RCR",NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
+NOP,NOP,NOP,NOP
 ```
 :::
 
