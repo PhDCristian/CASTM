@@ -1,5 +1,6 @@
 import {
   isIdentifier,
+  parseIntegerLiteral,
   parseKeyValueArgs,
   splitPositionalArgs
 } from '../pragma-args-utils.js';
@@ -9,6 +10,7 @@ import {
   CollectPragmaArgs,
   GuardPragmaArgs,
   GatherPragmaArgs,
+  NormalizePragmaArgs,
   StencilPragmaArgs,
   TrianglePragmaArgs,
   TransposePragmaArgs
@@ -163,6 +165,58 @@ export function parseCollectPragmaArgs(text: string): CollectPragmaArgs | null {
     localReg,
     destReg,
     combine: combine as CollectPragmaArgs['combine']
+  };
+}
+
+function defaultMaskForWidth(width: number): number | null {
+  if (!Number.isInteger(width) || width <= 0 || width >= 31) return null;
+  return (1 << width) - 1;
+}
+
+export function parseNormalizePragmaArgs(text: string): NormalizePragmaArgs | null {
+  const match = text.trim().match(/^normalize\s*\((.+)\)\s*;?\s*$/i);
+  if (!match) return null;
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+  for (const key of args.keys()) {
+    if (!['reg', 'carry', 'width', 'mask', 'axis', 'lane', 'dir'].includes(key)) return null;
+  }
+
+  const reg = args.get('reg')?.trim();
+  const carryReg = args.get('carry')?.trim();
+  const widthRaw = args.get('width');
+  const laneRaw = args.get('lane');
+  if (!reg || !carryReg || !widthRaw || !laneRaw) return null;
+  if (!isIdentifier(reg) || !isIdentifier(carryReg)) return null;
+
+  const width = parseIntegerLiteral(widthRaw);
+  const lane = parseIntegerLiteral(laneRaw);
+  if (width === null || lane === null) return null;
+
+  const axisRaw = (args.get('axis') ?? 'row').trim().toLowerCase();
+  if (axisRaw !== 'row' && axisRaw !== 'col') return null;
+  const axis = axisRaw as 'row' | 'col';
+
+  const defaultDirection = axis === 'row' ? 'right' : 'down';
+  const directionRaw = (args.get('dir') ?? defaultDirection).trim().toLowerCase();
+  if (!['left', 'right', 'up', 'down'].includes(directionRaw)) return null;
+  const direction = directionRaw as 'left' | 'right' | 'up' | 'down';
+
+  if (axis === 'row' && !['left', 'right'].includes(direction)) return null;
+  if (axis === 'col' && !['up', 'down'].includes(direction)) return null;
+
+  const maskRaw = args.get('mask');
+  const mask = maskRaw ? parseIntegerLiteral(maskRaw) : defaultMaskForWidth(width);
+  if (mask === null) return null;
+
+  return {
+    reg,
+    carryReg,
+    width,
+    mask,
+    axis,
+    lane,
+    direction
   };
 }
 

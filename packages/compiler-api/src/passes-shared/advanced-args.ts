@@ -4,6 +4,7 @@ export type {
   CollectPragmaArgs,
   GuardPragmaArgs,
   GatherPragmaArgs,
+  NormalizePragmaArgs,
   ReducePragmaArgs,
   RotateShiftPragmaArgs,
   ScanPragmaArgs,
@@ -25,6 +26,7 @@ export {
   parseCollectPragmaArgs,
   parseGuardPragmaArgs,
   parseGatherPragmaArgs,
+  parseNormalizePragmaArgs,
   parseStencilPragmaArgs,
   parseTrianglePragmaArgs,
   parseTransposePragmaArgs

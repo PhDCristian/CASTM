@@ -7,6 +7,7 @@ const ADVANCED_NAMES = new Set([
   'route',
   'broadcast',
   'collect',
+  'normalize',
   'rotate',
   'shift',
   'scan',

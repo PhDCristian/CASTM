@@ -8,6 +8,7 @@ export {
   buildCollectCycles,
   buildGuardCycles,
   buildGatherCycles,
+  buildNormalizeCycles,
   buildStencilCycles,
   buildTriangleCycles,
   buildStreamCycles,

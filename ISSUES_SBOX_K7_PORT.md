@@ -733,7 +733,7 @@ Snapshot sync (2026-02-13):
 | FEAT-2 | pending-backlog | Block A |
 | FEAT-3 | resolved-verified | WS-09 |
 | FEAT-4 | resolved-verified | WS-04 / portfolio |
-| FEAT-5 | pending-backlog | Block B |
+| FEAT-5 | resolved-verified | WS-14 |
 | FEAT-6 | resolved-verified | WS-10 |
 | FEAT-7 | resolved-verified | portfolio |
 | FEAT-8 | resolved-verified | WS-07 |
@@ -845,7 +845,7 @@ cycle { for k in range(4) { @k,k: SADD R3, ZERO, ZERO; } }
 
 ---
 
-### FEAT-5: `#pragma normalize` — Base-2^16 Normalization
+### FEAT-5: `normalize(...)` — Base-2^16 Normalization — ✅ RESOLVED (2026-02-13)
 
 **Problem:** The `SRT R1, R3, 16; LAND R3, R3, 65535` + carry propagation pattern appears **3 times** in the kernel (build_limbs, compute_qhat, mul_qhat_p). It's the canonical normalize-and-carry for multi-limb arithmetic.
 
@@ -862,10 +862,12 @@ cycle { row 0: _ | SADD R3, R3, RCL | SADD R3, R3, RCL | SADD R3, R3, RCL; }
 
 **Proposed (1 line):**
 ```c
-#pragma normalize(reg=R3, width=16, cols=4, carry_dir=right)
+normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
 ```
 
 **Impact:** -20 lines. Abstracts the most common pattern in multi-limb CGRA arithmetic.
+
+**Canonical implementation status:** implemented as deterministic four-cycle lane lowering (`SRT`, `LAND`, carry relay, lane add) with NxM row/column support and explicit diagnostics.
 
 ---
 

@@ -4,6 +4,7 @@ import {
   buildAllreduceCycles,
   buildCollectCycles,
   buildGatherCycles,
+  buildNormalizeCycles,
   buildStencilCycles,
   buildStreamCycles,
   buildTransposeCycles
@@ -464,5 +465,151 @@ describe('compiler-api collective/route builders', () => {
     );
     expect(badBoundsCycles).toHaveLength(0);
     expect(badBoundsDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
+  });
+
+  it('builds normalize cycles and validates lane/width constraints', () => {
+    const rowDiagnostics: any[] = [];
+    const rowCycles = buildNormalizeCycles(
+      {
+        reg: 'R3',
+        carryReg: 'R1',
+        width: 16,
+        mask: 65535,
+        axis: 'row',
+        lane: 0,
+        direction: 'right'
+      },
+      2,
+      torusGrid,
+      span,
+      rowDiagnostics
+    );
+    expect(rowDiagnostics).toHaveLength(0);
+    expect(rowCycles).toHaveLength(4);
+    expect(rowCycles[0].index).toBe(2);
+    const rowAddOperands: any[] = (rowCycles[3].statements as any[]).map((stmt) => stmt.instruction.operands);
+    expect(rowAddOperands[0]).toEqual(['R3', 'R3', 'ZERO']);
+    expect(rowAddOperands[1]).toEqual(['R3', 'R3', 'RCL']);
+
+    const colDiagnostics: any[] = [];
+    const colCycles = buildNormalizeCycles(
+      {
+        reg: 'R2',
+        carryReg: 'R0',
+        width: 8,
+        mask: 255,
+        axis: 'col',
+        lane: 1,
+        direction: 'up'
+      },
+      0,
+      torusGrid,
+      span,
+      colDiagnostics
+    );
+    expect(colDiagnostics).toHaveLength(0);
+    expect(colCycles).toHaveLength(4);
+    const colAddOperands: any[] = (colCycles[3].statements as any[]).map((stmt) => stmt.instruction.operands);
+    expect(colAddOperands[0]).toEqual(['R2', 'R2', 'ZERO']);
+    expect(colAddOperands[1]).toEqual(['R2', 'R2', 'RCB']);
+
+    const rowLeftDiagnostics: any[] = [];
+    const rowLeftCycles = buildNormalizeCycles(
+      {
+        reg: 'R3',
+        carryReg: 'R1',
+        width: 8,
+        mask: 255,
+        axis: 'row',
+        lane: 0,
+        direction: 'left'
+      },
+      0,
+      torusGrid,
+      span,
+      rowLeftDiagnostics
+    );
+    expect(rowLeftDiagnostics).toHaveLength(0);
+    const rowLeftAddOperands: any[] = (rowLeftCycles[3].statements as any[]).map((stmt) => stmt.instruction.operands);
+    expect(rowLeftAddOperands[0]).toEqual(['R3', 'R3', 'ZERO']);
+    expect(rowLeftAddOperands[1]).toEqual(['R3', 'R3', 'RCR']);
+
+    const colDownDiagnostics: any[] = [];
+    const colDownCycles = buildNormalizeCycles(
+      {
+        reg: 'R2',
+        carryReg: 'R0',
+        width: 8,
+        mask: 255,
+        axis: 'col',
+        lane: 1,
+        direction: 'down'
+      },
+      0,
+      torusGrid,
+      span,
+      colDownDiagnostics
+    );
+    expect(colDownDiagnostics).toHaveLength(0);
+    const colDownAddOperands: any[] = (colDownCycles[3].statements as any[]).map((stmt) => stmt.instruction.operands);
+    expect(colDownAddOperands[0]).toEqual(['R2', 'R2', 'ZERO']);
+    expect(colDownAddOperands[1]).toEqual(['R2', 'R2', 'RCT']);
+
+    const badWidthDiagnostics: any[] = [];
+    const badWidthCycles = buildNormalizeCycles(
+      {
+        reg: 'R3',
+        carryReg: 'R1',
+        width: 0,
+        mask: 0,
+        axis: 'row',
+        lane: 0,
+        direction: 'right'
+      },
+      0,
+      torusGrid,
+      span,
+      badWidthDiagnostics
+    );
+    expect(badWidthCycles).toHaveLength(0);
+    expect(badWidthDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const badLaneDiagnostics: any[] = [];
+    const badLaneCycles = buildNormalizeCycles(
+      {
+        reg: 'R3',
+        carryReg: 'R1',
+        width: 8,
+        mask: 255,
+        axis: 'col',
+        lane: 9,
+        direction: 'down'
+      },
+      0,
+      torusGrid,
+      span,
+      badLaneDiagnostics
+    );
+    expect(badLaneCycles).toHaveLength(0);
+    expect(badLaneDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
+
+    const zeroLengthDiagnostics: any[] = [];
+    const zeroLengthCycles = buildNormalizeCycles(
+      {
+        reg: 'R3',
+        carryReg: 'R1',
+        width: 8,
+        mask: 255,
+        axis: 'row',
+        lane: 0,
+        direction: 'left'
+      },
+      0,
+      { rows: 2, cols: 0, topology: 'mesh', wrapPolicy: 'clamp' },
+      span,
+      zeroLengthDiagnostics
+    );
+    expect(zeroLengthDiagnostics).toHaveLength(0);
+    expect(zeroLengthCycles).toHaveLength(0);
   });
 });

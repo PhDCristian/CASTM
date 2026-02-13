@@ -2,6 +2,7 @@ export { handleAllreduce } from './handlers-collective/allreduce.js';
 export { handleCollect } from './handlers-collective/collect.js';
 export { handleGather } from './handlers-collective/gather.js';
 export { handleGuard } from './handlers-collective/guard.js';
+export { handleNormalize } from './handlers-collective/normalize.js';
 export { handleReduce } from './handlers-collective/reduce.js';
 export { handleScan } from './handlers-collective/scan.js';
 export { handleStencil } from './handlers-collective/stencil.js';

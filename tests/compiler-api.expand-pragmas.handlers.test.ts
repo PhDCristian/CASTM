@@ -17,6 +17,7 @@ import {
   handleCollect,
   handleGather,
   handleGuard,
+  handleNormalize,
   handleReduce,
   handleScan,
   handleStencil,
@@ -65,6 +66,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(SUPPORTED_PRAGMAS.has('route')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('stream_store')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('collect')).toBe(true);
+    expect(SUPPORTED_PRAGMAS.has('normalize')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('guard')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('triangle')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('unknown')).toBe(false);
@@ -72,6 +74,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(PRAGMA_HANDLERS.get('route')).toBe(handleRoute);
     expect(PRAGMA_HANDLERS.get('broadcast')).toBe(handleBroadcast);
     expect(PRAGMA_HANDLERS.get('collect')).toBe(handleCollect);
+    expect(PRAGMA_HANDLERS.get('normalize')).toBe(handleNormalize);
     expect(PRAGMA_HANDLERS.get('guard')).toBe(handleGuard);
     expect(PRAGMA_HANDLERS.get('rotate')).toBe(handleRotateShift);
     expect(PRAGMA_HANDLERS.get('stream_load')).toBe(handleStreamLoad);
@@ -150,6 +153,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
       { fn: handleScan, text: 'scan(nope)' },
       { fn: handleStencil, text: 'stencil(nope)' },
       { fn: handleCollect, text: 'collect(nope)' },
+      { fn: handleNormalize, text: 'normalize(nope)' },
       { fn: handleGuard, text: 'guard(nope)' },
       { fn: handleTriangle, text: 'triangle(nope)' },
       { fn: handleAllreduce, text: 'allreduce(nope)' },
@@ -188,6 +192,14 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     );
     expect(collectContext.diagnostics).toHaveLength(0);
     expect(collectContext.generatedCycles.length).toBe(2);
+
+    const normalizeContext = ctx();
+    handleNormalize(
+      pragma('normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right)'),
+      normalizeContext
+    );
+    expect(normalizeContext.diagnostics).toHaveLength(0);
+    expect(normalizeContext.generatedCycles.length).toBe(4);
 
     const triangleContext = ctx();
     handleTriangle(

@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`9` validated, `15` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`10` validated, `14` in backlog)
 
 ## Workstreams
 
@@ -296,6 +296,27 @@ Evidence:
 - Tests: `tests/issues/feat-12-collect.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
 - Docs: `docs/language/collect-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
 
+### WS-14 — FEAT-5 Normalize Lane Primitive
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- abstract repeated carry-normalization idioms into a canonical statement with deterministic lowering.
+- keep the feature general-purpose (lane-based arithmetic normalization) rather than kernel/domain-specific templates.
+
+Subtasks:
+
+- [x] Add canonical `normalize(reg=..., carry=..., width=..., lane=...)` statement with `axis/dir/mask` options.
+- [x] Implement deterministic 4-cycle lowering (`SRT`, `LAND`, carry relay, lane add) for row/column lanes.
+- [x] Add parser/handler/builder/issue tests and documentation.
+
+Evidence:
+
+- Tests: `tests/issues/feat-05-normalize.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
+- Docs: `docs/language/normalize-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
+
 ## FEAT Portfolio (1..17)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
@@ -306,7 +327,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT-2 `carry_chain` | arithmetic primitive | `pending-backlog` | proposal only | Specify canonical statement shape and lowering equivalence vs hand-written carry chains. |
 | FEAT-3 `specialize` | compile-time optimization | `resolved-verified` | `tests/issues/feat-03-specialize.test.ts` | Extend identity catalog conservatively and keep deterministic rewrites. |
 | FEAT-4 `for` inside `cycle` | language core | `resolved-verified` | `tests/compiler-api.contract.test.ts`, `tests/issues/resolved-and-legacy.test.ts` | Keep regression guardrails for collision diagnostics and nested expansion. |
-| FEAT-5 `normalize` | arithmetic primitive | `pending-backlog` | proposal only | Define API (`normalize(...)`) and mapping to existing canonical cycles without ISA changes. |
+| FEAT-5 `normalize` | arithmetic primitive | `resolved-verified` | `tests/issues/feat-05-normalize.test.ts` | Extend with optional multi-lane orchestration only when deterministic cost model is defined. |
 | FEAT-6 `triangle` | spatial pattern | `resolved-verified` | `tests/issues/feat-06-triangle.test.ts` | Keep deterministic row-major expansion and NxM coverage checks. |
 | FEAT-7 `broadcast` implementation | advanced statement | `resolved-verified` | advanced statement coverage in `tests/compiler-api.contract.test.ts` | Extend benchmarks for route-vs-memory cost decisions (optional optimization track). |
 | FEAT-8 range coordinates | language core | `resolved-verified` | `tests/issues/feat-08-range-coordinates.test.ts` | Keep contract tests for descending/rectangular and unresolved-axis diagnostics. |
@@ -334,11 +355,11 @@ Subtasks:
 
 #### Block B — Canonical Language Ergonomics Track
 
-Status: `pending`
+Status: `done`
 
 Subtasks:
 
-- [ ] FEAT-5 grammar + lowering spec.
+- [x] FEAT-5 grammar + lowering spec.
 
 #### Block C — Domain Abstraction Track
 
@@ -374,7 +395,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1..2`, `FEAT-5`, `FEAT-10..11`, `FEAT-13..14`, `FEAT-16`.
+- [ ] Prioritize `FEAT-1..2`, `FEAT-10..11`, `FEAT-13..14`, `FEAT-16`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

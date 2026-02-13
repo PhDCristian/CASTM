@@ -34,6 +34,7 @@ import {
   parseCollectPragmaArgs,
   parseGuardPragmaArgs,
   parseGatherPragmaArgs,
+  parseNormalizePragmaArgs,
   parseReducePragmaArgs,
   parseRotateShiftPragmaArgs,
   parseScanPragmaArgs,
@@ -45,6 +46,7 @@ import {
 } from '../packages/compiler-api/src/passes-shared/advanced-args.js';
 import {
   buildCollectCycles,
+  buildNormalizeCycles,
   buildReduceCycles,
   buildScanCycles,
   buildGuardCycles,
@@ -239,6 +241,34 @@ describe('compiler-api passes shared utils', () => {
     expect(parseCollectPragmaArgs('collect(from=row(1), via=RCB, local=R2, into=R3, combine=bad)')).toBeNull();
     expect(parseCollectPragmaArgs('collect(from=row(1), via=RCB, local=1, into=R3)')).toBeNull();
     expect(parseCollectPragmaArgs('foo(from=row(1), via=RCB, local=R2, into=R3)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=0)')).toMatchObject({
+      reg: 'R3',
+      carryReg: 'R1',
+      width: 16,
+      mask: 65535,
+      axis: 'row',
+      lane: 0,
+      direction: 'right'
+    });
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=8, lane=1, axis=col, dir=up, mask=255)')).toMatchObject({
+      axis: 'col',
+      direction: 'up',
+      mask: 255
+    });
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=up)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=0, axis=diag)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=0, dir=zigzag)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=1, carry=R1, width=16, lane=0)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=1, width=16, lane=0)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=foo, lane=0)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=foo)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=0, axis=col, dir=left)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=0, mask=foo)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3 carry=R1, width=16, lane=0)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=31, lane=0)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16)')).toBeNull();
+    expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=0, extra=1)')).toBeNull();
+    expect(parseNormalizePragmaArgs('foo(reg=R3, carry=R1, width=16, lane=0)')).toBeNull();
     expect(parseAllreducePragmaArgs('allreduce(op=add, dest=R1, src=R0, axis=col)')).toMatchObject({
       operation: 'add',
       destReg: 'R1',
@@ -485,6 +515,50 @@ describe('compiler-api passes shared utils', () => {
       diagnostics
     );
     expect(badCollectCycles).toEqual([]);
+    expect(diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const normalizeCycles = buildNormalizeCycles(
+      {
+        reg: 'R3',
+        carryReg: 'R1',
+        width: 16,
+        mask: 65535,
+        axis: 'row',
+        lane: 0,
+        direction: 'right'
+      },
+      15,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(normalizeCycles).toHaveLength(4);
+    expect(normalizeCycles[0].statements[0]).toMatchObject({
+      kind: 'at',
+      row: 0,
+      col: 0,
+      instruction: { opcode: 'SRT', operands: ['R1', 'R3', '16'] }
+    });
+    expect(normalizeCycles[3].statements[0]).toMatchObject({
+      instruction: { opcode: 'SADD', operands: ['R3', 'R3', 'ZERO'] }
+    });
+
+    const badNormalize = buildNormalizeCycles(
+      {
+        reg: 'R3',
+        carryReg: 'R1',
+        width: 40,
+        mask: 65535,
+        axis: 'row',
+        lane: 0,
+        direction: 'right'
+      },
+      19,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(badNormalize).toEqual([]);
     expect(diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 

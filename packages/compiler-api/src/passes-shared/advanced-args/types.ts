@@ -20,6 +20,16 @@ export interface CollectPragmaArgs {
   combine: 'copy' | 'add' | 'sum' | 'sub' | 'and' | 'or' | 'xor' | 'mul' | 'shift_add';
 }
 
+export interface NormalizePragmaArgs {
+  reg: string;
+  carryReg: string;
+  width: number;
+  mask: number;
+  axis: 'row' | 'col';
+  lane: number;
+  direction: 'left' | 'right' | 'up' | 'down';
+}
+
 export interface RotateShiftPragmaArgs {
   reg: string;
   direction: 'left' | 'right';
