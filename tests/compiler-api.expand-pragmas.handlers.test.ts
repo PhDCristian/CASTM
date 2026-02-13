@@ -14,6 +14,7 @@ import {
 } from '../packages/compiler-api/src/passes-shared/expand-pragmas/handlers-rotate-stream.js';
 import {
   handleAllreduce,
+  handleCollect,
   handleGather,
   handleGuard,
   handleReduce,
@@ -63,12 +64,14 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
 
     expect(SUPPORTED_PRAGMAS.has('route')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('stream_store')).toBe(true);
+    expect(SUPPORTED_PRAGMAS.has('collect')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('guard')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('triangle')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('unknown')).toBe(false);
 
     expect(PRAGMA_HANDLERS.get('route')).toBe(handleRoute);
     expect(PRAGMA_HANDLERS.get('broadcast')).toBe(handleBroadcast);
+    expect(PRAGMA_HANDLERS.get('collect')).toBe(handleCollect);
     expect(PRAGMA_HANDLERS.get('guard')).toBe(handleGuard);
     expect(PRAGMA_HANDLERS.get('rotate')).toBe(handleRotateShift);
     expect(PRAGMA_HANDLERS.get('stream_load')).toBe(handleStreamLoad);
@@ -146,6 +149,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
       { fn: handleReduce, text: 'reduce(nope)' },
       { fn: handleScan, text: 'scan(nope)' },
       { fn: handleStencil, text: 'stencil(nope)' },
+      { fn: handleCollect, text: 'collect(nope)' },
       { fn: handleGuard, text: 'guard(nope)' },
       { fn: handleTriangle, text: 'triangle(nope)' },
       { fn: handleAllreduce, text: 'allreduce(nope)' },
@@ -176,6 +180,14 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     handleStencil(pragma('stencil(cross, add, R0, R1)'), stencilContext);
     expect(stencilContext.diagnostics).toHaveLength(0);
     expect(stencilContext.generatedCycles.length).toBeGreaterThan(0);
+
+    const collectContext = ctx();
+    handleCollect(
+      pragma('collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add)'),
+      collectContext
+    );
+    expect(collectContext.diagnostics).toHaveLength(0);
+    expect(collectContext.generatedCycles.length).toBe(2);
 
     const triangleContext = ctx();
     handleTriangle(

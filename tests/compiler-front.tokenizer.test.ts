@@ -30,6 +30,7 @@ kernel "k" {
   route(@0,1 -> @0,0, payload=R3, accum=R1);
   reduce(op=add, dest=R1, src=R0, axis=row);
   guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
   triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 }
 `;
@@ -39,6 +40,7 @@ kernel "k" {
     expect(tokenByValue.get('route')).toBe('keyword');
     expect(tokenByValue.get('reduce')).toBe('keyword');
     expect(tokenByValue.get('guard')).toBe('keyword');
+    expect(tokenByValue.get('collect')).toBe('keyword');
     expect(tokenByValue.get('triangle')).toBe('keyword');
   });
 });

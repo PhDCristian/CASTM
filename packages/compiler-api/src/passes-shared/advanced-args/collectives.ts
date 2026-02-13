@@ -5,12 +5,35 @@ import {
 } from '../pragma-args-utils.js';
 import { parseCoordinateLiteral } from '../route-args.js';
 import {
+  CollectAxisRef,
+  CollectPragmaArgs,
   GuardPragmaArgs,
   GatherPragmaArgs,
   StencilPragmaArgs,
   TrianglePragmaArgs,
   TransposePragmaArgs
 } from './types.js';
+
+const COLLECT_COMBINE_VALUES = new Set([
+  'copy',
+  'add',
+  'sum',
+  'sub',
+  'and',
+  'or',
+  'xor',
+  'mul',
+  'shift_add'
+]);
+
+function parseCollectAxisRef(value: string): CollectAxisRef | null {
+  const match = value.trim().match(/^(row|col)\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
+  if (!match) return null;
+  return {
+    axis: match[1].toLowerCase() as 'row' | 'col',
+    index: Number(match[2])
+  };
+}
 
 export function parseStencilPragmaArgs(text: string): StencilPragmaArgs | null {
   const match = text.trim().match(/^stencil\s*\((.+)\)\s*;?\s*$/i);
@@ -101,6 +124,45 @@ export function parseGuardPragmaArgs(text: string): GuardPragmaArgs | null {
     destReg,
     srcA,
     srcB
+  };
+}
+
+export function parseCollectPragmaArgs(text: string): CollectPragmaArgs | null {
+  const match = text.trim().match(/^collect\s*\((.+)\)\s*;?\s*$/i);
+  if (!match) return null;
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+  for (const key of args.keys()) {
+    if (!['from', 'to', 'via', 'local', 'into', 'combine'].includes(key)) return null;
+  }
+
+  const fromRaw = args.get('from');
+  const viaReg = args.get('via')?.trim();
+  const localReg = args.get('local')?.trim();
+  const destReg = args.get('into')?.trim();
+  if (!fromRaw || !viaReg || !localReg || !destReg) return null;
+  if (!isIdentifier(viaReg) || !isIdentifier(localReg) || !isIdentifier(destReg)) return null;
+
+  const from = parseCollectAxisRef(fromRaw);
+  if (!from) return null;
+
+  const toRaw = args.get('to');
+  const to = toRaw
+    ? parseCollectAxisRef(toRaw)
+    : { axis: from.axis, index: 0 };
+  if (!to) return null;
+  if (to.axis !== from.axis) return null;
+
+  const combine = (args.get('combine') ?? 'add').trim().toLowerCase();
+  if (!COLLECT_COMBINE_VALUES.has(combine)) return null;
+
+  return {
+    from,
+    to,
+    viaReg,
+    localReg,
+    destReg,
+    combine: combine as CollectPragmaArgs['combine']
   };
 }
 

@@ -69,7 +69,7 @@ These IDs are proposal/backlog items, not active correctness defects in canonica
 | FEAT-9 | compiler | resolved-verified | `tests/issues/feat-09-inline-arithmetic.test.ts` | openedge-dsl |
 | FEAT-10 | compiler | canonical-intentional | proposal only | backlog |
 | FEAT-11 | compiler | canonical-intentional | proposal only | backlog |
-| FEAT-12 | compiler | canonical-intentional | proposal only | backlog |
+| FEAT-12 | compiler | resolved-verified | `tests/issues/feat-12-collect.test.ts` | openedge-dsl |
 | FEAT-13 | compiler | canonical-intentional | proposal only | backlog |
 | FEAT-14 | compiler | canonical-intentional | proposal only | backlog |
 | FEAT-15 | compiler | resolved-verified | `tests/issues/feat-15-row-auto-broadcast.test.ts` | openedge-dsl |

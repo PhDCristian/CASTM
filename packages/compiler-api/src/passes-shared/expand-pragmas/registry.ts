@@ -7,6 +7,7 @@ import {
 } from './handlers-route-broadcast.js';
 import {
   handleAllreduce,
+  handleCollect,
   handleGather,
   handleGuard,
   handleReduce,
@@ -32,6 +33,7 @@ export const SUPPORTED_PRAGMAS = new Set<string>([
   ...NOOP_PRAGMAS,
   'route',
   'broadcast',
+  'collect',
   'rotate',
   'shift',
   'scan',
@@ -49,6 +51,7 @@ export const SUPPORTED_PRAGMAS = new Set<string>([
 export const PRAGMA_HANDLERS = new Map<string, PragmaHandler>([
   ['route', handleRoute],
   ['broadcast', handleBroadcast],
+  ['collect', handleCollect],
   ['rotate', handleRotateShift],
   ['shift', handleRotateShift],
   ['scan', handleScan],

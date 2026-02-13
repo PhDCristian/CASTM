@@ -740,7 +740,7 @@ Snapshot sync (2026-02-13):
 | FEAT-9 | resolved-verified | WS-08 |
 | FEAT-10 | pending-backlog | Block A |
 | FEAT-11 | pending-backlog | Block C |
-| FEAT-12 | pending-backlog | Block C |
+| FEAT-12 | resolved-verified | WS-13 |
 | FEAT-13 | pending-backlog | Block C |
 | FEAT-14 | pending-backlog | Block C |
 | FEAT-15 | resolved-verified | WS-11 |
@@ -1022,7 +1022,7 @@ Requires the DSL to support **conditional expressions** on loop variables based 
 
 ---
 
-### FEAT-12: `#pragma collect` — Cross-Row Value Collection
+### FEAT-12: `collect(...)` — Cross-Row/Column Value Collection — ✅ RESOLVED (2026-02-13)
 
 **Problem:** The pattern "read ROUT from another row and accumulate" appears 3 times in the kernel with the same structure: read RCB/RCT from adjacent row, then combine with local register.
 
@@ -1041,10 +1041,12 @@ cycle { row 0: SADD R3, R2, ZERO | SADD R3, R2, RCL | SADD R3, R2, RCL | SADD R3
 
 **Proposed (1 line per instance):**
 ```c
-#pragma collect(from=row(1), via=RCB, local=R2, into=R3, combine=shift_add)
+collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=shift_add);
 ```
 
 **Impact:** -12 lines across 3 instances.
+
+**Canonical implementation status:** available via advanced statement lowering in the compiler core with deterministic NxM behavior and explicit diagnostics for invalid geometry/via direction.
 
 ---
 

@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`8` validated, `16` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`9` validated, `15` in backlog)
 
 ## Workstreams
 
@@ -275,6 +275,27 @@ Evidence:
 - Tests: `tests/issues/feat-17-guard-condition.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
 - Docs: `docs/language/guard-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`.
 
+### WS-13 — FEAT-12 Collect Lane Pattern
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- provide a canonical lane-collection primitive for row/column aligned single-hop data movement.
+- replace repeated hand-written collect idioms with deterministic lowering and explicit geometry checks.
+
+Subtasks:
+
+- [x] Add canonical `collect(from=..., to=..., via=..., local=..., into=..., combine=...)` statement.
+- [x] Implement parser/handler/builder lowering with deterministic NxM behavior and explicit diagnostics for unsupported geometry.
+- [x] Add feature regression tests and language documentation.
+
+Evidence:
+
+- Tests: `tests/issues/feat-12-collect.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
+- Docs: `docs/language/collect-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
+
 ## FEAT Portfolio (1..17)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
@@ -292,7 +313,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT-9 inline operand arithmetic | desugar pass | `resolved-verified` | `tests/issues/feat-09-inline-arithmetic.test.ts` | Keep folding deterministic and side-effect free; extend with additional safe operators as needed. |
 | FEAT-10 `stash` | scheduling/lifetime | `pending-backlog` | proposal only | Define spill-vs-route decision model and artifact visibility in compile stats. |
 | FEAT-11 `extract_bytes(axis)` | domain abstraction | `pending-backlog` | proposal only | Specify if this is syntax sugar vs macro library; avoid new implicit semantics. |
-| FEAT-12 `collect` | domain pattern | `pending-backlog` | proposal only | Define canonical statement and lowering constraints for route conflict-free collection. |
+| FEAT-12 `collect` | lane pattern | `resolved-verified` | `tests/issues/feat-12-collect.test.ts` | Extend to multi-hop path synthesis only if deterministic cost model is documented. |
 | FEAT-13 `accumulate` | domain pattern | `pending-backlog` | proposal only | Formalize accumulation graph contract and determinism requirements across topologies. |
 | FEAT-14 `conditional_sub` | domain primitive | `pending-backlog` | proposal only | Define semantics against existing Barrett idiom and branch/select lowering parity. |
 | FEAT-15 row auto-broadcast | syntax sugar | `resolved-verified` | `tests/issues/feat-15-row-auto-broadcast.test.ts` | Keep NxM and segmented-row regressions to preserve deterministic lowering. |
@@ -325,7 +346,7 @@ Status: `pending`
 
 Subtasks:
 
-- [ ] FEAT-11..14 semantic contracts and IR shape.
+- [ ] FEAT-11, FEAT-13, FEAT-14 semantic contracts and IR shape.
 - [ ] FEAT-16 macro/tooling boundary decision (core vs preprocessor).
 - [ ] Contract tests for each accepted abstraction before implementation.
 
@@ -353,7 +374,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1..2`, `FEAT-5`, `FEAT-10..14`, `FEAT-16`.
+- [ ] Prioritize `FEAT-1..2`, `FEAT-5`, `FEAT-10..11`, `FEAT-13..14`, `FEAT-16`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

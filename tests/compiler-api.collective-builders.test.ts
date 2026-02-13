@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ErrorCodes, spanAt } from '@openedge/compiler-ir';
 import {
   buildAllreduceCycles,
+  buildCollectCycles,
   buildGatherCycles,
   buildStencilCycles,
   buildStreamCycles,
@@ -238,5 +239,230 @@ describe('compiler-api collective/route builders', () => {
       cycle.statements.some((stmt) => stmt.kind === 'at' && stmt.instruction.text.includes('IMM(7)'))
     );
     expect(hasFill).toBe(true);
+  });
+
+  it('builds collect cycles and validates collect constraints', () => {
+    const okDiagnostics: any[] = [];
+    const okCycles = buildCollectCycles(
+      {
+        from: { axis: 'row', index: 1 },
+        to: { axis: 'row', index: 0 },
+        viaReg: 'RCB',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'shift_add'
+      },
+      6,
+      torusGrid,
+      span,
+      okDiagnostics
+    );
+    expect(okDiagnostics).toHaveLength(0);
+    expect(okCycles).toHaveLength(2);
+    expect(okCycles[0].index).toBe(6);
+    const secondCycleStatements: any[] = okCycles[1].statements as any[];
+    expect(secondCycleStatements[0].instruction.operands).toEqual(['R3', 'R2', 'ZERO']);
+    expect(secondCycleStatements[1].instruction.operands).toEqual(['R3', 'R2', 'RCL']);
+
+    const badViaDiagnostics: any[] = [];
+    const badViaCycles = buildCollectCycles(
+      {
+        from: { axis: 'row', index: 1 },
+        to: { axis: 'row', index: 0 },
+        viaReg: 'RCR',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'add'
+      },
+      0,
+      torusGrid,
+      span,
+      badViaDiagnostics
+    );
+    expect(badViaCycles).toHaveLength(0);
+    expect(badViaDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const copyDiagnostics: any[] = [];
+    const copyCycles = buildCollectCycles(
+      {
+        from: { axis: 'row', index: 0 },
+        to: { axis: 'row', index: 0 },
+        viaReg: 'SELF',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'copy'
+      },
+      0,
+      torusGrid,
+      span,
+      copyDiagnostics
+    );
+    expect(copyDiagnostics).toHaveLength(0);
+    expect(copyCycles).toHaveLength(1);
+
+    const colShiftDiagnostics: any[] = [];
+    const colShiftCycles = buildCollectCycles(
+      {
+        from: { axis: 'col', index: 1 },
+        to: { axis: 'col', index: 0 },
+        viaReg: 'RCR',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'shift_add'
+      },
+      0,
+      torusGrid,
+      span,
+      colShiftDiagnostics
+    );
+    expect(colShiftDiagnostics).toHaveLength(0);
+    expect(colShiftCycles).toHaveLength(2);
+    const colShiftSecond: any[] = colShiftCycles[1].statements as any[];
+    expect(colShiftSecond[0].instruction.operands).toEqual(['R3', 'R2', 'ZERO']);
+    expect(colShiftSecond[1].instruction.operands).toEqual(['R3', 'R2', 'RCT']);
+
+    const rowReverseDiagnostics: any[] = [];
+    const rowReverseCycles = buildCollectCycles(
+      {
+        from: { axis: 'row', index: 0 },
+        to: { axis: 'row', index: 1 },
+        viaReg: 'RCT',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'add'
+      },
+      0,
+      torusGrid,
+      span,
+      rowReverseDiagnostics
+    );
+    expect(rowReverseDiagnostics).toHaveLength(0);
+    expect(rowReverseCycles).toHaveLength(2);
+
+    const colForwardDiagnostics: any[] = [];
+    const colForwardCycles = buildCollectCycles(
+      {
+        from: { axis: 'col', index: 0 },
+        to: { axis: 'col', index: 1 },
+        viaReg: 'RCL',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'add'
+      },
+      0,
+      torusGrid,
+      span,
+      colForwardDiagnostics
+    );
+    expect(colForwardDiagnostics).toHaveLength(0);
+    expect(colForwardCycles).toHaveLength(2);
+
+    const zeroLaneDiagnostics: any[] = [];
+    const zeroLaneCycles = buildCollectCycles(
+      {
+        from: { axis: 'row', index: 1 },
+        to: { axis: 'row', index: 1 },
+        viaReg: 'SELF',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'add'
+      },
+      0,
+      { rows: 2, cols: 0, topology: 'mesh', wrapPolicy: 'clamp' },
+      span,
+      zeroLaneDiagnostics
+    );
+    expect(zeroLaneDiagnostics).toHaveLength(0);
+    expect(zeroLaneCycles).toHaveLength(0);
+
+    const badCombineDiagnostics: any[] = [];
+    const badCombineCycles = buildCollectCycles(
+      {
+        from: { axis: 'row', index: 1 },
+        to: { axis: 'row', index: 0 },
+        viaReg: 'RCB',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'invalid' as any
+      },
+      0,
+      torusGrid,
+      span,
+      badCombineDiagnostics
+    );
+    expect(badCombineCycles).toHaveLength(0);
+    expect(badCombineDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const invalidViaDiagnostics: any[] = [];
+    const invalidViaCycles = buildCollectCycles(
+      {
+        from: { axis: 'row', index: 1 },
+        to: { axis: 'row', index: 0 },
+        viaReg: 'RZ',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'add'
+      },
+      0,
+      torusGrid,
+      span,
+      invalidViaDiagnostics
+    );
+    expect(invalidViaCycles).toHaveLength(0);
+    expect(invalidViaDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const rowBoundsDiagnostics: any[] = [];
+    const rowBoundsCycles = buildCollectCycles(
+      {
+        from: { axis: 'row', index: 9 },
+        to: { axis: 'row', index: 0 },
+        viaReg: 'SELF',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'copy'
+      },
+      0,
+      torusGrid,
+      span,
+      rowBoundsDiagnostics
+    );
+    expect(rowBoundsCycles).toHaveLength(0);
+    expect(rowBoundsDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
+
+    const colNonAdjacentDiagnostics: any[] = [];
+    const colNonAdjacentCycles = buildCollectCycles(
+      {
+        from: { axis: 'col', index: 3 },
+        to: { axis: 'col', index: 0 },
+        viaReg: 'RCR',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'add'
+      },
+      0,
+      torusGrid,
+      span,
+      colNonAdjacentDiagnostics
+    );
+    expect(colNonAdjacentCycles).toHaveLength(0);
+    expect(colNonAdjacentDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const badBoundsDiagnostics: any[] = [];
+    const badBoundsCycles = buildCollectCycles(
+      {
+        from: { axis: 'col', index: 9 },
+        to: { axis: 'col', index: 0 },
+        viaReg: 'SELF',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'copy'
+      },
+      0,
+      torusGrid,
+      span,
+      badBoundsDiagnostics
+    );
+    expect(badBoundsCycles).toHaveLength(0);
+    expect(badBoundsDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
   });
 });

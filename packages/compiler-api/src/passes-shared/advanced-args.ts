@@ -1,6 +1,7 @@
 export type {
   AllreducePragmaArgs,
   BroadcastPragmaArgs,
+  CollectPragmaArgs,
   GuardPragmaArgs,
   GatherPragmaArgs,
   ReducePragmaArgs,
@@ -21,6 +22,7 @@ export {
   parseScanPragmaArgs
 } from './advanced-args/scan-reduce.js';
 export {
+  parseCollectPragmaArgs,
   parseGuardPragmaArgs,
   parseGatherPragmaArgs,
   parseStencilPragmaArgs,

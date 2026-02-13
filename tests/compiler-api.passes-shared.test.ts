@@ -31,6 +31,7 @@ import {
 import {
   parseAllreducePragmaArgs,
   parseBroadcastPragmaArgs,
+  parseCollectPragmaArgs,
   parseGuardPragmaArgs,
   parseGatherPragmaArgs,
   parseReducePragmaArgs,
@@ -43,6 +44,7 @@ import {
   parseTransposePragmaArgs
 } from '../packages/compiler-api/src/passes-shared/advanced-args.js';
 import {
+  buildCollectCycles,
   buildReduceCycles,
   buildScanCycles,
   buildGuardCycles,
@@ -216,6 +218,27 @@ describe('compiler-api passes shared utils', () => {
     expect(parseGuardPragmaArgs('guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1, extra=1)')).toBeNull();
     expect(parseGuardPragmaArgs('guard(cond=col>=row, op=SMUL, dest=R2, srcA=1, srcB=R1)')).toBeNull();
     expect(parseGuardPragmaArgs('foo(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1)')).toBeNull();
+    expect(parseCollectPragmaArgs('collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add)')).toMatchObject({
+      from: { axis: 'row', index: 1 },
+      to: { axis: 'row', index: 0 },
+      viaReg: 'RCB',
+      localReg: 'R2',
+      destReg: 'R3',
+      combine: 'add'
+    });
+    expect(parseCollectPragmaArgs('collect(from=col(0), via=SELF, local=R2, into=R3)')).toMatchObject({
+      from: { axis: 'col', index: 0 },
+      to: { axis: 'col', index: 0 },
+      combine: 'add'
+    });
+    expect(parseCollectPragmaArgs('collect(from=row(1), to=col(0), via=RCB, local=R2, into=R3)')).toBeNull();
+    expect(parseCollectPragmaArgs('collect(from=row(1), via=RCB, local=R2, into=R3, extra=1)')).toBeNull();
+    expect(parseCollectPragmaArgs('collect(from=row(x), via=RCB, local=R2, into=R3)')).toBeNull();
+    expect(parseCollectPragmaArgs('collect(from=row(1), to=row(x), via=RCB, local=R2, into=R3)')).toBeNull();
+    expect(parseCollectPragmaArgs('collect(via=RCB, local=R2, into=R3)')).toBeNull();
+    expect(parseCollectPragmaArgs('collect(from=row(1), via=RCB, local=R2, into=R3, combine=bad)')).toBeNull();
+    expect(parseCollectPragmaArgs('collect(from=row(1), via=RCB, local=1, into=R3)')).toBeNull();
+    expect(parseCollectPragmaArgs('foo(from=row(1), via=RCB, local=R2, into=R3)')).toBeNull();
     expect(parseAllreducePragmaArgs('allreduce(op=add, dest=R1, src=R0, axis=col)')).toMatchObject({
       operation: 'add',
       destReg: 'R1',
@@ -401,6 +424,68 @@ describe('compiler-api passes shared utils', () => {
     );
     expect(badGuardCycles).toEqual([]);
     expect(diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
+
+    const collectCycles = buildCollectCycles(
+      {
+        from: { axis: 'row', index: 1 },
+        to: { axis: 'row', index: 0 },
+        viaReg: 'RCB',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'add'
+      },
+      9,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(collectCycles).toHaveLength(2);
+    expect(collectCycles[0].statements.length).toBe(4);
+    expect(collectCycles[1].statements[0]).toMatchObject({
+      kind: 'at',
+      row: 0,
+      col: 0,
+      instruction: { opcode: 'SADD', operands: ['R3', 'R2', 'R3'] }
+    });
+
+    const collectShiftAddCycles = buildCollectCycles(
+      {
+        from: { axis: 'row', index: 1 },
+        to: { axis: 'row', index: 0 },
+        viaReg: 'RCB',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'shift_add'
+      },
+      11,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(collectShiftAddCycles).toHaveLength(2);
+    expect(collectShiftAddCycles[1].statements[0]).toMatchObject({
+      instruction: { operands: ['R3', 'R2', 'ZERO'] }
+    });
+    expect(collectShiftAddCycles[1].statements[1]).toMatchObject({
+      instruction: { operands: ['R3', 'R2', 'RCL'] }
+    });
+
+    const badCollectCycles = buildCollectCycles(
+      {
+        from: { axis: 'row', index: 3 },
+        to: { axis: 'row', index: 0 },
+        viaReg: 'RCB',
+        localReg: 'R2',
+        destReg: 'R3',
+        combine: 'add'
+      },
+      13,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(badCollectCycles).toEqual([]);
+    expect(diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 
   it('handles desugar utilities for assignment, binary split and memory addresses', () => {

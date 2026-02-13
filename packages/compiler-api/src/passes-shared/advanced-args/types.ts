@@ -6,6 +6,20 @@ export interface BroadcastPragmaArgs {
   scope: 'row' | 'column' | 'all';
 }
 
+export interface CollectAxisRef {
+  axis: 'row' | 'col';
+  index: number;
+}
+
+export interface CollectPragmaArgs {
+  from: CollectAxisRef;
+  to: CollectAxisRef;
+  viaReg: string;
+  localReg: string;
+  destReg: string;
+  combine: 'copy' | 'add' | 'sum' | 'sub' | 'and' | 'or' | 'xor' | 'mul' | 'shift_add';
+}
+
 export interface RotateShiftPragmaArgs {
   reg: string;
   direction: 'left' | 'right';

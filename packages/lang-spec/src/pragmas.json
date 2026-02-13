@@ -9,6 +9,7 @@
   { "name": "route", "kind": "codegen" },
   { "name": "scan", "kind": "codegen" },
   { "name": "broadcast", "kind": "codegen" },
+  { "name": "collect", "kind": "codegen" },
   { "name": "auto_cycle", "kind": "codegen" },
   { "name": "end_auto_cycle", "kind": "codegen" }
 ]

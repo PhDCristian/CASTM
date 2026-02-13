@@ -26,6 +26,7 @@ let matrix[2][2] = { 1, 2, 3, 4 };
 
 kernel "canonical_example" {
   route(@0,1 -> @0,0, payload=R3, accum=R1);
+  collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
   reduce(op=add, dest=R1, src=R0, axis=row);
   guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
   triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
@@ -44,6 +45,7 @@ kernel "canonical_example" {
 
 - Memory sugar in `cycle {}` lowers to existing ISA (`LWI/SWI`) without changing CSV format.
 - Advanced statements lower to existing codegen passes.
+- `collect(...)` provides aligned single-hop lane collection (`row/col`) with deterministic lowering and explicit geometry checks.
 - `triangle(...)` expands deterministically in row-major order over the active grid (`shape=upper|lower`, optional `inclusive=true|false`) and emits one canonical cycle with per-PE placements.
 - `guard(...)` applies a compile-time predicate (`cond`) over `row`, `col`, `idx`, `rows`, `cols` and emits deterministic row-major placements for matching PEs only.
 - `route(...)` lowering preserves lexical position relative to neighboring cycles (no global hoisting).
@@ -55,3 +57,4 @@ kernel "canonical_example" {
 - Canonical optimization includes specialization of algebraic identities (`SMUL * 1/0`, `SADD +0`, `SSUB -0`, `LAND/LOR/LXOR` with neutral constants, shifts by `0`).
 - Triangle spatial-pattern reference: `docs/language/triangle-statement.md`.
 - Guard spatial-pattern reference: `docs/language/guard-statement.md`.
+- Collect lane-pattern reference: `docs/language/collect-statement.md`.
