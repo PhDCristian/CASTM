@@ -15,6 +15,7 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 | `target` declaration | done | `tests/compiler-api.contract.test.ts` | Required by parser (`E2001`). |
 | `kernel` + `cycle` blocks | done | `tests/compiler-api.contract.test.ts` | Basic AST and lowering in place. |
 | `@row,col`, `row`, `col`, `all` placement | done | `tests/compiler-api.contract.test.ts` | NxM grid override supported. |
+| Row auto-broadcast (`FEAT-15`) | done | `tests/issues/feat-15-row-auto-broadcast.test.ts` | `at row N: <single-instruction>;` auto-expands to all columns in that row; segmented row forms keep explicit slots and fill remainder with `NOP`. |
 | Coordinate range placement (`@r,c0..c1`, `@r0..r1,c`, `@r0..r1,c0..c1`) | done | `tests/issues/feat-08-range-coordinates.test.ts` | Range coordinates expand deterministically to concrete per-PE placements before lowering. |
 | C-like assignment desugar | done | `tests/compiler-api.contract.test.ts` | Supports copy form and full stable operator map (`+ - * ** << >> >>> & ~& \| ~\| ^ ~^`) with deterministic single-binary-expression lowering. |
 | Specialization pass (`FEAT-3`) | done | `tests/issues/feat-03-specialize.test.ts` | Applies safe algebraic identities (`*1`, `*0`, `+0`, `-0`, logical/shift identities) without changing ISA/output format. |

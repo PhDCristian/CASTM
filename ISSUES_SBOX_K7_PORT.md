@@ -743,7 +743,7 @@ Snapshot sync (2026-02-13):
 | FEAT-12 | pending-backlog | Block C |
 | FEAT-13 | pending-backlog | Block C |
 | FEAT-14 | pending-backlog | Block C |
-| FEAT-15 | pending-backlog | Block B |
+| FEAT-15 | resolved-verified | WS-11 |
 | FEAT-16 | pending-backlog | Block C |
 | FEAT-17 | pending-backlog | Block B |
 
@@ -1096,7 +1096,7 @@ cycle { @0,0: SWI R3, out_addr; }
 
 ---
 
-### FEAT-15: Row Auto-Broadcast Syntax
+### FEAT-15: Row Auto-Broadcast Syntax — ✅ RESOLVED (2026-02-13)
 
 **Problem:** When all 4 PEs in a row execute the same instruction, the current syntax requires repeating it 4 times with `|`:
 
@@ -1105,9 +1105,9 @@ cycle { @0,0: SWI R3, out_addr; }
 row 1: LWI R1, mu[1] | LWI R1, mu[1] | LWI R1, mu[1] | LWI R1, mu[1];
 ```
 
-**Proposed:** When a row has a single instruction (no `|` separators), auto-expand to all columns:
+**Canonical implementation:** when a row has a single instruction (no `|` separators), it auto-expands to all columns:
 ```c
-row 1: LWI R1, mu[1];  // → all 4 cols
+at row 1: LWI R1, mu[1];  // → all 4 cols
 ```
 
 This is distinct from FEAT-8 (range coords). FEAT-8 targets `@row,col..col` coordinate ranges; FEAT-15 targets the **visual pipe** row syntax.

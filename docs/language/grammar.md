@@ -46,6 +46,7 @@ Notes:
 - A single source line inside `cycle { ... }` may contain multiple `cycle_stmt` entries separated by `;`.
 - Spatial coordinate expressions are integer expressions; when division appears (for example `@k/4,k%4`) canonical lowering uses integer truncation semantics after loop binding.
 - Coordinate ranges expand inclusively. Example: `@0,0..3` expands to `@0,0`, `@0,1`, `@0,2`, `@0,3`; `@1..2,1..2` expands to the cartesian product.
+- `at row N: INSTR;` with a single instruction auto-broadcasts across every column in row `N`.
 
 ## Control-flow
 

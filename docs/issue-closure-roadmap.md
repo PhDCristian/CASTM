@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`6` validated, `18` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`7` validated, `17` in backlog)
 
 ## Workstreams
 
@@ -233,6 +233,27 @@ Evidence:
 - Tests: `tests/issues/feat-06-triangle.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`, `tests/compiler-front.tokenizer.test.ts`.
 - Docs: `docs/language/triangle-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
 
+### WS-11 — FEAT-15 Row Auto-Broadcast
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- keep row-wide programming concise without repeating identical per-column placements.
+- preserve deterministic semantics for both single-instruction and segmented row forms.
+
+Subtasks:
+
+- [x] Validate and document canonical row auto-broadcast semantics (`at row N: INSTR;`).
+- [x] Add dedicated regression tests for default 4x4 and NxM grids.
+- [x] Guard canonical-only policy by rejecting legacy row syntax without `at`.
+
+Evidence:
+
+- Tests: `tests/issues/feat-15-row-auto-broadcast.test.ts`.
+- Docs: `docs/feature-parity-matrix.md`, `docs/language/language-spec.md`.
+
 ## FEAT Portfolio (1..17)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
@@ -253,7 +274,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT-12 `collect` | domain pattern | `pending-backlog` | proposal only | Define canonical statement and lowering constraints for route conflict-free collection. |
 | FEAT-13 `accumulate` | domain pattern | `pending-backlog` | proposal only | Formalize accumulation graph contract and determinism requirements across topologies. |
 | FEAT-14 `conditional_sub` | domain primitive | `pending-backlog` | proposal only | Define semantics against existing Barrett idiom and branch/select lowering parity. |
-| FEAT-15 row auto-broadcast | syntax sugar | `pending-backlog` | proposal only | Decide interaction with current `at row` semantics and ambiguity resolution. |
+| FEAT-15 row auto-broadcast | syntax sugar | `resolved-verified` | `tests/issues/feat-15-row-auto-broadcast.test.ts` | Keep NxM and segmented-row regressions to preserve deterministic lowering. |
 | FEAT-16 pipeline macro | abstraction/tooling | `pending-backlog` | proposal only | Evaluate macro system scope and whether it belongs to compiler core or preprocessing layer. |
 | FEAT-17 guard condition | syntax/pattern | `pending-backlog` | proposal only | Define predicate grammar and lowering contract for sparse PE activation. |
 
@@ -276,7 +297,6 @@ Status: `pending`
 Subtasks:
 
 - [ ] FEAT-5 grammar + lowering spec.
-- [ ] FEAT-15 syntax conflict analysis with existing `at row`.
 - [ ] FEAT-17 predicate grammar and deterministic expansion design.
 
 #### Block C — Domain Abstraction Track
@@ -313,7 +333,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1..2`, `FEAT-5`, `FEAT-10..17`.
+- [ ] Prioritize `FEAT-1..2`, `FEAT-5`, `FEAT-10..14`, `FEAT-16..17`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 
