@@ -8,6 +8,7 @@ export type {
   ExtractBytesPragmaArgs,
   GuardPragmaArgs,
   GatherPragmaArgs,
+  LatencyHidePragmaArgs,
   NormalizePragmaArgs,
   ReducePragmaArgs,
   RotateShiftPragmaArgs,
@@ -39,6 +40,7 @@ export {
   parseTrianglePragmaArgs,
   parseTransposePragmaArgs
 } from './advanced-args/collectives.js';
+export { parseLatencyHidePragmaArgs } from './advanced-args/optimizer.js';
 export {
   parseStreamLoadPragmaArgs,
   parseStreamStorePragmaArgs

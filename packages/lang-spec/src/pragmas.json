@@ -2,6 +2,7 @@
   { "name": "unroll", "kind": "loop" },
   { "name": "no_unroll", "kind": "loop" },
   { "name": "parallel", "kind": "loop" },
+  { "name": "latency_hide", "kind": "loop" },
   { "name": "reduce", "kind": "codegen" },
   { "name": "stencil", "kind": "codegen" },
   { "name": "guard", "kind": "codegen" },

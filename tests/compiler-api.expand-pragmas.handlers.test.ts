@@ -66,6 +66,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
   it('exposes supported and noop pragma registries', () => {
     expect(NOOP_PRAGMAS.has('unroll')).toBe(true);
     expect(NOOP_PRAGMAS.has('route')).toBe(false);
+    expect(NOOP_PRAGMAS.has('latency_hide')).toBe(true);
 
     expect(SUPPORTED_PRAGMAS.has('route')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('stream_store')).toBe(true);
@@ -77,6 +78,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(SUPPORTED_PRAGMAS.has('normalize')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('guard')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('triangle')).toBe(true);
+    expect(SUPPORTED_PRAGMAS.has('latency_hide')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('unknown')).toBe(false);
 
     expect(PRAGMA_HANDLERS.get('route')).toBe(handleRoute);
@@ -88,6 +90,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(PRAGMA_HANDLERS.get('extract_bytes')).toBe(handleExtractBytes);
     expect(PRAGMA_HANDLERS.get('normalize')).toBe(handleNormalize);
     expect(PRAGMA_HANDLERS.get('guard')).toBe(handleGuard);
+    expect(PRAGMA_HANDLERS.has('latency_hide')).toBe(false);
     expect(PRAGMA_HANDLERS.get('rotate')).toBe(handleRotateShift);
     expect(PRAGMA_HANDLERS.get('stream_load')).toBe(handleStreamLoad);
   });

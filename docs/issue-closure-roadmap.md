@@ -422,13 +422,34 @@ Evidence:
 - Tests: `tests/issues/feat-16-pipeline.test.ts`, `tests/compiler-front.parser-modules.test.ts`, `tests/lsp.contract.test.ts`.
 - Docs: `docs/language/pipeline-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
 
+### WS-20 — FEAT-1 Latency Hide Conservative Scheduler
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- close the remaining high-impact FEAT backlog item with deterministic behavior and no legacy syntax.
+- provide safe cycle compaction with explicit legality guards instead of heuristic reordering.
+
+Subtasks:
+
+- [x] Add canonical `latency_hide(window=..., mode=conservative)` statement recognition in parser/registry/lang-spec.
+- [x] Implement conservative post-expansion cycle compaction with explicit hazard checks (PE overlap, route boundary, control barriers, dual-memory adjacency).
+- [x] Add parser/pass/issue tests and language docs.
+
+Evidence:
+
+- Tests: `tests/issues/feat-01-latency-hide.test.ts`, `tests/compiler-api.latency-hide.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/lsp.contract.test.ts`.
+- Docs: `docs/language/latency-hide-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
+
 ## FEAT Portfolio (1..17)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
 
 | FEAT | Scope | Status | Evidence | Next subtask |
 |---|---|---|---|---|
-| FEAT-1 `latency_hide` | scheduling/optimizer | `pending-backlog` | proposal only | Define scheduler contract and stall-slot legality model for NxM + neighbor hazards. |
+| FEAT-1 `latency_hide` | scheduling/optimizer | `resolved-verified` | `tests/issues/feat-01-latency-hide.test.ts`, `tests/compiler-api.latency-hide.test.ts` | Keep conservative hazard guards deterministic; extend only with contract-backed scheduler modes. |
 | FEAT-2 `carry_chain` | arithmetic primitive | `resolved-verified` | `tests/issues/feat-02-carry-chain.test.ts` | Keep per-limb stage order deterministic and explicit; extend only with contract-backed scheduling variants. |
 | FEAT-3 `specialize` | compile-time optimization | `resolved-verified` | `tests/issues/feat-03-specialize.test.ts` | Extend identity catalog conservatively and keep deterministic rewrites. |
 | FEAT-4 `for` inside `cycle` | language core | `resolved-verified` | `tests/compiler-api.contract.test.ts`, `tests/issues/resolved-and-legacy.test.ts` | Keep regression guardrails for collision diagnostics and nested expansion. |
@@ -454,7 +475,7 @@ Status: `pending`
 
 Subtasks:
 
-- [ ] FEAT-1 scheduler RFC + legality checker.
+- [x] FEAT-1 conservative scheduler + legality checker.
 - [ ] FEAT-10 lifetime/stash cost model draft.
 - [ ] Extend FEAT-3 beyond identity set only when semantic proofs are documented.
 
@@ -499,7 +520,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1`, `FEAT-10`.
+- [ ] Prioritize `FEAT-10`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

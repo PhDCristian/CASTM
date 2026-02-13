@@ -68,7 +68,7 @@ function_call_inline ::= ident "(" arg_list? ")"
 ```text
 advanced_stmt    ::= route_stmt | reduce_stmt | scan_stmt | broadcast_stmt
                   | accumulate_stmt | carry_chain_stmt | conditional_sub_stmt | collect_stmt | normalize_stmt | extract_bytes_stmt | rotate_stmt | shift_stmt | stencil_stmt | guard_stmt | triangle_stmt | allreduce_stmt
-                  | transpose_stmt | gather_stmt | stream_load_stmt | stream_store_stmt
+                  | transpose_stmt | gather_stmt | stream_load_stmt | stream_store_stmt | latency_hide_stmt
 
 route_stmt       ::= "route" "(" route_edge "," "payload" "=" register "," ( "accum" "=" register | "dest" "=" register "," "op" "=" op_call ) ")" ";"
 route_edge       ::= "@" int_expr "," int_expr "->" "@" int_expr "," int_expr
@@ -82,6 +82,7 @@ lane_ref         ::= ("row" | "col") "(" int_expr ")"
 collect_combine  ::= "copy" | "add" | "sum" | "sub" | "and" | "or" | "xor" | "mul" | "shift_add"
 normalize_stmt   ::= "normalize" "(" "reg" "=" register "," "carry" "=" register "," "width" "=" int_expr "," "lane" "=" int_expr [ "," "mask" "=" int_expr ] [ "," "axis" "=" ("row" | "col") ] [ "," "dir" "=" ("right" | "left" | "down" | "up") ] ")" ";"
 extract_bytes_stmt ::= "extract_bytes" "(" "src" "=" register "," "dest" "=" register [ "," "axis" "=" ("row" | "col") ] [ "," "byteWidth" "=" int_expr ] [ "," "mask" "=" int_expr ] ")" ";"
+latency_hide_stmt ::= "latency_hide" "(" ( "window" "=" int_expr [ "," "mode" "=" "conservative" ] | "mode" "=" "conservative" ) ")" ";"
 
 reduce_stmt      ::= "reduce" "(" "op" "=" ident "," "dest" "=" register "," "src" "=" register [ "," "axis" "=" ("row" | "col") ] ")" ";"
 scan_stmt        ::= "scan" "(" "op" "=" ident "," "src" "=" register "," "dest" "=" register "," "dir" "=" ident [ "," "mode" "=" ident ] ")" ";"

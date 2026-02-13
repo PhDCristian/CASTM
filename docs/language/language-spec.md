@@ -12,6 +12,7 @@ Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas 
 - `pipeline(...)` function-call sequencing macro
 - explicit spatial namespace (`at ...`)
 - advanced statements (`route(...)`, `reduce(...)`, `scan(...)`, etc.)
+- conservative cycle compaction statement (`latency_hide(...)`)
 - explicit runtime loop form
 - runtime directives (`.io_load`, `.io_store`, `.limit`, `.assert`)
 
@@ -34,6 +35,7 @@ function helper_stage_b(src) {
 }
 
 kernel "canonical_example" {
+  latency_hide(window=1, mode=conservative);
   route(@0,1 -> @0,0, payload=R3, accum=R1);
   accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
   carry_chain(src=R0, carry=R3, store=output, limbs=2, width=16, row=0);
@@ -70,6 +72,7 @@ kernel "canonical_example" {
 - `triangle(...)` expands deterministically in row-major order over the active grid (`shape=upper|lower`, optional `inclusive=true|false`) and emits one canonical cycle with per-PE placements.
 - `guard(...)` applies a compile-time predicate (`cond`) over `row`, `col`, `idx`, `rows`, `cols` and emits deterministic row-major placements for matching PEs only.
 - `route(...)` lowering preserves lexical position relative to neighboring cycles (no global hoisting).
+- `latency_hide(...)` applies conservative post-expansion cycle compaction with explicit hazard guards (PE overlap, route boundary, control barriers, dual-memory adjacency).
 - Inside `cycle { ... }`, semicolon-separated placements on the same line are supported.
 - Computed spatial coordinates in loops (for example `@k/4,k%4`) are valid canonical syntax.
 - Coordinate ranges are valid in canonical placements: `@r,c0..c1`, `@r0..r1,c`, and `@r0..r1,c0..c1` (inclusive expansion).
@@ -82,6 +85,7 @@ kernel "canonical_example" {
 - Carry-chain reference: `docs/language/carry-chain-statement.md`.
 - Conditional-subtraction reference: `docs/language/conditional-sub-statement.md`.
 - Pipeline-macro reference: `docs/language/pipeline-statement.md`.
+- Latency-hide scheduler reference: `docs/language/latency-hide-statement.md`.
 - Collect lane-pattern reference: `docs/language/collect-statement.md`.
 - Normalize lane-pattern reference: `docs/language/normalize-statement.md`.
 - Byte-extraction reference: `docs/language/extract-bytes-statement.md`.

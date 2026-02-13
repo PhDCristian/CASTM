@@ -78,6 +78,9 @@ describe('compiler-front lowering module contracts', () => {
     expect(parseAdvancedStatementAsPragma('extract_bytes(src=R0, dest=R1, axis=col);')).toBe(
       'extract_bytes(src=R0, dest=R1, axis=col)'
     );
+    expect(parseAdvancedStatementAsPragma('latency_hide(window=1, mode=conservative);')).toBe(
+      'latency_hide(window=1, mode=conservative)'
+    );
 
     const cycleStmt = parseCycleStatement(
       'at @0,1: SADD R1, R2, R3;',

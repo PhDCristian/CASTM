@@ -146,3 +146,8 @@ export interface StreamStorePragmaArgs {
   row: number;
   count: number;
 }
+
+export interface LatencyHidePragmaArgs {
+  window: number;
+  mode: 'conservative';
+}

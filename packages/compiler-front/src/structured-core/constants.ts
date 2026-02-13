@@ -18,7 +18,8 @@ export const ADVANCED_NAMES = new Set([
   'transpose',
   'gather',
   'stream_load',
-  'stream_store'
+  'stream_store',
+  'latency_hide'
 ]);
 
 export const RESERVED_KEYWORDS = new Set([

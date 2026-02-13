@@ -729,7 +729,7 @@ Snapshot sync (2026-02-13):
 
 | FEAT | Operational status | Roadmap block |
 |---|---|---|
-| FEAT-1 | pending-backlog | Block A |
+| FEAT-1 | resolved-verified | WS-20 |
 | FEAT-2 | resolved-verified | WS-18 |
 | FEAT-3 | resolved-verified | WS-09 |
 | FEAT-4 | resolved-verified | WS-04 / portfolio |
@@ -751,7 +751,7 @@ Snapshot sync (2026-02-13):
 
 ## 🔴 HIGH IMPACT — Latency Reduction
 
-### FEAT-1: `#pragma latency_hide` — Latency-Aware Instruction Scheduling
+### FEAT-1: `latency_hide(...)` — Latency-Aware Instruction Scheduling — ✅ RESOLVED (2026-02-13)
 
 **Problem:** 75 stall cycles (27% overhead) from LWI (2cc) and SMUL (3cc). SMUL cycles have idle PEs that waste the 2-cycle stall. We manually hid the `p` LWI inside a SMUL slot (OPT-G), but the compiler should do this automatically.
 
@@ -766,12 +766,12 @@ cycle {
 
 **Proposed:**
 ```c
-#pragma latency_hide  // compiler auto-merges adjacent cycles
-cycle { row 1: SMUL R2, R0, R1 | ...; }  // 3cc, row 0 idle
-cycle { @0,3: LWI R1, 4; }               // compiler moves this INTO the SMUL cycle
+latency_hide(window=1, mode=conservative);
+cycle { at row 1: SMUL R2, R0, R1; }  // 3cc, row 0 idle
+cycle { @0,3: LWI R1, 4; }            // compiler can compact this into the previous cycle when hazards allow
 ```
 
-**Impact:** -10 to -20 hwcc. The compiler analyzes data dependencies and PE occupancy to fill stall slots with independent work from adjacent cycles.
+**Canonical implementation status:** available as deterministic conservative post-expansion compaction with explicit legality checks (PE overlap, route boundaries, control barriers, dual-memory adjacency).
 
 ---
 

@@ -7,6 +7,7 @@ import {
   GridSpec,
   makeDiagnostic
 } from '@openedge/compiler-ir';
+import { parseLatencyHidePragmaArgs } from './advanced-args.js';
 import { cloneAst } from './ast-utils.js';
 import { extractPragmaName } from './pragma-args-utils.js';
 import {
@@ -15,6 +16,7 @@ import {
   PRAGMA_HANDLERS,
   SUPPORTED_PRAGMAS
 } from './expand-pragmas-handlers.js';
+import { applyLatencyHide } from './expand-pragmas/latency-hide.js';
 
 export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSpec): CompilerPass<AstProgram, AstProgram> {
   return {
@@ -29,6 +31,7 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
 
       const cyclesByAnchor = new Map<number, CycleAst[]>();
       const totalCycles = output.kernel.cycles.length;
+      const latencyHideWindows: number[] = [];
 
       const normalizeAnchor = (anchorCycleIndex: number | undefined): number => {
         if (!Number.isInteger(anchorCycleIndex)) return 0;
@@ -50,6 +53,22 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
           generatedCycles,
           diagnostics
         };
+
+        if (name === 'latency_hide') {
+          const parsed = parseLatencyHidePragmaArgs(pragma.text);
+          if (!parsed) {
+            diagnostics.push(makeDiagnostic(
+              ErrorCodes.Parse.InvalidSyntax,
+              'error',
+              pragma.span,
+              `Invalid latency_hide statement syntax: '${pragma.text}'.`,
+              'Use latency_hide(window=1[, mode=conservative]).'
+            ));
+            continue;
+          }
+          latencyHideWindows.push(parsed.window);
+          continue;
+        }
 
         if (handler) {
           handler(pragma, context);
@@ -86,6 +105,14 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
           ...cycle,
           index
         }));
+      }
+
+      if (latencyHideWindows.length > 0) {
+        output.kernel.cycles = applyLatencyHide(
+          output.kernel.cycles,
+          grid,
+          Math.max(...latencyHideWindows)
+        );
       }
 
       return { output, diagnostics };

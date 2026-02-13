@@ -31,7 +31,8 @@ export const NOOP_PRAGMAS = new Set<string>([
   'unroll',
   'no_unroll',
   'parallel',
-  'no_fuse'
+  'no_fuse',
+  'latency_hide'
 ]);
 
 export const SUPPORTED_PRAGMAS = new Set<string>([
@@ -55,7 +56,8 @@ export const SUPPORTED_PRAGMAS = new Set<string>([
   'transpose',
   'gather',
   'stream_load',
-  'stream_store'
+  'stream_store',
+  'latency_hide'
 ]);
 
 export const PRAGMA_HANDLERS = new Map<string, PragmaHandler>([

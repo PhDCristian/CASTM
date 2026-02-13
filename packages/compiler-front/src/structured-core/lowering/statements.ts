@@ -23,7 +23,8 @@ const ADVANCED_NAMES = new Set([
   'transpose',
   'gather',
   'stream_load',
-  'stream_store'
+  'stream_store',
+  'latency_hide'
 ]);
 
 export function parseAdvancedStatementAsPragma(clean: string): string | null {
