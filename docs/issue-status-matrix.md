@@ -13,19 +13,19 @@ This matrix is the operational source of truth for issue triage across compiler,
 
 | id | ambito | estado | evidencia-test | owner |
 |---|---|---|---|---|
-| Issue-1 | compiler | resolved-verified | `tests/issues/resolved-and-legacy.test.ts` | openedge-dsl |
+| Issue-1 | compiler | resolved-verified | `tests/issues/resolved-core-broadcast-and-loop.test.ts` | openedge-dsl |
 | Issue-2 | compiler | resolved-verified | `tests/compiler-api.contract.test.ts` | openedge-dsl |
 | Issue-3 | compiler | resolved-verified | `tests/issues/issue-03-multi-statement-cycle-line.test.ts` | openedge-dsl |
 | Issue-4 | compiler/docs | canonical-intentional | `tests/issues/resolved-and-legacy.test.ts` (legacy reject) | openedge-dsl |
-| Issue-5 | compiler | resolved-verified | `tests/compiler-api.contract.test.ts` | openedge-dsl |
+| Issue-5 | compiler | resolved-verified | `tests/issues/resolved-core-broadcast-and-loop.test.ts` | openedge-dsl |
 | Issue-6 | compiler | resolved-verified | `tests/compiler-api.contract.test.ts`, `tests/issues/resolved-and-legacy.test.ts` | openedge-dsl |
 | Issue-7 | compiler/docs | canonical-intentional | `tests/compiler-api.contract.test.ts` (legacy pragma rejection) | openedge-dsl |
 | Issue-8 | compiler/docs | canonical-intentional | `tests/compiler-api.contract.test.ts` (legacy pragma rejection) | openedge-dsl |
-| Issue-9 | compiler | resolved-verified | `tests/compiler-api.contract.test.ts` | openedge-dsl |
-| Issue-10 | compiler | resolved-verified | `tests/compiler-api.contract.test.ts` | openedge-dsl |
+| Issue-9 | compiler | resolved-verified | `tests/issues/resolved-core-broadcast-and-loop.test.ts` | openedge-dsl |
+| Issue-10 | compiler | resolved-verified | `tests/issues/resolved-core-broadcast-and-loop.test.ts` | openedge-dsl |
 | Issue-11 | compiler/docs | canonical-intentional | language policy + legacy pragma rejection tests | openedge-dsl |
 | Issue-12 | compiler | resolved-verified | `tests/compiler-api.contract.test.ts` | openedge-dsl |
-| BUG-1 | compiler | resolved-verified | broadcast behavior covered by canonical spatial tests | openedge-dsl |
+| BUG-1 | compiler | resolved-verified | `tests/issues/resolved-core-broadcast-and-loop.test.ts` | openedge-dsl |
 | BUG-2 | compiler | resolved-verified | `tests/compiler-api.contract.test.ts`, `tests/issues/issue-03-multi-statement-cycle-line.test.ts` | openedge-dsl |
 | BUG-3 | simulator | resolved-verified | `UMA-CGRA-Simulator/src/__tests__/dsl-compiler-v2-adapter.test.ts` | uma-simulator |
 | BUG-4 | simulator | resolved-verified | `UMA-CGRA-Simulator/src/__tests__/dsl-compiler-v2-adapter.test.ts` | uma-simulator |
