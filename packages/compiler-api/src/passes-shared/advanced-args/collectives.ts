@@ -7,6 +7,7 @@ import { parseCoordinateLiteral } from '../route-args.js';
 import {
   GatherPragmaArgs,
   StencilPragmaArgs,
+  TrianglePragmaArgs,
   TransposePragmaArgs
 } from './types.js';
 
@@ -31,6 +32,47 @@ export function parseStencilPragmaArgs(text: string): StencilPragmaArgs | null {
     operation,
     srcReg,
     destReg
+  };
+}
+
+function parseTriangleInclusive(value: string | undefined): boolean | null {
+  if (!value) return true;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'true' || normalized === 'inclusive') return true;
+  if (normalized === 'false' || normalized === 'exclusive') return false;
+  return null;
+}
+
+export function parseTrianglePragmaArgs(text: string): TrianglePragmaArgs | null {
+  const match = text.trim().match(/^triangle\s*\((.+)\)\s*;?\s*$/i);
+  if (!match) return null;
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+  for (const key of args.keys()) {
+    if (!['shape', 'inclusive', 'op', 'dest', 'srca', 'srcb'].includes(key)) return null;
+  }
+
+  const shape = args.get('shape')?.trim().toLowerCase();
+  if (shape !== 'upper' && shape !== 'lower') return null;
+
+  const inclusive = parseTriangleInclusive(args.get('inclusive'));
+  if (inclusive === null) return null;
+
+  const opcode = args.get('op')?.trim().toUpperCase();
+  const destReg = args.get('dest')?.trim();
+  const srcA = args.get('srca')?.trim();
+  const srcB = args.get('srcb')?.trim();
+
+  if (!opcode || !destReg || !srcA || !srcB) return null;
+  if (!isIdentifier(opcode) || !isIdentifier(destReg) || !isIdentifier(srcA) || !isIdentifier(srcB)) return null;
+
+  return {
+    shape,
+    inclusive,
+    opcode,
+    destReg,
+    srcA,
+    srcB
   };
 }
 

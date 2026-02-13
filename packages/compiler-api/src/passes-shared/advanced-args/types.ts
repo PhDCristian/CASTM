@@ -35,6 +35,15 @@ export interface StencilPragmaArgs {
   destReg: string;
 }
 
+export interface TrianglePragmaArgs {
+  shape: 'upper' | 'lower';
+  inclusive: boolean;
+  opcode: string;
+  destReg: string;
+  srcA: string;
+  srcB: string;
+}
+
 export interface AllreducePragmaArgs {
   operation: string;
   destReg: string;

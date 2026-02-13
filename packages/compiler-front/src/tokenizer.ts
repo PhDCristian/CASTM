@@ -14,7 +14,7 @@ const KEYWORDS = new Set([
 ]);
 const ADVANCED_STATEMENTS = new Set([
   'route', 'broadcast', 'rotate', 'shift', 'scan', 'reduce',
-  'stencil', 'allreduce', 'transpose', 'gather', 'stream_load', 'stream_store'
+  'stencil', 'triangle', 'allreduce', 'transpose', 'gather', 'stream_load', 'stream_store'
 ]);
 
 export function tokenizeSource(source: string): FrontToken[] {

@@ -18,6 +18,7 @@ import {
   handleReduce,
   handleScan,
   handleStencil,
+  handleTriangle,
   handleTranspose
 } from '../packages/compiler-api/src/passes-shared/expand-pragmas/handlers-collective.js';
 import {
@@ -61,6 +62,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
 
     expect(SUPPORTED_PRAGMAS.has('route')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('stream_store')).toBe(true);
+    expect(SUPPORTED_PRAGMAS.has('triangle')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('unknown')).toBe(false);
 
     expect(PRAGMA_HANDLERS.get('route')).toBe(handleRoute);
@@ -141,6 +143,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
       { fn: handleReduce, text: 'reduce(nope)' },
       { fn: handleScan, text: 'scan(nope)' },
       { fn: handleStencil, text: 'stencil(nope)' },
+      { fn: handleTriangle, text: 'triangle(nope)' },
       { fn: handleAllreduce, text: 'allreduce(nope)' },
       { fn: handleTranspose, text: 'transpose(nope)' },
       { fn: handleGather, text: 'gather(nope)' }
@@ -169,6 +172,15 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     handleStencil(pragma('stencil(cross, add, R0, R1)'), stencilContext);
     expect(stencilContext.diagnostics).toHaveLength(0);
     expect(stencilContext.generatedCycles.length).toBeGreaterThan(0);
+
+    const triangleContext = ctx();
+    handleTriangle(
+      pragma('triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1)'),
+      triangleContext
+    );
+    expect(triangleContext.diagnostics).toHaveLength(0);
+    expect(triangleContext.generatedCycles.length).toBe(1);
+    expect(triangleContext.generatedCycles[0].statements.length).toBe(10);
 
     const allreduceContext = ctx();
     handleAllreduce(pragma('allreduce(op=add, dest=R1, src=R0, axis=row)'), allreduceContext);

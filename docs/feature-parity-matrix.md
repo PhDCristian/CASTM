@@ -47,6 +47,7 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 | `scan` lowering | done | `tests/compiler-api.contract.test.ts` | Supports `add/and/or/xor/max/min`, `inclusive/exclusive`, and `left/right/up/down` across all rows/cols lanes. |
 | `reduce` lowering | done | `tests/compiler-api.contract.test.ts` | Supports `sum/add/and/or/xor/mul/max/min` with `axis=row|col` using route-based NxM lowering. |
 | `stencil` lowering | done | `tests/compiler-api.contract.test.ts` | Supports `cross/horizontal/vertical` with `sum/add/avg` lowering across full grid. |
+| `triangle` lowering (`FEAT-6`) | done | `tests/issues/feat-06-triangle.test.ts` | Canonical spatial pattern statement: `triangle(shape=upper|lower, inclusive=true|false, op=..., dest=..., srcA=..., srcB=...)` lowers to deterministic row-major placements over the configured NxM grid. |
 | `allreduce` lowering | done | `tests/compiler-api.contract.test.ts` | Composes NxM reduce + broadcast from `@0,0` with support for `axis=row|col`. |
 | `transpose` lowering | done | `tests/compiler-api.contract.test.ts` | Square-grid lowering implemented via pairwise route swaps using scratch registers with non-square validation diagnostics. |
 | `gather` lowering | done | `tests/compiler-api.contract.test.ts` | Full-grid gather to configurable destination with `add/sum/and/or/xor/mul` accumulation using route transfers. |

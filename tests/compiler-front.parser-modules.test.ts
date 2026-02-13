@@ -53,6 +53,9 @@ describe('compiler-front lowering module contracts', () => {
     expect(parseAdvancedStatementAsPragma('route(@0,1 -> @0,0, payload=R3, accum=R1);')).toBe(
       'route(@0,1 -> @0,0, payload=R3, accum=R1)'
     );
+    expect(parseAdvancedStatementAsPragma('triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);')).toBe(
+      'triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1)'
+    );
 
     const cycleStmt = parseCycleStatement(
       'at @0,1: SADD R1, R2, R3;',

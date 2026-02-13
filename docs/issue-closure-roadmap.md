@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`5` validated, `19` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`6` validated, `18` in backlog)
 
 ## Workstreams
 
@@ -191,6 +191,48 @@ Evidence:
 - Tests: `tests/issues/feat-09-inline-arithmetic.test.ts`.
 - Pipeline update: `packages/compiler-api/src/compiler-driver/analyze-driver.ts` (desugar stage).
 
+### WS-09 — FEAT-3 Specialize Pass
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- reduce redundant identity operations automatically without ISA changes.
+- keep canonical output deterministic through safe algebraic rewrites only.
+
+Subtasks:
+
+- [x] Add `specialize` pass in desugar stage for proven-safe identities (`*1/*0`, `+0`, `-0`, logical neutral constants, shifts by zero).
+- [x] Wire pass into canonical analyze pipeline after inline arithmetic folding.
+- [x] Add dedicated regression coverage and update contracts/docs.
+
+Evidence:
+
+- Commit: `49424a6`.
+- Tests: `tests/issues/feat-03-specialize.test.ts`, updated contracts in `tests/compiler-api.contract.test.ts`, `tests/issues/feat-09-inline-arithmetic.test.ts`.
+
+### WS-10 — FEAT-6 Triangle Spatial Pattern
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- provide a general spatial pattern primitive for upper/lower triangular activation.
+- avoid hand-written coordinate lists while preserving deterministic lowering.
+
+Subtasks:
+
+- [x] Add canonical advanced statement `triangle(shape=..., inclusive=..., op=..., dest=..., srcA=..., srcB=...)`.
+- [x] Implement parser/handler/builder lowering with deterministic row-major expansion over NxM grid.
+- [x] Add feature, handler, parser/tokenizer tests and documentation.
+
+Evidence:
+
+- Tests: `tests/issues/feat-06-triangle.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`, `tests/compiler-front.tokenizer.test.ts`.
+- Docs: `docs/language/triangle-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
+
 ## FEAT Portfolio (1..17)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
@@ -202,7 +244,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT-3 `specialize` | compile-time optimization | `resolved-verified` | `tests/issues/feat-03-specialize.test.ts` | Extend identity catalog conservatively and keep deterministic rewrites. |
 | FEAT-4 `for` inside `cycle` | language core | `resolved-verified` | `tests/compiler-api.contract.test.ts`, `tests/issues/resolved-and-legacy.test.ts` | Keep regression guardrails for collision diagnostics and nested expansion. |
 | FEAT-5 `normalize` | arithmetic primitive | `pending-backlog` | proposal only | Define API (`normalize(...)`) and mapping to existing canonical cycles without ISA changes. |
-| FEAT-6 `triangle` | spatial pattern | `pending-backlog` | proposal only | Define pattern grammar (`upper/lower`, `inclusive`) and deterministic expansion order. |
+| FEAT-6 `triangle` | spatial pattern | `resolved-verified` | `tests/issues/feat-06-triangle.test.ts` | Keep deterministic row-major expansion and NxM coverage checks. |
 | FEAT-7 `broadcast` implementation | advanced statement | `resolved-verified` | advanced statement coverage in `tests/compiler-api.contract.test.ts` | Extend benchmarks for route-vs-memory cost decisions (optional optimization track). |
 | FEAT-8 range coordinates | language core | `resolved-verified` | `tests/issues/feat-08-range-coordinates.test.ts` | Keep contract tests for descending/rectangular and unresolved-axis diagnostics. |
 | FEAT-9 inline operand arithmetic | desugar pass | `resolved-verified` | `tests/issues/feat-09-inline-arithmetic.test.ts` | Keep folding deterministic and side-effect free; extend with additional safe operators as needed. |
@@ -233,7 +275,7 @@ Status: `pending`
 
 Subtasks:
 
-- [ ] FEAT-5 and FEAT-6 grammar + lowering specs.
+- [ ] FEAT-5 grammar + lowering spec.
 - [ ] FEAT-15 syntax conflict analysis with existing `at row`.
 - [ ] FEAT-17 predicate grammar and deterministic expansion design.
 
@@ -271,7 +313,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1..2`, `FEAT-5..6`, `FEAT-10..17`.
+- [ ] Prioritize `FEAT-1..2`, `FEAT-5`, `FEAT-10..17`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

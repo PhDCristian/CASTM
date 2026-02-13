@@ -31,6 +31,7 @@ kernel "feat3_add_shift" {
     @0,1: SADD R2, IMM(0), R0;
     @0,2: SSUB R3, R2, IMM(0);
     @0,3: SRT R4, R3, IMM(0);
+    @1,0: SRT R5, IMM(0), IMM(2);
   }
 }
 `;
@@ -42,6 +43,7 @@ kernel "feat3_add_shift" {
     expect(csv).toContain('0,0,1,SADD R2 R0 ZERO');
     expect(csv).toContain('0,0,2,SADD R3 R2 ZERO');
     expect(csv).toContain('0,0,3,SADD R4 R3 ZERO');
+    expect(csv).toContain('0,1,0,SADD R5 ZERO ZERO');
   });
 
   it('specializes logical identities', () => {
@@ -53,6 +55,8 @@ kernel "feat3_logic" {
     @0,1: LOR R2, R0, IMM(0);
     @0,2: LXOR R3, R0, IMM(0);
     @0,3: LXOR R4, R1, R1;
+    @1,0: LOR R5, IMM(0), R2;
+    @1,1: LXOR R6, IMM(0), R2;
   }
 }
 `;
@@ -64,6 +68,8 @@ kernel "feat3_logic" {
     expect(csv).toContain('0,0,1,SADD R2 R0 ZERO');
     expect(csv).toContain('0,0,2,SADD R3 R0 ZERO');
     expect(csv).toContain('0,0,3,SADD R4 ZERO ZERO');
+    expect(csv).toContain('0,1,0,SADD R5 R2 ZERO');
+    expect(csv).toContain('0,1,1,SADD R6 R2 ZERO');
   });
 
   it('keeps non-specializable operations unchanged', () => {
@@ -73,6 +79,9 @@ kernel "feat3_keep" {
   cycle {
     @0,0: SMUL R1, R0, FACTOR;
     @0,1: FXPMUL R2, R0, IMM(1);
+    @0,2: SSUB R3, R2, IMM(2);
+    @0,3: LOR R4, R2, IMM(5);
+    @1,0: LXOR R5, R1, R2;
   }
 }
 `;
@@ -82,5 +91,8 @@ kernel "feat3_keep" {
     const csv = result.artifacts.csv ?? '';
     expect(csv).toContain('0,0,0,SMUL R1 R0 FACTOR');
     expect(csv).toContain('0,0,1,FXPMUL R2 R0 IMM(1)');
+    expect(csv).toContain('0,0,2,SSUB R3 R2 IMM(2)');
+    expect(csv).toContain('0,0,3,LOR R4 R2 IMM(5)');
+    expect(csv).toContain('0,1,0,LXOR R5 R1 R2');
   });
 });

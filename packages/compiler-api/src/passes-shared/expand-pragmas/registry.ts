@@ -11,6 +11,7 @@ import {
   handleReduce,
   handleScan,
   handleStencil,
+  handleTriangle,
   handleTranspose
 } from './handlers-collective.js';
 import {
@@ -35,6 +36,7 @@ export const SUPPORTED_PRAGMAS = new Set<string>([
   'scan',
   'reduce',
   'stencil',
+  'triangle',
   'allreduce',
   'transpose',
   'gather',
@@ -50,6 +52,7 @@ export const PRAGMA_HANDLERS = new Map<string, PragmaHandler>([
   ['scan', handleScan],
   ['reduce', handleReduce],
   ['stencil', handleStencil],
+  ['triangle', handleTriangle],
   ['allreduce', handleAllreduce],
   ['transpose', handleTranspose],
   ['gather', handleGather],

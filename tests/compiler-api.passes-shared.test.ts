@@ -37,12 +37,14 @@ import {
   parseStencilPragmaArgs,
   parseStreamLoadPragmaArgs,
   parseStreamStorePragmaArgs,
+  parseTrianglePragmaArgs,
   parseTransposePragmaArgs
 } from '../packages/compiler-api/src/passes-shared/advanced-args.js';
 import {
   buildReduceCycles,
   buildScanCycles,
-  buildStreamCycles
+  buildStreamCycles,
+  buildTriangleCycles
 } from '../packages/compiler-api/src/passes-shared/collective-builders.js';
 import {
   buildRouteCycles
@@ -182,6 +184,24 @@ describe('compiler-api passes shared utils', () => {
       srcReg: 'R0',
       destReg: 'R1'
     });
+    expect(parseTrianglePragmaArgs('triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1)')).toMatchObject({
+      shape: 'upper',
+      inclusive: true,
+      opcode: 'SMUL',
+      destReg: 'R2',
+      srcA: 'R0',
+      srcB: 'R1'
+    });
+    expect(parseTrianglePragmaArgs('triangle(shape=upper, op=SMUL, dest=R2, srcA=R0, srcB=R1)')).toMatchObject({
+      inclusive: true
+    });
+    expect(parseTrianglePragmaArgs('triangle(shape=upper, inclusive=exclusive, op=SMUL, dest=R2, srcA=R0, srcB=R1)')).toMatchObject({
+      inclusive: false
+    });
+    expect(parseTrianglePragmaArgs('triangle(shape=upper, inclusive=maybe, op=SMUL, dest=R2, srcA=R0, srcB=R1)')).toBeNull();
+    expect(parseTrianglePragmaArgs('triangle(shape=upper, op=SMUL, dest=R2, srcA=R0, srcB=R1, extra=1)')).toBeNull();
+    expect(parseTrianglePragmaArgs('triangle(shape=upper, op=SMUL, dest=R2, srcA=1, srcB=R1)')).toBeNull();
+    expect(parseTrianglePragmaArgs('foo(shape=upper, op=SMUL, dest=R2, srcA=R0, srcB=R1)')).toBeNull();
     expect(parseAllreducePragmaArgs('allreduce(op=add, dest=R1, src=R0, axis=col)')).toMatchObject({
       operation: 'add',
       destReg: 'R1',
@@ -258,6 +278,68 @@ describe('compiler-api passes shared utils', () => {
 
     const streamCycles = buildStreamCycles('LWD', 'R1', 1, 2, 0, grid, span, diagnostics);
     expect(streamCycles).toHaveLength(2);
+
+    const triangleCycles = buildTriangleCycles(
+      {
+        shape: 'upper',
+        inclusive: true,
+        opcode: 'SMUL',
+        destReg: 'R2',
+        srcA: 'R0',
+        srcB: 'R1'
+      },
+      3,
+      grid,
+      span
+    );
+    expect(triangleCycles).toHaveLength(1);
+    expect(triangleCycles[0].statements.length).toBe(10);
+
+    const upperExclusive = buildTriangleCycles(
+      {
+        shape: 'upper',
+        inclusive: false,
+        opcode: 'SMUL',
+        destReg: 'R2',
+        srcA: 'R0',
+        srcB: 'R1'
+      },
+      4,
+      grid,
+      span
+    );
+    expect(upperExclusive[0].statements.length).toBe(6);
+
+    const lowerInclusive = buildTriangleCycles(
+      {
+        shape: 'lower',
+        inclusive: true,
+        opcode: 'SADD',
+        destReg: 'R1',
+        srcA: 'R0',
+        srcB: 'ZERO'
+      },
+      5,
+      grid,
+      span
+    );
+    expect(lowerInclusive[0].statements.length).toBe(10);
+
+    const emptyTriangle = buildTriangleCycles(
+      {
+        shape: 'upper',
+        inclusive: true,
+        opcode: 'SMUL',
+        destReg: 'R2',
+        srcA: 'R0',
+        srcB: 'R1'
+      },
+      0,
+      { rows: 0, cols: 0, topology: 'mesh', wrapPolicy: 'clamp' },
+      span
+    );
+    expect(emptyTriangle).toEqual([]);
+
     expect(diagnostics).toHaveLength(0);
   });
 

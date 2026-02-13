@@ -734,7 +734,7 @@ Snapshot sync (2026-02-13):
 | FEAT-3 | resolved-verified | WS-09 |
 | FEAT-4 | resolved-verified | WS-04 / portfolio |
 | FEAT-5 | pending-backlog | Block B |
-| FEAT-6 | pending-backlog | Block B |
+| FEAT-6 | resolved-verified | WS-10 |
 | FEAT-7 | resolved-verified | portfolio |
 | FEAT-8 | resolved-verified | WS-07 |
 | FEAT-9 | resolved-verified | WS-08 |
@@ -869,7 +869,7 @@ cycle { row 0: _ | SADD R3, R3, RCL | SADD R3, R3, RCL | SADD R3, R3, RCL; }
 
 ---
 
-### FEAT-6: `#pragma triangle` — Upper/Lower Triangle Patterns
+### FEAT-6: `#pragma triangle` — Upper/Lower Triangle Patterns — ✅ RESOLVED (2026-02-13)
 
 **Problem:** The Karatsuba upper-triangle SMUL (lines 90-95) maps 10 PEs where `col >= row`. Cannot be expressed with a single `for` because the condition is 2D.
 
@@ -881,9 +881,9 @@ row 1: _ | SMUL R2, R0, R1 | SMUL R2, R0, R1 | SMUL R2, R0, R1;
 @3,3: SMUL R2, R0, R1;
 ```
 
-**Proposed (1 line):**
+**Canonical implementation (1 line):**
 ```c
-#pragma triangle(upper, inclusive) { @row,col: SMUL R2, R0, R1; }
+triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 ```
 
 **Impact:** -10 lines. Semantic clarity — immediately conveys "upper triangle multiply."

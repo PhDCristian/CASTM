@@ -1,4 +1,5 @@
 export { buildStencilCycles } from './collective/stencil.js';
+export { buildTriangleCycles } from './collective/triangle.js';
 export { buildAllreduceCycles } from './collective/allreduce.js';
 export { buildTransposeCycles } from './collective/transpose.js';
 export {

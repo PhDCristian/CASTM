@@ -7,6 +7,7 @@ export {
   buildAllreduceCycles,
   buildGatherCycles,
   buildStencilCycles,
+  buildTriangleCycles,
   buildStreamCycles,
   buildTransposeCycles
 } from './collective-misc-builders.js';

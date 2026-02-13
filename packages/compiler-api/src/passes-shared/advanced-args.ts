@@ -8,6 +8,7 @@ export type {
   StencilPragmaArgs,
   StreamLoadPragmaArgs,
   StreamStorePragmaArgs,
+  TrianglePragmaArgs,
   TransposePragmaArgs
 } from './advanced-args/types.js';
 
@@ -21,6 +22,7 @@ export {
 export {
   parseGatherPragmaArgs,
   parseStencilPragmaArgs,
+  parseTrianglePragmaArgs,
   parseTransposePragmaArgs
 } from './advanced-args/collectives.js';
 export {
