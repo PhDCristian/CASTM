@@ -1,36 +1,14 @@
-# Barrett Port Examples
+# Carry + Normalize Pattern
 
-This directory contains the OpenEdgeDSL port of the Barrett Modular Exponentiation algorithm.
+A general multi-limb pattern using canonical reusable statements.
 
-## Quick Links
+```openedge
+target "uma-cgra-base";
+let LIMBS = { 0, 0, 0, 0 };
 
-| Document | Description |
-|----------|-------------|
-| [Full Documentation](README.md) | Complete guide with patterns and verification |
-| [Source Files](../../../../examples/dsl_port/) | Actual `.edsl` files |
-| [Verification Scripts](../../../../scripts/) | Test scripts for each module |
-
-## Quick Start
-
-```bash
-# Compile and verify the main orchestrator
-npx vite-node scripts/verify_barrett.ts
-
-# Run full E2E test with simulator
-npx vite-node scripts/e2e_simulator_test.ts
+kernel "carry_normalize_example" {
+  carry_chain(src=R0, carry=R3, store=LIMBS, limbs=3, width=16, row=0);
+  normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
+  conditional_sub(value=R0, sub=R1, dest=R2, target=row(0));
+}
 ```
-
-## Module Summary
-
-| Module | Lines | Purpose |
-|--------|-------|---------|
-| `multiplication.edsl` | 152 | Schoolbook A×B |
-| `squaring.edsl` | 165 | Optimized A² |
-| `limb_conversion.edsl` | 103 | Base-8 → Base-16 |
-| `remainder_computation.edsl` | 96 | R = L - RH |
-| `barrett_modexp.edsl` | 132 | Main orchestrator |
-
-## See Also
-
-- [Porting Guide](../../porting-guide.md) - General porting patterns
-- [#pragma route](../../features/pragmas/route.md) - Routing directive

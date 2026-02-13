@@ -2,7 +2,7 @@ import { defineConfig } from 'vitepress'
 
 export default defineConfig({
   title: 'OpenEdge DSL',
-  description: 'A Domain-Specific Language for Programming Coarse-Grained Reconfigurable Arrays',
+  description: 'Canonical DSL and compiler toolchain for OpenEdge CGRA targets',
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
@@ -30,9 +30,9 @@ export default defineConfig({
     sidebar: {
       '/guide/': [
         {
-          text: 'Getting Started',
+          text: 'Guide',
           items: [
-            { text: 'Introduction', link: '/guide/getting-started' },
+            { text: 'Getting Started', link: '/guide/getting-started' },
             { text: 'CLI Reference', link: '/guide/cli-reference' },
             { text: 'Library Usage', link: '/guide/library-usage' },
           ]
@@ -40,52 +40,71 @@ export default defineConfig({
       ],
       '/language/': [
         {
-          text: 'Language Specification',
+          text: 'Language',
           items: [
             { text: 'Overview', link: '/language/overview' },
             { text: 'Program Structure', link: '/language/program-structure' },
             { text: 'Spatial-Temporal Model', link: '/language/spatial-temporal' },
             { text: 'Instruction Set', link: '/language/instruction-set' },
-            { text: 'Compilation', link: '/language/compilation' },
+            { text: 'Compilation Pipeline', link: '/language/compilation' },
+            { text: 'DSL to CSV Equivalence', link: '/language/dsl-csv-equivalence' },
             { text: 'Formal Grammar', link: '/language/grammar' },
           ]
         }
       ],
       '/features/': [
         {
-          text: 'Core Features',
+          text: 'Core Syntax',
           items: [
-            { text: 'C-like Expressions', link: '/features/expressions' },
+            { text: 'Expressions', link: '/features/expressions' },
             { text: 'Memory Sugar', link: '/features/memory-sugar' },
-            { text: 'Named Arrays', link: '/features/named-arrays' },
-            { text: 'Functions', link: '/features/functions' },
-            { text: 'Control Flow', link: '/features/control-flow' },
-            { text: 'Loops', link: '/features/loops' },
+            { text: 'Unified Declarations', link: '/features/named-arrays' },
             { text: '2D Arrays', link: '/features/2d-arrays' },
-            { text: 'Broadcast Syntax', link: '/features/broadcast-syntax' },
             { text: 'Computed Constants', link: '/features/computed-constants' },
             { text: 'Coordinate Expressions', link: '/features/coordinate-expressions' },
             { text: 'Dynamic Coordinates', link: '/features/dynamic-coordinates' },
-            { text: 'Assertions', link: '/features/assertions' },
+            { text: 'Row Auto-Broadcast', link: '/features/broadcast-syntax' },
+            { text: 'Functions', link: '/features/functions' },
+            { text: 'Loops', link: '/features/loops' },
+            { text: 'Control Flow', link: '/features/control-flow' },
+            { text: 'Runtime Directives', link: '/features/assertions' },
           ]
         },
         {
-          text: 'Pragma Directives',
+          text: 'Advanced Statements',
           collapsed: false,
           items: [
             { text: 'Overview', link: '/features/pragmas/' },
-            { text: '#pragma parallel', link: '/features/pragmas/parallel' },
-            { text: '#pragma reduce', link: '/features/pragmas/reduce' },
-            { text: '#pragma allreduce', link: '/features/pragmas/allreduce' },
-            { text: '#pragma stencil', link: '/features/pragmas/stencil' },
-            { text: '#pragma route', link: '/features/pragmas/route' },
-            { text: '#pragma rotate', link: '/features/pragmas/rotate' },
-            { text: '#pragma shift', link: '/features/pragmas/shift' },
-            { text: '#pragma broadcast', link: '/features/pragmas/broadcast' },
-            { text: '#pragma gather', link: '/features/pragmas/gather' },
-            { text: '#pragma scan', link: '/features/pragmas/scan' },
-            { text: '#pragma unroll', link: '/features/pragmas/unroll' },
-            { text: '#pragma auto_cycle', link: '/features/pragmas/auto-cycle' },
+            { text: 'route(...)', link: '/features/pragmas/route' },
+            { text: 'broadcast(...)', link: '/features/pragmas/broadcast' },
+            { text: 'reduce(...)', link: '/features/pragmas/reduce' },
+            { text: 'scan(...)', link: '/features/pragmas/scan' },
+            { text: 'rotate(...)', link: '/features/pragmas/rotate' },
+            { text: 'shift(...)', link: '/features/pragmas/shift' },
+            { text: 'stencil(...)', link: '/features/pragmas/stencil' },
+            { text: 'allreduce(...)', link: '/features/pragmas/allreduce' },
+            { text: 'transpose(...)', link: '/features/pragmas/transpose' },
+            { text: 'gather(...)', link: '/features/pragmas/gather' },
+            { text: 'stream_load/store(...)', link: '/features/pragmas/stream' },
+            { text: 'accumulate(...)', link: '/features/pragmas/accumulate' },
+            { text: 'carry_chain(...)', link: '/features/pragmas/carry-chain' },
+            { text: 'conditional_sub(...)', link: '/features/pragmas/conditional-sub' },
+            { text: 'collect(...)', link: '/features/pragmas/collect' },
+            { text: 'normalize(...)', link: '/features/pragmas/normalize' },
+            { text: 'extract_bytes(...)', link: '/features/pragmas/extract-bytes' },
+            { text: 'guard(...)', link: '/features/pragmas/guard' },
+            { text: 'triangle(...)', link: '/features/pragmas/triangle' },
+            { text: 'latency_hide(...)', link: '/features/pragmas/auto-cycle' },
+            { text: 'stash(...)', link: '/features/pragmas/stash' },
+            { text: 'pipeline(...)', link: '/features/pragmas/pipeline' },
+          ]
+        },
+        {
+          text: 'Loop Composition',
+          collapsed: true,
+          items: [
+            { text: 'Loop Composition Patterns', link: '/features/pragmas/parallel' },
+            { text: 'Loop Expansion Model', link: '/features/pragmas/unroll' },
           ]
         }
       ],
@@ -93,13 +112,13 @@ export default defineConfig({
         {
           text: 'Examples',
           items: [
-            { text: 'Basic Kernels', link: '/examples/basic' },
+            { text: 'Basic Kernel', link: '/examples/basic' },
             { text: 'Loop Patterns', link: '/examples/loops' },
-            { text: 'Parallel Patterns', link: '/examples/parallel' },
-            { text: 'Stencil Operations', link: '/examples/stencil' },
-            { text: 'Scan & Broadcast', link: '/examples/scan' },
-            { text: 'Barrett Reduction', link: '/examples/barrett' },
-            { text: 'FFT Kernels', link: '/examples/fft' },
+            { text: 'Pipeline + Functions', link: '/examples/parallel' },
+            { text: 'Stencil + Guard', link: '/examples/stencil' },
+            { text: 'Scan + Reduce', link: '/examples/scan' },
+            { text: 'Carry + Normalize', link: '/examples/barrett' },
+            { text: 'Streaming + Route', link: '/examples/fft' },
           ]
         }
       ],
@@ -108,7 +127,7 @@ export default defineConfig({
           text: 'Reference',
           items: [
             { text: 'Error Codes', link: '/reference/error-codes' },
-            { text: 'Porting Guide', link: '/reference/porting-guide' },
+            { text: 'Canonical Style Guide', link: '/reference/porting-guide' },
           ]
         }
       ],
@@ -124,7 +143,7 @@ export default defineConfig({
     },
 
     footer: {
-      message: 'Released under the MIT License.',
+      message: 'Private research documentation. Canonical syntax only.',
       copyright: '© 2024-present Cristian Campos · Universidad de Málaga',
     },
 
@@ -142,6 +161,13 @@ export default defineConfig({
       light: 'vitesse-light',
       dark: 'vitesse-dark',
     },
+    languageAlias: {
+      openedge: 'ts',
+      dsl: 'ts',
+      edsl: 'ts',
+      cgra: 'ts'
+    },
+    defaultHighlightLang: 'txt',
     lineNumbers: true,
   },
 })

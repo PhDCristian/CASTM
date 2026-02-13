@@ -8,10 +8,10 @@ interface Stat {
 }
 
 const stats: Stat[] = [
-  { label: 'ISA Instructions', value: '40', suffix: '+' },
-  { label: 'Pragma Patterns', value: '13' },
-  { label: 'Built-in Themes', value: '8' },
-  { label: 'Grid Topology', value: '4×4' },
+  { label: 'ISA Opcodes', value: '27' },
+  { label: 'Advanced Statements', value: '22' },
+  { label: 'Contract Tests', value: '318' },
+  { label: 'Grid Targets', value: 'NxM' },
 ]
 
 const visible = ref(false)

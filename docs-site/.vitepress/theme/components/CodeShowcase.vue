@@ -1,28 +1,21 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 
-const code = `.data input { 10, 20, 30, 40 }
-.data output { 0 }
+const code = `target "uma-cgra-base";
+let input = { 10, 20, 30, 40 };
+let output @100 = { 0 };
 
-kernel "VectorReduce" {
-    config(0xF, 0);
+function stage_load(src) {
+    cycle { @0,0: SADD R2, src, ZERO; }
+}
 
-    // Load values across the grid
-    #pragma parallel
-    for j in range(4) {
-        cycle {
-            @0,j: R0 = input[j];
-        }
-    }
+kernel "vector_reduce" {
+    pipeline(stage_load(R0));
+    reduce(op=add, dest=R1, src=R2, axis=row);
 
-    // Tree-reduce to single value
-    #pragma reduce(sum, R1, R0)
-
-    // Store result
     cycle {
         @0,0: output[0] = R1;
     }
-    cycle { @0,0: EXIT; }
 }`
 
 const displayed = ref('')
@@ -60,7 +53,7 @@ onMounted(() => {
           <span class="dot yellow"></span>
           <span class="dot green"></span>
         </div>
-        <span class="filename">vector_reduce.edsl</span>
+        <span class="filename">vector_reduce.dsl</span>
       </div>
       <div class="code-body">
         <pre><code>{{ displayed }}<span v-if="!isComplete && showCursor" class="cursor">▎</span></code></pre>

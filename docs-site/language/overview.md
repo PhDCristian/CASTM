@@ -1,50 +1,49 @@
-# Introduction
+# Language Overview
 
-> Archived reference notice: the canonical private source of truth is now `docs/language/*`. This section is kept for historical context only.
+OpenEdgeDSL uses a single canonical syntax profile.
 
-[← Back to Index](../README.md) | [Next: Program Structure →](02-program-structure.md)
+## Design Goals
 
----
+- deterministic lowering to ISA-compatible CSV
+- explicit spatial-temporal intent
+- composable high-level statements without backend format changes
+- typed diagnostics with phase-aware artifacts
 
-## Overview
+## Canonical Surface
 
-OpenEdge-DSL is a high-level structured assembly language designed for the OpenEdgeCGRA architecture. It bridges the gap between the physical spatial nature of CGRAs and the logical flow of software development.
+| Area | Canonical Forms |
+|---|---|
+| declarations | `let` |
+| spatial placement | `at @r,c`, `at row`, `at col`, `at all` |
+| control-flow | `if`, `while`, `for`, runtime `for` |
+| composition | `function`, `pipeline(...)` |
+| advanced operations | `route(...)`, `reduce(...)`, `scan(...)`, `collect(...)`, `carry_chain(...)`, ... |
+| runtime directives | `.io_load`, `.io_store`, `.limit`, `.assert` |
 
-## Design Philosophy
+## Minimal Program (Executable)
 
-1. **Spatial-Temporal Hybrid:** Supports both visual "pipe" syntax for dense dataflow and structural blocks for sparse control.
-2. **Compilation-Time Safety:** Resolves labels, aliases, and constants at compile time, eliminating manual address calculation errors.
-3. **Zero-Overhead:** Compiles deterministically 1:1 to the native CSV format used by the simulator hardware.
-4. **Professional Syntax:** Adopts C/Verilog-style conventions (`{ }`, `;`, directives) for robustness and tooling compatibility.
+```openedge
+target "uma-cgra-base";
+let A = { 1, 2, 3, 4 };
 
----
-
-## Lexical Structure
-
-### Comments
-
-- **Single line:** `//`
-- **Multi-line:** `/* ... */`
-
-```c
-// This is a single-line comment
-/* This is a
-   multi-line comment */
+kernel "overview" {
+  route(@0,1 -> @0,0, payload=R3, accum=R1);
+  cycle {
+    at @0,0: R0 = A[0];
+    at row 1: NOP;
+  }
+}
 ```
 
-### Case Sensitivity
+## What This Gives You
 
-- **Keywords** are case-insensitive (`cycle` == `CYCLE`)
-- **Identifiers** (Labels, Aliases) are case-sensitive
+- direct mapping from high-level intent to deterministic CSV output
+- predictable cycle ordering and lowering
+- typed compilation artifacts for tooling and debugging (`structuredAst`, `ast`, `hir`, `mir`, `lir`, `csv`)
 
-### Separators
+## References
 
-- Instructions must end with a semicolon `;` in structural mode
-- Scopes are defined by curly braces `{ }`
-
----
-
-## Navigation
-
-- [← Back to Index](../README.md)
-- [Next: Program Structure →](02-program-structure.md)
+- [Program Structure](/language/program-structure)
+- [Compilation Pipeline](/language/compilation)
+- [DSL to CSV Equivalence](/language/dsl-csv-equivalence)
+- [Formal Grammar](/language/grammar)

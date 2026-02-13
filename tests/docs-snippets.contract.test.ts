@@ -7,10 +7,14 @@ import { compile } from '@openedge/compiler-api';
 function collectMarkdownFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   const files: string[] = [];
+  const ignoredDirs = new Set(['node_modules', '.vitepress', 'dist']);
 
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
+      if (ignoredDirs.has(entry.name)) {
+        continue;
+      }
       files.push(...collectMarkdownFiles(full));
       continue;
     }
@@ -33,11 +37,14 @@ function extractDslSnippets(markdown: string): string[] {
 }
 
 describe('docs snippets contracts', () => {
-  it('compiles executable DSL snippets from docs', () => {
+  it('compiles executable DSL snippets from canonical docs and docs-site', () => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
-    const docsRoot = path.resolve(__dirname, '../docs/language');
-    const markdownFiles = collectMarkdownFiles(docsRoot);
+    const docsRoots = [
+      path.resolve(__dirname, '../docs/language'),
+      path.resolve(__dirname, '../docs-site')
+    ];
+    const markdownFiles = docsRoots.flatMap((root) => collectMarkdownFiles(root));
 
     const snippets: Array<{ file: string; source: string }> = [];
     for (const file of markdownFiles) {

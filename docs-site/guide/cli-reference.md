@@ -5,153 +5,58 @@ outline: deep
 
 # CLI Reference
 
-OpenEdge DSL provides a rich command-line interface with both interactive and batch modes.
+The `openedge` CLI exposes three canonical commands.
+
+## Usage
+
+```bash
+openedge emit <input.dsl> [-o out.csv] [--format flat-csv|sim-matrix-csv] [--target profile] [--rows N] [--cols N] [--topology torus|mesh]
+openedge check <input.dsl> [--target profile] [--rows N] [--cols N] [--topology torus|mesh]
+openedge analyze <input.dsl> [--target profile] [--rows N] [--cols N] [--topology torus|mesh]
+```
 
 ## Commands
 
-| Command | Alias | Description |
-|---------|-------|-------------|
-| `compile <file>` | | Compile DSL source to CSV format |
-| `check <file>` | | Validate syntax without generating output |
-| `info <file>` | | Display program statistics and memory layout |
-| `watch <file>` | `w` | Watch file and auto-recompile on changes |
-| `tui` | `t` | Launch modern TUI with side-by-side preview |
-| `interactive` | `i` | Launch classic interactive menu-driven mode |
-| `theme [name]` | | Change or list available themes |
+## `emit`
 
-## compile
+Compiles source and emits CSV.
 
-Compile a DSL source file to CSV format:
+- default format: `flat-csv`
+- optional simulator-ready format: `sim-matrix-csv`
+
+Examples:
 
 ```bash
-openedge compile <file> [options]
-
-Options:
-  -o, --output <file>  Output CSV file (default: <input>.csv)
-  -q, --quiet          Suppress non-error output
-  --no-color           Disable colored output
+openedge emit kernel.dsl -o kernel.csv
+openedge emit kernel.dsl --format sim-matrix-csv -o kernel-matrix.csv
 ```
 
-### Example
+## `check`
+
+Runs parse + semantic + lowering validation and prints `ok` on success.
 
 ```bash
-openedge compile kernel.edsl -o output.csv
+openedge check kernel.dsl
 ```
 
-### Output Format
+## `analyze`
 
-The compiler generates CSV format compatible with CGRA simulators:
-
-```csv
-0
-"LWI R0, 0", "LWI R1, 4", NOP, NOP
-NOP, NOP, NOP, NOP
-...
-1
-"SADD R2, R0, R1", NOP, NOP, NOP
-...
-```
-
-## check
-
-Validate syntax without generating output:
+Returns JSON with stats and diagnostics.
 
 ```bash
-openedge check kernel.edsl
+openedge analyze kernel.dsl
 ```
 
-## info
+## Grid Overrides
 
-Display program statistics and memory layout:
+Use runtime grid overrides without changing source:
 
 ```bash
-openedge info kernel.edsl --json
+openedge emit kernel.dsl --rows 8 --cols 8 --topology mesh
 ```
 
-```
-  ✓ Program: kernel.edsl
+## Exit Codes
 
-    Status:      Valid
-    Cycles:      5
-    Grid:        2×2
-    Memory:      2 region(s)
-        input: 0x0 (2 values)
-        output: 0x8 (1 values)
-```
-
-## watch
-
-Watch a file and auto-recompile on changes:
-
-```bash
-openedge watch kernel.edsl
-# or
-openedge w kernel.edsl
-```
-
-## tui
-
-Launch the modern Terminal UI:
-
-```bash
-openedge tui  # or just 'openedge t'
-```
-
-| Feature | TUI (Modern) | Interactive (Classic) |
-|---------|--------------|-----------------------|
-| **Layout** | Double-column | Single-column |
-| **Preview** | Real-time (on hover) | On select |
-| **Navigation** | Arrow keys + ESC | Arrow keys |
-| **Visuals** | React-based Ink | Inquirer-based |
-| **File Browser** | Side-by-side | Menu-driven |
-
-### Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `↑` `↓` | Navigate menu / files |
-| `Enter` | Select item |
-| `ESC` | Go back (TUI only) |
-| `Ctrl+C` | Exit gracefully |
-
-## Themes
-
-8 built-in color themes:
-
-| Theme | Style |
-|-------|-------|
-| `default` | Cyan and green |
-| `ocean` | Blue marine tones |
-| `sunset` | Warm red and orange |
-| `nord` | Nord color palette |
-| `dracula` | Purple and green |
-| `monokai` | Classic Monokai |
-| `cyberpunk` | Bright neon colors |
-| `minimal` | Monochrome minimal |
-
-```bash
-openedge theme          # List all themes
-openedge theme dracula  # Apply theme
-```
-
-## Configuration
-
-Configuration is stored in `~/.openedge/`:
-
-```
-~/.openedge/
-├── config.json    # Theme and preferences
-└── history.json   # Recent files
-```
-
-### Options
-
-```json
-{
-  "theme": "default",
-  "recentFilesLimit": 10,
-  "watchDebounceMs": 300,
-  "clearScreenOnAction": true,
-  "showSpinners": true
-}
-```
+- `0`: success
+- `1`: CLI/runtime failure
+- `2`: compilation diagnostics (parse/semantic/lowering errors)

@@ -1,83 +1,58 @@
-# Compilation Rules (DSL to CSV)
+# Compilation Pipeline
 
-[← Instruction Set](04-instruction-set.md) | [Index](../README.md) | [Next: Features →](../features/README.md)
+OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifacts.
 
----
+## Pipeline Stages
 
-The compiler performs a 2-pass process to transform DSL source code into the target CSV format.
+| Stage | Input | Output | Purpose |
+|---|---|---|---|
+| Parse | source text | structured AST | canonical syntax parsing and shape validation |
+| Analyze | structured AST | flat AST | semantic checks, expansion, deterministic lowering prep |
+| Lower | flat AST | HIR / MIR / LIR | target-oriented intermediate lowering |
+| Emit | LIR or MIR | CSV | backend output (`flat-csv` or `sim-matrix-csv`) |
 
-## Pass 1: Symbol Resolution
+## Public API
 
-1. Initialize `cycle_counter = 0`.
-2. Parse line by line.
-3. Record `.const` and `.alias` definitions.
-4. When a `label:` is encountered, store `{ label_name: cycle_counter }` in the Symbol Table.
-5. When a `cycle` block closes, increment `cycle_counter`.
+- `parse(source, options)`
+- `analyze(ast, options)`
+- `compile(source, options)`
+- `emit(program, backendOptions)`
 
-## Pass 2: Code Generation
+## Compile Options
 
-1. Reset `cycle_counter = 0`.
-2. For each `cycle` block:
-   * Initialize a 4x4 grid of `NOP` instructions.
-   * **Visual Pipe:** Parse `row r: c0 | c1 | c2 | c3`. Fill grid `(r, 0..3)`. Replace `_` with `NOP`.
-   * **Structural:** Parse `row r { col c: ... }`. Fill specific grid cells.
-   * **Direct:** Parse `@c,r: ...`. Fill specific grid cell.
-   * **Instruction Translation:**
-     * Replace Aliases with Registers (`r_acc` -> `R3`).
-     * Replace Constants with Values (`.THRESHOLD` -> `100`).
-     * Replace Labels with Cycle Numbers (`end_loop` -> `15`).
-   * **Emit CSV:** Generate 16 lines (one per PE) for the current cycle:
-     `cycle_counter, row, col, "INSTRUCTION"`
-3. Increment `cycle_counter`.
+| Option | Type | Purpose |
+|---|---|---|
+| `targetProfile` | `string` | select target profile from `lang-spec` |
+| `grid` | `{ rows?, cols?, topology? }` | override effective grid at compile time |
+| `emitArtifacts` | `Array<'structured'|'ast'|'hir'|'mir'|'lir'|'csv'>` | request phase artifacts |
+| `strictUnsupported` | `boolean` | enforce strict validation for unsupported forms |
 
----
+## Compile Result Artifacts
 
-## Safety Mechanisms
+`compile(...)` may include:
 
-### Implicit Exit
+- `structuredAst`
+- `ast` (flat AST)
+- `hir`
+- `mir`
+- `lir`
+- `csv`
+- runtime metadata: `memoryRegions`, `ioConfig`, `assertions`, `symbols`
 
-If no `EXIT` instruction is detected in the entire kernel after compilation, the compiler must automatically append a new cycle containing `EXIT` at `@0,0` to prevent infinite simulation loops.
+## Diagnostics Contract
 
-**Example:**
+Each diagnostic includes:
 
-```c
-// Source (no EXIT)
-kernel "NoExit" {
-    config(0xF, 0);
-    cycle {
-        row 0: SADD R0, R0, IMM(1) | _ | _ | _;
-    }
-}
+- `code`
+- `severity`
+- `span`
+- `message`
+- optional `hint`, `hintCode`
 
-// Compiled output includes auto-generated exit:
-// Cycle 0: SADD R0, R0, 1 | NOP | NOP | NOP
-// Cycle 1 (auto): EXIT | NOP | NOP | NOP (all rows)
-```
+See [Error Codes](/reference/error-codes).
 
----
+## DSL to CSV View
 
-## CSV Output Format
+Use the dedicated equivalence page for side-by-side examples:
 
-The generated CSV has the following structure:
-
-```csv
-cycle,row,col,instruction
-0,0,0,"SADD R0, R0, 1"
-0,0,1,"NOP"
-0,0,2,"NOP"
-0,0,3,"NOP"
-0,1,0,"NOP"
-...
-1,0,0,"EXIT"
-...
-```
-
-Each row represents one PE at one cycle, with 16 rows per cycle (4 rows × 4 columns).
-
----
-
-## Navigation
-
-- [← Instruction Set](04-instruction-set.md)
-- [Index](../README.md)
-- [Next: Features →](../features/README.md)
+- [DSL to CSV Equivalence](/language/dsl-csv-equivalence)

@@ -1,8 +1,12 @@
-# Archived Language Docs Notice
+# Language Documentation
 
-The pages in this folder document archived syntax snapshots and are preserved only for historical/reference purposes.
+This directory documents the canonical OpenEdgeDSL language surface.
 
-Canonical private language docs live in:
+Start here:
 
-- `docs/language/language-spec.md`
-- `docs/language/grammar.md`
+- [Overview](/language/overview)
+- [Program Structure](/language/program-structure)
+- [Spatial-Temporal Model](/language/spatial-temporal)
+- [Compilation Pipeline](/language/compilation)
+- [DSL to CSV Equivalence](/language/dsl-csv-equivalence)
+- [Formal Grammar](/language/grammar)

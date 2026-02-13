@@ -5,76 +5,64 @@ outline: deep
 
 # Getting Started
 
-OpenEdge DSL is a high-level structured assembly language designed for the **OpenEdgeCGRA architecture**. It bridges the gap between the physical spatial nature of CGRAs and the logical flow of software development.
+OpenEdgeDSL uses canonical syntax and compiles deterministically to CSV for OpenEdge CGRA flows.
 
 ## Prerequisites
 
-- **Node.js** ≥ 18.0.0
-- **npm** ≥ 8.0.0
+- Node.js >= 18
+- pnpm >= 8 (or npm)
 
-## Installation
-
-### From Source
+## Install and Build
 
 ```bash
 git clone https://github.com/PhDCristian/OpenEdgeDSL.git
 cd OpenEdgeDSL
-npm install
-npm run build:cli
-npm link  # Optional: install globally
+pnpm install
+pnpm -r build
 ```
 
-### Package-based Usage
+## First Kernel
 
-OpenEdgeDSL is consumed through `@openedge/*` packages (for example `@openedge/compiler-api` and `@openedge/cli`).
+Create `hello.dsl`:
 
-## Quick Start
-
-### 1. Write Your First Kernel
-
-Create a file called `hello.edsl`:
-
-```c
+```openedge
 target "uma-cgra-base";
 let input = { 10, 20 };
-let output = { 0 };
+let output @100 = { 0 };
 
-kernel "Hello" {
-    cycle {
-        at @0,0: R0 = input[0];
-        at @0,1: R1 = input[1];
-    }
-
-    cycle {
-        at @0,0: R2 = R0 + R1;
-    }
-
-    cycle {
-        at @0,0: output[0] = R2;
-    }
-
-    cycle {
-        at @0,0: EXIT;
-    }
+kernel "hello" {
+  cycle {
+    at @0,0: R0 = input[0];
+    at @0,1: R1 = input[1];
+  }
+  cycle {
+    at @0,0: R2 = R0 + R1;
+    at @0,1: output[0] = R2;
+  }
 }
 ```
 
-### 2. Compile It
+## Compile
 
 ```bash
-openedge emit hello.edsl -o hello.csv
+openedge emit hello.dsl -o hello.csv
 ```
 
-### 3. Validate and Analyze
+## Validate and Analyze
 
 ```bash
-openedge check hello.edsl
-openedge analyze hello.edsl
+openedge check hello.dsl
+openedge analyze hello.dsl
 ```
 
-## What Next?
+## Authoring Rules
 
-- 📖 **[Language Specification](/language/overview)** — Learn the syntax and semantics
-- ⚡ **[Features](/features/expressions)** — Explore C-like expressions, pragmas, and more
-- 🎯 **[Examples](/examples/basic)** — See complete, runnable kernels
-- 🔧 **[CLI Reference](/guide/cli-reference)** — Full command documentation
+- Start every program with `target "...";`.
+- Use `let` for constants, aliases, and arrays.
+- Use canonical advanced statements such as `route(...)`, `reduce(...)`, and `scan(...)`.
+
+## Next
+
+- [Language Overview](/language/overview)
+- [Features](/features/expressions)
+- [Examples](/examples/basic)
