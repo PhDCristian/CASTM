@@ -152,6 +152,7 @@ describe('branch coverage round 2', () => {
       span,
       statements: [
         { kind: 'at', row: 0, col: 0, instruction: { text: 'NOP', opcode: 'NOP', operands: [], span }, span },
+        { kind: 'at-expr', rowExpr: 'i/4', colExpr: 'i%4', instruction: { text: 'NOP', opcode: 'NOP', operands: [], span }, span },
         { kind: 'row', row: 1, instructions: [{ text: 'BNE R0, R1, L', opcode: 'BNE', operands: [], span }], span },
         { kind: 'col', col: 2, instruction: { text: 'NOP', opcode: 'NOP', operands: [], span }, span },
         { kind: 'all', instruction: { text: 'NOP', opcode: 'NOP', operands: [], span }, span }
@@ -162,8 +163,9 @@ describe('branch coverage round 2', () => {
 
     const cloned = cloneCycle(cycle, 3);
     expect(cloned.index).toBe(3);
-    expect((cloned.statements[2] as any).kind).toBe('col');
-    expect((cloned.statements[3] as any).kind).toBe('all');
+    expect((cloned.statements[1] as any).kind).toBe('at-expr');
+    expect((cloned.statements[3] as any).kind).toBe('col');
+    expect((cloned.statements[4] as any).kind).toBe('all');
   });
 
   it('covers function prelude and dispatch fallback', () => {

@@ -19,6 +19,17 @@ export function lowerCycleStatements(
   const occupied = new Set<string>();
 
   for (const stmt of statements) {
+    if (stmt.kind === 'at-expr') {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Semantic.UnresolvedCoordinateExpression,
+        'error',
+        stmt.span,
+        `Unresolved spatial coordinate expression '@${stmt.rowExpr},${stmt.colExpr}'.`,
+        'Bind coordinate expressions via for-loop expansion or use explicit numeric coordinates.'
+      ));
+      continue;
+    }
+
     if (stmt.kind === 'at') {
       addOperation(operations, occupied, cycleIndex, stmt.row, stmt.col, stmt.instruction, grid, labels, diagnostics);
       continue;

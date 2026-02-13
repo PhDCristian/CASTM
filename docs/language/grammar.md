@@ -40,6 +40,11 @@ at_all_stmt      ::= "at" "all" ":" instruction ";"
 short_point_stmt ::= "@" int_expr "," int_expr ":" instruction ";"
 ```
 
+Notes:
+
+- A single source line inside `cycle { ... }` may contain multiple `cycle_stmt` entries separated by `;`.
+- Spatial coordinate expressions are integer expressions; when division appears (for example `@k/4,k%4`) canonical lowering uses integer truncation semantics after loop binding.
+
 ## Control-flow
 
 ```text

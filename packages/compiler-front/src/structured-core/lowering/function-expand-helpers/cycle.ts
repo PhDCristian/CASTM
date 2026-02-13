@@ -43,6 +43,21 @@ export function cloneCycle(cycle: CycleAst, index: number): CycleAst {
         };
       }
 
+      if (statement.kind === 'at-expr') {
+        return {
+          kind: 'at-expr' as const,
+          rowExpr: statement.rowExpr,
+          colExpr: statement.colExpr,
+          instruction: {
+            text: statement.instruction.text,
+            opcode: statement.instruction.opcode,
+            operands: [...statement.instruction.operands],
+            span: { ...statement.instruction.span }
+          },
+          span: { ...statement.span }
+        };
+      }
+
       if (statement.kind === 'row') {
         return {
           kind: 'row' as const,

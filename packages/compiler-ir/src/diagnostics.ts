@@ -16,7 +16,8 @@ export const ErrorCodes = {
     InvalidGridSpec: 'E3007',
     UnsupportedPragma: 'E3008',
     UnknownLabel: 'E3009',
-    DuplicateLabel: 'E3010'
+    DuplicateLabel: 'E3010',
+    UnresolvedCoordinateExpression: 'E3011'
   },
   Internal: {
     UnexpectedState: 'E9001'

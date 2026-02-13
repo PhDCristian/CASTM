@@ -1,6 +1,6 @@
 import { CycleStatementAst, spanAt } from '@openedge/compiler-ir';
 import { parseInstruction } from './instructions.js';
-import { evaluateNumericExpression } from '../parser-utils/numbers.js';
+import { evaluateCoordinateExpression, evaluateNumericExpression } from '../parser-utils/numbers.js';
 import { splitTopLevel } from '../parser-utils/strings.js';
 
 const ADVANCED_NAMES = new Set([
@@ -37,11 +37,21 @@ export function parseCycleStatement(
 ): CycleStatementAst | null {
   const atMatch = clean.match(/^(?:at\s+)?@\s*([^,]+)\s*,\s*([^:]+)\s*:\s*(.+);\s*$/i);
   if (atMatch) {
-    const row = evaluateNumericExpression(atMatch[1].trim(), constants, bindings);
-    const col = evaluateNumericExpression(atMatch[2].trim(), constants, bindings);
-    if (row === null || col === null) return null;
+    const rowExpr = atMatch[1].trim();
+    const colExpr = atMatch[2].trim();
+    const row = evaluateCoordinateExpression(rowExpr, constants, bindings);
+    const col = evaluateCoordinateExpression(colExpr, constants, bindings);
     const instructionText = atMatch[3].trim();
     const column = Math.max(1, rawLine.indexOf(instructionText) + 1);
+    if (row === null || col === null) {
+      return {
+        kind: 'at-expr',
+        rowExpr,
+        colExpr,
+        instruction: parseInstruction(instructionText, line, column),
+        span: spanAt(line, 1, clean.length)
+      };
+    }
     return {
       kind: 'at',
       row,

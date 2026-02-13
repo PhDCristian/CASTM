@@ -4,7 +4,7 @@ Discovered while porting `sbox_k7_v5_rout.edsl` → `sbox_k7_v6_compact.edsl`.
 
 ---
 
-## Status Snapshot (2026-02-10)
+## Status Snapshot (2026-02-13)
 
 Current tracking has been consolidated in:
 
@@ -12,9 +12,9 @@ Current tracking has been consolidated in:
 
 Quick summary:
 
-- **Resolved in OpenEdgeDSL:** Issue 1, 2, 3, 4, 5, 6, 9, 12 and BUG-1, BUG-6.
+- **Resolved in OpenEdgeDSL (verified by tests):** Issue 1, 2, 3, 5, 6, 9, 10, 12 and BUG-1, BUG-6, BUG-7, BUG-8, BUG-9.
 - **Resolved in simulator sync:** BUG-3/4 and wrapper parity guardrails for BUG-5.
-- **Pending as design/enhancement choices:** Issue 8, 10, 11 and re-validation of Issue 7 in integration scenarios.
+- **Canonical-intentional (not bugs in canonical-only mode):** legacy `#pragma` workflow items (Issue 4, 7, 8, 11 and related REG sections).
 
 ---
 

@@ -24,6 +24,26 @@ export function evaluateNumericExpression(
   constants: ReadonlyMap<string, number>,
   bindings: ReadonlyMap<string, number>
 ): number | null {
+  const evaluated = evaluateNumericExpressionRaw(expression, constants, bindings);
+  if (evaluated === null || !Number.isInteger(evaluated)) return null;
+  return evaluated;
+}
+
+export function evaluateCoordinateExpression(
+  expression: string,
+  constants: ReadonlyMap<string, number>,
+  bindings: ReadonlyMap<string, number>
+): number | null {
+  const evaluated = evaluateNumericExpressionRaw(expression, constants, bindings);
+  if (evaluated === null) return null;
+  return Number.isInteger(evaluated) ? evaluated : Math.trunc(evaluated);
+}
+
+function evaluateNumericExpressionRaw(
+  expression: string,
+  constants: ReadonlyMap<string, number>,
+  bindings: ReadonlyMap<string, number>
+): number | null {
   const unresolved: string[] = [];
   const replaced = expression.replace(/\b[A-Za-z_][A-Za-z0-9_]*\b/g, (name) => {
     if (bindings.has(name)) return String(bindings.get(name));
@@ -32,19 +52,12 @@ export function evaluateNumericExpression(
     return name;
   });
 
-  if (unresolved.length > 0) {
-    return null;
-  }
-
-  if (!/^[0-9a-fA-FxX+\-*/%()\s]+$/.test(replaced)) {
-    return null;
-  }
+  if (unresolved.length > 0) return null;
+  if (!/^[0-9a-fA-FxX+\-*/%()\s]+$/.test(replaced)) return null;
 
   try {
     const value = Function(`"use strict"; return (${replaced});`)();
-    if (typeof value !== 'number' || !Number.isFinite(value) || !Number.isInteger(value)) {
-      return null;
-    }
+    if (typeof value !== 'number' || !Number.isFinite(value)) return null;
     return value;
   } catch {
     return null;

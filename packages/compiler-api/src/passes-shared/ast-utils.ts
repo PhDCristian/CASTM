@@ -35,6 +35,14 @@ export function cloneAst(ast: AstProgram): AstProgram {
             };
           }
 
+          if (stmt.kind === 'at-expr') {
+            return {
+              ...stmt,
+              span: { ...stmt.span },
+              instruction: cloneInstruction(stmt.instruction)
+            };
+          }
+
           if (stmt.kind === 'row') {
             return {
               ...stmt,

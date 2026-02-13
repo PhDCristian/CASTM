@@ -26,6 +26,7 @@ export function consumeFunctionPreludeStatement(
 
   kernel.pragmas.push({
     text: advancedPragmaText,
+    anchorCycleIndex: Array.isArray(kernel.cycles) ? kernel.cycles.length : 0,
     span: spanAt(entry.lineNo, 1, clean.length)
   });
   return true;

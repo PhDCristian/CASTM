@@ -15,6 +15,9 @@ function renderCycleStatement(statement: CycleStatementAst): string {
   if (statement.kind === 'at') {
     return `@${statement.row},${statement.col}: ${statement.instruction.text};`;
   }
+  if (statement.kind === 'at-expr') {
+    return `@${statement.rowExpr},${statement.colExpr}: ${statement.instruction.text};`;
+  }
   if (statement.kind === 'row') {
     return `at row ${statement.row}: ${statement.instructions.map((instruction) => instruction.text).join(' | ')};`;
   }

@@ -19,7 +19,8 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 | `function` (definition + call expansion) | done | `tests/compiler-api.contract.test.ts` | Supports pre-kernel definitions, named/positional argument binding, nested non-recursive calls, label-safe expansion, and `all:` cycle statements inside expanded bodies. |
 | Labeled cycles + branch label resolution | done | `tests/compiler-api.contract.test.ts` | Supports `label: cycle { ... }`, branch/jump label resolution, duplicate/unknown label diagnostics, and expansion-safe function label prefixing. |
 | `while` / `if` | done | `tests/compiler-api.contract.test.ts` | Kernel/function lowering to branch+jump labeled cycles is in place, including fused-while neighbor-operand rewriting for control conditions. |
-| `for ... in range(...)` (kernel + `cycle`) | done | `tests/compiler-api.contract.test.ts` | Supports compile-time unroll (including descending ranges) in kernel/cycle scopes and explicit runtime loop form (`at @r,c runtime`). |
+| `for ... in range(...)` (kernel + `cycle`) | done | `tests/compiler-api.contract.test.ts`, `tests/issues/bug-07-computed-loop-coords.test.ts` | Supports compile-time unroll (including descending ranges) in kernel/cycle scopes, explicit runtime loop form (`at @r,c runtime`), and computed spatial coordinates like `@k/4,k%4`. |
+| Multi-statement cycle-line parsing | done | `tests/issues/issue-03-multi-statement-cycle-line.test.ts` | `cycle { ... }` bodies support semicolon-separated placements on the same line without instruction-text corruption. |
 
 ## Declarations & Runtime Directives
 
@@ -38,7 +39,7 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 |---|---|---|---|
 | Legacy pragma rejection (`#pragma ...`) | done | `tests/compiler-api.contract.test.ts` | Rejected with explicit parse diagnostics; canonical form is statement-based (`route(...)`, `reduce(...)`, ...). |
 | Strict unsupported validation | done | `tests/compiler-api.contract.test.ts` | `strictUnsupported` default is `true` (`E3008`). |
-| `route` lowering | done | `tests/compiler-api.contract.test.ts` | Canonical `@r,c` coordinates lower to topology-aware route cycles, including custom-op destination forms with `INCOMING` resolution. |
+| `route` lowering | done | `tests/compiler-api.contract.test.ts`, `tests/issues/bug-08-route-order.test.ts` | Canonical `@r,c` coordinates lower to topology-aware route cycles, including custom-op destination forms with `INCOMING` resolution and lexical-position-preserving insertion (no route hoisting). |
 | `broadcast` lowering | done | `tests/compiler-api.contract.test.ts` | Fanout implemented via route-style lowering for `row`/`column`/`all` scopes (including NxM grids). |
 | `rotate`/`shift` lowering | done | `tests/compiler-api.contract.test.ts` | Lowering applies across all grid rows; `rotate` remains torus-only by design and `shift` supports fill values. |
 | `scan` lowering | done | `tests/compiler-api.contract.test.ts` | Supports `add/and/or/xor/max/min`, `inclusive/exclusive`, and `left/right/up/down` across all rows/cols lanes. |

@@ -9,6 +9,7 @@ import { parseForHeader } from '../control-flow.js';
 import { parseCycleStatement } from '../statements.js';
 import { collectBlockFromEntries, SourceLineEntry } from '../../parser-utils/blocks.js';
 import { evaluateNumericExpression } from '../../parser-utils/numbers.js';
+import { splitTopLevel } from '../../parser-utils/strings.js';
 import { expandSpatialAtBlockStatements } from '../cycle-spatial.js';
 
 export interface ExpandLoopEntryInput {
@@ -154,23 +155,31 @@ export function tryExpandSingleCycleStatementStep(input: ExpandLoopEntryInput): 
     return { handled: true, nextIndex: input.index, shouldBreak: false, statements: [] };
   }
 
-  const statement = parseCycleStatement(
-    input.clean,
-    input.entry.lineNo,
-    input.raw,
-    input.constants,
-    input.bindings
-  );
-  if (!statement) {
-    input.diagnostics.push(makeDiagnostic(
-      ErrorCodes.Parse.InvalidSyntax,
-      'error',
-      spanAt(input.entry.lineNo, 1, input.clean.length),
-      `Invalid cycle statement: '${input.clean}'`,
-      'Expected @row,col:, at @row,col:, at @row,col { ... }, at row/col/all, or for ... in range(...) { ... }.'
-    ));
-    return { handled: true, nextIndex: input.index, shouldBreak: false, statements: [] };
+  const statements: CycleStatementAst[] = [];
+  const parts = splitTopLevel(input.clean, ';').map((part) => part.trim()).filter(Boolean);
+  const candidates = parts.length > 1 ? parts.map((part) => `${part};`) : [input.clean];
+
+  for (const candidate of candidates) {
+    const statement = parseCycleStatement(
+      candidate,
+      input.entry.lineNo,
+      input.raw,
+      input.constants,
+      input.bindings
+    );
+    if (!statement) {
+      const visible = candidate.endsWith(';') ? candidate.slice(0, -1) : candidate;
+      input.diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(input.entry.lineNo, 1, Math.max(1, visible.length)),
+        `Invalid cycle statement: '${visible}'`,
+        'Expected @row,col:, at @row,col:, at @row,col { ... }, at row/col/all, or for ... in range(...) { ... }.'
+      ));
+      continue;
+    }
+    statements.push(statement);
   }
 
-  return { handled: true, nextIndex: input.index, shouldBreak: false, statements: [statement] };
+  return { handled: true, nextIndex: input.index, shouldBreak: false, statements };
 }

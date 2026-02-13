@@ -15,6 +15,14 @@ export interface CycleStmtAt {
   span: SourceSpan;
 }
 
+export interface CycleStmtAtExpr {
+  kind: 'at-expr';
+  rowExpr: string;
+  colExpr: string;
+  instruction: InstructionAst;
+  span: SourceSpan;
+}
+
 export interface CycleStmtRow {
   kind: 'row';
   row: number;
@@ -35,7 +43,7 @@ export interface CycleStmtAll {
   span: SourceSpan;
 }
 
-export type CycleStatementAst = CycleStmtAt | CycleStmtRow | CycleStmtCol | CycleStmtAll;
+export type CycleStatementAst = CycleStmtAt | CycleStmtAtExpr | CycleStmtRow | CycleStmtCol | CycleStmtAll;
 
 export interface CycleAst {
   index: number;
@@ -60,6 +68,7 @@ export interface DeclarationAst {
 
 export interface PragmaAst {
   text: string;
+  anchorCycleIndex?: number;
   span: SourceSpan;
 }
 

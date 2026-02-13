@@ -42,3 +42,6 @@ kernel "canonical_example" {
 
 - Memory sugar in `cycle {}` lowers to existing ISA (`LWI/SWI`) without changing CSV format.
 - Advanced statements lower to existing codegen passes.
+- `route(...)` lowering preserves lexical position relative to neighboring cycles (no global hoisting).
+- Inside `cycle { ... }`, semicolon-separated placements on the same line are supported.
+- Computed spatial coordinates in loops (for example `@k/4,k%4`) are valid canonical syntax.

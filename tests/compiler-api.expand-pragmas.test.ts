@@ -84,4 +84,24 @@ describe('compiler-api expand pragmas pass', () => {
     const result = pass.run(ast);
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedPragma)).toBe(true);
   });
+
+  it('normalizes out-of-range pragma anchor cycle indices', () => {
+    const ast = makeBaseAst([
+      'route(@0,1 -> @0,0, payload=R3, accum=R1)',
+      'route(@0,0 -> @0,1, payload=R3, accum=R1)'
+    ]);
+    ast.kernel!.pragmas[0].anchorCycleIndex = -3;
+    ast.kernel!.pragmas[1].anchorCycleIndex = 999;
+
+    const pass = createExpandPragmasPass(true, {
+      rows: 4,
+      cols: 4,
+      topology: 'torus',
+      wrapPolicy: 'wrap'
+    });
+
+    const result = pass.run(ast);
+    expect(result.diagnostics).toHaveLength(0);
+    expect((result.output.kernel?.cycles.length ?? 0)).toBeGreaterThan(2);
+  });
 });

@@ -78,6 +78,7 @@ import { bindFunctionCallArgs } from '../packages/compiler-front/src/structured-
 import { parseFunctionCallLine } from '../packages/compiler-front/src/structured-core/lowering/functions/call.js';
 import {
   applyBindings,
+  evaluateCoordinateExpression,
   evaluateNumericExpression,
   parseNumber
 } from '../packages/compiler-front/src/structured-core/parser-utils/numbers.js';
@@ -470,7 +471,11 @@ describe('branch coverage round 9 - compiler front helpers', () => {
     expect(parseDirective('let A[4];', 1)?.kind).toBe('data2d');
     expect(parseDirective('let A[4] = {1,2,3,4};', 1)?.kind).toBe('data2d');
 
-    expect(parseCycleStatement('@bad,0: NOP;', 1, '@bad,0: NOP;', new Map(), new Map())).toBeNull();
+    expect(parseCycleStatement('@bad,0: NOP;', 1, '@bad,0: NOP;', new Map(), new Map())).toMatchObject({
+      kind: 'at-expr',
+      rowExpr: 'bad',
+      colExpr: '0'
+    });
     expect(parseCycleStatement('at row bad: NOP;', 1, 'at row bad: NOP;', new Map(), new Map())).toBeNull();
     expect(parseCycleStatement('at col bad: NOP;', 1, 'at col bad: NOP;', new Map(), new Map())).toBeNull();
   });
@@ -509,6 +514,8 @@ describe('branch coverage round 9 - compiler front helpers', () => {
     expect(parseNumber('-0xF')).toBe(-15);
     expect(applyBindings('i + j', new Map([['i', 1], ['j', 2]])).includes('1')).toBe(true);
     expect(evaluateNumericExpression('Math.max(1,2)', new Map(), new Map())).toBeNull();
+    expect(evaluateCoordinateExpression('1/4', new Map(), new Map())).toBe(0);
+    expect(evaluateCoordinateExpression('1/0', new Map(), new Map())).toBeNull();
 
     const cycleResult = tryParseCycleStatement([{ lineNo: 1, rawLine: 'cycle {', cleanLine: 'cycle {' }] as any, 0, 'cycle {', 1, { value: 0 }, []);
     expect(cycleResult.stop).toBe(true);

@@ -27,16 +27,29 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
         return { output, diagnostics };
       }
 
-      const generatedCycles: CycleAst[] = [];
-      const context: ExpandPragmaContext = {
-        grid,
-        generatedCycles,
-        diagnostics
+      const cyclesByAnchor = new Map<number, CycleAst[]>();
+      const totalCycles = output.kernel.cycles.length;
+
+      const normalizeAnchor = (anchorCycleIndex: number | undefined): number => {
+        if (!Number.isInteger(anchorCycleIndex)) return 0;
+        if (anchorCycleIndex! < 0) return 0;
+        if (anchorCycleIndex! > totalCycles) return totalCycles;
+        return anchorCycleIndex!;
       };
 
       for (const pragma of output.kernel.pragmas) {
         const name = extractPragmaName(pragma.text);
         const handler = PRAGMA_HANDLERS.get(name);
+        const anchor = normalizeAnchor(pragma.anchorCycleIndex);
+        const generatedCycles = cyclesByAnchor.get(anchor) ?? [];
+        if (!cyclesByAnchor.has(anchor)) {
+          cyclesByAnchor.set(anchor, generatedCycles);
+        }
+        const context: ExpandPragmaContext = {
+          grid,
+          generatedCycles,
+          diagnostics
+        };
 
         if (handler) {
           handler(pragma, context);
@@ -56,8 +69,19 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
         ));
       }
 
-      if (generatedCycles.length > 0) {
-        const merged = [...generatedCycles, ...output.kernel.cycles];
+      const hasGeneratedCycles = [...cyclesByAnchor.values()].some((bucket) => bucket.length > 0);
+      if (hasGeneratedCycles) {
+        const merged: CycleAst[] = [];
+        for (let cycleIndex = 0; cycleIndex <= totalCycles; cycleIndex++) {
+          const anchoredCycles = cyclesByAnchor.get(cycleIndex);
+          if (anchoredCycles && anchoredCycles.length > 0) {
+            merged.push(...anchoredCycles);
+          }
+          if (cycleIndex < totalCycles) {
+            merged.push(output.kernel.cycles[cycleIndex]);
+          }
+        }
+
         output.kernel.cycles = merged.map((cycle, index) => ({
           ...cycle,
           index
