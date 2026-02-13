@@ -741,7 +741,7 @@ Snapshot sync (2026-02-13):
 | FEAT-10 | pending-backlog | Block A |
 | FEAT-11 | resolved-verified | WS-15 |
 | FEAT-12 | resolved-verified | WS-13 |
-| FEAT-13 | pending-backlog | Block C |
+| FEAT-13 | resolved-verified | WS-16 |
 | FEAT-14 | pending-backlog | Block C |
 | FEAT-15 | resolved-verified | WS-11 |
 | FEAT-16 | pending-backlog | Block C |
@@ -1047,7 +1047,7 @@ collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=shift_add);
 
 ---
 
-### FEAT-13: `#pragma accumulate` — Product Accumulation Networks
+### FEAT-13: `accumulate(...)` — Product Accumulation Networks — ✅ RESOLVED (2026-02-13)
 
 **Problem:** The product accumulation in `accumulate_c_multiply` (lines 274-304) is the **longest single block** in the kernel: 31 lines of hand-optimized ROUT chains where each PE has a different instruction (RCB, RCL, RCR, RCT, SELF, R2). This is a **convolution accumulation graph** that maps anti-diagonal sums.
 
@@ -1062,13 +1062,16 @@ cycle {
 }
 ```
 
-**Proposed:**
+**Canonical implementation:**
 ```c
-#pragma accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT)
-// Compiler generates the optimal routing graph for anti-diagonal accumulation
+accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
+accumulate(pattern=row, products=R2, accum=R3, out=ROUT, combine=xor);
+accumulate(pattern=col, products=R2, accum=R3, out=ROUT, combine=sub);
 ```
 
-**Impact:** -30 lines. This is the highest single-block reduction potential but also the hardest to implement — requires the compiler to synthesize optimal ROUT chains for arbitrary accumulation topologies.
+**Impact:** -30 lines in the original block while keeping deterministic NxM lowering and explicit staged behavior.
+
+**Canonical implementation status:** available as advanced statement lowering in the compiler core with deterministic stage ordering for `row`, `col`, and `anti_diagonal` patterns.
 
 ---
 

@@ -29,6 +29,7 @@ import {
   parseRoutePragmaArgs
 } from '../packages/compiler-api/src/passes-shared/route-args.js';
 import {
+  parseAccumulatePragmaArgs,
   parseAllreducePragmaArgs,
   parseBroadcastPragmaArgs,
   parseCollectPragmaArgs,
@@ -46,6 +47,7 @@ import {
   parseTransposePragmaArgs
 } from '../packages/compiler-api/src/passes-shared/advanced-args.js';
 import {
+  buildAccumulateCycles,
   buildCollectCycles,
   buildExtractBytesCycles,
   buildNormalizeCycles,
@@ -243,6 +245,23 @@ describe('compiler-api passes shared utils', () => {
     expect(parseCollectPragmaArgs('collect(from=row(1), via=RCB, local=R2, into=R3, combine=bad)')).toBeNull();
     expect(parseCollectPragmaArgs('collect(from=row(1), via=RCB, local=1, into=R3)')).toBeNull();
     expect(parseCollectPragmaArgs('foo(from=row(1), via=RCB, local=R2, into=R3)')).toBeNull();
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add)')).toMatchObject({
+      pattern: 'anti_diagonal',
+      productsReg: 'R2',
+      accumReg: 'R3',
+      outReg: 'ROUT',
+      combine: 'add'
+    });
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT)')).toMatchObject({
+      pattern: 'row',
+      combine: 'add'
+    });
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=diag, products=R2, accum=R3, out=ROUT)')).toBeNull();
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, out=ROUT)')).toBeNull();
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=1)')).toBeNull();
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, combine=bad)')).toBeNull();
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, extra=1)')).toBeNull();
+    expect(parseAccumulatePragmaArgs('foo(pattern=row, products=R2, accum=R3, out=ROUT)')).toBeNull();
     expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=0)')).toMatchObject({
       reg: 'R3',
       carryReg: 'R1',
@@ -458,6 +477,29 @@ describe('compiler-api passes shared utils', () => {
     );
     expect(guardTruthiness).toHaveLength(1);
     expect(guardTruthiness[0].statements.length).toBe(8);
+
+    const accumulateCycles = buildAccumulateCycles(
+      {
+        pattern: 'anti_diagonal',
+        productsReg: 'R2',
+        accumReg: 'R3',
+        outReg: 'ROUT',
+        combine: 'add'
+      },
+      48,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(accumulateCycles).toHaveLength(4);
+    expect(accumulateCycles[0].statements[0]).toMatchObject({
+      kind: 'at',
+      instruction: { opcode: 'SADD', operands: ['R3', 'R2', 'ZERO'] }
+    });
+    expect(accumulateCycles[3].statements[0]).toMatchObject({
+      kind: 'at',
+      instruction: { opcode: 'SADD', operands: ['ROUT', 'R3', 'ZERO'] }
+    });
 
     const badGuardCycles = buildGuardCycles(
       {

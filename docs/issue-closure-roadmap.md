@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`11` validated, `13` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`12` validated, `12` in backlog)
 
 ## Workstreams
 
@@ -338,6 +338,27 @@ Evidence:
 - Tests: `tests/issues/feat-11-extract-bytes.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
 - Docs: `docs/language/extract-bytes-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
 
+### WS-16 — FEAT-13 Accumulation Pattern
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- replace large manual accumulation graphs with one canonical statement.
+- keep the feature general across NxM grids (`row`, `col`, `anti_diagonal`) and avoid domain hardcoding.
+
+Subtasks:
+
+- [x] Add canonical `accumulate(pattern=..., products=..., accum=..., out=...)` statement with optional `combine=...`.
+- [x] Implement deterministic staged lowering for row/column/anti-diagonal patterns.
+- [x] Add parser/handler/builder/issue tests and language docs.
+
+Evidence:
+
+- Tests: `tests/issues/feat-13-accumulate.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
+- Docs: `docs/language/accumulate-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
+
 ## FEAT Portfolio (1..17)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
@@ -356,7 +377,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT-10 `stash` | scheduling/lifetime | `pending-backlog` | proposal only | Define spill-vs-route decision model and artifact visibility in compile stats. |
 | FEAT-11 `extract_bytes(axis)` | language abstraction | `resolved-verified` | `tests/issues/feat-11-extract-bytes.test.ts` | Extend only with semantically explicit variants (no hidden control-flow or implicit routing). |
 | FEAT-12 `collect` | lane pattern | `resolved-verified` | `tests/issues/feat-12-collect.test.ts` | Extend to multi-hop path synthesis only if deterministic cost model is documented. |
-| FEAT-13 `accumulate` | domain pattern | `pending-backlog` | proposal only | Formalize accumulation graph contract and determinism requirements across topologies. |
+| FEAT-13 `accumulate` | domain pattern | `resolved-verified` | `tests/issues/feat-13-accumulate.test.ts` | Extend only with explicit additional patterns that preserve deterministic stage ordering and diagnostics. |
 | FEAT-14 `conditional_sub` | domain primitive | `pending-backlog` | proposal only | Define semantics against existing Barrett idiom and branch/select lowering parity. |
 | FEAT-15 row auto-broadcast | syntax sugar | `resolved-verified` | `tests/issues/feat-15-row-auto-broadcast.test.ts` | Keep NxM and segmented-row regressions to preserve deterministic lowering. |
 | FEAT-16 pipeline macro | abstraction/tooling | `pending-backlog` | proposal only | Evaluate macro system scope and whether it belongs to compiler core or preprocessing layer. |
@@ -388,7 +409,7 @@ Status: `pending`
 
 Subtasks:
 
-- [ ] FEAT-13, FEAT-14 semantic contracts and IR shape.
+- [ ] FEAT-14 semantic contract and IR shape.
 - [ ] FEAT-16 macro/tooling boundary decision (core vs preprocessor).
 - [ ] Contract tests for each accepted abstraction before implementation.
 
@@ -416,7 +437,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1..2`, `FEAT-10`, `FEAT-13..14`, `FEAT-16`.
+- [ ] Prioritize `FEAT-1..2`, `FEAT-10`, `FEAT-14`, `FEAT-16`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

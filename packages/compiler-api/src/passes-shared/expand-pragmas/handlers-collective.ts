@@ -1,4 +1,5 @@
 export { handleAllreduce } from './handlers-collective/allreduce.js';
+export { handleAccumulate } from './handlers-collective/accumulate.js';
 export { handleCollect } from './handlers-collective/collect.js';
 export { handleExtractBytes } from './handlers-collective/extract-bytes.js';
 export { handleGather } from './handlers-collective/gather.js';

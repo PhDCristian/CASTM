@@ -9,6 +9,7 @@
   { "name": "route", "kind": "codegen" },
   { "name": "scan", "kind": "codegen" },
   { "name": "broadcast", "kind": "codegen" },
+  { "name": "accumulate", "kind": "codegen" },
   { "name": "collect", "kind": "codegen" },
   { "name": "extract_bytes", "kind": "codegen" },
   { "name": "normalize", "kind": "codegen" },

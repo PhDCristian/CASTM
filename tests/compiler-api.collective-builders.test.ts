@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ErrorCodes, spanAt } from '@openedge/compiler-ir';
 import {
+  buildAccumulateCycles,
   buildAllreduceCycles,
   buildCollectCycles,
   buildExtractBytesCycles,
@@ -466,6 +467,124 @@ describe('compiler-api collective/route builders', () => {
     );
     expect(badBoundsCycles).toHaveLength(0);
     expect(badBoundsDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
+  });
+
+  it('builds accumulate cycles for row/col/anti_diagonal patterns', () => {
+    const antiDiagDiagnostics: any[] = [];
+    const antiDiagCycles = buildAccumulateCycles(
+      {
+        pattern: 'anti_diagonal',
+        productsReg: 'R2',
+        accumReg: 'R3',
+        outReg: 'ROUT',
+        combine: 'add'
+      },
+      4,
+      torusGrid,
+      span,
+      antiDiagDiagnostics
+    );
+    expect(antiDiagDiagnostics).toHaveLength(0);
+    expect(antiDiagCycles).toHaveLength(4);
+    expect(antiDiagCycles[0].index).toBe(4);
+    expect(antiDiagCycles[1].statements[0]).toMatchObject({
+      row: 0,
+      col: 0,
+      instruction: { operands: ['R3', 'R3', 'ZERO'] }
+    });
+    expect(antiDiagCycles[1].statements[5]).toMatchObject({
+      row: 1,
+      col: 1,
+      instruction: { operands: ['R3', 'R3', 'RCT'] }
+    });
+    expect(antiDiagCycles[2].statements[0]).toMatchObject({
+      row: 0,
+      col: 0,
+      instruction: { operands: ['R3', 'R3', 'RCR'] }
+    });
+    expect(antiDiagCycles[3].statements[0]).toMatchObject({
+      instruction: { operands: ['ROUT', 'R3', 'ZERO'] }
+    });
+
+    const rowDiagnostics: any[] = [];
+    const rowCycles = buildAccumulateCycles(
+      {
+        pattern: 'row',
+        productsReg: 'R0',
+        accumReg: 'R1',
+        outReg: 'R2',
+        combine: 'xor'
+      },
+      0,
+      torusGrid,
+      span,
+      rowDiagnostics
+    );
+    expect(rowDiagnostics).toHaveLength(0);
+    expect(rowCycles).toHaveLength(3);
+    expect(rowCycles[1].statements[0]).toMatchObject({
+      instruction: { opcode: 'LXOR', operands: ['R1', 'R1', 'ZERO'] }
+    });
+    expect(rowCycles[1].statements[1]).toMatchObject({
+      instruction: { opcode: 'LXOR', operands: ['R1', 'R1', 'RCL'] }
+    });
+
+    const colDiagnostics: any[] = [];
+    const colCycles = buildAccumulateCycles(
+      {
+        pattern: 'col',
+        productsReg: 'R0',
+        accumReg: 'R1',
+        outReg: 'R2',
+        combine: 'sub'
+      },
+      0,
+      torusGrid,
+      span,
+      colDiagnostics
+    );
+    expect(colDiagnostics).toHaveLength(0);
+    expect(colCycles).toHaveLength(3);
+    expect(colCycles[1].statements[0]).toMatchObject({
+      instruction: { opcode: 'SSUB', operands: ['R1', 'R1', 'ZERO'] }
+    });
+    expect(colCycles[1].statements[4]).toMatchObject({
+      instruction: { opcode: 'SSUB', operands: ['R1', 'R1', 'RCT'] }
+    });
+
+    const badCombineDiagnostics: any[] = [];
+    const badCombineCycles = buildAccumulateCycles(
+      {
+        pattern: 'row',
+        productsReg: 'R0',
+        accumReg: 'R1',
+        outReg: 'R2',
+        combine: 'bad' as any
+      },
+      0,
+      torusGrid,
+      span,
+      badCombineDiagnostics
+    );
+    expect(badCombineCycles).toHaveLength(0);
+    expect(badCombineDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const badPatternDiagnostics: any[] = [];
+    const badPatternCycles = buildAccumulateCycles(
+      {
+        pattern: 'diag' as any,
+        productsReg: 'R0',
+        accumReg: 'R1',
+        outReg: 'R2',
+        combine: 'add'
+      },
+      0,
+      torusGrid,
+      span,
+      badPatternDiagnostics
+    );
+    expect(badPatternCycles).toHaveLength(0);
+    expect(badPatternDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 
   it('builds normalize cycles and validates lane/width constraints', () => {

@@ -20,6 +20,14 @@ export interface CollectPragmaArgs {
   combine: 'copy' | 'add' | 'sum' | 'sub' | 'and' | 'or' | 'xor' | 'mul' | 'shift_add';
 }
 
+export interface AccumulatePragmaArgs {
+  pattern: 'row' | 'col' | 'anti_diagonal';
+  productsReg: string;
+  accumReg: string;
+  outReg: string;
+  combine: 'add' | 'sum' | 'sub' | 'and' | 'or' | 'xor' | 'mul';
+}
+
 export interface NormalizePragmaArgs {
   reg: string;
   carryReg: string;

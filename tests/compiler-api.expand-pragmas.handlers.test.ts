@@ -14,6 +14,7 @@ import {
 } from '../packages/compiler-api/src/passes-shared/expand-pragmas/handlers-rotate-stream.js';
 import {
   handleAllreduce,
+  handleAccumulate,
   handleCollect,
   handleExtractBytes,
   handleGather,
@@ -67,6 +68,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(SUPPORTED_PRAGMAS.has('route')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('stream_store')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('collect')).toBe(true);
+    expect(SUPPORTED_PRAGMAS.has('accumulate')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('extract_bytes')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('normalize')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('guard')).toBe(true);
@@ -75,6 +77,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
 
     expect(PRAGMA_HANDLERS.get('route')).toBe(handleRoute);
     expect(PRAGMA_HANDLERS.get('broadcast')).toBe(handleBroadcast);
+    expect(PRAGMA_HANDLERS.get('accumulate')).toBe(handleAccumulate);
     expect(PRAGMA_HANDLERS.get('collect')).toBe(handleCollect);
     expect(PRAGMA_HANDLERS.get('extract_bytes')).toBe(handleExtractBytes);
     expect(PRAGMA_HANDLERS.get('normalize')).toBe(handleNormalize);
@@ -155,6 +158,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
       { fn: handleReduce, text: 'reduce(nope)' },
       { fn: handleScan, text: 'scan(nope)' },
       { fn: handleStencil, text: 'stencil(nope)' },
+      { fn: handleAccumulate, text: 'accumulate(nope)' },
       { fn: handleCollect, text: 'collect(nope)' },
       { fn: handleExtractBytes, text: 'extract_bytes(nope)' },
       { fn: handleNormalize, text: 'normalize(nope)' },
@@ -196,6 +200,14 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     );
     expect(collectContext.diagnostics).toHaveLength(0);
     expect(collectContext.generatedCycles.length).toBe(2);
+
+    const accumulateContext = ctx();
+    handleAccumulate(
+      pragma('accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add)'),
+      accumulateContext
+    );
+    expect(accumulateContext.diagnostics).toHaveLength(0);
+    expect(accumulateContext.generatedCycles.length).toBe(4);
 
     const normalizeContext = ctx();
     handleNormalize(

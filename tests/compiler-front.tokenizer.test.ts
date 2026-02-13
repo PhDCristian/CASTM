@@ -30,6 +30,7 @@ kernel "k" {
   route(@0,1 -> @0,0, payload=R3, accum=R1);
   reduce(op=add, dest=R1, src=R0, axis=row);
   guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  accumulate(pattern=row, products=R2, accum=R3, out=ROUT);
   collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
   normalize(reg=R3, carry=R1, width=16, lane=0);
   extract_bytes(src=R0, dest=R1, axis=col);
@@ -42,6 +43,7 @@ kernel "k" {
     expect(tokenByValue.get('route')).toBe('keyword');
     expect(tokenByValue.get('reduce')).toBe('keyword');
     expect(tokenByValue.get('guard')).toBe('keyword');
+    expect(tokenByValue.get('accumulate')).toBe('keyword');
     expect(tokenByValue.get('collect')).toBe('keyword');
     expect(tokenByValue.get('normalize')).toBe('keyword');
     expect(tokenByValue.get('extract_bytes')).toBe('keyword');

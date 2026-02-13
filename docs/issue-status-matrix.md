@@ -70,7 +70,7 @@ These IDs are proposal/backlog items, not active correctness defects in canonica
 | FEAT-10 | compiler | canonical-intentional | proposal only | backlog |
 | FEAT-11 | compiler | resolved-verified | `tests/issues/feat-11-extract-bytes.test.ts` | openedge-dsl |
 | FEAT-12 | compiler | resolved-verified | `tests/issues/feat-12-collect.test.ts` | openedge-dsl |
-| FEAT-13 | compiler | canonical-intentional | proposal only | backlog |
+| FEAT-13 | compiler | resolved-verified | `tests/issues/feat-13-accumulate.test.ts` | openedge-dsl |
 | FEAT-14 | compiler | canonical-intentional | proposal only | backlog |
 | FEAT-15 | compiler | resolved-verified | `tests/issues/feat-15-row-auto-broadcast.test.ts` | openedge-dsl |
 | FEAT-16 | compiler | canonical-intentional | proposal only | backlog |

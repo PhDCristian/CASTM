@@ -1,4 +1,5 @@
 export type {
+  AccumulatePragmaArgs,
   AllreducePragmaArgs,
   BroadcastPragmaArgs,
   CollectPragmaArgs,
@@ -24,6 +25,7 @@ export {
   parseScanPragmaArgs
 } from './advanced-args/scan-reduce.js';
 export {
+  parseAccumulatePragmaArgs,
   parseCollectPragmaArgs,
   parseExtractBytesPragmaArgs,
   parseGuardPragmaArgs,

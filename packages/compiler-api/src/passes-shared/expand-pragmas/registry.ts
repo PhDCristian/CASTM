@@ -7,6 +7,7 @@ import {
 } from './handlers-route-broadcast.js';
 import {
   handleAllreduce,
+  handleAccumulate,
   handleCollect,
   handleExtractBytes,
   handleGather,
@@ -35,6 +36,7 @@ export const SUPPORTED_PRAGMAS = new Set<string>([
   ...NOOP_PRAGMAS,
   'route',
   'broadcast',
+  'accumulate',
   'collect',
   'extract_bytes',
   'normalize',
@@ -55,6 +57,7 @@ export const SUPPORTED_PRAGMAS = new Set<string>([
 export const PRAGMA_HANDLERS = new Map<string, PragmaHandler>([
   ['route', handleRoute],
   ['broadcast', handleBroadcast],
+  ['accumulate', handleAccumulate],
   ['collect', handleCollect],
   ['extract_bytes', handleExtractBytes],
   ['normalize', handleNormalize],

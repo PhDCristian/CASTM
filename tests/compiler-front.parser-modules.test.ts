@@ -59,6 +59,9 @@ describe('compiler-front lowering module contracts', () => {
     expect(parseAdvancedStatementAsPragma('guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);')).toBe(
       'guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1)'
     );
+    expect(parseAdvancedStatementAsPragma('accumulate(pattern=row, products=R2, accum=R3, out=ROUT);')).toBe(
+      'accumulate(pattern=row, products=R2, accum=R3, out=ROUT)'
+    );
     expect(parseAdvancedStatementAsPragma('collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);')).toBe(
       'collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add)'
     );

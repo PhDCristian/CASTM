@@ -65,13 +65,14 @@ function_call    ::= ident "(" arg_list? ")" ";"
 
 ```text
 advanced_stmt    ::= route_stmt | reduce_stmt | scan_stmt | broadcast_stmt
-                  | collect_stmt | normalize_stmt | extract_bytes_stmt | rotate_stmt | shift_stmt | stencil_stmt | guard_stmt | triangle_stmt | allreduce_stmt
+                  | accumulate_stmt | collect_stmt | normalize_stmt | extract_bytes_stmt | rotate_stmt | shift_stmt | stencil_stmt | guard_stmt | triangle_stmt | allreduce_stmt
                   | transpose_stmt | gather_stmt | stream_load_stmt | stream_store_stmt
 
 route_stmt       ::= "route" "(" route_edge "," "payload" "=" register "," ( "accum" "=" register | "dest" "=" register "," "op" "=" op_call ) ")" ";"
 route_edge       ::= "@" int_expr "," int_expr "->" "@" int_expr "," int_expr
 op_call          ::= ident "(" operand "," operand "," operand ")"
 
+accumulate_stmt  ::= "accumulate" "(" "pattern" "=" ("row" | "col" | "anti_diagonal") "," "products" "=" register "," "accum" "=" register "," "out" "=" register [ "," "combine" "=" ("add" | "sum" | "sub" | "and" | "or" | "xor" | "mul") ] ")" ";"
 collect_stmt     ::= "collect" "(" "from" "=" lane_ref [ "," "to" "=" lane_ref ] "," "via" "=" register "," "local" "=" register "," "into" "=" register [ "," "combine" "=" collect_combine ] ")" ";"
 lane_ref         ::= ("row" | "col") "(" int_expr ")"
 collect_combine  ::= "copy" | "add" | "sum" | "sub" | "and" | "or" | "xor" | "mul" | "shift_add"

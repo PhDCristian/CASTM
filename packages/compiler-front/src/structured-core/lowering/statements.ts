@@ -6,6 +6,7 @@ import { splitTopLevel } from '../parser-utils/strings.js';
 const ADVANCED_NAMES = new Set([
   'route',
   'broadcast',
+  'accumulate',
   'collect',
   'extract_bytes',
   'normalize',

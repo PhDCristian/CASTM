@@ -6,6 +6,7 @@ import {
 } from '../pragma-args-utils.js';
 import { parseCoordinateLiteral } from '../route-args.js';
 import {
+  AccumulatePragmaArgs,
   CollectAxisRef,
   CollectPragmaArgs,
   ExtractBytesPragmaArgs,
@@ -27,6 +28,16 @@ const COLLECT_COMBINE_VALUES = new Set([
   'xor',
   'mul',
   'shift_add'
+]);
+
+const ACCUMULATE_COMBINE_VALUES = new Set([
+  'add',
+  'sum',
+  'sub',
+  'and',
+  'or',
+  'xor',
+  'mul'
 ]);
 
 function parseCollectAxisRef(value: string): CollectAxisRef | null {
@@ -166,6 +177,39 @@ export function parseCollectPragmaArgs(text: string): CollectPragmaArgs | null {
     localReg,
     destReg,
     combine: combine as CollectPragmaArgs['combine']
+  };
+}
+
+export function parseAccumulatePragmaArgs(text: string): AccumulatePragmaArgs | null {
+  const match = text.trim().match(/^accumulate\s*\((.+)\)\s*;?\s*$/i);
+  if (!match) return null;
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+  for (const key of args.keys()) {
+    if (!['pattern', 'products', 'accum', 'out', 'combine'].includes(key)) return null;
+  }
+
+  const patternRaw = args.get('pattern')?.trim().toLowerCase();
+  if (patternRaw !== 'row' && patternRaw !== 'col' && patternRaw !== 'anti_diagonal') {
+    return null;
+  }
+  const pattern = patternRaw as AccumulatePragmaArgs['pattern'];
+
+  const productsReg = args.get('products')?.trim();
+  const accumReg = args.get('accum')?.trim();
+  const outReg = args.get('out')?.trim();
+  if (!productsReg || !accumReg || !outReg) return null;
+  if (!isIdentifier(productsReg) || !isIdentifier(accumReg) || !isIdentifier(outReg)) return null;
+
+  const combineRaw = (args.get('combine') ?? 'add').trim().toLowerCase();
+  if (!ACCUMULATE_COMBINE_VALUES.has(combineRaw)) return null;
+
+  return {
+    pattern,
+    productsReg,
+    accumReg,
+    outReg,
+    combine: combineRaw as AccumulatePragmaArgs['combine']
   };
 }
 

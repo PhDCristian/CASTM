@@ -5,6 +5,7 @@ export {
 
 export {
   buildAllreduceCycles,
+  buildAccumulateCycles,
   buildCollectCycles,
   buildExtractBytesCycles,
   buildGuardCycles,
