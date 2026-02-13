@@ -12,7 +12,7 @@ std::latency_hide(window=1[, mode=conservative]);
 
 | Key | Required | Default | Description |
 |---|---|---|---|
-| `window` | no | `1` | max local merge attempts per anchor cycle |
+| `window` | no | `1` | max local merge attempts per anchor cycle (`1..256`) |
 | `mode` | no | `conservative` | compaction strategy |
 
 ## Hazard Guards

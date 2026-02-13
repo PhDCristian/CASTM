@@ -1,11 +1,11 @@
-# Collect Statement (`collect(...)`)
+# Collect Statement (`std::collect(...)`)
 
-`collect(...)` is a canonical advanced statement for aligned single-hop lane collection across rows or columns.
+`std::collect(...)` is a canonical advanced statement for aligned single-hop lane collection across rows or columns.
 
 ## Canonical Syntax
 
 ```text
-collect(from=row(N)|col(N), to=row(M)|col(M), via=SELF|RCT|RCB|RCL|RCR, local=RL, into=RD[, combine=copy|add|sum|sub|and|or|xor|mul|shift_add]);
+std::collect(from=row(N)|col(N), to=row(M)|col(M), via=SELF|RCT|RCB|RCL|RCR, local=RL, into=RD[, combine=copy|add|sum|sub|and|or|xor|mul|shift_add]);
 ```
 
 Accepted values:
@@ -35,13 +35,13 @@ Accepted values:
 Row collection from row `1` into row `0`:
 
 ```text
-collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
+std::collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
 ```
 
 Column collection in NxM:
 
 ```text
-collect(from=col(2), to=col(1), via=RCR, local=R4, into=R5, combine=xor);
+std::collect(from=col(2), to=col(1), via=RCR, local=R4, into=R5, combine=xor);
 ```
 
 ## Executable Snippet
@@ -49,7 +49,7 @@ collect(from=col(2), to=col(1), via=RCR, local=R4, into=R5, combine=xor);
 ```dsl
 target "uma-cgra-base";
 kernel "collect_doc" {
-  collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
+  std::collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
 }
 ```
 

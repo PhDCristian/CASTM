@@ -1,11 +1,11 @@
-# Conditional Sub Statement (`conditional_sub(...)`)
+# Conditional Sub Statement (`std::conditional_sub(...)`)
 
-`conditional_sub(...)` is a canonical advanced statement for branchless conditional subtraction on CGRA lanes.
+`std::conditional_sub(...)` is a canonical advanced statement for branchless conditional subtraction on CGRA lanes.
 
 ## Canonical Syntax
 
 ```text
-conditional_sub(value=R0, sub=R1, dest=R2[, target=all|row(N)|col(N)|point(r,c)]);
+std::conditional_sub(value=R0, sub=R1, dest=R2[, target=all|row(N)|col(N)|point(r,c)]);
 ```
 
 Accepted values:
@@ -29,19 +29,19 @@ This keeps selection branchless and explicit.
 All PEs:
 
 ```text
-conditional_sub(value=R0, sub=R1, dest=R2);
+std::conditional_sub(value=R0, sub=R1, dest=R2);
 ```
 
 Single row:
 
 ```text
-conditional_sub(value=R4, sub=R5, dest=R6, target=row(1));
+std::conditional_sub(value=R4, sub=R5, dest=R6, target=row(1));
 ```
 
 Single coordinate:
 
 ```text
-conditional_sub(value=R7, sub=R1, dest=R0, target=point(1,2));
+std::conditional_sub(value=R7, sub=R1, dest=R0, target=point(1,2));
 ```
 
 ## Executable Snippet
@@ -49,7 +49,7 @@ conditional_sub(value=R7, sub=R1, dest=R0, target=point(1,2));
 ```dsl
 target "uma-cgra-base";
 kernel "conditional_sub_doc" {
-  conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
+  std::conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
 }
 ```
 

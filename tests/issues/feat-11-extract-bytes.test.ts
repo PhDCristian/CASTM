@@ -11,7 +11,7 @@ describe('issues/FEAT-11 extract_bytes statement', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat11_col" {
-  extract_bytes(src=R0, dest=R1);
+  std::extract_bytes(src=R0, dest=R1);
 }
 `;
 
@@ -32,7 +32,7 @@ kernel "feat11_col" {
     const source = `
 target "uma-cgra-base";
 kernel "feat11_row" {
-  extract_bytes(src=R2, dest=R3, axis=row, byteWidth=4, mask=15);
+  std::extract_bytes(src=R2, dest=R3, axis=row, byteWidth=4, mask=15);
 }
 `;
 

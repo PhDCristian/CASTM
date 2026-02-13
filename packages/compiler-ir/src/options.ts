@@ -6,6 +6,7 @@ export interface CompileOptions {
   emitArtifacts?: Array<'structured' | 'ast' | 'hir' | 'mir' | 'lir' | 'csv'>;
   strictUnsupported?: boolean;
   schedulerMode?: 'safe' | 'balanced' | 'aggressive';
+  pruneNoopCycles?: boolean;
 }
 
 export interface EmitOptions {

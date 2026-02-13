@@ -363,4 +363,32 @@ kernel "legacy_for" {
     expect(result.success).toBe(false);
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
+
+  it('prunes noop-only unlabeled cycles when safe to do so', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "noop_prune" {
+  cycle { at @0,0: NOP; }
+  cycle { at @0,0: R1 = R0 + 1; }
+}
+`;
+    const result = compile(source, { emitArtifacts: ['mir', 'csv'], pruneNoopCycles: true });
+    expect(result.success).toBe(true);
+    expect(result.stats.cycles).toBe(1);
+    expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 1');
+  });
+
+  it('keeps noop-only cycles when numeric branch targets exist', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "noop_prune_guarded" {
+  cycle { at @0,0: BEQ R0, 0, 1; }
+  cycle { at @0,0: NOP; }
+}
+`;
+    const result = compile(source, { emitArtifacts: ['mir', 'csv'], pruneNoopCycles: true });
+    expect(result.success).toBe(true);
+    expect(result.stats.cycles).toBe(2);
+    expect(result.artifacts.csv).toContain('0,0,0,BEQ R0 0 1');
+  });
 });

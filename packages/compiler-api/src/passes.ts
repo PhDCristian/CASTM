@@ -3,6 +3,7 @@ export {
   desugarAutoCyclePass,
   desugarExpressionsPass,
   desugarInlineArithmeticPass,
+  pruneNoopCyclesPass,
   specializePass,
   desugarMemoryPass
 } from './passes-shared/desugar-passes.js';

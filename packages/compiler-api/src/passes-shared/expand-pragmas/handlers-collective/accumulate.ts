@@ -20,7 +20,7 @@ export const handleAccumulate: PragmaHandler = (pragma, ctx) => {
       'error',
       pragma.span,
       `Invalid accumulate statement syntax: '${pragma.text}'.`,
-      'Use accumulate(pattern=row|col|anti_diagonal, products=R2, accum=R3, out=ROUT[, combine=add|sum|sub|and|or|xor|mul]).'
+      'Use accumulate(pattern=row|col|anti_diagonal, products=R2, accum=R3, out=ROUT[, combine=add|sum|sub|and|or|xor|mul][, steps=1][, scope=all|row(i)|col(j)]).'
     ));
     return;
   }

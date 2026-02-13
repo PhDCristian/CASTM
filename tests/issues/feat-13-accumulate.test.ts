@@ -58,6 +58,78 @@ kernel "feat13_col" {
     expect(colCsv).toContain('2,2,1,SADD R5 R4 ZERO');
   });
 
+  it('supports explicit steps and validates step limits against grid shape', () => {
+    const stepped = compile(`
+target "uma-cgra-base";
+kernel "feat13_steps" {
+  accumulate(pattern=row, products=R1, accum=R4, out=R5, combine=xor, steps=2);
+}
+`, {
+      grid: { rows: 2, cols: 3, topology: 'mesh' }
+    });
+    expect(stepped.success).toBe(true);
+    expect(stepped.artifacts.mir?.cycles).toHaveLength(4);
+
+    const tooDeep = compile(`
+target "uma-cgra-base";
+kernel "feat13_too_deep" {
+  accumulate(pattern=row, products=R1, accum=R4, out=R5, steps=8);
+}
+`, {
+      grid: { rows: 2, cols: 3, topology: 'mesh' }
+    });
+    expect(tooDeep.success).toBe(false);
+    expect(tooDeep.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
+  it('supports scoped accumulation on a single row/column and rejects incompatible scope-pattern combinations', () => {
+    const scopedRow = compile(`
+target "uma-cgra-base";
+kernel "feat13_scope_row" {
+  accumulate(pattern=row, products=R1, accum=R4, out=R5, scope=row(1));
+}
+`);
+    expect(scopedRow.success).toBe(true);
+    const scopedRowCsv = scopedRow.artifacts.csv ?? '';
+    expect(scopedRowCsv).toContain('0,1,0,SADD R4 R1 ZERO');
+    expect(scopedRowCsv).not.toContain('0,0,0,SADD R4 R1 ZERO');
+
+    const scopedCol = compile(`
+target "uma-cgra-base";
+kernel "feat13_scope_col" {
+  accumulate(pattern=col, products=R1, accum=R4, out=R5, scope=col(2));
+}
+`);
+    expect(scopedCol.success).toBe(true);
+    const scopedColCsv = scopedCol.artifacts.csv ?? '';
+    expect(scopedColCsv).toContain('0,0,2,SADD R4 R1 ZERO');
+    expect(scopedColCsv).not.toContain('0,0,1,SADD R4 R1 ZERO');
+
+    const incompatible = compile(`
+target "uma-cgra-base";
+kernel "feat13_scope_mismatch" {
+  accumulate(pattern=anti_diagonal, products=R1, accum=R4, out=R5, scope=row(1));
+}
+`);
+    expect(incompatible.success).toBe(false);
+    expect(incompatible.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
+  it('skips redundant seed/final stages when products, accum and out share register', () => {
+    const result = compile(`
+target "uma-cgra-base";
+kernel "feat13_compact" {
+  accumulate(pattern=row, products=R3, accum=R3, out=R3, combine=xor);
+}
+`);
+    expect(result.success).toBe(true);
+    expect(result.artifacts.mir?.cycles).toHaveLength(1);
+
+    const csv = result.artifacts.csv ?? '';
+    expect(csv).toContain('0,0,1,LXOR R3 R3 RCL');
+    expect(csv).not.toContain('SADD R3 R3 ZERO');
+  });
+
   it('rejects malformed or unsupported accumulate forms', () => {
     const badPattern = compile(`
 target "uma-cgra-base";

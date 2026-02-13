@@ -12,7 +12,7 @@ Rules:
 
 - each entry must be a function call expression.
 - entries are expanded left-to-right.
-- advanced statements (`route(...)`, `reduce(...)`, etc.) are not valid as pipeline entries.
+- advanced statements (`std::route(...)`, `std::reduce(...)`, etc.) are not valid as pipeline entries.
 
 ## Semantics
 

@@ -42,6 +42,29 @@ const ACCUMULATE_COMBINE_VALUES = new Set([
   'mul'
 ]);
 
+function parseAccumulateScope(value: string): AccumulatePragmaArgs['scope'] | null {
+  const normalized = value.trim();
+  if (normalized.toLowerCase() === 'all') {
+    return { kind: 'all' };
+  }
+
+  const rowMatch = normalized.match(/^row\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
+  if (rowMatch) {
+    const index = parseIntegerLiteral(rowMatch[1]);
+    if (index === null) return null;
+    return { kind: 'row', index };
+  }
+
+  const colMatch = normalized.match(/^col\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
+  if (colMatch) {
+    const index = parseIntegerLiteral(colMatch[1]);
+    if (index === null) return null;
+    return { kind: 'col', index };
+  }
+
+  return null;
+}
+
 function parseCollectAxisRef(value: string): CollectAxisRef | null {
   const match = value.trim().match(/^(row|col)\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
   if (!match) return null;
@@ -188,7 +211,7 @@ export function parseAccumulatePragmaArgs(text: string): AccumulatePragmaArgs | 
   const args = parseKeyValueArgs(match[1]);
   if (!args) return null;
   for (const key of args.keys()) {
-    if (!['pattern', 'products', 'accum', 'out', 'combine'].includes(key)) return null;
+    if (!['pattern', 'products', 'accum', 'out', 'combine', 'steps', 'scope'].includes(key)) return null;
   }
 
   const patternRaw = args.get('pattern')?.trim().toLowerCase();
@@ -206,12 +229,26 @@ export function parseAccumulatePragmaArgs(text: string): AccumulatePragmaArgs | 
   const combineRaw = (args.get('combine') ?? 'add').trim().toLowerCase();
   if (!ACCUMULATE_COMBINE_VALUES.has(combineRaw)) return null;
 
+  const stepsRaw = args.get('steps');
+  let steps = 1;
+  if (stepsRaw !== undefined) {
+    const parsedSteps = parseIntegerLiteral(stepsRaw);
+    if (parsedSteps === null || parsedSteps <= 0) return null;
+    steps = parsedSteps;
+  }
+
+  const scopeRaw = args.get('scope');
+  const scope = scopeRaw ? parseAccumulateScope(scopeRaw) : { kind: 'all' };
+  if (!scope) return null;
+
   return {
     pattern,
     productsReg,
     accumReg,
     outReg,
-    combine: combineRaw as AccumulatePragmaArgs['combine']
+    combine: combineRaw as AccumulatePragmaArgs['combine'],
+    steps,
+    scope
   };
 }
 

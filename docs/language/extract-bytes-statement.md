@@ -1,11 +1,11 @@
-# Extract Bytes Statement (`extract_bytes(...)`)
+# Extract Bytes Statement (`std::extract_bytes(...)`)
 
-`extract_bytes(...)` is a canonical advanced statement for byte-lane extraction over the full active grid.
+`std::extract_bytes(...)` is a canonical advanced statement for byte-lane extraction over the full active grid.
 
 ## Canonical Syntax
 
 ```text
-extract_bytes(src=R0, dest=R1[, axis=row|col, byteWidth=8, mask=255]);
+std::extract_bytes(src=R0, dest=R1[, axis=row|col, byteWidth=8, mask=255]);
 ```
 
 Accepted values:
@@ -35,13 +35,13 @@ This makes row/column extraction patterns explicit without duplicating near-iden
 Default column-based extraction:
 
 ```text
-extract_bytes(src=R0, dest=R1);
+std::extract_bytes(src=R0, dest=R1);
 ```
 
 Row-based extraction with 4-bit nibbles:
 
 ```text
-extract_bytes(src=R2, dest=R3, axis=row, byteWidth=4, mask=15);
+std::extract_bytes(src=R2, dest=R3, axis=row, byteWidth=4, mask=15);
 ```
 
 ## Executable Snippet
@@ -49,7 +49,7 @@ extract_bytes(src=R2, dest=R3, axis=row, byteWidth=4, mask=15);
 ```dsl
 target "uma-cgra-base";
 kernel "extract_doc" {
-  extract_bytes(src=R0, dest=R1, axis=col);
+  std::extract_bytes(src=R0, dest=R1, axis=col);
 }
 ```
 

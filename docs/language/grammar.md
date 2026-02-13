@@ -82,7 +82,7 @@ route_stmt       ::= std_prefix "route" "(" route_edge "," "payload" "=" registe
 route_edge       ::= "@" int_expr "," int_expr "->" "@" int_expr "," int_expr
 op_call          ::= ident "(" operand "," operand "," operand ")"
 
-accumulate_stmt  ::= std_prefix "accumulate" "(" "pattern" "=" ("row" | "col" | "anti_diagonal") "," "products" "=" register "," "accum" "=" register "," "out" "=" register [ "," "combine" "=" ("add" | "sum" | "sub" | "and" | "or" | "xor" | "mul") ] ")" ";"
+accumulate_stmt  ::= std_prefix "accumulate" "(" "pattern" "=" ("row" | "col" | "anti_diagonal") "," "products" "=" register "," "accum" "=" register "," "out" "=" register [ "," "combine" "=" ("add" | "sum" | "sub" | "and" | "or" | "xor" | "mul") ] [ "," "steps" "=" int_expr ] [ "," "scope" "=" ("all" | "row(" int_expr ")" | "col(" int_expr ")") ] ")" ";"
 carry_chain_stmt ::= std_prefix "carry_chain" "(" "src" "=" register "," "carry" "=" register "," "store" "=" ident "," "limbs" "=" int_expr "," "width" "=" int_expr "," "row" "=" int_expr [ "," "mask" "=" int_expr ] [ "," "start" "=" int_expr ] [ "," "dir" "=" ("right" | "left") ] ")" ";"
 conditional_sub_stmt ::= std_prefix "conditional_sub" "(" "value" "=" register "," "sub" "=" register "," "dest" "=" register [ "," "target" "=" ("all" | "row(" int_expr ")" | "col(" int_expr ")" | "point(" int_expr "," int_expr ")") ] ")" ";"
 collect_stmt     ::= std_prefix "collect" "(" "from" "=" lane_ref [ "," "to" "=" lane_ref ] "," "via" "=" register "," "local" "=" register "," "into" "=" register [ "," "combine" "=" collect_combine ] ")" ";"

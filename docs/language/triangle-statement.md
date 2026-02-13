@@ -1,11 +1,11 @@
-# Triangle Statement (`triangle(...)`)
+# Triangle Statement (`std::triangle(...)`)
 
-`triangle(...)` is a canonical advanced statement for generating deterministic upper/lower-triangle spatial patterns over the active grid.
+`std::triangle(...)` is a canonical advanced statement for generating deterministic upper/lower-triangle spatial patterns over the active grid.
 
 ## Canonical Syntax
 
 ```text
-triangle(shape=upper|lower, inclusive=true|false, op=OPCODE, dest=RD, srcA=RA, srcB=RB);
+std::triangle(shape=upper|lower, inclusive=true|false, op=OPCODE, dest=RD, srcA=RA, srcB=RB);
 ```
 
 Accepted values:
@@ -31,13 +31,13 @@ Accepted values:
 Upper triangle (including diagonal):
 
 ```text
-triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+std::triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 ```
 
 Lower triangle (strictly below diagonal):
 
 ```text
-triangle(shape=lower, inclusive=false, op=SADD, dest=R3, srcA=R1, srcB=R2);
+std::triangle(shape=lower, inclusive=false, op=SADD, dest=R3, srcA=R1, srcB=R2);
 ```
 
 ## Executable Snippet
@@ -45,7 +45,7 @@ triangle(shape=lower, inclusive=false, op=SADD, dest=R3, srcA=R1, srcB=R2);
 ```dsl
 target "uma-cgra-base";
 kernel "triangle_doc" {
-  triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  std::triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 }
 ```
 
@@ -53,8 +53,8 @@ kernel "triangle_doc" {
 
 Malformed forms are rejected with parse diagnostics and a canonical hint. Example invalid forms:
 
-- `triangle(shape=diag, op=SMUL, dest=R2, srcA=R0, srcB=R1);`
-- `triangle(shape=upper, op=SMUL);`
+- `std::triangle(shape=diag, op=SMUL, dest=R2, srcA=R0, srcB=R1);`
+- `std::triangle(shape=upper, op=SMUL);`
 
 ## Verification
 

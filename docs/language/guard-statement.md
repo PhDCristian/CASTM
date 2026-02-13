@@ -1,13 +1,13 @@
-# Guard Statement (`guard(...)`)
+# Guard Statement (`std::guard(...)`)
 
-`guard(...)` is a canonical advanced statement for predicate-driven spatial activation.
+`std::guard(...)` is a canonical advanced statement for predicate-driven spatial activation.
 
 It expands to one cycle containing only placements whose coordinates satisfy a compile-time boolean condition.
 
 ## Canonical Syntax
 
 ```text
-guard(cond=<condition>, op=OPCODE, dest=RD, srcA=RA, srcB=RB);
+std::guard(cond=<condition>, op=OPCODE, dest=RD, srcA=RA, srcB=RB);
 ```
 
 Required keys:
@@ -41,8 +41,8 @@ Supported operators:
 ## Examples
 
 ```text
-guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
-guard(cond=(idx%2)==0, op=SADD, dest=R3, srcA=R0, srcB=ZERO);
+std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+std::guard(cond=(idx%2)==0, op=SADD, dest=R3, srcA=R0, srcB=ZERO);
 ```
 
 ## Executable Snippet
@@ -50,7 +50,7 @@ guard(cond=(idx%2)==0, op=SADD, dest=R3, srcA=R0, srcB=ZERO);
 ```dsl
 target "uma-cgra-base";
 kernel "guard_doc" {
-  guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 }
 ```
 

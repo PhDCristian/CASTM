@@ -480,7 +480,8 @@ describe('compiler-api collective/route builders', () => {
         productsReg: 'R2',
         accumReg: 'R3',
         outReg: 'ROUT',
-        combine: 'add'
+        combine: 'add',
+        steps: 1
       },
       4,
       torusGrid,
@@ -516,7 +517,8 @@ describe('compiler-api collective/route builders', () => {
         productsReg: 'R0',
         accumReg: 'R1',
         outReg: 'R2',
-        combine: 'xor'
+        combine: 'xor',
+        steps: 1
       },
       0,
       torusGrid,
@@ -539,7 +541,8 @@ describe('compiler-api collective/route builders', () => {
         productsReg: 'R0',
         accumReg: 'R1',
         outReg: 'R2',
-        combine: 'sub'
+        combine: 'sub',
+        steps: 1
       },
       0,
       torusGrid,
@@ -562,7 +565,8 @@ describe('compiler-api collective/route builders', () => {
         productsReg: 'R0',
         accumReg: 'R1',
         outReg: 'R2',
-        combine: 'bad' as any
+        combine: 'bad' as any,
+        steps: 1
       },
       0,
       torusGrid,
@@ -579,7 +583,8 @@ describe('compiler-api collective/route builders', () => {
         productsReg: 'R0',
         accumReg: 'R1',
         outReg: 'R2',
-        combine: 'add'
+        combine: 'add',
+        steps: 1
       },
       0,
       torusGrid,
@@ -588,6 +593,146 @@ describe('compiler-api collective/route builders', () => {
     );
     expect(badPatternCycles).toHaveLength(0);
     expect(badPatternDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const steppedDiagnostics: any[] = [];
+    const steppedCycles = buildAccumulateCycles(
+      {
+        pattern: 'row',
+        productsReg: 'R0',
+        accumReg: 'R1',
+        outReg: 'R2',
+        combine: 'add',
+        steps: 2
+      },
+      0,
+      { rows: 2, cols: 4, topology: 'mesh', wrapPolicy: 'clamp' },
+      span,
+      steppedDiagnostics
+    );
+    expect(steppedDiagnostics).toHaveLength(0);
+    expect(steppedCycles).toHaveLength(4); // seed + 2 row passes + final
+    expect(steppedCycles[1].statements[1]).toMatchObject({
+      instruction: { opcode: 'SADD', operands: ['R1', 'R1', 'RCL'] }
+    });
+    expect(steppedCycles[2].statements[1]).toMatchObject({
+      instruction: { opcode: 'SADD', operands: ['R1', 'R1', 'RCL'] }
+    });
+
+    const optimizedDiagnostics: any[] = [];
+    const optimizedCycles = buildAccumulateCycles(
+      {
+        pattern: 'row',
+        productsReg: 'R1',
+        accumReg: 'R1',
+        outReg: 'R1',
+        combine: 'add',
+        steps: 1
+      },
+      0,
+      torusGrid,
+      span,
+      optimizedDiagnostics
+    );
+    expect(optimizedDiagnostics).toHaveLength(0);
+    expect(optimizedCycles).toHaveLength(1); // only combine stage remains
+
+    const tooDeepDiagnostics: any[] = [];
+    const tooDeepCycles = buildAccumulateCycles(
+      {
+        pattern: 'row',
+        productsReg: 'R0',
+        accumReg: 'R1',
+        outReg: 'R2',
+        combine: 'add',
+        steps: 9
+      },
+      0,
+      torusGrid,
+      span,
+      tooDeepDiagnostics
+    );
+    expect(tooDeepCycles).toHaveLength(0);
+    expect(tooDeepDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const scopedRowDiagnostics: any[] = [];
+    const scopedRowCycles = buildAccumulateCycles(
+      {
+        pattern: 'row',
+        productsReg: 'R0',
+        accumReg: 'R1',
+        outReg: 'R2',
+        combine: 'add',
+        steps: 1,
+        scope: { kind: 'row', index: 2 }
+      },
+      0,
+      torusGrid,
+      span,
+      scopedRowDiagnostics
+    );
+    expect(scopedRowDiagnostics).toHaveLength(0);
+    expect(scopedRowCycles).toHaveLength(3);
+    expect(scopedRowCycles[0].statements).toHaveLength(4);
+    expect(scopedRowCycles[1].statements.every((s: any) => s.row === 2)).toBe(true);
+
+    const scopedColDiagnostics: any[] = [];
+    const scopedColCycles = buildAccumulateCycles(
+      {
+        pattern: 'col',
+        productsReg: 'R0',
+        accumReg: 'R1',
+        outReg: 'R2',
+        combine: 'add',
+        steps: 1,
+        scope: { kind: 'col', index: 1 }
+      },
+      0,
+      torusGrid,
+      span,
+      scopedColDiagnostics
+    );
+    expect(scopedColDiagnostics).toHaveLength(0);
+    expect(scopedColCycles).toHaveLength(3);
+    expect(scopedColCycles[0].statements).toHaveLength(4);
+    expect(scopedColCycles[1].statements.every((s: any) => s.col === 1)).toBe(true);
+
+    const scopedMismatchDiagnostics: any[] = [];
+    const scopedMismatchCycles = buildAccumulateCycles(
+      {
+        pattern: 'anti_diagonal',
+        productsReg: 'R0',
+        accumReg: 'R1',
+        outReg: 'R2',
+        combine: 'add',
+        steps: 1,
+        scope: { kind: 'row', index: 0 }
+      },
+      0,
+      torusGrid,
+      span,
+      scopedMismatchDiagnostics
+    );
+    expect(scopedMismatchCycles).toHaveLength(0);
+    expect(scopedMismatchDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const outOfBoundsScopeDiagnostics: any[] = [];
+    const outOfBoundsScopeCycles = buildAccumulateCycles(
+      {
+        pattern: 'row',
+        productsReg: 'R0',
+        accumReg: 'R1',
+        outReg: 'R2',
+        combine: 'add',
+        steps: 1,
+        scope: { kind: 'row', index: 9 }
+      },
+      0,
+      torusGrid,
+      span,
+      outOfBoundsScopeDiagnostics
+    );
+    expect(outOfBoundsScopeCycles).toHaveLength(0);
+    expect(outOfBoundsScopeDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
   });
 
   it('builds conditional_sub cycles and validates spatial targets', () => {

@@ -62,7 +62,11 @@ describe('compiler-api latency_hide parser + scheduler', () => {
 
     expect(parseLatencyHidePragmaArgs('latency_hide()')).toBeNull();
     expect(parseLatencyHidePragmaArgs('latency_hide(window=0)')).toBeNull();
-    expect(parseLatencyHidePragmaArgs('latency_hide(window=9)')).toBeNull();
+    expect(parseLatencyHidePragmaArgs('latency_hide(window=9)')).toEqual({
+      window: 9,
+      mode: 'conservative'
+    });
+    expect(parseLatencyHidePragmaArgs('latency_hide(window=257)')).toBeNull();
     expect(parseLatencyHidePragmaArgs('latency_hide(mode=aggressive)')).toBeNull();
     expect(parseLatencyHidePragmaArgs('latency_hide(extra=1)')).toBeNull();
     expect(parseLatencyHidePragmaArgs('latency_hide(window=1 mode=conservative)')).toBeNull();

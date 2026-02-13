@@ -5,6 +5,8 @@ import {
 } from '../pragma-args-utils.js';
 import { LatencyHidePragmaArgs, StashPragmaArgs, StashTarget } from './types.js';
 
+const LATENCY_HIDE_MAX_WINDOW = 256;
+
 export function parseLatencyHidePragmaArgs(text: string): LatencyHidePragmaArgs | null {
   const match = text.trim().match(/^latency_hide\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
@@ -17,7 +19,7 @@ export function parseLatencyHidePragmaArgs(text: string): LatencyHidePragmaArgs 
 
   const windowRaw = args.get('window')?.trim() ?? '1';
   const window = parseIntegerLiteral(windowRaw);
-  if (window === null || window <= 0 || window > 8) return null;
+  if (window === null || window <= 0 || window > LATENCY_HIDE_MAX_WINDOW) return null;
 
   const modeRaw = (args.get('mode') ?? 'conservative').trim().toLowerCase();
   if (modeRaw !== 'conservative') return null;

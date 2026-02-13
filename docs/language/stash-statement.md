@@ -1,11 +1,11 @@
-# Stash Statement (`stash(...)`)
+# Stash Statement (`std::stash(...)`)
 
-`stash(...)` is a canonical advanced statement for explicit register spill/restore placement on the CGRA grid.
+`std::stash(...)` is a canonical advanced statement for explicit register spill/restore placement on the CGRA grid.
 
 ## Canonical Syntax
 
 ```text
-stash(action=save|restore, reg=R0, addr=<memory-or-address>[, target=all|row(N)|col(N)|point(r,c)]);
+std::stash(action=save|restore, reg=R0, addr=<memory-or-address>[, target=all|row(N)|col(N)|point(r,c)]);
 ```
 
 Accepted values:
@@ -34,16 +34,16 @@ Target expansion:
 Point-target save + restore:
 
 ```text
-stash(action=save, reg=R0, addr=L[0], target=point(3,0));
-stash(action=restore, reg=R1, addr=L[0], target=point(3,0));
+std::stash(action=save, reg=R0, addr=L[0], target=point(3,0));
+std::stash(action=restore, reg=R1, addr=L[0], target=point(3,0));
 ```
 
 Row/column/all targets:
 
 ```text
-stash(action=save, reg=R2, addr=L[1], target=row(1));
-stash(action=restore, reg=R3, addr=L[2], target=col(2));
-stash(action=save, reg=R4, addr=360, target=all);
+std::stash(action=save, reg=R2, addr=L[1], target=row(1));
+std::stash(action=restore, reg=R3, addr=L[2], target=col(2));
+std::stash(action=save, reg=R4, addr=360, target=all);
 ```
 
 ## Executable Snippet
@@ -52,8 +52,8 @@ stash(action=save, reg=R4, addr=360, target=all);
 target "uma-cgra-base";
 let L @360 = { 0, 0, 0, 0 };
 kernel "stash_doc" {
-  stash(action=save, reg=R0, addr=L[0], target=point(3,0));
-  stash(action=restore, reg=R1, addr=L[0], target=point(3,0));
+  std::stash(action=save, reg=R0, addr=L[0], target=point(3,0));
+  std::stash(action=restore, reg=R1, addr=L[0], target=point(3,0));
 }
 ```
 

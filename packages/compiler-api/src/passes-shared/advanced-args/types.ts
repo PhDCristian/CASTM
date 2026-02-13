@@ -26,6 +26,8 @@ export interface AccumulatePragmaArgs {
   accumReg: string;
   outReg: string;
   combine: 'add' | 'sum' | 'sub' | 'and' | 'or' | 'xor' | 'mul';
+  steps: number;
+  scope?: { kind: 'all' } | { kind: 'row'; index: number } | { kind: 'col'; index: number };
 }
 
 export type ConditionalSubTarget =

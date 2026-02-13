@@ -1,11 +1,11 @@
-# Normalize Statement (`normalize(...)`)
+# Normalize Statement (`std::normalize(...)`)
 
-`normalize(...)` is a canonical advanced statement for limb-style carry normalization over a single row or column lane.
+`std::normalize(...)` is a canonical advanced statement for limb-style carry normalization over a single row or column lane.
 
 ## Canonical Syntax
 
 ```text
-normalize(reg=R3, carry=R1, width=16, lane=0[, mask=65535, axis=row|col, dir=right|left|down|up]);
+std::normalize(reg=R3, carry=R1, width=16, lane=0[, mask=65535, axis=row|col, dir=right|left|down|up]);
 ```
 
 Accepted values:
@@ -44,13 +44,13 @@ Lowering is deterministic and emits 4 cycles over the selected lane:
 Row normalization:
 
 ```text
-normalize(reg=R3, carry=R1, width=16, lane=0);
+std::normalize(reg=R3, carry=R1, width=16, lane=0);
 ```
 
 Column normalization on NxM:
 
 ```text
-normalize(reg=R2, carry=R0, width=8, mask=255, axis=col, lane=1, dir=up);
+std::normalize(reg=R2, carry=R0, width=8, mask=255, axis=col, lane=1, dir=up);
 ```
 
 ## Executable Snippet
@@ -58,7 +58,7 @@ normalize(reg=R2, carry=R0, width=8, mask=255, axis=col, lane=1, dir=up);
 ```dsl
 target "uma-cgra-base";
 kernel "normalize_doc" {
-  normalize(reg=R3, carry=R1, width=16, lane=0);
+  std::normalize(reg=R3, carry=R1, width=16, lane=0);
 }
 ```
 

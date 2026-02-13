@@ -273,16 +273,43 @@ describe('compiler-api passes shared utils', () => {
       productsReg: 'R2',
       accumReg: 'R3',
       outReg: 'ROUT',
-      combine: 'add'
+      combine: 'add',
+      steps: 1,
+      scope: { kind: 'all' }
     });
     expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT)')).toMatchObject({
       pattern: 'row',
-      combine: 'add'
+      combine: 'add',
+      steps: 1,
+      scope: { kind: 'all' }
+    });
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, steps=2)')).toMatchObject({
+      pattern: 'row',
+      combine: 'add',
+      steps: 2,
+      scope: { kind: 'all' }
+    });
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, scope=row(2))')).toMatchObject({
+      pattern: 'row',
+      scope: { kind: 'row', index: 2 }
+    });
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=col, products=R2, accum=R3, out=ROUT, scope=col(1))')).toMatchObject({
+      pattern: 'col',
+      scope: { kind: 'col', index: 1 }
+    });
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=col, products=R2, accum=R3, out=ROUT, scope=all)')).toMatchObject({
+      pattern: 'col',
+      scope: { kind: 'all' }
     });
     expect(parseAccumulatePragmaArgs('accumulate(pattern=diag, products=R2, accum=R3, out=ROUT)')).toBeNull();
     expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, out=ROUT)')).toBeNull();
     expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=1)')).toBeNull();
     expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, combine=bad)')).toBeNull();
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, steps=0)')).toBeNull();
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, steps=-1)')).toBeNull();
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, steps=1.5)')).toBeNull();
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, scope=diag(1))')).toBeNull();
+    expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, scope=row(x))')).toBeNull();
     expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, extra=1)')).toBeNull();
     expect(parseAccumulatePragmaArgs('foo(pattern=row, products=R2, accum=R3, out=ROUT)')).toBeNull();
     expect(parseConditionalSubPragmaArgs('conditional_sub(value=R0, sub=R1, dest=R2)')).toMatchObject({

@@ -115,6 +115,7 @@ export default defineConfig({
             { text: 'Basic Kernel', link: '/examples/basic' },
             { text: 'Loop Patterns', link: '/examples/loops' },
             { text: 'Loop Strategies', link: '/examples/loop-strategies' },
+            { text: 'Kernel Compaction', link: '/examples/kernel-compaction' },
             { text: 'For + Control-Flow', link: '/examples/for-control-flow' },
             { text: 'Scheduler Modes', link: '/examples/scheduler-modes' },
             { text: 'Pipeline + Functions', link: '/examples/parallel' },

@@ -18,6 +18,7 @@ import {
   desugarAutoCyclePass,
   desugarExpressionsPass,
   desugarInlineArithmeticPass,
+  pruneNoopCyclesPass,
   specializePass,
   lowerToLirPass,
   lowerToMirPass
@@ -50,6 +51,7 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
   const target = resolveGrid(semaAst, options, diagnostics);
   const strictUnsupported = options.strictUnsupported !== false;
   const schedulerMode = options.schedulerMode ?? 'safe';
+  const pruneNoopCycles = options.pruneNoopCycles === true;
 
   if (!target) {
     return {
@@ -73,6 +75,10 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
     desugarAutoCyclePass,
     createExpandPragmasPass(strictUnsupported, target.grid)
   ];
+
+  if (pruneNoopCycles) {
+    astPasses.push(pruneNoopCyclesPass);
+  }
 
   const astPipeline = runStagedPipeline(
     semaAst,
