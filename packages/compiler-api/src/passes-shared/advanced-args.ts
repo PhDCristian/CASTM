@@ -3,6 +3,7 @@ export type {
   AllreducePragmaArgs,
   BroadcastPragmaArgs,
   CollectPragmaArgs,
+  ConditionalSubPragmaArgs,
   ExtractBytesPragmaArgs,
   GuardPragmaArgs,
   GatherPragmaArgs,
@@ -27,6 +28,7 @@ export {
 export {
   parseAccumulatePragmaArgs,
   parseCollectPragmaArgs,
+  parseConditionalSubPragmaArgs,
   parseExtractBytesPragmaArgs,
   parseGuardPragmaArgs,
   parseGatherPragmaArgs,

@@ -6,6 +6,7 @@ export {
 export {
   buildAllreduceCycles,
   buildAccumulateCycles,
+  buildConditionalSubCycles,
   buildCollectCycles,
   buildExtractBytesCycles,
   buildGuardCycles,

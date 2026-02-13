@@ -742,7 +742,7 @@ Snapshot sync (2026-02-13):
 | FEAT-11 | resolved-verified | WS-15 |
 | FEAT-12 | resolved-verified | WS-13 |
 | FEAT-13 | resolved-verified | WS-16 |
-| FEAT-14 | pending-backlog | Block C |
+| FEAT-14 | resolved-verified | WS-17 |
 | FEAT-15 | resolved-verified | WS-11 |
 | FEAT-16 | pending-backlog | Block C |
 | FEAT-17 | resolved-verified | WS-12 |
@@ -1075,7 +1075,7 @@ accumulate(pattern=col, products=R2, accum=R3, out=ROUT, combine=sub);
 
 ---
 
-### FEAT-14: `#pragma conditional_sub` — Barrett Conditional Subtraction
+### FEAT-14: `conditional_sub(...)` — Branchless Conditional Subtraction — ✅ RESOLVED (2026-02-13)
 
 **Problem:** The Barrett final step (reconstruct → subtract p → BSFA select) is a 5-cycle idiom that appears identically 4 times in the kernel (once per modular operation):
 
@@ -1089,12 +1089,16 @@ cycle { @0,0: BSFA R3, R0, R2, SELF; }
 cycle { @0,0: SWI R3, out_addr; }
 ```
 
-**Proposed (1 line):**
+**Canonical implementation:**
 ```c
-#pragma conditional_sub(limb0=R2@(0,0), limb1=R2@(0,1), prime_addr=4, out=out_addr)
+conditional_sub(value=R0, sub=R1, dest=R2);
+conditional_sub(value=R4, sub=R5, dest=R6, target=row(1));
+conditional_sub(value=R7, sub=R1, dest=R0, target=point(1,2));
 ```
 
-**Impact:** The idiom is already inside a function so current lines don't multiply, but it makes the semantic intent instantly clear. -3 lines.
+**Impact:** preserves branchless semantics while removing repeated boilerplate and keeping intent explicit.
+
+**Canonical implementation status:** available as deterministic two-stage lowering (`SSUB`, `BSFA`) over configurable spatial targets.
 
 ---
 

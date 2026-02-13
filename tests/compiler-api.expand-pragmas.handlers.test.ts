@@ -16,6 +16,7 @@ import {
   handleAllreduce,
   handleAccumulate,
   handleCollect,
+  handleConditionalSub,
   handleExtractBytes,
   handleGather,
   handleGuard,
@@ -69,6 +70,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(SUPPORTED_PRAGMAS.has('stream_store')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('collect')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('accumulate')).toBe(true);
+    expect(SUPPORTED_PRAGMAS.has('conditional_sub')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('extract_bytes')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('normalize')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('guard')).toBe(true);
@@ -78,6 +80,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(PRAGMA_HANDLERS.get('route')).toBe(handleRoute);
     expect(PRAGMA_HANDLERS.get('broadcast')).toBe(handleBroadcast);
     expect(PRAGMA_HANDLERS.get('accumulate')).toBe(handleAccumulate);
+    expect(PRAGMA_HANDLERS.get('conditional_sub')).toBe(handleConditionalSub);
     expect(PRAGMA_HANDLERS.get('collect')).toBe(handleCollect);
     expect(PRAGMA_HANDLERS.get('extract_bytes')).toBe(handleExtractBytes);
     expect(PRAGMA_HANDLERS.get('normalize')).toBe(handleNormalize);
@@ -160,6 +163,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
       { fn: handleStencil, text: 'stencil(nope)' },
       { fn: handleAccumulate, text: 'accumulate(nope)' },
       { fn: handleCollect, text: 'collect(nope)' },
+      { fn: handleConditionalSub, text: 'conditional_sub(nope)' },
       { fn: handleExtractBytes, text: 'extract_bytes(nope)' },
       { fn: handleNormalize, text: 'normalize(nope)' },
       { fn: handleGuard, text: 'guard(nope)' },
@@ -200,6 +204,14 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     );
     expect(collectContext.diagnostics).toHaveLength(0);
     expect(collectContext.generatedCycles.length).toBe(2);
+
+    const conditionalSubContext = ctx();
+    handleConditionalSub(
+      pragma('conditional_sub(value=R0, sub=R1, dest=R2, target=row(1))'),
+      conditionalSubContext
+    );
+    expect(conditionalSubContext.diagnostics).toHaveLength(0);
+    expect(conditionalSubContext.generatedCycles.length).toBe(2);
 
     const accumulateContext = ctx();
     handleAccumulate(

@@ -62,6 +62,9 @@ describe('compiler-front lowering module contracts', () => {
     expect(parseAdvancedStatementAsPragma('accumulate(pattern=row, products=R2, accum=R3, out=ROUT);')).toBe(
       'accumulate(pattern=row, products=R2, accum=R3, out=ROUT)'
     );
+    expect(parseAdvancedStatementAsPragma('conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));')).toBe(
+      'conditional_sub(value=R0, sub=R1, dest=R2, target=row(1))'
+    );
     expect(parseAdvancedStatementAsPragma('collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);')).toBe(
       'collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add)'
     );

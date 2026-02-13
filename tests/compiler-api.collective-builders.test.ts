@@ -4,6 +4,7 @@ import {
   buildAccumulateCycles,
   buildAllreduceCycles,
   buildCollectCycles,
+  buildConditionalSubCycles,
   buildExtractBytesCycles,
   buildGatherCycles,
   buildNormalizeCycles,
@@ -585,6 +586,112 @@ describe('compiler-api collective/route builders', () => {
     );
     expect(badPatternCycles).toHaveLength(0);
     expect(badPatternDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+  });
+
+  it('builds conditional_sub cycles and validates spatial targets', () => {
+    const allDiagnostics: any[] = [];
+    const allCycles = buildConditionalSubCycles(
+      {
+        valueReg: 'R0',
+        subReg: 'R1',
+        destReg: 'R2',
+        target: { kind: 'all' }
+      },
+      9,
+      torusGrid,
+      span,
+      allDiagnostics
+    );
+    expect(allDiagnostics).toHaveLength(0);
+    expect(allCycles).toHaveLength(2);
+    expect(allCycles[0].index).toBe(9);
+    expect(allCycles[0].statements).toHaveLength(16);
+    expect(allCycles[1].statements[0]).toMatchObject({
+      instruction: { opcode: 'BSFA', operands: ['R2', 'R0', 'R2', 'SELF'] }
+    });
+
+    const rowDiagnostics: any[] = [];
+    const rowCycles = buildConditionalSubCycles(
+      {
+        valueReg: 'R3',
+        subReg: 'R4',
+        destReg: 'R5',
+        target: { kind: 'row', index: 2 }
+      },
+      0,
+      torusGrid,
+      span,
+      rowDiagnostics
+    );
+    expect(rowDiagnostics).toHaveLength(0);
+    expect(rowCycles[0].statements).toHaveLength(4);
+    expect(rowCycles[0].statements[0]).toMatchObject({ row: 2, col: 0 });
+
+    const colDiagnostics: any[] = [];
+    const colCycles = buildConditionalSubCycles(
+      {
+        valueReg: 'R3',
+        subReg: 'R4',
+        destReg: 'R5',
+        target: { kind: 'col', index: 1 }
+      },
+      0,
+      torusGrid,
+      span,
+      colDiagnostics
+    );
+    expect(colDiagnostics).toHaveLength(0);
+    expect(colCycles[0].statements).toHaveLength(4);
+    expect(colCycles[0].statements[0]).toMatchObject({ row: 0, col: 1 });
+
+    const pointDiagnostics: any[] = [];
+    const pointCycles = buildConditionalSubCycles(
+      {
+        valueReg: 'R7',
+        subReg: 'R1',
+        destReg: 'R0',
+        target: { kind: 'point', row: 1, col: 3 }
+      },
+      0,
+      torusGrid,
+      span,
+      pointDiagnostics
+    );
+    expect(pointDiagnostics).toHaveLength(0);
+    expect(pointCycles[0].statements).toHaveLength(1);
+    expect(pointCycles[0].statements[0]).toMatchObject({ row: 1, col: 3 });
+
+    const badRowDiagnostics: any[] = [];
+    const badRowCycles = buildConditionalSubCycles(
+      {
+        valueReg: 'R0',
+        subReg: 'R1',
+        destReg: 'R2',
+        target: { kind: 'row', index: 99 }
+      },
+      0,
+      torusGrid,
+      span,
+      badRowDiagnostics
+    );
+    expect(badRowCycles).toHaveLength(0);
+    expect(badRowDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
+
+    const badPointDiagnostics: any[] = [];
+    const badPointCycles = buildConditionalSubCycles(
+      {
+        valueReg: 'R0',
+        subReg: 'R1',
+        destReg: 'R2',
+        target: { kind: 'point', row: 9, col: 9 }
+      },
+      0,
+      torusGrid,
+      span,
+      badPointDiagnostics
+    );
+    expect(badPointCycles).toHaveLength(0);
+    expect(badPointDiagnostics.some((d) => d.code === ErrorCodes.Semantic.CoordinateOutOfBounds)).toBe(true);
   });
 
   it('builds normalize cycles and validates lane/width constraints', () => {

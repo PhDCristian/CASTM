@@ -28,6 +28,19 @@ export interface AccumulatePragmaArgs {
   combine: 'add' | 'sum' | 'sub' | 'and' | 'or' | 'xor' | 'mul';
 }
 
+export type ConditionalSubTarget =
+  | { kind: 'all' }
+  | { kind: 'row'; index: number }
+  | { kind: 'col'; index: number }
+  | { kind: 'point'; row: number; col: number };
+
+export interface ConditionalSubPragmaArgs {
+  valueReg: string;
+  subReg: string;
+  destReg: string;
+  target: ConditionalSubTarget;
+}
+
 export interface NormalizePragmaArgs {
   reg: string;
   carryReg: string;

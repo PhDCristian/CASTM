@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`12` validated, `12` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`13` validated, `11` in backlog)
 
 ## Workstreams
 
@@ -359,6 +359,27 @@ Evidence:
 - Tests: `tests/issues/feat-13-accumulate.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
 - Docs: `docs/language/accumulate-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
 
+### WS-17 — FEAT-14 Conditional Subtraction Primitive
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- replace repeated branchless subtraction idioms with one canonical primitive.
+- keep semantics general and portable through explicit spatial targeting.
+
+Subtasks:
+
+- [x] Add canonical `conditional_sub(value=..., sub=..., dest=...)` statement with optional `target=all|row|col|point(r,c)`.
+- [x] Implement deterministic two-cycle lowering (`SSUB`, `BSFA`) over selected placements.
+- [x] Add parser/handler/builder/issue tests and language docs.
+
+Evidence:
+
+- Tests: `tests/issues/feat-14-conditional-sub.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
+- Docs: `docs/language/conditional-sub-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
+
 ## FEAT Portfolio (1..17)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
@@ -378,7 +399,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT-11 `extract_bytes(axis)` | language abstraction | `resolved-verified` | `tests/issues/feat-11-extract-bytes.test.ts` | Extend only with semantically explicit variants (no hidden control-flow or implicit routing). |
 | FEAT-12 `collect` | lane pattern | `resolved-verified` | `tests/issues/feat-12-collect.test.ts` | Extend to multi-hop path synthesis only if deterministic cost model is documented. |
 | FEAT-13 `accumulate` | domain pattern | `resolved-verified` | `tests/issues/feat-13-accumulate.test.ts` | Extend only with explicit additional patterns that preserve deterministic stage ordering and diagnostics. |
-| FEAT-14 `conditional_sub` | domain primitive | `pending-backlog` | proposal only | Define semantics against existing Barrett idiom and branch/select lowering parity. |
+| FEAT-14 `conditional_sub` | domain primitive | `resolved-verified` | `tests/issues/feat-14-conditional-sub.test.ts` | Keep branchless two-stage contract stable (`SSUB`, `BSFA`) with explicit spatial targeting semantics. |
 | FEAT-15 row auto-broadcast | syntax sugar | `resolved-verified` | `tests/issues/feat-15-row-auto-broadcast.test.ts` | Keep NxM and segmented-row regressions to preserve deterministic lowering. |
 | FEAT-16 pipeline macro | abstraction/tooling | `pending-backlog` | proposal only | Evaluate macro system scope and whether it belongs to compiler core or preprocessing layer. |
 | FEAT-17 guard condition | syntax/pattern | `resolved-verified` | `tests/issues/feat-17-guard-condition.test.ts` | Keep predicate evaluation deterministic and bounded to canonical spatial symbols. |
@@ -409,7 +430,6 @@ Status: `pending`
 
 Subtasks:
 
-- [ ] FEAT-14 semantic contract and IR shape.
 - [ ] FEAT-16 macro/tooling boundary decision (core vs preprocessor).
 - [ ] Contract tests for each accepted abstraction before implementation.
 
@@ -437,7 +457,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1..2`, `FEAT-10`, `FEAT-14`, `FEAT-16`.
+- [ ] Prioritize `FEAT-1..2`, `FEAT-10`, `FEAT-16`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

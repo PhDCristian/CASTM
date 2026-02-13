@@ -33,6 +33,7 @@ import {
   parseAllreducePragmaArgs,
   parseBroadcastPragmaArgs,
   parseCollectPragmaArgs,
+  parseConditionalSubPragmaArgs,
   parseExtractBytesPragmaArgs,
   parseGuardPragmaArgs,
   parseGatherPragmaArgs,
@@ -49,6 +50,7 @@ import {
 import {
   buildAccumulateCycles,
   buildCollectCycles,
+  buildConditionalSubCycles,
   buildExtractBytesCycles,
   buildNormalizeCycles,
   buildReduceCycles,
@@ -262,6 +264,23 @@ describe('compiler-api passes shared utils', () => {
     expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, combine=bad)')).toBeNull();
     expect(parseAccumulatePragmaArgs('accumulate(pattern=row, products=R2, accum=R3, out=ROUT, extra=1)')).toBeNull();
     expect(parseAccumulatePragmaArgs('foo(pattern=row, products=R2, accum=R3, out=ROUT)')).toBeNull();
+    expect(parseConditionalSubPragmaArgs('conditional_sub(value=R0, sub=R1, dest=R2)')).toMatchObject({
+      valueReg: 'R0',
+      subReg: 'R1',
+      destReg: 'R2',
+      target: { kind: 'all' }
+    });
+    expect(parseConditionalSubPragmaArgs('conditional_sub(value=R0, sub=R1, dest=R2, target=row(1))')).toMatchObject({
+      target: { kind: 'row', index: 1 }
+    });
+    expect(parseConditionalSubPragmaArgs('conditional_sub(value=R0, sub=R1, dest=R2, target=point(1,2))')).toMatchObject({
+      target: { kind: 'point', row: 1, col: 2 }
+    });
+    expect(parseConditionalSubPragmaArgs('conditional_sub(value=R0, sub=R1, target=row(1))')).toBeNull();
+    expect(parseConditionalSubPragmaArgs('conditional_sub(value=R0, sub=R1, dest=R2, target=diag(1))')).toBeNull();
+    expect(parseConditionalSubPragmaArgs('conditional_sub(value=R0, sub=R1, dest=1)')).toBeNull();
+    expect(parseConditionalSubPragmaArgs('conditional_sub(value=R0, sub=R1, dest=R2, extra=1)')).toBeNull();
+    expect(parseConditionalSubPragmaArgs('foo(value=R0, sub=R1, dest=R2)')).toBeNull();
     expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=0)')).toMatchObject({
       reg: 'R3',
       carryReg: 'R1',
@@ -499,6 +518,29 @@ describe('compiler-api passes shared utils', () => {
     expect(accumulateCycles[3].statements[0]).toMatchObject({
       kind: 'at',
       instruction: { opcode: 'SADD', operands: ['ROUT', 'R3', 'ZERO'] }
+    });
+
+    const conditionalSubCycles = buildConditionalSubCycles(
+      {
+        valueReg: 'R0',
+        subReg: 'R1',
+        destReg: 'R2',
+        target: { kind: 'point', row: 1, col: 2 }
+      },
+      60,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(conditionalSubCycles).toHaveLength(2);
+    expect(conditionalSubCycles[0].statements[0]).toMatchObject({
+      kind: 'at',
+      row: 1,
+      col: 2,
+      instruction: { opcode: 'SSUB', operands: ['R2', 'R0', 'R1'] }
+    });
+    expect(conditionalSubCycles[1].statements[0]).toMatchObject({
+      instruction: { opcode: 'BSFA', operands: ['R2', 'R0', 'R2', 'SELF'] }
     });
 
     const badGuardCycles = buildGuardCycles(

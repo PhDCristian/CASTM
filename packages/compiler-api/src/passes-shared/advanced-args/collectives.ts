@@ -9,6 +9,7 @@ import {
   AccumulatePragmaArgs,
   CollectAxisRef,
   CollectPragmaArgs,
+  ConditionalSubPragmaArgs,
   ExtractBytesPragmaArgs,
   GuardPragmaArgs,
   GatherPragmaArgs,
@@ -210,6 +211,61 @@ export function parseAccumulatePragmaArgs(text: string): AccumulatePragmaArgs | 
     accumReg,
     outReg,
     combine: combineRaw as AccumulatePragmaArgs['combine']
+  };
+}
+
+function parseConditionalSubTarget(value: string): ConditionalSubPragmaArgs['target'] | null {
+  const normalized = value.trim();
+  if (normalized.toLowerCase() === 'all') {
+    return { kind: 'all' };
+  }
+
+  const rowMatch = normalized.match(/^row\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
+  if (rowMatch) {
+    return { kind: 'row', index: Number(rowMatch[1]) };
+  }
+
+  const colMatch = normalized.match(/^col\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
+  if (colMatch) {
+    return { kind: 'col', index: Number(colMatch[1]) };
+  }
+
+  const pointMatch = normalized.match(/^point\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*,\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
+  if (pointMatch) {
+    return {
+      kind: 'point',
+      row: Number(pointMatch[1]),
+      col: Number(pointMatch[2])
+    };
+  }
+
+  return null;
+}
+
+export function parseConditionalSubPragmaArgs(text: string): ConditionalSubPragmaArgs | null {
+  const match = text.trim().match(/^conditional_sub\s*\((.+)\)\s*;?\s*$/i);
+  if (!match) return null;
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+  for (const key of args.keys()) {
+    if (!['value', 'sub', 'dest', 'target'].includes(key)) return null;
+  }
+
+  const valueReg = args.get('value')?.trim();
+  const subReg = args.get('sub')?.trim();
+  const destReg = args.get('dest')?.trim();
+  if (!valueReg || !subReg || !destReg) return null;
+  if (!isIdentifier(valueReg) || !isIdentifier(subReg) || !isIdentifier(destReg)) return null;
+
+  const targetRaw = args.get('target')?.trim() ?? 'all';
+  const target = parseConditionalSubTarget(targetRaw);
+  if (!target) return null;
+
+  return {
+    valueReg,
+    subReg,
+    destReg,
+    target
   };
 }
 
