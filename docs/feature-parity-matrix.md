@@ -15,6 +15,7 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 | `target` declaration | done | `tests/compiler-api.contract.test.ts` | Required by parser (`E2001`). |
 | `kernel` + `cycle` blocks | done | `tests/compiler-api.contract.test.ts` | Basic AST and lowering in place. |
 | `@row,col`, `row`, `col`, `all` placement | done | `tests/compiler-api.contract.test.ts` | NxM grid override supported. |
+| Coordinate range placement (`@r,c0..c1`, `@r0..r1,c`, `@r0..r1,c0..c1`) | done | `tests/issues/feat-08-range-coordinates.test.ts` | Range coordinates expand deterministically to concrete per-PE placements before lowering. |
 | C-like assignment desugar | done | `tests/compiler-api.contract.test.ts` | Supports copy form and full stable operator map (`+ - * ** << >> >>> & ~& \| ~\| ^ ~^`) with deterministic single-binary-expression lowering. |
 | `function` (definition + call expansion) | done | `tests/compiler-api.contract.test.ts` | Supports pre-kernel definitions, named/positional argument binding, nested non-recursive calls, label-safe expansion, and `all:` cycle statements inside expanded bodies. |
 | Labeled cycles + branch label resolution | done | `tests/compiler-api.contract.test.ts` | Supports `label: cycle { ... }`, branch/jump label resolution, duplicate/unknown label diagnostics, and expansion-safe function label prefixing. |
@@ -50,6 +51,7 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 | `gather` lowering | done | `tests/compiler-api.contract.test.ts` | Full-grid gather to configurable destination with `add/sum/and/or/xor/mul` accumulation using route transfers. |
 | `stream_load` / `stream_store` lowering | done | `tests/compiler-api.contract.test.ts` | Supports `row` and `count` parameters with row-wide `LWD`/`SWD` emission over current grid width (including NxM). |
 | `auto_cycle` lowering | done | `tests/compiler-api.contract.test.ts` | Parser-level grouping of PE-prefixed statements with conflict-based cycle inference and explicit diagnostics for malformed/nested/mixed regions. |
+| Inline operand arithmetic folding (`FEAT-9`) | done | `tests/issues/feat-09-inline-arithmetic.test.ts` | Constant arithmetic in operands (`IMM(expr)`, `LWI/SWI addrExpr`, memory-sugar addresses) folds to deterministic integer literals when resolvable. |
 
 ## IR / Backend / Tooling
 

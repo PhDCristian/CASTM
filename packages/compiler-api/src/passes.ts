@@ -2,6 +2,7 @@ export {
   createDesugarMemoryPass,
   desugarAutoCyclePass,
   desugarExpressionsPass,
+  desugarInlineArithmeticPass,
   desugarMemoryPass
 } from './passes-shared/desugar-passes.js';
 

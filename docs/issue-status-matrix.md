@@ -2,6 +2,8 @@
 
 This matrix is the operational source of truth for issue triage across compiler, simulator, and docs.
 
+Execution roadmap (tasks/subtasks/timeline): `docs/issue-closure-roadmap.md`.
+
 ## Status Legend
 
 - `resolved-verified`: fixed and backed by executable tests.
@@ -63,8 +65,8 @@ These IDs are proposal/backlog items, not active correctness defects in canonica
 | FEAT-5 | compiler | canonical-intentional | proposal only | backlog |
 | FEAT-6 | compiler | canonical-intentional | proposal only | backlog |
 | FEAT-7 | compiler | resolved-verified | advanced statement coverage in `tests/compiler-api.contract.test.ts` | openedge-dsl |
-| FEAT-8 | compiler | resolved-verified | `tests/issues/bug-07-computed-loop-coords.test.ts` | openedge-dsl |
-| FEAT-9 | compiler | canonical-intentional | proposal only | backlog |
+| FEAT-8 | compiler | resolved-verified | `tests/issues/feat-08-range-coordinates.test.ts` | openedge-dsl |
+| FEAT-9 | compiler | resolved-verified | `tests/issues/feat-09-inline-arithmetic.test.ts` | openedge-dsl |
 | FEAT-10 | compiler | canonical-intentional | proposal only | backlog |
 | FEAT-11 | compiler | canonical-intentional | proposal only | backlog |
 | FEAT-12 | compiler | canonical-intentional | proposal only | backlog |

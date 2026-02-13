@@ -17,6 +17,7 @@ import {
   createExpandPragmasPass,
   desugarAutoCyclePass,
   desugarExpressionsPass,
+  desugarInlineArithmeticPass,
   lowerToLirPass,
   lowerToMirPass
 } from '../passes.js';
@@ -64,6 +65,7 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
   const astPasses = [
     createDesugarMemoryPass(memory.symbolsByName),
     desugarExpressionsPass,
+    desugarInlineArithmeticPass,
     desugarAutoCyclePass,
     createExpandPragmasPass(strictUnsupported, target.grid)
   ];

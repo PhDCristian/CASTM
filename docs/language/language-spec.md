@@ -45,3 +45,5 @@ kernel "canonical_example" {
 - `route(...)` lowering preserves lexical position relative to neighboring cycles (no global hoisting).
 - Inside `cycle { ... }`, semicolon-separated placements on the same line are supported.
 - Computed spatial coordinates in loops (for example `@k/4,k%4`) are valid canonical syntax.
+- Coordinate ranges are valid in canonical placements: `@r,c0..c1`, `@r0..r1,c`, and `@r0..r1,c0..c1` (inclusive expansion).
+- Inline arithmetic in instruction operands is supported and folded when resolvable at compile time (for example `IMM((2+3)*4)` or `LWI R0, 360 + 2*4`).

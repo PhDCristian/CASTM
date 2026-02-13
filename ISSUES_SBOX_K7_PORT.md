@@ -9,6 +9,7 @@ Discovered while porting `sbox_k7_v5_rout.edsl` → `sbox_k7_v6_compact.edsl`.
 Current tracking has been consolidated in:
 
 - `docs/issue-status-matrix.md` (OpenEdgeDSL vs UMA-CGRA-Simulator vs docs)
+- `docs/issue-closure-roadmap.md` (tasks, subtasks, timeline, rationale, evidence)
 
 Quick summary:
 
@@ -717,6 +718,37 @@ Analysis of the v7-optimized kernel (332 lines, 274 instr, 349 hwcc) to identify
 
 ---
 
+## FEAT Tracking (Operational)
+
+Operational source of truth for FEAT status and execution is:
+
+- `docs/issue-status-matrix.md`
+- `docs/issue-closure-roadmap.md#feat-portfolio-117`
+
+Snapshot sync (2026-02-13):
+
+| FEAT | Operational status | Roadmap block |
+|---|---|---|
+| FEAT-1 | pending-backlog | Block A |
+| FEAT-2 | pending-backlog | Block A |
+| FEAT-3 | pending-backlog | Block A |
+| FEAT-4 | resolved-verified | WS-04 / portfolio |
+| FEAT-5 | pending-backlog | Block B |
+| FEAT-6 | pending-backlog | Block B |
+| FEAT-7 | resolved-verified | portfolio |
+| FEAT-8 | resolved-verified | WS-07 |
+| FEAT-9 | resolved-verified | WS-08 |
+| FEAT-10 | pending-backlog | Block A |
+| FEAT-11 | pending-backlog | Block C |
+| FEAT-12 | pending-backlog | Block C |
+| FEAT-13 | pending-backlog | Block C |
+| FEAT-14 | pending-backlog | Block C |
+| FEAT-15 | pending-backlog | Block B |
+| FEAT-16 | pending-backlog | Block C |
+| FEAT-17 | pending-backlog | Block B |
+
+---
+
 ## 🔴 HIGH IMPACT — Latency Reduction
 
 ### FEAT-1: `#pragma latency_hide` — Latency-Aware Instruction Scheduling
@@ -882,7 +914,7 @@ function load_all(reg, addr) {
 
 ## 🟢 LOW IMPACT — Ergonomics
 
-### FEAT-8: Range Coordinate Syntax — `@0,0..3` (Issue #7)
+### FEAT-8: Range Coordinate Syntax — `@0,0..3` (Issue #7) — ✅ RESOLVED (2026-02-13)
 
 **Problem:** Every multi-PE instruction requires explicit coordinate listing.
 
@@ -894,7 +926,7 @@ function load_all(reg, addr) {
 
 ---
 
-### FEAT-9: Inline Operand Arithmetic
+### FEAT-9: Inline Operand Arithmetic — ✅ RESOLVED (2026-02-13)
 
 **Problem:** Memory operands don't support arithmetic. Must use `.data` named arrays or `.const` workarounds.
 

@@ -37,7 +37,7 @@ export function parseInlineCycleStatements(
   for (const part of parts) {
     const cleanStmt = `${part};`;
     const parsed = parseCycleStatement(cleanStmt, lineNo, cleanStmt, constants, new Map());
-    if (!parsed) {
+    if (!parsed || parsed.length === 0) {
       diagnostics.push(makeDiagnostic(
         ErrorCodes.Parse.InvalidSyntax,
         'error',
@@ -47,7 +47,7 @@ export function parseInlineCycleStatements(
       ));
       continue;
     }
-    statements.push(parsed);
+    statements.push(...parsed);
   }
   return statements;
 }

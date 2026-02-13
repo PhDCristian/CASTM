@@ -61,7 +61,8 @@ describe('compiler-front lowering module contracts', () => {
       new Map(),
       new Map()
     );
-    expect(cycleStmt).toMatchObject({
+    expect(cycleStmt).toHaveLength(1);
+    expect(cycleStmt?.[0]).toMatchObject({
       kind: 'at',
       row: 0,
       col: 1

@@ -33,17 +33,19 @@ assert           ::= ".assert" assert_expr
 ```text
 cycle_block      ::= "cycle" "{" cycle_stmt* "}"
 cycle_stmt       ::= at_point_stmt | at_row_stmt | at_col_stmt | at_all_stmt | short_point_stmt
-at_point_stmt    ::= "at" "@" int_expr "," int_expr ":" instruction ";"
+coord_expr       ::= int_expr | int_expr ".." int_expr
+at_point_stmt    ::= "at" "@" coord_expr "," coord_expr ":" instruction ";"
 at_row_stmt      ::= "at" "row" int_expr ":" instruction ";"
 at_col_stmt      ::= "at" "col" int_expr ":" instruction ";"
 at_all_stmt      ::= "at" "all" ":" instruction ";"
-short_point_stmt ::= "@" int_expr "," int_expr ":" instruction ";"
+short_point_stmt ::= "@" coord_expr "," coord_expr ":" instruction ";"
 ```
 
 Notes:
 
 - A single source line inside `cycle { ... }` may contain multiple `cycle_stmt` entries separated by `;`.
 - Spatial coordinate expressions are integer expressions; when division appears (for example `@k/4,k%4`) canonical lowering uses integer truncation semantics after loop binding.
+- Coordinate ranges expand inclusively. Example: `@0,0..3` expands to `@0,0`, `@0,1`, `@0,2`, `@0,3`; `@1..2,1..2` expands to the cartesian product.
 
 ## Control-flow
 

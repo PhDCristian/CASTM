@@ -160,14 +160,14 @@ export function tryExpandSingleCycleStatementStep(input: ExpandLoopEntryInput): 
   const candidates = parts.length > 1 ? parts.map((part) => `${part};`) : [input.clean];
 
   for (const candidate of candidates) {
-    const statement = parseCycleStatement(
+    const parsedStatements = parseCycleStatement(
       candidate,
       input.entry.lineNo,
       input.raw,
       input.constants,
       input.bindings
     );
-    if (!statement) {
+    if (!parsedStatements || parsedStatements.length === 0) {
       const visible = candidate.endsWith(';') ? candidate.slice(0, -1) : candidate;
       input.diagnostics.push(makeDiagnostic(
         ErrorCodes.Parse.InvalidSyntax,
@@ -178,7 +178,7 @@ export function tryExpandSingleCycleStatementStep(input: ExpandLoopEntryInput): 
       ));
       continue;
     }
-    statements.push(statement);
+    statements.push(...parsedStatements);
   }
 
   return { handled: true, nextIndex: input.index, shouldBreak: false, statements };

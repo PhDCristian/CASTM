@@ -471,11 +471,18 @@ describe('branch coverage round 9 - compiler front helpers', () => {
     expect(parseDirective('let A[4];', 1)?.kind).toBe('data2d');
     expect(parseDirective('let A[4] = {1,2,3,4};', 1)?.kind).toBe('data2d');
 
-    expect(parseCycleStatement('@bad,0: NOP;', 1, '@bad,0: NOP;', new Map(), new Map())).toMatchObject({
+    expect(parseCycleStatement('@bad,0: NOP;', 1, '@bad,0: NOP;', new Map(), new Map())).toMatchObject([{
       kind: 'at-expr',
       rowExpr: 'bad',
       colExpr: '0'
-    });
+    }]);
+    expect(parseCycleStatement('@0..,1: NOP;', 1, '@0..,1: NOP;', new Map(), new Map())).toBeNull();
+    expect(parseCycleStatement('@bad..1,0: NOP;', 1, '@bad..1,0: NOP;', new Map(), new Map())).toBeNull();
+    expect(parseCycleStatement('@a[0]{1}x,(0)..(1): NOP;', 1, '@a[0]{1}x,(0)..(1): NOP;', new Map(), new Map()))
+      .toMatchObject([
+        { kind: 'at-expr', rowExpr: 'a[0]{1}x', colExpr: '0' },
+        { kind: 'at-expr', rowExpr: 'a[0]{1}x', colExpr: '1' }
+      ]);
     expect(parseCycleStatement('at row bad: NOP;', 1, 'at row bad: NOP;', new Map(), new Map())).toBeNull();
     expect(parseCycleStatement('at col bad: NOP;', 1, 'at col bad: NOP;', new Map(), new Map())).toBeNull();
   });
