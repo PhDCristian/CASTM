@@ -46,7 +46,7 @@ Expected SEMICOLON, but found IDENTIFIER('ZERO')
 
 ---
 
-## Issue 3: C-like expressions fail in multi-`@` cycle blocks
+## Issue 3: C-like expressions fail in multi-`@` cycle blocks — ✅ RESOLVED (2026-02-13)
 
 **Symptom:**
 ```
@@ -62,7 +62,7 @@ when writing `@0,0: R3 = R2; @0,1: R3 = R2;` inside a cycle.
 
 ---
 
-## Issue 4: C-like expressions fail inside `row N:` pipe syntax
+## Issue 4: C-like expressions fail inside `row N:` pipe syntax — ℹ️ CANONICAL-INTENTIONAL
 
 **Symptom:** `row 0: R3 = R2 | SADD R3, R2, RCL | ...` fails because `|` is ambiguous between the pipe separator and the C-like bitwise OR operator context.
 
@@ -113,7 +113,7 @@ when writing `cycle { for i in range(4) { row i: LWI R0, addr | ...; } }`
 
 ---
 
-## Issue 7: `#pragma auto_cycle` doesn't work inside functions
+## Issue 7: `#pragma auto_cycle` doesn't work inside functions — ℹ️ CANONICAL-INTENTIONAL
 
 **Symptom:** `#pragma auto_cycle` inside function bodies causes:
 ```
@@ -128,7 +128,7 @@ Expected KEYWORD('cycle'), but found AT_SYMBOL('@')
 
 ---
 
-## Issue 8: `#pragma parallel` (without `collapse`) generates serial cycles
+## Issue 8: `#pragma parallel` (without `collapse`) generates serial cycles — ℹ️ CANONICAL-INTENTIONAL
 
 **Symptom:** `#pragma parallel for c in range(4) { cycle { @0,c: INSTR; } }` generates **4 separate cycles** (one INSTR per column per cycle) instead of 1 cycle with all 4 columns active simultaneously.
 
@@ -184,7 +184,7 @@ when writing `cycle { col 2: SADD R0, ZERO, IMM(55); }`
 
 ---
 
-## Issue 10: `for` loop variable name `col` triggers parse error
+## Issue 10: `for` loop variable name `col` triggers parse error — ✅ RESOLVED (2026-02-13)
 
 **Symptom:**
 ```
@@ -198,7 +198,7 @@ when writing `for col in range(1, 4) { ... }`
 
 ---
 
-## Issue 11: `#pragma parallel collapse` generates isolated cycles that can't merge with other instructions
+## Issue 11: `#pragma parallel collapse` generates isolated cycles that can't merge with other instructions — ℹ️ CANONICAL-INTENTIONAL
 
 **Symptom:** When `#pragma parallel collapse` is adjacent to a `cycle { }` block with different `@row,col:` instructions, the pragma's cycle(s) remain separate — they can't be merged into the same cycle as other explicit instructions.
 
@@ -1405,7 +1405,7 @@ This would permanently eliminate all synchronization issues and resolve BUG-2, B
 
 ---
 
-## BUG-6: Expression Desugarer Does Not Recognize Function Parameter Names
+## BUG-6: Expression Desugarer Does Not Recognize Function Parameter Names — ✅ RESOLVED
 
 **Severity:** Medium — limits expression syntax adoption in parameterized functions.
 
@@ -1458,7 +1458,7 @@ function extract_bytes_col(src, dst) {
 
 ---
 
-## BUG-7: v3 Compiler Rejects Computed Loop-Variable Coordinates in `for { cycle {} }`
+## BUG-7: v3 Compiler Rejects Computed Loop-Variable Coordinates in `for { cycle {} }` — ✅ RESOLVED (2026-02-13)
 
 **Severity:** Critical — blocks all parallel-collapse patterns in the SBOX K7 kernel.
 
@@ -1514,7 +1514,7 @@ for k in range(16) {
 
 ---
 
-## BUG-8: v3 Compiler Hoists `route()` Statement to Beginning of Kernel
+## BUG-8: v3 Compiler Hoists `route()` Statement to Beginning of Kernel — ✅ RESOLVED (2026-02-13)
 
 **Severity:** High — breaks data-dependent routing in all kernels using inline `route()`.
 
@@ -1551,7 +1551,7 @@ cycle { @0,3: R0 = RCL; }
 
 ---
 
-## BUG-9: v3 Structured Parser is Line-Oriented — Multi-Statement Lines Break Function Expansion
+## BUG-9: v3 Structured Parser is Line-Oriented — Multi-Statement Lines Break Function Expansion — ✅ RESOLVED (2026-02-13)
 
 **Severity:** Medium — affects code style and readability, not functionality if rules are followed.
 
