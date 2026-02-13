@@ -15,6 +15,7 @@ import {
 import {
   handleAllreduce,
   handleGather,
+  handleGuard,
   handleReduce,
   handleScan,
   handleStencil,
@@ -62,11 +63,13 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
 
     expect(SUPPORTED_PRAGMAS.has('route')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('stream_store')).toBe(true);
+    expect(SUPPORTED_PRAGMAS.has('guard')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('triangle')).toBe(true);
     expect(SUPPORTED_PRAGMAS.has('unknown')).toBe(false);
 
     expect(PRAGMA_HANDLERS.get('route')).toBe(handleRoute);
     expect(PRAGMA_HANDLERS.get('broadcast')).toBe(handleBroadcast);
+    expect(PRAGMA_HANDLERS.get('guard')).toBe(handleGuard);
     expect(PRAGMA_HANDLERS.get('rotate')).toBe(handleRotateShift);
     expect(PRAGMA_HANDLERS.get('stream_load')).toBe(handleStreamLoad);
   });
@@ -143,6 +146,7 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
       { fn: handleReduce, text: 'reduce(nope)' },
       { fn: handleScan, text: 'scan(nope)' },
       { fn: handleStencil, text: 'stencil(nope)' },
+      { fn: handleGuard, text: 'guard(nope)' },
       { fn: handleTriangle, text: 'triangle(nope)' },
       { fn: handleAllreduce, text: 'allreduce(nope)' },
       { fn: handleTranspose, text: 'transpose(nope)' },
@@ -181,6 +185,15 @@ describe('compiler-api expand-pragmas handlers/registry', () => {
     expect(triangleContext.diagnostics).toHaveLength(0);
     expect(triangleContext.generatedCycles.length).toBe(1);
     expect(triangleContext.generatedCycles[0].statements.length).toBe(10);
+
+    const guardContext = ctx();
+    handleGuard(
+      pragma('guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1)'),
+      guardContext
+    );
+    expect(guardContext.diagnostics).toHaveLength(0);
+    expect(guardContext.generatedCycles.length).toBe(1);
+    expect(guardContext.generatedCycles[0].statements.length).toBe(10);
 
     const allreduceContext = ctx();
     handleAllreduce(pragma('allreduce(op=add, dest=R1, src=R0, axis=row)'), allreduceContext);

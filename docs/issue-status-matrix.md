@@ -74,4 +74,4 @@ These IDs are proposal/backlog items, not active correctness defects in canonica
 | FEAT-14 | compiler | canonical-intentional | proposal only | backlog |
 | FEAT-15 | compiler | resolved-verified | `tests/issues/feat-15-row-auto-broadcast.test.ts` | openedge-dsl |
 | FEAT-16 | compiler | canonical-intentional | proposal only | backlog |
-| FEAT-17 | compiler | canonical-intentional | proposal only | backlog |
+| FEAT-17 | compiler | resolved-verified | `tests/issues/feat-17-guard-condition.test.ts` | openedge-dsl |

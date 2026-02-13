@@ -65,7 +65,7 @@ function_call    ::= ident "(" arg_list? ")" ";"
 
 ```text
 advanced_stmt    ::= route_stmt | reduce_stmt | scan_stmt | broadcast_stmt
-                  | rotate_stmt | shift_stmt | stencil_stmt | triangle_stmt | allreduce_stmt
+                  | rotate_stmt | shift_stmt | stencil_stmt | guard_stmt | triangle_stmt | allreduce_stmt
                   | transpose_stmt | gather_stmt | stream_load_stmt | stream_store_stmt
 
 route_stmt       ::= "route" "(" route_edge "," "payload" "=" register "," ( "accum" "=" register | "dest" "=" register "," "op" "=" op_call ) ")" ";"
@@ -74,6 +74,7 @@ op_call          ::= ident "(" operand "," operand "," operand ")"
 
 reduce_stmt      ::= "reduce" "(" "op" "=" ident "," "dest" "=" register "," "src" "=" register [ "," "axis" "=" ("row" | "col") ] ")" ";"
 scan_stmt        ::= "scan" "(" "op" "=" ident "," "src" "=" register "," "dest" "=" register "," "dir" "=" ident [ "," "mode" "=" ident ] ")" ";"
+guard_stmt       ::= "guard" "(" "cond" "=" cond_expr "," "op" "=" ident "," "dest" "=" register "," "srcA" "=" register "," "srcB" "=" register ")" ";"
 triangle_stmt    ::= "triangle" "(" "shape" "=" ("upper" | "lower") [ "," "inclusive" "=" ("true" | "false" | "inclusive" | "exclusive") ] "," "op" "=" ident "," "dest" "=" register "," "srcA" "=" register "," "srcB" "=" register ")" ";"
 ```
 

@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`7` validated, `17` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`8` validated, `16` in backlog)
 
 ## Workstreams
 
@@ -254,6 +254,27 @@ Evidence:
 - Tests: `tests/issues/feat-15-row-auto-broadcast.test.ts`.
 - Docs: `docs/feature-parity-matrix.md`, `docs/language/language-spec.md`.
 
+### WS-12 — FEAT-17 Guard Spatial Predicate
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- provide a general predicate-based spatial pattern beyond fixed triangle forms.
+- keep deterministic compile-time lowering for sparse activation patterns.
+
+Subtasks:
+
+- [x] Add canonical `guard(cond=..., op=..., dest=..., srcA=..., srcB=...)` statement.
+- [x] Implement predicate evaluation over `row`, `col`, `idx`, `rows`, `cols` in NxM grids.
+- [x] Add diagnostics for malformed/unevaluable predicates and full regression coverage.
+
+Evidence:
+
+- Tests: `tests/issues/feat-17-guard-condition.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
+- Docs: `docs/language/guard-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`.
+
 ## FEAT Portfolio (1..17)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
@@ -276,7 +297,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT-14 `conditional_sub` | domain primitive | `pending-backlog` | proposal only | Define semantics against existing Barrett idiom and branch/select lowering parity. |
 | FEAT-15 row auto-broadcast | syntax sugar | `resolved-verified` | `tests/issues/feat-15-row-auto-broadcast.test.ts` | Keep NxM and segmented-row regressions to preserve deterministic lowering. |
 | FEAT-16 pipeline macro | abstraction/tooling | `pending-backlog` | proposal only | Evaluate macro system scope and whether it belongs to compiler core or preprocessing layer. |
-| FEAT-17 guard condition | syntax/pattern | `pending-backlog` | proposal only | Define predicate grammar and lowering contract for sparse PE activation. |
+| FEAT-17 guard condition | syntax/pattern | `resolved-verified` | `tests/issues/feat-17-guard-condition.test.ts` | Keep predicate evaluation deterministic and bounded to canonical spatial symbols. |
 
 ### FEAT Backlog Execution Blocks
 
@@ -297,7 +318,6 @@ Status: `pending`
 Subtasks:
 
 - [ ] FEAT-5 grammar + lowering spec.
-- [ ] FEAT-17 predicate grammar and deterministic expansion design.
 
 #### Block C — Domain Abstraction Track
 
@@ -333,7 +353,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1..2`, `FEAT-5`, `FEAT-10..14`, `FEAT-16..17`.
+- [ ] Prioritize `FEAT-1..2`, `FEAT-5`, `FEAT-10..14`, `FEAT-16`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

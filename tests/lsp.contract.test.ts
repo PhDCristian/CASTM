@@ -7,6 +7,9 @@ describe('lsp canonical contracts', () => {
     expect(completions.some((c) => c.label === 'route(...);' && c.kind === 'advanced')).toBe(true);
     expect(completions.some((c) => c.label === 'ROUT' && c.kind === 'register')).toBe(true);
 
+    const guardCompletions = getCompletions('gu');
+    expect(guardCompletions.some((c) => c.label === 'guard(...);' && c.kind === 'advanced')).toBe(true);
+
     const keywordCompletions = getCompletions('let');
     expect(keywordCompletions.some((c) => c.label === 'let' && c.kind === 'keyword')).toBe(true);
   });

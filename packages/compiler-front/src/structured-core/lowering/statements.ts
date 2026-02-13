@@ -11,6 +11,7 @@ const ADVANCED_NAMES = new Set([
   'scan',
   'reduce',
   'stencil',
+  'guard',
   'triangle',
   'allreduce',
   'transpose',

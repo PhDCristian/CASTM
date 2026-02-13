@@ -44,6 +44,14 @@ export interface TrianglePragmaArgs {
   srcB: string;
 }
 
+export interface GuardPragmaArgs {
+  condition: string;
+  opcode: string;
+  destReg: string;
+  srcA: string;
+  srcB: string;
+}
+
 export interface AllreducePragmaArgs {
   operation: string;
   destReg: string;

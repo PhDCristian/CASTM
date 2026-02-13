@@ -8,6 +8,7 @@ import {
 import {
   handleAllreduce,
   handleGather,
+  handleGuard,
   handleReduce,
   handleScan,
   handleStencil,
@@ -36,6 +37,7 @@ export const SUPPORTED_PRAGMAS = new Set<string>([
   'scan',
   'reduce',
   'stencil',
+  'guard',
   'triangle',
   'allreduce',
   'transpose',
@@ -52,6 +54,7 @@ export const PRAGMA_HANDLERS = new Map<string, PragmaHandler>([
   ['scan', handleScan],
   ['reduce', handleReduce],
   ['stencil', handleStencil],
+  ['guard', handleGuard],
   ['triangle', handleTriangle],
   ['allreduce', handleAllreduce],
   ['transpose', handleTranspose],

@@ -745,7 +745,7 @@ Snapshot sync (2026-02-13):
 | FEAT-14 | pending-backlog | Block C |
 | FEAT-15 | resolved-verified | WS-11 |
 | FEAT-16 | pending-backlog | Block C |
-| FEAT-17 | pending-backlog | Block B |
+| FEAT-17 | resolved-verified | WS-12 |
 
 ---
 
@@ -1154,7 +1154,7 @@ function multiply_mod(a, b, out) { accum_mul(a, b); barrett_tail(out); }
 
 ---
 
-### FEAT-17: `#pragma guard(condition)` — Conditional PE Activation in Loops
+### FEAT-17: `#pragma guard(condition)` — Conditional PE Activation in Loops — ✅ RESOLVED (2026-02-13)
 
 **Problem:** The upper-triangle SMUL (lines 90-95) and diagonal init (lines 267-271) are patterns where only PEs matching a 2D condition are active. These can't be expressed with a simple `for` loop.
 
@@ -1171,21 +1171,10 @@ row 1: _ | SMUL R2, R0, R1 | SMUL R2, R0, R1 | SMUL R2, R0, R1;
 @2,2: SADD R3, ZERO, ZERO; @3,3: SADD R3, ZERO, ZERO;
 ```
 
-**Proposed:**
+**Canonical implementation:**
 ```c
-// Upper triangle
-#pragma parallel collapse
-for k in range(16) {
-    #pragma guard(k%4 >= k/4)
-    cycle { @k/4,k%4: SMUL R2, R0, R1; }
-}
-
-// Diagonal
-#pragma parallel collapse
-for k in range(16) {
-    #pragma guard(k%4 == k/4)
-    cycle { @k/4,k%4: SADD R3, ZERO, ZERO; }
-}
+guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+guard(cond=col==row, op=SADD, dest=R3, srcA=ZERO, srcB=ZERO);
 ```
 
 More general than FEAT-6 (`#pragma triangle`): allows any boolean condition over the PE index space. Also covers off-diagonal doubling, L-shaped patterns, and arbitrary subsets.

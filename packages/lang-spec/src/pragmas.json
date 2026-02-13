@@ -4,6 +4,7 @@
   { "name": "parallel", "kind": "loop" },
   { "name": "reduce", "kind": "codegen" },
   { "name": "stencil", "kind": "codegen" },
+  { "name": "guard", "kind": "codegen" },
   { "name": "triangle", "kind": "codegen" },
   { "name": "route", "kind": "codegen" },
   { "name": "scan", "kind": "codegen" },

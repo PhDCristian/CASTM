@@ -5,6 +5,7 @@ export {
 
 export {
   buildAllreduceCycles,
+  buildGuardCycles,
   buildGatherCycles,
   buildStencilCycles,
   buildTriangleCycles,

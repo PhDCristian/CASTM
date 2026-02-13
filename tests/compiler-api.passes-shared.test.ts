@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ErrorCodes } from '@openedge/compiler-ir';
 import {
   cloneAst,
   createAtCycle,
@@ -30,6 +31,7 @@ import {
 import {
   parseAllreducePragmaArgs,
   parseBroadcastPragmaArgs,
+  parseGuardPragmaArgs,
   parseGatherPragmaArgs,
   parseReducePragmaArgs,
   parseRotateShiftPragmaArgs,
@@ -43,6 +45,7 @@ import {
 import {
   buildReduceCycles,
   buildScanCycles,
+  buildGuardCycles,
   buildStreamCycles,
   buildTriangleCycles
 } from '../packages/compiler-api/src/passes-shared/collective-builders.js';
@@ -202,6 +205,17 @@ describe('compiler-api passes shared utils', () => {
     expect(parseTrianglePragmaArgs('triangle(shape=upper, op=SMUL, dest=R2, srcA=R0, srcB=R1, extra=1)')).toBeNull();
     expect(parseTrianglePragmaArgs('triangle(shape=upper, op=SMUL, dest=R2, srcA=1, srcB=R1)')).toBeNull();
     expect(parseTrianglePragmaArgs('foo(shape=upper, op=SMUL, dest=R2, srcA=R0, srcB=R1)')).toBeNull();
+    expect(parseGuardPragmaArgs('guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1)')).toMatchObject({
+      condition: 'col>=row',
+      opcode: 'SMUL',
+      destReg: 'R2',
+      srcA: 'R0',
+      srcB: 'R1'
+    });
+    expect(parseGuardPragmaArgs('guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0)')).toBeNull();
+    expect(parseGuardPragmaArgs('guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1, extra=1)')).toBeNull();
+    expect(parseGuardPragmaArgs('guard(cond=col>=row, op=SMUL, dest=R2, srcA=1, srcB=R1)')).toBeNull();
+    expect(parseGuardPragmaArgs('foo(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1)')).toBeNull();
     expect(parseAllreducePragmaArgs('allreduce(op=add, dest=R1, src=R0, axis=col)')).toMatchObject({
       operation: 'add',
       destReg: 'R1',
@@ -340,7 +354,53 @@ describe('compiler-api passes shared utils', () => {
     );
     expect(emptyTriangle).toEqual([]);
 
-    expect(diagnostics).toHaveLength(0);
+    const guardCycles = buildGuardCycles(
+      {
+        condition: 'col>=row',
+        opcode: 'SMUL',
+        destReg: 'R2',
+        srcA: 'R0',
+        srcB: 'R1'
+      },
+      6,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(guardCycles).toHaveLength(1);
+    expect(guardCycles[0].statements.length).toBe(10);
+
+    const guardTruthiness = buildGuardCycles(
+      {
+        condition: 'idx%2',
+        opcode: 'SADD',
+        destReg: 'R1',
+        srcA: 'R0',
+        srcB: 'ZERO'
+      },
+      7,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(guardTruthiness).toHaveLength(1);
+    expect(guardTruthiness[0].statements.length).toBe(8);
+
+    const badGuardCycles = buildGuardCycles(
+      {
+        condition: 'col>=',
+        opcode: 'SADD',
+        destReg: 'R1',
+        srcA: 'R0',
+        srcB: 'ZERO'
+      },
+      8,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(badGuardCycles).toEqual([]);
+    expect(diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
   it('handles desugar utilities for assignment, binary split and memory addresses', () => {

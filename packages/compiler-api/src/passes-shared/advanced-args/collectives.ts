@@ -5,6 +5,7 @@ import {
 } from '../pragma-args-utils.js';
 import { parseCoordinateLiteral } from '../route-args.js';
 import {
+  GuardPragmaArgs,
   GatherPragmaArgs,
   StencilPragmaArgs,
   TrianglePragmaArgs,
@@ -69,6 +70,33 @@ export function parseTrianglePragmaArgs(text: string): TrianglePragmaArgs | null
   return {
     shape,
     inclusive,
+    opcode,
+    destReg,
+    srcA,
+    srcB
+  };
+}
+
+export function parseGuardPragmaArgs(text: string): GuardPragmaArgs | null {
+  const match = text.trim().match(/^guard\s*\((.+)\)\s*;?\s*$/i);
+  if (!match) return null;
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+  for (const key of args.keys()) {
+    if (!['cond', 'op', 'dest', 'srca', 'srcb'].includes(key)) return null;
+  }
+
+  const condition = args.get('cond')?.trim();
+  const opcode = args.get('op')?.trim().toUpperCase();
+  const destReg = args.get('dest')?.trim();
+  const srcA = args.get('srca')?.trim();
+  const srcB = args.get('srcb')?.trim();
+
+  if (!condition || !opcode || !destReg || !srcA || !srcB) return null;
+  if (!isIdentifier(opcode) || !isIdentifier(destReg) || !isIdentifier(srcA) || !isIdentifier(srcB)) return null;
+
+  return {
+    condition,
     opcode,
     destReg,
     srcA,
