@@ -65,7 +65,7 @@ function_call    ::= ident "(" arg_list? ")" ";"
 
 ```text
 advanced_stmt    ::= route_stmt | reduce_stmt | scan_stmt | broadcast_stmt
-                  | collect_stmt | normalize_stmt | rotate_stmt | shift_stmt | stencil_stmt | guard_stmt | triangle_stmt | allreduce_stmt
+                  | collect_stmt | normalize_stmt | extract_bytes_stmt | rotate_stmt | shift_stmt | stencil_stmt | guard_stmt | triangle_stmt | allreduce_stmt
                   | transpose_stmt | gather_stmt | stream_load_stmt | stream_store_stmt
 
 route_stmt       ::= "route" "(" route_edge "," "payload" "=" register "," ( "accum" "=" register | "dest" "=" register "," "op" "=" op_call ) ")" ";"
@@ -76,6 +76,7 @@ collect_stmt     ::= "collect" "(" "from" "=" lane_ref [ "," "to" "=" lane_ref ]
 lane_ref         ::= ("row" | "col") "(" int_expr ")"
 collect_combine  ::= "copy" | "add" | "sum" | "sub" | "and" | "or" | "xor" | "mul" | "shift_add"
 normalize_stmt   ::= "normalize" "(" "reg" "=" register "," "carry" "=" register "," "width" "=" int_expr "," "lane" "=" int_expr [ "," "mask" "=" int_expr ] [ "," "axis" "=" ("row" | "col") ] [ "," "dir" "=" ("right" | "left" | "down" | "up") ] ")" ";"
+extract_bytes_stmt ::= "extract_bytes" "(" "src" "=" register "," "dest" "=" register [ "," "axis" "=" ("row" | "col") ] [ "," "byteWidth" "=" int_expr ] [ "," "mask" "=" int_expr ] ")" ";"
 
 reduce_stmt      ::= "reduce" "(" "op" "=" ident "," "dest" "=" register "," "src" "=" register [ "," "axis" "=" ("row" | "col") ] ")" ";"
 scan_stmt        ::= "scan" "(" "op" "=" ident "," "src" "=" register "," "dest" "=" register "," "dir" "=" ident [ "," "mode" "=" ident ] ")" ";"

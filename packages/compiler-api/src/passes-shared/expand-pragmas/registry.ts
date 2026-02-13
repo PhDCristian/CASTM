@@ -8,6 +8,7 @@ import {
 import {
   handleAllreduce,
   handleCollect,
+  handleExtractBytes,
   handleGather,
   handleGuard,
   handleNormalize,
@@ -35,6 +36,7 @@ export const SUPPORTED_PRAGMAS = new Set<string>([
   'route',
   'broadcast',
   'collect',
+  'extract_bytes',
   'normalize',
   'rotate',
   'shift',
@@ -54,6 +56,7 @@ export const PRAGMA_HANDLERS = new Map<string, PragmaHandler>([
   ['route', handleRoute],
   ['broadcast', handleBroadcast],
   ['collect', handleCollect],
+  ['extract_bytes', handleExtractBytes],
   ['normalize', handleNormalize],
   ['rotate', handleRotateShift],
   ['shift', handleRotateShift],

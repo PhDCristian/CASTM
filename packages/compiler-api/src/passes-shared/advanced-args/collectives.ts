@@ -8,6 +8,7 @@ import { parseCoordinateLiteral } from '../route-args.js';
 import {
   CollectAxisRef,
   CollectPragmaArgs,
+  ExtractBytesPragmaArgs,
   GuardPragmaArgs,
   GatherPragmaArgs,
   NormalizePragmaArgs,
@@ -217,6 +218,41 @@ export function parseNormalizePragmaArgs(text: string): NormalizePragmaArgs | nu
     axis,
     lane,
     direction
+  };
+}
+
+export function parseExtractBytesPragmaArgs(text: string): ExtractBytesPragmaArgs | null {
+  const match = text.trim().match(/^extract_bytes\s*\((.+)\)\s*;?\s*$/i);
+  if (!match) return null;
+  const args = parseKeyValueArgs(match[1]);
+  if (!args) return null;
+  for (const key of args.keys()) {
+    if (!['src', 'dest', 'axis', 'bytewidth', 'mask'].includes(key)) return null;
+  }
+
+  const srcReg = args.get('src')?.trim();
+  const destReg = args.get('dest')?.trim();
+  if (!srcReg || !destReg) return null;
+  if (!isIdentifier(srcReg) || !isIdentifier(destReg)) return null;
+
+  const axisRaw = (args.get('axis') ?? 'col').trim().toLowerCase();
+  if (axisRaw !== 'row' && axisRaw !== 'col') return null;
+  const axis = axisRaw as 'row' | 'col';
+
+  const byteWidthRaw = args.get('bytewidth');
+  const byteWidth = byteWidthRaw ? parseIntegerLiteral(byteWidthRaw) : 8;
+  if (byteWidth === null || byteWidth <= 0 || byteWidth > 16) return null;
+
+  const maskRaw = args.get('mask');
+  const mask = maskRaw ? parseIntegerLiteral(maskRaw) : ((1 << byteWidth) - 1);
+  if (mask === null) return null;
+
+  return {
+    srcReg,
+    destReg,
+    axis,
+    byteWidth,
+    mask
   };
 }
 

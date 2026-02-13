@@ -68,7 +68,7 @@ These IDs are proposal/backlog items, not active correctness defects in canonica
 | FEAT-8 | compiler | resolved-verified | `tests/issues/feat-08-range-coordinates.test.ts` | openedge-dsl |
 | FEAT-9 | compiler | resolved-verified | `tests/issues/feat-09-inline-arithmetic.test.ts` | openedge-dsl |
 | FEAT-10 | compiler | canonical-intentional | proposal only | backlog |
-| FEAT-11 | compiler | canonical-intentional | proposal only | backlog |
+| FEAT-11 | compiler | resolved-verified | `tests/issues/feat-11-extract-bytes.test.ts` | openedge-dsl |
 | FEAT-12 | compiler | resolved-verified | `tests/issues/feat-12-collect.test.ts` | openedge-dsl |
 | FEAT-13 | compiler | canonical-intentional | proposal only | backlog |
 | FEAT-14 | compiler | canonical-intentional | proposal only | backlog |

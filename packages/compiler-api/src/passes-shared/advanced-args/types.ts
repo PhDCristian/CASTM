@@ -30,6 +30,14 @@ export interface NormalizePragmaArgs {
   direction: 'left' | 'right' | 'up' | 'down';
 }
 
+export interface ExtractBytesPragmaArgs {
+  srcReg: string;
+  destReg: string;
+  axis: 'row' | 'col';
+  byteWidth: number;
+  mask: number;
+}
+
 export interface RotateShiftPragmaArgs {
   reg: string;
   direction: 'left' | 'right';

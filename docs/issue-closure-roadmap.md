@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`10` validated, `14` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`11` validated, `13` in backlog)
 
 ## Workstreams
 
@@ -317,6 +317,27 @@ Evidence:
 - Tests: `tests/issues/feat-05-normalize.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
 - Docs: `docs/language/normalize-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
 
+### WS-15 — FEAT-11 Extract Bytes Unification
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- unify row/column byte-extraction idioms into one canonical statement.
+- keep this abstraction general and parameterized (axis/byteWidth/mask), avoiding domain-specific hardcoded macros.
+
+Subtasks:
+
+- [x] Add canonical `extract_bytes(src=..., dest=...)` statement with `axis/byteWidth/mask` options.
+- [x] Implement deterministic two-cycle lowering (`SRT`, `LAND`) over the active NxM grid.
+- [x] Add parser/handler/builder/issue tests and language docs.
+
+Evidence:
+
+- Tests: `tests/issues/feat-11-extract-bytes.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
+- Docs: `docs/language/extract-bytes-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
+
 ## FEAT Portfolio (1..17)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
@@ -333,7 +354,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT-8 range coordinates | language core | `resolved-verified` | `tests/issues/feat-08-range-coordinates.test.ts` | Keep contract tests for descending/rectangular and unresolved-axis diagnostics. |
 | FEAT-9 inline operand arithmetic | desugar pass | `resolved-verified` | `tests/issues/feat-09-inline-arithmetic.test.ts` | Keep folding deterministic and side-effect free; extend with additional safe operators as needed. |
 | FEAT-10 `stash` | scheduling/lifetime | `pending-backlog` | proposal only | Define spill-vs-route decision model and artifact visibility in compile stats. |
-| FEAT-11 `extract_bytes(axis)` | domain abstraction | `pending-backlog` | proposal only | Specify if this is syntax sugar vs macro library; avoid new implicit semantics. |
+| FEAT-11 `extract_bytes(axis)` | language abstraction | `resolved-verified` | `tests/issues/feat-11-extract-bytes.test.ts` | Extend only with semantically explicit variants (no hidden control-flow or implicit routing). |
 | FEAT-12 `collect` | lane pattern | `resolved-verified` | `tests/issues/feat-12-collect.test.ts` | Extend to multi-hop path synthesis only if deterministic cost model is documented. |
 | FEAT-13 `accumulate` | domain pattern | `pending-backlog` | proposal only | Formalize accumulation graph contract and determinism requirements across topologies. |
 | FEAT-14 `conditional_sub` | domain primitive | `pending-backlog` | proposal only | Define semantics against existing Barrett idiom and branch/select lowering parity. |
@@ -367,7 +388,7 @@ Status: `pending`
 
 Subtasks:
 
-- [ ] FEAT-11, FEAT-13, FEAT-14 semantic contracts and IR shape.
+- [ ] FEAT-13, FEAT-14 semantic contracts and IR shape.
 - [ ] FEAT-16 macro/tooling boundary decision (core vs preprocessor).
 - [ ] Contract tests for each accepted abstraction before implementation.
 
@@ -395,7 +416,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1..2`, `FEAT-10..11`, `FEAT-13..14`, `FEAT-16`.
+- [ ] Prioritize `FEAT-1..2`, `FEAT-10`, `FEAT-13..14`, `FEAT-16`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

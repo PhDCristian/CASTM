@@ -3,6 +3,7 @@ import { ErrorCodes, spanAt } from '@openedge/compiler-ir';
 import {
   buildAllreduceCycles,
   buildCollectCycles,
+  buildExtractBytesCycles,
   buildGatherCycles,
   buildNormalizeCycles,
   buildStencilCycles,
@@ -611,5 +612,72 @@ describe('compiler-api collective/route builders', () => {
     );
     expect(zeroLengthDiagnostics).toHaveLength(0);
     expect(zeroLengthCycles).toHaveLength(0);
+  });
+
+  it('builds extract_bytes cycles and validates byte width constraints', () => {
+    const okDiagnostics: any[] = [];
+    const okCycles = buildExtractBytesCycles(
+      {
+        srcReg: 'R0',
+        destReg: 'R1',
+        axis: 'row',
+        byteWidth: 8,
+        mask: 255
+      },
+      4,
+      torusGrid,
+      span,
+      okDiagnostics
+    );
+    expect(okDiagnostics).toHaveLength(0);
+    expect(okCycles).toHaveLength(2);
+    expect(okCycles[0].index).toBe(4);
+    expect(okCycles[0].statements[0]).toMatchObject({
+      row: 0,
+      col: 0,
+      instruction: { operands: ['R1', 'R0', '0'] }
+    });
+    expect(okCycles[0].statements[4]).toMatchObject({
+      row: 1,
+      col: 0,
+      instruction: { operands: ['R1', 'R0', '8'] }
+    });
+    expect(okCycles[1].statements[0]).toMatchObject({
+      instruction: { opcode: 'LAND', operands: ['R1', 'R1', '255'] }
+    });
+
+    const badWidthDiagnostics: any[] = [];
+    const badWidthCycles = buildExtractBytesCycles(
+      {
+        srcReg: 'R0',
+        destReg: 'R1',
+        axis: 'col',
+        byteWidth: 0,
+        mask: 255
+      },
+      0,
+      torusGrid,
+      span,
+      badWidthDiagnostics
+    );
+    expect(badWidthCycles).toHaveLength(0);
+    expect(badWidthDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const zeroGridDiagnostics: any[] = [];
+    const zeroGridCycles = buildExtractBytesCycles(
+      {
+        srcReg: 'R0',
+        destReg: 'R1',
+        axis: 'col',
+        byteWidth: 8,
+        mask: 255
+      },
+      0,
+      { rows: 0, cols: 4, topology: 'mesh', wrapPolicy: 'clamp' },
+      span,
+      zeroGridDiagnostics
+    );
+    expect(zeroGridDiagnostics).toHaveLength(0);
+    expect(zeroGridCycles).toHaveLength(0);
   });
 });

@@ -28,6 +28,7 @@ kernel "canonical_example" {
   route(@0,1 -> @0,0, payload=R3, accum=R1);
   collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
   normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
+  extract_bytes(src=R0, dest=R1, axis=col);
   reduce(op=add, dest=R1, src=R0, axis=row);
   guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
   triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
@@ -48,6 +49,7 @@ kernel "canonical_example" {
 - Advanced statements lower to existing codegen passes.
 - `collect(...)` provides aligned single-hop lane collection (`row/col`) with deterministic lowering and explicit geometry checks.
 - `normalize(...)` provides canonical carry-normalization over one row/column lane using deterministic multi-cycle lowering (`SRT` + `LAND` + carry relay + lane add).
+- `extract_bytes(...)` unifies row/column byte-lane extraction as a canonical two-cycle pattern (`SRT` + `LAND`) over the active grid.
 - `triangle(...)` expands deterministically in row-major order over the active grid (`shape=upper|lower`, optional `inclusive=true|false`) and emits one canonical cycle with per-PE placements.
 - `guard(...)` applies a compile-time predicate (`cond`) over `row`, `col`, `idx`, `rows`, `cols` and emits deterministic row-major placements for matching PEs only.
 - `route(...)` lowering preserves lexical position relative to neighboring cycles (no global hoisting).
@@ -61,3 +63,4 @@ kernel "canonical_example" {
 - Guard spatial-pattern reference: `docs/language/guard-statement.md`.
 - Collect lane-pattern reference: `docs/language/collect-statement.md`.
 - Normalize lane-pattern reference: `docs/language/normalize-statement.md`.
+- Byte-extraction reference: `docs/language/extract-bytes-statement.md`.

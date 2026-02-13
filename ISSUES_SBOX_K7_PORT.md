@@ -739,7 +739,7 @@ Snapshot sync (2026-02-13):
 | FEAT-8 | resolved-verified | WS-07 |
 | FEAT-9 | resolved-verified | WS-08 |
 | FEAT-10 | pending-backlog | Block A |
-| FEAT-11 | pending-backlog | Block C |
+| FEAT-11 | resolved-verified | WS-15 |
 | FEAT-12 | resolved-verified | WS-13 |
 | FEAT-13 | pending-backlog | Block C |
 | FEAT-14 | pending-backlog | Block C |
@@ -985,7 +985,7 @@ These are higher-level abstractions targeting **multi-limb arithmetic** and **CG
 
 ---
 
-### FEAT-11: Parameterized Byte Extraction — `extract_bytes(axis)`
+### FEAT-11: Parameterized Byte Extraction — `extract_bytes(...)` — ✅ RESOLVED (2026-02-13)
 
 **Problem:** `extract_bytes_col` and `extract_bytes_row` are identical except for the shift formula (`k%4*8` vs `k/4*8`). Two 7-line functions for what should be one.
 
@@ -1007,20 +1007,15 @@ function extract_bytes_row(src, dst) {
 }
 ```
 
-**Proposed (7 lines):**
+**Canonical implementation:**
 ```c
-function extract_bytes(src, dst, axis) {
-    #pragma parallel collapse
-    for k in range(16) {
-        cycle { @k/4,k%4: SRT dst, src, k.select(axis, col=%4, row=/4)*8; }
-        cycle { @k/4,k%4: LAND dst, dst, 255; }
-    }
-}
+extract_bytes(src=R0, dest=R1, axis=col);                 // default byteWidth=8, mask=255
+extract_bytes(src=R2, dest=R3, axis=row, byteWidth=4, mask=15);
 ```
 
-Requires the DSL to support **conditional expressions** on loop variables based on function parameters.
-
 **Impact:** -7 lines.
+
+**Canonical implementation status:** available as deterministic 2-cycle full-grid lowering (`SRT`, `LAND`) parameterized by `axis`, `byteWidth`, and `mask`.
 
 ---
 

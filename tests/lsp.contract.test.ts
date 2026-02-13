@@ -16,6 +16,9 @@ describe('lsp canonical contracts', () => {
     const normalizeCompletions = getCompletions('no');
     expect(normalizeCompletions.some((c) => c.label === 'normalize(...);' && c.kind === 'advanced')).toBe(true);
 
+    const extractCompletions = getCompletions('ex');
+    expect(extractCompletions.some((c) => c.label === 'extract_bytes(...);' && c.kind === 'advanced')).toBe(true);
+
     const keywordCompletions = getCompletions('let');
     expect(keywordCompletions.some((c) => c.label === 'let' && c.kind === 'keyword')).toBe(true);
   });

@@ -65,6 +65,9 @@ describe('compiler-front lowering module contracts', () => {
     expect(parseAdvancedStatementAsPragma('normalize(reg=R3, carry=R1, width=16, lane=0);')).toBe(
       'normalize(reg=R3, carry=R1, width=16, lane=0)'
     );
+    expect(parseAdvancedStatementAsPragma('extract_bytes(src=R0, dest=R1, axis=col);')).toBe(
+      'extract_bytes(src=R0, dest=R1, axis=col)'
+    );
 
     const cycleStmt = parseCycleStatement(
       'at @0,1: SADD R1, R2, R3;',

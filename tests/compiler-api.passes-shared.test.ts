@@ -32,6 +32,7 @@ import {
   parseAllreducePragmaArgs,
   parseBroadcastPragmaArgs,
   parseCollectPragmaArgs,
+  parseExtractBytesPragmaArgs,
   parseGuardPragmaArgs,
   parseGatherPragmaArgs,
   parseNormalizePragmaArgs,
@@ -46,6 +47,7 @@ import {
 } from '../packages/compiler-api/src/passes-shared/advanced-args.js';
 import {
   buildCollectCycles,
+  buildExtractBytesCycles,
   buildNormalizeCycles,
   buildReduceCycles,
   buildScanCycles,
@@ -269,6 +271,24 @@ describe('compiler-api passes shared utils', () => {
     expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16)')).toBeNull();
     expect(parseNormalizePragmaArgs('normalize(reg=R3, carry=R1, width=16, lane=0, extra=1)')).toBeNull();
     expect(parseNormalizePragmaArgs('foo(reg=R3, carry=R1, width=16, lane=0)')).toBeNull();
+    expect(parseExtractBytesPragmaArgs('extract_bytes(src=R0, dest=R1, axis=row, byteWidth=8, mask=255)')).toMatchObject({
+      srcReg: 'R0',
+      destReg: 'R1',
+      axis: 'row',
+      byteWidth: 8,
+      mask: 255
+    });
+    expect(parseExtractBytesPragmaArgs('extract_bytes(src=R0, dest=R1)')).toMatchObject({
+      axis: 'col',
+      byteWidth: 8,
+      mask: 255
+    });
+    expect(parseExtractBytesPragmaArgs('extract_bytes(src=R0, dest=R1, axis=diag)')).toBeNull();
+    expect(parseExtractBytesPragmaArgs('extract_bytes(src=R0, dest=1)')).toBeNull();
+    expect(parseExtractBytesPragmaArgs('extract_bytes(src=R0, dest=R1, byteWidth=0)')).toBeNull();
+    expect(parseExtractBytesPragmaArgs('extract_bytes(src=R0, dest=R1, mask=foo)')).toBeNull();
+    expect(parseExtractBytesPragmaArgs('extract_bytes(src=R0, dest=R1, extra=1)')).toBeNull();
+    expect(parseExtractBytesPragmaArgs('foo(src=R0, dest=R1)')).toBeNull();
     expect(parseAllreducePragmaArgs('allreduce(op=add, dest=R1, src=R0, axis=col)')).toMatchObject({
       operation: 'add',
       destReg: 'R1',
@@ -559,6 +579,46 @@ describe('compiler-api passes shared utils', () => {
       diagnostics
     );
     expect(badNormalize).toEqual([]);
+    expect(diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+
+    const extractBytesCycles = buildExtractBytesCycles(
+      {
+        srcReg: 'R0',
+        destReg: 'R1',
+        axis: 'col',
+        byteWidth: 8,
+        mask: 255
+      },
+      20,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(extractBytesCycles).toHaveLength(2);
+    expect(extractBytesCycles[0].statements[0]).toMatchObject({
+      instruction: { opcode: 'SRT', operands: ['R1', 'R0', '0'] }
+    });
+    expect(extractBytesCycles[0].statements[1]).toMatchObject({
+      instruction: { opcode: 'SRT', operands: ['R1', 'R0', '8'] }
+    });
+    expect(extractBytesCycles[1].statements[0]).toMatchObject({
+      instruction: { opcode: 'LAND', operands: ['R1', 'R1', '255'] }
+    });
+
+    const badExtractBytes = buildExtractBytesCycles(
+      {
+        srcReg: 'R0',
+        destReg: 'R1',
+        axis: 'row',
+        byteWidth: 32,
+        mask: 255
+      },
+      22,
+      grid,
+      span,
+      diagnostics
+    );
+    expect(badExtractBytes).toEqual([]);
     expect(diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });
 

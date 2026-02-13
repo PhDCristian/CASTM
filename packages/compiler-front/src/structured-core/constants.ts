@@ -2,6 +2,7 @@ export const ADVANCED_NAMES = new Set([
   'route',
   'broadcast',
   'collect',
+  'extract_bytes',
   'normalize',
   'rotate',
   'shift',
