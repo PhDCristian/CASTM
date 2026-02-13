@@ -68,7 +68,7 @@ kernel "feat9_loop_bound" {
     const result = compile(source);
     expect(result.success).toBe(true);
     const csv = result.artifacts.csv ?? '';
-    expect(csv).toContain('0,0,0,SRT R1 R0 IMM(0)');
+    expect(csv).toContain('0,0,0,SADD R1 R0 ZERO');
     expect(csv).toContain('1,0,1,SRT R1 R0 IMM(8)');
     expect(csv).toContain('2,0,2,SRT R1 R0 IMM(16)');
     expect(csv).toContain('3,0,3,SRT R1 R0 IMM(24)');

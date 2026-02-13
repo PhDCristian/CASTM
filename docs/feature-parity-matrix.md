@@ -17,6 +17,7 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 | `@row,col`, `row`, `col`, `all` placement | done | `tests/compiler-api.contract.test.ts` | NxM grid override supported. |
 | Coordinate range placement (`@r,c0..c1`, `@r0..r1,c`, `@r0..r1,c0..c1`) | done | `tests/issues/feat-08-range-coordinates.test.ts` | Range coordinates expand deterministically to concrete per-PE placements before lowering. |
 | C-like assignment desugar | done | `tests/compiler-api.contract.test.ts` | Supports copy form and full stable operator map (`+ - * ** << >> >>> & ~& \| ~\| ^ ~^`) with deterministic single-binary-expression lowering. |
+| Specialization pass (`FEAT-3`) | done | `tests/issues/feat-03-specialize.test.ts` | Applies safe algebraic identities (`*1`, `*0`, `+0`, `-0`, logical/shift identities) without changing ISA/output format. |
 | `function` (definition + call expansion) | done | `tests/compiler-api.contract.test.ts` | Supports pre-kernel definitions, named/positional argument binding, nested non-recursive calls, label-safe expansion, and `all:` cycle statements inside expanded bodies. |
 | Labeled cycles + branch label resolution | done | `tests/compiler-api.contract.test.ts` | Supports `label: cycle { ... }`, branch/jump label resolution, duplicate/unknown label diagnostics, and expansion-safe function label prefixing. |
 | `while` / `if` | done | `tests/compiler-api.contract.test.ts` | Kernel/function lowering to branch+jump labeled cycles is in place, including fused-while neighbor-operand rewriting for control conditions. |

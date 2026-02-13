@@ -199,7 +199,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 |---|---|---|---|---|
 | FEAT-1 `latency_hide` | scheduling/optimizer | `pending-backlog` | proposal only | Define scheduler contract and stall-slot legality model for NxM + neighbor hazards. |
 | FEAT-2 `carry_chain` | arithmetic primitive | `pending-backlog` | proposal only | Specify canonical statement shape and lowering equivalence vs hand-written carry chains. |
-| FEAT-3 `specialize` | compile-time optimization | `pending-backlog` | proposal only | Add specialization pass design (`SMUL*1`, `SMUL*0`, identity folds) with safety constraints. |
+| FEAT-3 `specialize` | compile-time optimization | `resolved-verified` | `tests/issues/feat-03-specialize.test.ts` | Extend identity catalog conservatively and keep deterministic rewrites. |
 | FEAT-4 `for` inside `cycle` | language core | `resolved-verified` | `tests/compiler-api.contract.test.ts`, `tests/issues/resolved-and-legacy.test.ts` | Keep regression guardrails for collision diagnostics and nested expansion. |
 | FEAT-5 `normalize` | arithmetic primitive | `pending-backlog` | proposal only | Define API (`normalize(...)`) and mapping to existing canonical cycles without ISA changes. |
 | FEAT-6 `triangle` | spatial pattern | `pending-backlog` | proposal only | Define pattern grammar (`upper/lower`, `inclusive`) and deterministic expansion order. |
@@ -224,8 +224,8 @@ Status: `pending`
 Subtasks:
 
 - [ ] FEAT-1 scheduler RFC + legality checker.
-- [ ] FEAT-3 specialization pass prototype with contract tests.
 - [ ] FEAT-10 lifetime/stash cost model draft.
+- [ ] Extend FEAT-3 beyond identity set only when semantic proofs are documented.
 
 #### Block B — Canonical Language Ergonomics Track
 
@@ -271,7 +271,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1..3`, `FEAT-5..6`, `FEAT-10..17`.
+- [ ] Prioritize `FEAT-1..2`, `FEAT-5..6`, `FEAT-10..17`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

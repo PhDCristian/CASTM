@@ -731,7 +731,7 @@ Snapshot sync (2026-02-13):
 |---|---|---|
 | FEAT-1 | pending-backlog | Block A |
 | FEAT-2 | pending-backlog | Block A |
-| FEAT-3 | pending-backlog | Block A |
+| FEAT-3 | resolved-verified | WS-09 |
 | FEAT-4 | resolved-verified | WS-04 / portfolio |
 | FEAT-5 | pending-backlog | Block B |
 | FEAT-6 | pending-backlog | Block B |
@@ -799,7 +799,7 @@ The compiler generates the optimal interleaved schedule, potentially finding int
 
 ---
 
-### FEAT-3: `#pragma specialize` — Constant Specialization
+### FEAT-3: `#pragma specialize` — Constant Specialization — ✅ RESOLVED (2026-02-13)
 
 **Problem:** We manually discovered that `p_limbs[0] = 1` and replaced `SMUL R2, R0, 1` (3cc) with `SADD R2, R0, ZERO` (1cc). The compiler should detect and optimize multiply-by-1, multiply-by-0, add-with-0, and similar identity operations automatically.
 

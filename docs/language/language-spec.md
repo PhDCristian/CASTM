@@ -47,3 +47,4 @@ kernel "canonical_example" {
 - Computed spatial coordinates in loops (for example `@k/4,k%4`) are valid canonical syntax.
 - Coordinate ranges are valid in canonical placements: `@r,c0..c1`, `@r0..r1,c`, and `@r0..r1,c0..c1` (inclusive expansion).
 - Inline arithmetic in instruction operands is supported and folded when resolvable at compile time (for example `IMM((2+3)*4)` or `LWI R0, 360 + 2*4`).
+- Canonical optimization includes specialization of algebraic identities (`SMUL * 1/0`, `SADD +0`, `SSUB -0`, `LAND/LOR/LXOR` with neutral constants, shifts by `0`).

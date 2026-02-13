@@ -126,7 +126,7 @@ kernel "runtime_for" {
 `;
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('SADD R0 ZERO IMM(0)');
+    expect(result.artifacts.csv).toContain('SADD R0 ZERO ZERO');
     expect(result.artifacts.csv).toContain('BGE R0 IMM(3)');
   });
 
