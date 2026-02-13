@@ -30,6 +30,9 @@ describe('lsp canonical contracts', () => {
 
     const keywordCompletions = getCompletions('let');
     expect(keywordCompletions.some((c) => c.label === 'let' && c.kind === 'keyword')).toBe(true);
+
+    const pipelineKeywordCompletions = getCompletions('pipe');
+    expect(pipelineKeywordCompletions.some((c) => c.label === 'pipeline' && c.kind === 'keyword')).toBe(true);
   });
 
   it('reports parse errors for legacy syntax', () => {

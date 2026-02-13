@@ -15,7 +15,7 @@ Source of truth:
 - `canonical-intentional`: `8`
 - `pending-fix`: `0`
 - `simulator-pending`: `0`
-- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`14` validated, `10` in backlog)
+- Backlog proposal IDs (`OPT-*`, `FEAT-*`): `24` (`15` validated, `9` in backlog)
 
 ## Workstreams
 
@@ -401,6 +401,27 @@ Evidence:
 - Tests: `tests/issues/feat-02-carry-chain.test.ts`, `tests/compiler-api.collective-builders.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/compiler-api.passes-shared.test.ts`.
 - Docs: `docs/language/carry-chain-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
 
+### WS-19 — FEAT-16 Pipeline Function Sequencing Macro
+
+Status: `done`  
+Completed: `2026-02-13`
+
+Why:
+
+- preserve function-based composition while removing repeated call-tail boilerplate.
+- avoid introducing a legacy macro engine by compiling `pipeline(...)` into canonical fn-call statements.
+
+Subtasks:
+
+- [x] Add canonical `pipeline(fnA(...), fnB(...), ...)` statement form.
+- [x] Expand pipeline entries into ordered fn-call statements before function lowering.
+- [x] Add parser/issue tests, LSP keyword completion coverage, and language docs.
+
+Evidence:
+
+- Tests: `tests/issues/feat-16-pipeline.test.ts`, `tests/compiler-front.parser-modules.test.ts`, `tests/lsp.contract.test.ts`.
+- Docs: `docs/language/pipeline-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
+
 ## FEAT Portfolio (1..17)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
@@ -422,7 +443,7 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT-13 `accumulate` | domain pattern | `resolved-verified` | `tests/issues/feat-13-accumulate.test.ts` | Extend only with explicit additional patterns that preserve deterministic stage ordering and diagnostics. |
 | FEAT-14 `conditional_sub` | domain primitive | `resolved-verified` | `tests/issues/feat-14-conditional-sub.test.ts` | Keep branchless two-stage contract stable (`SSUB`, `BSFA`) with explicit spatial targeting semantics. |
 | FEAT-15 row auto-broadcast | syntax sugar | `resolved-verified` | `tests/issues/feat-15-row-auto-broadcast.test.ts` | Keep NxM and segmented-row regressions to preserve deterministic lowering. |
-| FEAT-16 pipeline macro | abstraction/tooling | `pending-backlog` | proposal only | Evaluate macro system scope and whether it belongs to compiler core or preprocessing layer. |
+| FEAT-16 pipeline macro | abstraction/tooling | `resolved-verified` | `tests/issues/feat-16-pipeline.test.ts` | Keep pipeline entries restricted to canonical function calls and preserve ordered expansion semantics. |
 | FEAT-17 guard condition | syntax/pattern | `resolved-verified` | `tests/issues/feat-17-guard-condition.test.ts` | Keep predicate evaluation deterministic and bounded to canonical spatial symbols. |
 
 ### FEAT Backlog Execution Blocks
@@ -447,12 +468,12 @@ Subtasks:
 
 #### Block C — Domain Abstraction Track
 
-Status: `pending`
+Status: `done`
 
 Subtasks:
 
-- [ ] FEAT-16 macro/tooling boundary decision (core vs preprocessor).
-- [ ] Contract tests for each accepted abstraction before implementation.
+- [x] FEAT-16 macro/tooling boundary decision: canonical in-core function-sequence expansion.
+- [x] Contract tests added before acceptance (`tests/issues/feat-16-pipeline.test.ts` + parser/lsp contracts).
 
 ## Remaining Work (Backlog, Non-Blocking for Issue Closure)
 
@@ -478,7 +499,7 @@ Status: `pending-backlog`
 
 Subtasks:
 
-- [ ] Prioritize `FEAT-1`, `FEAT-10`, `FEAT-16`.
+- [ ] Prioritize `FEAT-1`, `FEAT-10`.
 - [ ] Define canonical grammar impact and diagnostic strategy.
 - [ ] Ship only features with strict contracts and deterministic lowering.
 

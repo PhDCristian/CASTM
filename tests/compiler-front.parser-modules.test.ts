@@ -26,6 +26,7 @@ import { collectBlockFromEntries } from '../packages/compiler-front/src/structur
 import { evaluateNumericExpression } from '../packages/compiler-front/src/structured-core/parser-utils/numbers.js';
 import { splitTopLevel } from '../packages/compiler-front/src/structured-core/parser-utils/strings.js';
 import { buildConstantMap } from '../packages/compiler-front/src/structured-core/lowering/top-level-scope/constants.js';
+import { parsePipelineCallSequence } from '../packages/compiler-front/src/structured-core/statements/matchers.js';
 
 describe('compiler-front lowering module contracts', () => {
   it('splits top-level lists while preserving nested delimiters', () => {
@@ -91,6 +92,17 @@ describe('compiler-front lowering module contracts', () => {
       row: 0,
       col: 1
     });
+
+    expect(parsePipelineCallSequence('pipeline(stepA(), stepB(R0), stepC(out_addr));')).toEqual([
+      { name: 'stepA', args: [] },
+      { name: 'stepB', args: ['R0'] },
+      { name: 'stepC', args: ['out_addr'] }
+    ]);
+    expect(parsePipelineCallSequence('pipeline();')).toBeNull();
+    expect(parsePipelineCallSequence('pipeline(,);')).toBeNull();
+    expect(parsePipelineCallSequence('pipeline(route(@0,1 -> @0,0, payload=R3, accum=R1));')).toBeNull();
+    expect(parsePipelineCallSequence('pipeline(stepA, stepB());')).toBeNull();
+    expect(parsePipelineCallSequence('foo(stepA(), stepB());')).toBeUndefined();
   });
 
   it('parses canonical let declarations into directive AST nodes', () => {

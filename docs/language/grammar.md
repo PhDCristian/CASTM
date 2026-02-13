@@ -8,7 +8,7 @@ This grammar defines the canonical OpenEdgeDSL syntax profile.
 program          ::= target_decl declaration* function_def* kernel_decl
 target_decl      ::= "target" string_lit ";"
 kernel_decl      ::= "kernel" string_lit "{" kernel_item* "}"
-kernel_item      ::= config_stmt | runtime_directive | cycle_block | control_stmt | for_stmt | advanced_stmt | function_call
+kernel_item      ::= config_stmt | runtime_directive | cycle_block | control_stmt | for_stmt | advanced_stmt | pipeline_stmt | function_call
 ```
 
 ## Declarations
@@ -59,6 +59,8 @@ for_stmt         ::= "for" ident "in" "range" "(" range_args ")" "{" kernel_item
 range_args       ::= int_expr | int_expr "," int_expr | int_expr "," int_expr "," int_expr
 function_def     ::= "function" ident "(" ident_list? ")" "{" kernel_item* "}"
 function_call    ::= ident "(" arg_list? ")" ";"
+pipeline_stmt    ::= "pipeline" "(" function_call_inline ( "," function_call_inline )* ")" ";"
+function_call_inline ::= ident "(" arg_list? ")"
 ```
 
 ## Advanced Statements

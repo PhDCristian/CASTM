@@ -62,6 +62,7 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 | `stream_load` / `stream_store` lowering | done | `tests/compiler-api.contract.test.ts` | Supports `row` and `count` parameters with row-wide `LWD`/`SWD` emission over current grid width (including NxM). |
 | `auto_cycle` lowering | done | `tests/compiler-api.contract.test.ts` | Parser-level grouping of PE-prefixed statements with conflict-based cycle inference and explicit diagnostics for malformed/nested/mixed regions. |
 | Inline operand arithmetic folding (`FEAT-9`) | done | `tests/issues/feat-09-inline-arithmetic.test.ts` | Constant arithmetic in operands (`IMM(expr)`, `LWI/SWI addrExpr`, memory-sugar addresses) folds to deterministic integer literals when resolvable. |
+| `pipeline` function-sequence macro (`FEAT-16`) | done | `tests/issues/feat-16-pipeline.test.ts` | `pipeline(fnA(...), fnB(...), ...)` expands to ordered canonical function calls before function lowering, preserving existing function semantics and diagnostics. |
 
 ## IR / Backend / Tooling
 

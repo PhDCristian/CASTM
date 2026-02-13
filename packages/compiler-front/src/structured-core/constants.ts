@@ -27,6 +27,7 @@ export const RESERVED_KEYWORDS = new Set([
   'for',
   'cycle',
   'at',
+  'pipeline',
   'target',
   'kernel',
   'let'

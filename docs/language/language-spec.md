@@ -9,6 +9,7 @@ Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas 
 
 - `let` unified declarations
 - top-level `function` definitions + kernel call sites
+- `pipeline(...)` function-call sequencing macro
 - explicit spatial namespace (`at ...`)
 - advanced statements (`route(...)`, `reduce(...)`, `scan(...)`, etc.)
 - explicit runtime loop form
@@ -24,11 +25,20 @@ let input = { 10, 20, 30, 40 };
 let output @100 = { 0, 0, 0, 0 };
 let matrix[2][2] = { 1, 2, 3, 4 };
 
+function helper_stage_a() {
+  cycle { @0,0: NOP; }
+}
+
+function helper_stage_b(src) {
+  cycle { @0,1: SADD R2, src, ZERO; }
+}
+
 kernel "canonical_example" {
   route(@0,1 -> @0,0, payload=R3, accum=R1);
   accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
   carry_chain(src=R0, carry=R3, store=output, limbs=2, width=16, row=0);
   conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
+  pipeline(helper_stage_a(), helper_stage_b(R0));
   collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
   normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
   extract_bytes(src=R0, dest=R1, axis=col);
@@ -53,6 +63,7 @@ kernel "canonical_example" {
 - `accumulate(...)` provides deterministic NxM accumulation patterns (`row`, `col`, `anti_diagonal`) and removes manual ROUT-graph boilerplate from kernels.
 - `carry_chain(...)` provides deterministic limb carry propagation + store staging without manual repeated cycles.
 - `conditional_sub(...)` provides deterministic branchless subtraction/select (`SSUB` + `BSFA`) scoped to `all`, `row`, `col`, or one point target (`point(r,c)`).
+- `pipeline(...)` expands ordered function-call sequences and keeps function-based composition explicit without introducing legacy macro engines.
 - `collect(...)` provides aligned single-hop lane collection (`row/col`) with deterministic lowering and explicit geometry checks.
 - `normalize(...)` provides canonical carry-normalization over one row/column lane using deterministic multi-cycle lowering (`SRT` + `LAND` + carry relay + lane add).
 - `extract_bytes(...)` unifies row/column byte-lane extraction as a canonical two-cycle pattern (`SRT` + `LAND`) over the active grid.
@@ -70,6 +81,7 @@ kernel "canonical_example" {
 - Accumulation-pattern reference: `docs/language/accumulate-statement.md`.
 - Carry-chain reference: `docs/language/carry-chain-statement.md`.
 - Conditional-subtraction reference: `docs/language/conditional-sub-statement.md`.
+- Pipeline-macro reference: `docs/language/pipeline-statement.md`.
 - Collect lane-pattern reference: `docs/language/collect-statement.md`.
 - Normalize lane-pattern reference: `docs/language/normalize-statement.md`.
 - Byte-extraction reference: `docs/language/extract-bytes-statement.md`.

@@ -10,6 +10,7 @@ import {
 import { spanAt } from './utils.js';
 import {
   parseAdvancedStatement,
+  parsePipelineCallSequence,
   parseFunctionCall,
   shouldSkipStructuredLine
 } from './statements/matchers.js';
@@ -39,6 +40,30 @@ export function parseStructuredStatements(
         text: advanced.text,
         span: spanAt(entry.lineNo, clean.length)
       });
+      continue;
+    }
+
+    const pipelineCalls = parsePipelineCallSequence(clean);
+    if (pipelineCalls !== undefined) {
+      if (!pipelineCalls || pipelineCalls.length === 0) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(entry.lineNo, clean.length),
+          `Invalid pipeline statement: '${clean}'.`,
+          'Use pipeline(fn1(...), fn2(...), ...); with canonical function calls only.'
+        ));
+        continue;
+      }
+
+      for (const call of pipelineCalls) {
+        out.push({
+          kind: 'fn-call',
+          name: call.name,
+          args: call.args,
+          span: spanAt(entry.lineNo, clean.length)
+        });
+      }
       continue;
     }
 

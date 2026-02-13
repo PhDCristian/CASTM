@@ -9,7 +9,7 @@ const TOKEN_RE = /"(?:\\.|[^"])*"|0x[0-9a-fA-F]+|-?\d+|[A-Za-z_][A-Za-z0-9_]*|==
 const KEYWORDS = new Set([
   'target', 'kernel', 'config', 'cycle',
   'let', 'at', 'row', 'col', 'all',
-  'if', 'else', 'while', 'for', 'in', 'range', 'runtime',
+  'if', 'else', 'while', 'for', 'in', 'range', 'runtime', 'pipeline',
   'function'
 ]);
 const ADVANCED_STATEMENTS = new Set([

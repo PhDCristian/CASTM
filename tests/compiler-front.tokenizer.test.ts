@@ -33,6 +33,7 @@ kernel "k" {
   accumulate(pattern=row, products=R2, accum=R3, out=ROUT);
   carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0);
   conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
+  pipeline(step0(), step1(R0));
   collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
   normalize(reg=R3, carry=R1, width=16, lane=0);
   extract_bytes(src=R0, dest=R1, axis=col);
@@ -48,6 +49,7 @@ kernel "k" {
     expect(tokenByValue.get('accumulate')).toBe('keyword');
     expect(tokenByValue.get('carry_chain')).toBe('keyword');
     expect(tokenByValue.get('conditional_sub')).toBe('keyword');
+    expect(tokenByValue.get('pipeline')).toBe('keyword');
     expect(tokenByValue.get('collect')).toBe('keyword');
     expect(tokenByValue.get('normalize')).toBe('keyword');
     expect(tokenByValue.get('extract_bytes')).toBe('keyword');

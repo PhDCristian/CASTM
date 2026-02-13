@@ -744,7 +744,7 @@ Snapshot sync (2026-02-13):
 | FEAT-13 | resolved-verified | WS-16 |
 | FEAT-14 | resolved-verified | WS-17 |
 | FEAT-15 | resolved-verified | WS-11 |
-| FEAT-16 | pending-backlog | Block C |
+| FEAT-16 | resolved-verified | WS-19 |
 | FEAT-17 | resolved-verified | WS-12 |
 
 ---
@@ -1123,7 +1123,7 @@ This is distinct from FEAT-8 (range coords). FEAT-8 targets `@row,col..col` coor
 
 ---
 
-### FEAT-16: Pipeline Macro — Shared Tail Abstraction
+### FEAT-16: `pipeline(...)` — Function Sequence Macro — ✅ RESOLVED (2026-02-13)
 
 **Problem:** `square_mod` and `multiply_mod` share 4 of 5 function calls (the "Barrett pipeline tail"):
 
@@ -1145,19 +1145,19 @@ function multiply_mod(a_addr, b_addr, out_addr) {
 }
 ```
 
-**Proposed:**
+**Canonical implementation:**
 ```c
-macro barrett_tail(out_addr) {
-    build_limbs_base16_from_regs();
-    compute_qhat_inregs();
-    mul_qhat_p_inregs();
-    compute_r_inregs(out_addr);
-}
-function square_mod(in, out) { accum_square(in); barrett_tail(out); }
-function multiply_mod(a, b, out) { accum_mul(a, b); barrett_tail(out); }
+pipeline(
+  build_limbs_base16_from_regs(),
+  compute_qhat_inregs(),
+  mul_qhat_p_inregs(),
+  compute_r_inregs(out_addr)
+);
 ```
 
-**Impact:** -5 lines, clearer separation between accumulation strategy and reduction pipeline.
+**Impact:** -5 lines while keeping composition explicitly function-based and canonical.
+
+**Canonical implementation status:** available as parser-level expansion to ordered fn-call statements (`pipeline(fnA(...), fnB(...), ...)`), with strict validation that each entry is a canonical function call.
 
 ---
 

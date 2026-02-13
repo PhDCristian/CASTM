@@ -16,7 +16,7 @@ export function getCompletions(prefix: string, targetProfileId = 'uma-cgra-base'
   const needle = prefix.trim().toUpperCase();
   const out: CompletionItem[] = [];
 
-  const keywords = ['let', 'target', 'kernel', 'cycle', 'at', 'if', 'else', 'while', 'for', 'range', 'runtime'];
+  const keywords = ['let', 'target', 'kernel', 'cycle', 'at', 'if', 'else', 'while', 'for', 'range', 'runtime', 'pipeline'];
   const advancedStatements = getPragmas().map((pragma) => `${pragma.name}(...);`);
 
   for (const keyword of keywords) {
