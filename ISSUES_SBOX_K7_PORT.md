@@ -456,7 +456,7 @@ The kernel consists of 4 modular operations (~70 cycles each). Each operation ha
 
 ## Optimization Proposals
 
-### OPT-A: Cycle Packing — Post-Compilation Instruction Scheduling
+### OPT-A: Cycle Packing — Post-Compilation Instruction Scheduling — ✅ RESOLVED (2026-02-13)
 
 **Problem it solves:** Many consecutive 1-2 PE cycles are independent and could be merged into fewer cycles.
 
@@ -481,15 +481,16 @@ cycle {
 3. Merges compatible cycles into a single cycle
 4. Validates no PE is assigned twice and no neighbor read conflicts exist
 
-**Implementation in DSL compiler:**
-- New pass after CSV generation: `CyclePackingPass`
-- Input: list of cycles with per-PE instruction assignments
-- Output: compacted list with merged cycles
-- Constraint: only merge if no instruction reads a neighbor (`RCL`, `RCR`, `RCT`, `RCB`) that would be affected by the merge
+**Implementation in canonical compiler:**
+- Implemented via canonical statement `latency_hide(window=..., mode=conservative)`.
+- Lowering executes deterministic post-expansion cycle packing with explicit hazard guards.
+- Contract tests verify positive packing and non-packing safety cases.
 
 **Estimated impact:** -8 to -12 cycles (3-4% reduction). The gains are modest because most serial sections have genuine data dependencies. The independent cycles are scattered in the normalization and route setup phases.
 
-**Complexity:** Medium — requires building a dependency graph and solving a scheduling problem. Similar to what Compigra's ILP scheduler does, but simpler because the PE assignments are already fixed.
+**Complexity:** Medium — already implemented in conservative deterministic form (no ILP/autoscheduler).
+
+**Evidence:** `tests/issues/opt-a-cycle-packing.test.ts`, `tests/issues/feat-01-latency-hide.test.ts`, `tests/compiler-api.latency-hide.test.ts`.
 
 ---
 
