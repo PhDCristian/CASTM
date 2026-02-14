@@ -103,3 +103,13 @@ kernel "invalid_unroll_zero" {
   }
 }
 ```
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/features/loops/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/loops/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/loops/01-main.csv`.

@@ -2,6 +2,12 @@
 
 OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifacts.
 
+## Target and assumptions
+
+- Snippets in this page use `target "uma-cgra-base";`.
+- Pipeline behavior is deterministic for a fixed source and compile options.
+- CSV snippets are generated through `docs:artifacts:generate`.
+
 ## Pipeline Stages
 
 | Stage | Input | Output | Purpose |
@@ -17,6 +23,15 @@ OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifact
 - `analyze(ast, options)`
 - `compile(source, options)`
 - `emit(program, backendOptions)`
+
+## Phase walkthrough (OpenEdgeDSL ↔ CSV)
+
+::: code-group
+<<< ../snippets/language/compilation/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/compilation/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/language/compilation/01-main.csv`.
 
 ## Compile Options
 
@@ -56,6 +71,13 @@ OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifact
 - numeric branch targets are remapped when intermediate noop cycles are removed.
 - in non-strict memory policy, `ROUT` producers may move earlier when no incoming-read dependency is crossed.
 - control-flow ops (`BEQ/BNE/.../EXIT`) remain barriers.
+
+## Reproduce with artifacts
+
+```bash
+openedge analyze kernel.dsl
+openedge emit kernel.dsl --format sim-matrix-csv -o kernel.csv
+```
 
 ## Diagnostics Contract
 

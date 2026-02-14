@@ -26,3 +26,13 @@ kernel "coords" {
 ```
 
 Coordinate expressions that remain unresolved after loop expansion are rejected with semantic diagnostics.
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/features/coordinate-expressions/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/coordinate-expressions/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/coordinate-expressions/01-main.csv`.

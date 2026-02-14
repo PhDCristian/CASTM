@@ -1,6 +1,21 @@
 # Examples Overview
 
-This section is organized as executable, practical examples.
+This section is organized as executable, practical examples with deterministic lowering.
+
+## Target and assumptions
+
+- Every runnable snippet uses `target "uma-cgra-base";`.
+- CSV shown in examples is generated from source snippets (never handwritten).
+- Default interpretation is `4x4` torus unless a page states otherwise.
+
+## Quick OpenEdgeDSL ↔ CSV preview
+
+::: code-group
+<<< ../snippets/examples/overview/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/overview/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/examples/overview/01-main.csv`.
 
 ## Recommended reading order
 

@@ -1,0 +1,70 @@
+# `std::route(...)` Variants
+
+## When to use
+
+Use this page to compare route forms beyond the baseline `payload+accum` form and inspect custom destination operations.
+
+## Target and assumptions
+
+All executable snippets are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
+
+## Syntax
+
+```text
+std::route(@r1,c1 -> @r2,c2, payload=Rx, accum=Ry);
+std::route(@r1,c1 -> @r2,c2, payload=Rx, dest=Rd, op=OP(Rd, Ra, INCOMING));
+```
+
+## Parameters
+
+| Parameter | Required | Description |
+|---|---|---|
+| `payload` | yes | Register injected into route path. |
+| `accum` | yes (simple form) | Destination accumulation register. |
+| `dest` | yes (custom form) | Destination register used by custom op. |
+| `op` | yes (custom form) | Operation expression at sink (uses `INCOMING`). |
+
+## Case A — Minimal
+
+::: code-group
+<<< ../../snippets/pragmas/route-variants/02-long-path.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route-variants/02-long-path.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/route-variants/02-long-path.csv`.
+
+## Case B — Advanced options
+
+::: code-group
+<<< ../../snippets/pragmas/route-variants/01-custom-op.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route-variants/01-custom-op.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/route-variants/01-custom-op.csv`.
+
+## Case C — Invalid usage
+
+<<< ../../snippets/pragmas/route-variants/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+- `accum` form is ideal when the destination combines using built-in accumulation.
+- `dest+op` form gives explicit sink operation control and can model custom combine logic.
+
+## Related patterns
+
+- `std::route(...)` core page: [/features/pragmas/route](/features/pragmas/route)
+- Comparison snippet (`accum` vs `dest+op`):
+
+::: code-group
+<<< ../../snippets/pragmas/route-variants/03-compare.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route-variants/03-compare.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/route-variants/03-compare.csv`.

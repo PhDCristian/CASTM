@@ -1,54 +1,61 @@
 # `std::conditional_sub(...)`
 
-Branchless conditional subtraction over configurable spatial targets.
+## When to use
+
+Use branchless conditional subtraction in scoped target regions.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::conditional_sub(value=RV, sub=RS, dest=RD[, target=all|row(N)|col(N)|point(r,c)]);
+std::conditional_sub(value=Rv, sub=Rs, dest=Rd, target=all|row(i)|col(j)|point(r,c));
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Description |
+| Parameter | Required | Description |
 |---|---|---|
-| `value` | yes | candidate value register |
-| `sub` | yes | subtraction register |
-| `dest` | yes | destination register |
-| `target` | no | spatial scope (`all` by default) |
+| `value` | yes | Input value register. |
+| `sub` | yes | Subtractor register. |
+| `dest` | yes | Destination register. |
+| `target` | no | Spatial scope (`all` default). |
 
-## Lowering Shape
+## Case A — Minimal
 
-Always emits two deterministic stages over selected placements:
+::: code-group
+<<< ../../snippets/pragmas/conditional-sub/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/conditional-sub/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-1. `SSUB dest, value, sub`
-2. `BSFA dest, value, dest, SELF`
+Full CSV: `docs-site/snippets/pragmas/conditional-sub/01-minimal.csv`.
 
-## Executable Example
+## Case B — Advanced options
 
-```openedge
-target "uma-cgra-base";
-kernel "conditional_sub_doc" {
-  std::conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
-}
-```
+::: code-group
+<<< ../../snippets/pragmas/conditional-sub/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/conditional-sub/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-## CSV Excerpt (Matrix)
+Full CSV: `docs-site/snippets/pragmas/conditional-sub/02-advanced.csv`.
 
-```csv
-0,,,
-NOP,NOP,NOP,NOP
-"SSUB R2, R0, R1","SSUB R2, R0, R1",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-NOP,NOP,NOP,NOP
-"BSFA R2, R0, R2, SELF","BSFA R2, R0, R2, SELF",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+## Case C — Invalid usage
 
-## Diagnostics
+<<< ../../snippets/pragmas/conditional-sub/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
-- malformed target syntax -> parse diagnostic
-- out-of-range row/col/point -> coordinate diagnostic
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Creates deterministic compare/sub/select stages without control-flow divergence.
+
+## Related patterns
+
+- `std::guard(...)` for predicate-based activation
+- `std::reduce(...)` for preceding aggregate build

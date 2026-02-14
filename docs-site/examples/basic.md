@@ -6,11 +6,17 @@
 - memory sugar (`R = A[i]`, `A[i] = R`),
 - simple arithmetic lowering (`R2 = R0 + R1`).
 
+## Target and assumptions
+
+- `target "uma-cgra-base";` is explicit in the linked snippet.
+- default profile assumes `4x4` toroidal grid.
+- CSV shown is generated from the exact snippet (no manual transcription).
+
 ## OpenEdgeDSL / CSV
 
 ::: code-group
-<<< ./artifacts/basic.edsl{openedge} [OpenEdgeDSL]
-<<< ./artifacts/basic.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+<<< ../snippets/examples/basic/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/basic/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
 ## Expected effect
@@ -28,4 +34,4 @@ const result = compile(source);
 console.log(result.success, result.stats.cycles);
 ```
 
-Full generated CSV: `docs-site/examples/artifacts/basic.csv`.
+Full generated CSV: `docs-site/snippets/examples/basic/01-main.csv`.

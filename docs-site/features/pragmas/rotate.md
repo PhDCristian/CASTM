@@ -1,54 +1,60 @@
 # `std::rotate(...)`
 
-Toroidal lane rotation using route relay steps.
+## When to use
+
+Use lane rotation when values must circulate horizontally with wrap semantics.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::rotate(reg=R0, direction=left|right[, distance=N]);
+std::rotate(reg=R0, direction=left|right, distance=1);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Default | Description |
-|---|---|---|---|
-| `reg` | yes | - | register to rotate |
-| `direction` | yes | - | `left` or `right` |
-| `distance` | no | `1` | rotation distance |
+| Parameter | Required | Description |
+|---|---|---|
+| `reg` | yes | Register to rotate. |
+| `direction` | yes | `left` or `right`. |
+| `distance` | no | Positive integer distance (default `1`). |
 
-## Semantics
+## Case A — Minimal
 
-Each rotation step emits two cycles:
+::: code-group
+<<< ../../snippets/pragmas/rotate/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/rotate/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-1. `SADD ROUT, reg, ZERO` on all placements
-2. `SADD reg, incoming, ZERO` with directional incoming register
+Full CSV: `docs-site/snippets/pragmas/rotate/01-minimal.csv`.
 
-`std::rotate(...)` requires torus topology.
+## Case B — Advanced options
 
-## Executable Example
+::: code-group
+<<< ../../snippets/pragmas/rotate/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/rotate/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-```openedge
-target "uma-cgra-base";
-kernel "rotate_doc" {
-  std::rotate(reg=R0, direction=left, distance=1);
-}
-```
+Full CSV: `docs-site/snippets/pragmas/rotate/02-advanced.csv`.
 
-## DSL to CSV Example (Matrix)
+## Case C — Invalid usage
 
-```csv [CSV matrix excerpt]
-0,,,
-"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
-"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
-"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
-"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
-1,,,
-"SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO"
-"SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO"
-"SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO"
-"SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO","SADD R0, RCR, ZERO"
-```
+<<< ../../snippets/pragmas/rotate/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
-## Diagnostics
+Expected: explicit diagnostic with source span and actionable hint.
 
-Using `std::rotate(...)` on non-torus topology emits `UnsupportedOperation` diagnostics.
+## Lowering notes
+
+Emits deterministic movement cycles preserving lane order by distance.
+
+## Related patterns
+
+- `std::shift(...)` for directional move with fill
+- `std::route(...)` for targeted transfer

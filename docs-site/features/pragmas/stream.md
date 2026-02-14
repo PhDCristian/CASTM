@@ -1,53 +1,61 @@
-# `std::stream_load(...)` and `std::stream_store(...)`
+# `std::stream_load/store(...)`
 
-Stream-pointer memory operations lowered to `LWD`/`SWD` over selected rows.
+## When to use
+
+Use to connect row-local stream interfaces with register values.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::stream_load(dest=RD[, row=N][, count=N]);
-std::stream_store(src=RS[, row=N][, count=N]);
+std::stream_load(dest=Rd, row=0, count=1);
+std::stream_store(src=Rs, row=0, count=1);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Default | Description |
-|---|---|---|---|
-| `dest` / `src` | yes | - | destination or source register |
-| `row` | no | `0` | row where streaming op is placed |
-| `count` | no | `1` | number of emitted stream operations |
+| Parameter | Required | Description |
+|---|---|---|
+| `dest/src` | yes | Load destination or store source register. |
+| `row` | no | Target stream row (default `0`). |
+| `count` | no | Number of stream operations (default `1`). |
 
-## DSL to CSV Example (Matrix)
+## Case A — Minimal
 
 ::: code-group
-```openedge [OpenEdgeDSL]
-target "uma-cgra-base";
-kernel "stream_doc" {
-  std::stream_load(dest=R0, row=0, count=2);
-  std::stream_store(src=R0, row=0, count=2);
-}
-```
-
-```csv [CSV matrix excerpt]
-0,,,
-"LWD R0",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-"LWD R0",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-2,,,
-"SWD R0",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-3,,,
-"SWD R0",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+<<< ../../snippets/pragmas/stream/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stream/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
+
+Full CSV: `docs-site/snippets/pragmas/stream/01-minimal.csv`.
+
+## Case B — Advanced options
+
+::: code-group
+<<< ../../snippets/pragmas/stream/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stream/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/stream/02-advanced.csv`.
+
+## Case C — Invalid usage
+
+<<< ../../snippets/pragmas/stream/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Lowers to LWD/SWD stream memory operations in deterministic order.
+
+## Related patterns
+
+- `std::route(...)` for in-grid post-load distribution
+- `std::shift(...)` for row-local movement

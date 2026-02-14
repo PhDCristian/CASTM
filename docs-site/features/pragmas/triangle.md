@@ -1,48 +1,62 @@
 # `std::triangle(...)`
 
-Deterministic upper/lower triangle spatial pattern generation.
+## When to use
+
+Use upper/lower triangular spatial masks with explicit operation semantics.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::triangle(shape=upper|lower, inclusive=true|false, op=OPCODE, dest=RD, srcA=RA, srcB=RB);
+std::triangle(shape=upper|lower, inclusive=true|false, op=OPCODE, dest=Rd, srcA=Ra, srcB=Rb);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Description |
+| Parameter | Required | Description |
 |---|---|---|
-| `shape` | yes | `upper` or `lower` |
-| `inclusive` | no | include diagonal (default `true`) |
-| `op` | yes | opcode |
-| `dest`, `srcA`, `srcB` | yes | instruction operands |
+| `shape` | yes | Triangle orientation. |
+| `inclusive` | no | Include diagonal (`true` default). |
+| `op` | yes | Opcode for active cells. |
+| `dest` | yes | Destination register. |
+| `srcA/srcB` | yes | Operands for operation. |
 
-## Semantics
+## Case A — Minimal
 
-One cycle is emitted with placements selected by shape predicate:
+::: code-group
+<<< ../../snippets/pragmas/triangle/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/triangle/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-- upper inclusive: `col >= row`
-- upper exclusive: `col > row`
-- lower inclusive: `row >= col`
-- lower exclusive: `row > col`
+Full CSV: `docs-site/snippets/pragmas/triangle/01-minimal.csv`.
 
-Evaluation order is deterministic row-major.
+## Case B — Advanced options
 
-## Executable Example
+::: code-group
+<<< ../../snippets/pragmas/triangle/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/triangle/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-```openedge
-target "uma-cgra-base";
-kernel "triangle_doc" {
-  std::triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
-}
-```
+Full CSV: `docs-site/snippets/pragmas/triangle/02-advanced.csv`.
 
-## DSL to CSV Example (Matrix)
+## Case C — Invalid usage
 
-```csv [CSV matrix excerpt]
-0,,,
-"SMUL R2, R0, R1","SMUL R2, R0, R1","SMUL R2, R0, R1","SMUL R2, R0, R1"
-NOP,"SMUL R2, R0, R1","SMUL R2, R0, R1","SMUL R2, R0, R1"
-NOP,NOP,"SMUL R2, R0, R1","SMUL R2, R0, R1"
-NOP,NOP,NOP,"SMUL R2, R0, R1"
-```
+<<< ../../snippets/pragmas/triangle/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Computes triangular membership at compile-time and emits deterministic row-major placements.
+
+## Related patterns
+
+- `std::guard(...)` for arbitrary predicates
+- `std::collect(...)` for post-mask aggregation

@@ -1,0 +1,6 @@
+target "uma-cgra-base";
+kernel "ex_for_spatial" {
+  for i in range(0, 4) {
+    cycle { at @0,i: R2 = R0 + 1; }
+  }
+}

@@ -81,6 +81,35 @@ function extractDslSnippets(markdown: string): DslSnippet[] {
   return snippets;
 }
 
+function collectEdslFiles(dir: string): string[] {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...collectEdslFiles(full));
+      continue;
+    }
+    if (entry.isFile() && full.endsWith('.edsl')) {
+      files.push(full);
+    }
+  }
+  return files;
+}
+
+function extractIncludePaths(markdown: string): string[] {
+  const paths: string[] = [];
+  for (const line of markdown.split('\n')) {
+    const include = line.match(/^\s*<<<\s+(.+)$/);
+    if (!include) continue;
+    let includePath = include[1].trim();
+    includePath = includePath.replace(/\[[^\]]*\]\s*$/, '').trim();
+    includePath = includePath.replace(/\{[^}]*\}\s*$/, '').trim();
+    if (includePath) paths.push(includePath);
+  }
+  return paths;
+}
+
 function resolveSnippetSource(markdownFile: string, source: string): string {
   const trimmed = source.trim();
   const includeMatch = trimmed.match(/^<<<\s+(.+)$/);
@@ -110,6 +139,14 @@ describe('docs snippets contracts', () => {
     const snippets: Array<{ file: string; snippet: DslSnippet }> = [];
     for (const file of markdownFiles) {
       const content = fs.readFileSync(file, 'utf8');
+
+      for (const includePath of extractIncludePaths(content)) {
+        const resolved = includePath.startsWith('/')
+          ? includePath
+          : path.resolve(path.dirname(file), includePath);
+        expect(fs.existsSync(resolved), `Broken include in ${file}: ${includePath}`).toBe(true);
+      }
+
       for (const snippet of extractDslSnippets(content)) {
         snippets.push({ file, snippet });
       }
@@ -134,6 +171,22 @@ describe('docs snippets contracts', () => {
           result.diagnostics.some((diag) => diag.code === expectedCode),
           `Missing expected diagnostic ${expectedCode} in ${item.file}\n${source}`
         ).toBe(true);
+      }
+    }
+
+    const snippetsRoot = path.resolve(__dirname, '../docs-site/snippets');
+    const snippetFiles = collectEdslFiles(snippetsRoot);
+    expect(snippetFiles.length).toBeGreaterThan(0);
+
+    for (const snippetFile of snippetFiles) {
+      const source = fs.readFileSync(snippetFile, 'utf8');
+      const result = compile(source, { strictUnsupported: false });
+      const lower = snippetFile.toLowerCase();
+      const expectsFailure = lower.includes('invalid') || lower.includes('fail');
+      if (expectsFailure) {
+        expect(result.success, `Expected snippet failure: ${snippetFile}`).toBe(false);
+      } else {
+        expect(result.success, `Expected snippet success: ${snippetFile}`).toBe(true);
       }
     }
   });

@@ -1,0 +1,5 @@
+0,,,
+"LWI R0, 4","LWI R0, 8","LWI R0, 12","LWI R0, 16"
+"LWI R0, 4","LWI R0, 8","LWI R0, 12","LWI R0, 16"
+"LWI R0, 4","LWI R0, 8","LWI R0, 12","LWI R0, 16"
+NOP,NOP,NOP,NOP

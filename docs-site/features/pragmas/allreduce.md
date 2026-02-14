@@ -1,61 +1,61 @@
 # `std::allreduce(...)`
 
-Grid-wide reduction followed by deterministic broadcast of reduced value.
+## When to use
+
+Use when every PE needs the same reduced value after aggregation.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::allreduce(op=add|sum|sub|and|or|xor|mul, dest=RD, src=RS[, axis=row|col]);
+std::allreduce(op=add|..., dest=Rd, src=Rs, axis=row|col);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Default | Description |
-|---|---|---|---|
-| `op` | yes | - | reduction combiner |
-| `dest` | yes | - | destination register |
-| `src` | yes | - | source register |
-| `axis` | no | `row` | reduction/broadcast axis |
+| Parameter | Required | Description |
+|---|---|---|
+| `op` | yes | Reduction operation. |
+| `dest` | yes | Destination register per PE. |
+| `src` | yes | Source register per PE. |
+| `axis` | no | Reduction axis (`row` default or `col`). |
 
-## Lowering Shape
+## Case A — Minimal
 
-1. Apply lane reduction (`std::reduce(...)`) on selected axis.
-2. Broadcast reduced value from canonical source point over same axis scope.
+::: code-group
+<<< ../../snippets/pragmas/allreduce/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/allreduce/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-## Executable Example
+Full CSV: `docs-site/snippets/pragmas/allreduce/01-minimal.csv`.
 
-```openedge
-target "uma-cgra-base";
-kernel "allreduce_doc" {
-  std::allreduce(op=add, dest=R1, src=R0, axis=row);
-}
-```
+## Case B — Advanced options
 
-## DSL to CSV Example (Matrix)
+::: code-group
+<<< ../../snippets/pragmas/allreduce/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/allreduce/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-```csv [CSV matrix excerpt]
-0,,,
-"SADD R1, R0, ZERO",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-NOP,"SADD ROUT, R0, ZERO",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-2,,,
-"SADD R3, RCR, ZERO",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-3,,,
-"SADD R1, R1, R3",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+Full CSV: `docs-site/snippets/pragmas/allreduce/02-advanced.csv`.
 
-## Diagnostics
+## Case C — Invalid usage
 
-Invalid operations or malformed arguments emit explicit parse/semantic diagnostics.
+<<< ../../snippets/pragmas/allreduce/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Composes reduce + distribution phases with deterministic ordering.
+
+## Related patterns
+
+- `std::reduce(...)` for non-distributed reduction
+- `std::broadcast(...)` for source-based fan-out

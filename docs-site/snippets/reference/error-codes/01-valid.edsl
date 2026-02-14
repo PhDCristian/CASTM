@@ -1,0 +1,6 @@
+target "uma-cgra-base";
+kernel "diag_valid" {
+  cycle {
+    at @0,0: R0 = R0 + 1;
+  }
+}

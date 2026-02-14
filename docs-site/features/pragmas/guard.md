@@ -1,46 +1,61 @@
 # `std::guard(...)`
 
-Predicate-driven spatial activation for one canonical instruction template.
+## When to use
+
+Use compile-time spatial predicates to emit only valid PE placements.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::guard(cond=<boolean-expr>, op=OPCODE, dest=RD, srcA=RA, srcB=RB);
+std::guard(cond=<expr>, op=OPCODE, dest=Rd, srcA=Ra, srcB=Rb);
 ```
 
-## Predicate Variables
+## Parameters
 
-- `row`, `col`
-- `idx` (`row * cols + col`)
-- `rows`, `cols`
+| Parameter | Required | Description |
+|---|---|---|
+| `cond` | yes | Predicate over `row`, `col`, `idx`, `rows`, `cols`. |
+| `op` | yes | Opcode for emitted instruction. |
+| `dest` | yes | Destination register. |
+| `srcA/srcB` | yes | Operand registers or immediates. |
 
-Supported operators include arithmetic (`+ - * / %`) and comparators (`== != < <= > >=`).
+## Case A — Minimal
 
-## Semantics
+::: code-group
+<<< ../../snippets/pragmas/guard/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/guard/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-- compile-time predicate evaluation per PE
-- deterministic row-major placement emission
-- non-matching PEs are omitted
+Full CSV: `docs-site/snippets/pragmas/guard/01-minimal.csv`.
 
-## Executable Example
+## Case B — Advanced options
 
-```openedge
-target "uma-cgra-base";
-kernel "guard_doc" {
-  std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
-}
-```
+::: code-group
+<<< ../../snippets/pragmas/guard/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/guard/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-## DSL to CSV Example (Matrix)
+Full CSV: `docs-site/snippets/pragmas/guard/02-advanced.csv`.
 
-```csv [CSV matrix excerpt]
-0,,,
-"SMUL R2, R0, R1","SMUL R2, R0, R1","SMUL R2, R0, R1","SMUL R2, R0, R1"
-NOP,"SMUL R2, R0, R1","SMUL R2, R0, R1","SMUL R2, R0, R1"
-NOP,NOP,"SMUL R2, R0, R1","SMUL R2, R0, R1"
-NOP,NOP,NOP,"SMUL R2, R0, R1"
-```
+## Case C — Invalid usage
 
-## Diagnostics
+<<< ../../snippets/pragmas/guard/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
-Invalid predicates or malformed argument sets produce explicit diagnostics with source spans.
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Predicate is resolved per PE at compile time, then matching placements are emitted in row-major order.
+
+## Related patterns
+
+- `std::triangle(...)` for geometric masks
+- `std::stencil(...)` for neighborhood activation

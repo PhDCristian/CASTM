@@ -76,6 +76,7 @@ export default defineConfig({
           items: [
             { text: 'Overview', link: '/features/pragmas/index' },
             { text: 'route(...)', link: '/features/pragmas/route' },
+            { text: 'route variants', link: '/features/pragmas/route-variants' },
             { text: 'broadcast(...)', link: '/features/pragmas/broadcast' },
             { text: 'reduce(...)', link: '/features/pragmas/reduce' },
             { text: 'scan(...)', link: '/features/pragmas/scan' },

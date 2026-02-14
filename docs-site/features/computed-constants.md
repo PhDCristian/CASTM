@@ -26,3 +26,13 @@ kernel "computed" {
 ```
 
 Unresolved expressions that cannot be legally lowered produce diagnostics.
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/features/computed-constants/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/computed-constants/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/computed-constants/01-main.csv`.

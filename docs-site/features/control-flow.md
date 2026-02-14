@@ -73,3 +73,13 @@ kernel "bad_while_control" {
 - `else` does not take its own control location; it pairs with the preceding `if (...) at @...`.
 - control coordinates are explicit integer literals (decimal or hex).
 - lowering emits deterministic branch labels/cycles from these canonical headers.
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/features/control-flow/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/control-flow/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/control-flow/01-main.csv`.

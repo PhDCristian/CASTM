@@ -1,56 +1,62 @@
 # `std::extract_bytes(...)`
 
-Byte-lane extraction across the active grid with configurable axis and width.
+## When to use
+
+Use to align lane values to byte slices by row or column axis.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::extract_bytes(src=RS, dest=RD[, axis=row|col, byteWidth=N, mask=M]);
+std::extract_bytes(src=Rs, dest=Rd, axis=row|col, byteWidth=8, mask=255);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Default | Description |
-|---|---|---|---|
-| `src` | yes | - | source register |
-| `dest` | yes | - | destination register |
-| `axis` | no | `col` | shift axis |
-| `byteWidth` | no | `8` | extraction width (`1..16`) |
-| `mask` | no | `(1 << byteWidth) - 1` | lane mask |
+| Parameter | Required | Description |
+|---|---|---|
+| `src` | yes | Source register. |
+| `dest` | yes | Destination register. |
+| `axis` | no | `col` default or `row`. |
+| `byteWidth` | no | Width per extracted byte chunk. |
+| `mask` | no | Mask applied after shift. |
 
-## Lowering Shape
+## Case A — Minimal
 
-Two cycles over active placements:
+::: code-group
+<<< ../../snippets/pragmas/extract-bytes/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/extract-bytes/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-1. `SRT dest, src, shift`
-2. `LAND dest, dest, mask`
+Full CSV: `docs-site/snippets/pragmas/extract-bytes/01-minimal.csv`.
 
-`shift` is derived from `row` or `col` and `byteWidth`.
+## Case B — Advanced options
 
-## Executable Example
+::: code-group
+<<< ../../snippets/pragmas/extract-bytes/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/extract-bytes/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-```openedge
-target "uma-cgra-base";
-kernel "extract_doc" {
-  std::extract_bytes(src=R0, dest=R1, axis=col, byteWidth=8, mask=255);
-}
-```
+Full CSV: `docs-site/snippets/pragmas/extract-bytes/02-advanced.csv`.
 
-## DSL to CSV Example (Matrix)
+## Case C — Invalid usage
 
-```csv [CSV matrix excerpt]
-0,,,
-"SRT R1, R0, 0","SRT R1, R0, 8","SRT R1, R0, 16","SRT R1, R0, 24"
-"SRT R1, R0, 0","SRT R1, R0, 8","SRT R1, R0, 16","SRT R1, R0, 24"
-"SRT R1, R0, 0","SRT R1, R0, 8","SRT R1, R0, 16","SRT R1, R0, 24"
-"SRT R1, R0, 0","SRT R1, R0, 8","SRT R1, R0, 16","SRT R1, R0, 24"
-1,,,
-"LAND R1, R1, 255","LAND R1, R1, 255","LAND R1, R1, 255","LAND R1, R1, 255"
-"LAND R1, R1, 255","LAND R1, R1, 255","LAND R1, R1, 255","LAND R1, R1, 255"
-"LAND R1, R1, 255","LAND R1, R1, 255","LAND R1, R1, 255","LAND R1, R1, 255"
-"LAND R1, R1, 255","LAND R1, R1, 255","LAND R1, R1, 255","LAND R1, R1, 255"
-```
+<<< ../../snippets/pragmas/extract-bytes/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
-## Diagnostics
+Expected: explicit diagnostic with source span and actionable hint.
 
-Invalid axis/width/mask forms produce explicit parse diagnostics.
+## Lowering notes
+
+Lowers to shift + mask pattern mapped deterministically across lanes.
+
+## Related patterns
+
+- `std::normalize(...)` for width-aware carry behavior
+- `std::mulacc_chain(...)` for subsequent arithmetic chains

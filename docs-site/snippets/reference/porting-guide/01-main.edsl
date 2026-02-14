@@ -1,0 +1,12 @@
+target "uma-cgra-base";
+let SCALE = 2;
+let IN = { 3, 4, 5, 6 };
+let OUT @192 = { 0, 0, 0, 0 };
+
+kernel "style_canonical" {
+  for i in range(0, 4) {
+    cycle { @i/4,i%4: R0 = IN[i]; }
+    cycle { @i/4,i%4: R1 = R0 * SCALE; }
+    cycle { @i/4,i%4: OUT[i] = R1; }
+  }
+}

@@ -7,6 +7,20 @@ outline: deep
 
 The `openedge` CLI exposes three canonical commands.
 
+## Target and assumptions
+
+- CLI examples assume canonical source with `target "uma-cgra-base";`.
+- `sim-matrix-csv` is the default documentation view format for DSL↔CSV equivalence.
+
+## OpenEdgeDSL ↔ CSV quick sample
+
+::: code-group
+<<< ../snippets/guide/cli-reference/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/guide/cli-reference/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/guide/cli-reference/01-main.csv`.
+
 ## Usage
 
 ```bash

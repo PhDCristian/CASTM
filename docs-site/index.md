@@ -68,3 +68,15 @@ features:
 ---
 
 <StatsBar />
+
+## Quick DSL ↔ CSV
+
+Use this minimal canonical snippet as a fast sanity check of the toolchain.
+Snippet target: `target "uma-cgra-base";`.
+
+::: code-group
+<<< ./snippets/home/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ./snippets/home/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/home/01-main.csv`.

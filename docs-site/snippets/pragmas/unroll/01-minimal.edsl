@@ -1,0 +1,6 @@
+target "uma-cgra-base";
+kernel "unroll_min" {
+  for i in range(0, 4) unroll(2) {
+    cycle { at @0,i: R2 = R0 + 1; }
+  }
+}

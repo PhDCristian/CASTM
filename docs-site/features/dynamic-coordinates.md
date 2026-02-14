@@ -19,3 +19,13 @@ kernel "dynamic_coords" {
 
 - inside compile-time loops: allowed when expression resolves to integer coordinates.
 - unresolved coordinate expressions outside valid binding context are rejected.
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/features/dynamic-coordinates/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/dynamic-coordinates/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/dynamic-coordinates/01-main.csv`.

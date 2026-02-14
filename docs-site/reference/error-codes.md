@@ -2,6 +2,12 @@
 
 Canonical diagnostics currently exposed by `@openedge/compiler-ir`.
 
+## Target and assumptions
+
+- Diagnostic examples are canonical syntax.
+- Snippets use `target "uma-cgra-base";`.
+- CSV excerpt is generated from a valid example snippet.
+
 ## Parse
 
 - `E2001` Missing target declaration
@@ -25,6 +31,24 @@ Canonical diagnostics currently exposed by `@openedge/compiler-ir`.
 ## Internal
 
 - `E9001` Unexpected internal state
+
+## Valid compile reference (OpenEdgeDSL ↔ CSV)
+
+::: code-group
+<<< ../snippets/reference/error-codes/01-valid.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/reference/error-codes/01-valid.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/reference/error-codes/01-valid.csv`.
+
+## Invalid usage reference
+
+<<< ../snippets/reference/error-codes/02-invalid.edsl{openedge-fail} [OpenEdgeDSL (invalid)]
+
+Expected diagnostic:
+
+- `E3004` Spatial collision in the same cycle
+- hint: keep one placement per PE (`row,col`) in each cycle
 
 ## Diagnostic Shape
 

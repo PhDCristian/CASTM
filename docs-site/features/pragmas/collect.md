@@ -1,56 +1,63 @@
 # `std::collect(...)`
 
-Aligned single-hop lane collection for row or column lanes.
+## When to use
+
+Use axis-scoped collection from one slice into another with a chosen combiner.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::collect(from=row(N)|col(N), to=row(M)|col(M), via=SELF|RCT|RCB|RCL|RCR, local=RL, into=RD[, combine=copy|add|sum|sub|and|or|xor|mul|shift_add]);
+std::collect(from=row(i)|col(j), to=row(k)|col(k), via=Rv, local=Rl, into=Rd, combine=copy|add|...);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Description |
+| Parameter | Required | Description |
 |---|---|---|
-| `from` | yes | source lane selector |
-| `to` | no | destination lane selector (defaults to same axis lane 0) |
-| `via` | yes | incoming neighbor used by destination lane |
-| `local` | yes | local register at destination |
-| `into` | yes | destination register |
-| `combine` | no | combine mode (default `add`) |
+| `from` | yes | Source axis reference. |
+| `to` | no | Destination axis reference (default index 0 same axis). |
+| `via` | yes | Transit register. |
+| `local` | yes | Local source register. |
+| `into` | yes | Destination register. |
+| `combine` | no | Combine strategy (`add` default). |
 
-## Semantics
+## Case A — Minimal
 
-- Supports same-lane and adjacent-lane transfers (`abs(from.index - to.index) <= 1`).
-- `via` must match lane geometry.
-- Emits deterministic row-major placement cycles.
+::: code-group
+<<< ../../snippets/pragmas/collect/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/collect/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-## Executable Example
+Full CSV: `docs-site/snippets/pragmas/collect/01-minimal.csv`.
 
-```openedge
-target "uma-cgra-base";
-kernel "collect_doc" {
-  std::collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
-}
-```
+## Case B — Advanced options
 
-## CSV Excerpt (Matrix)
+::: code-group
+<<< ../../snippets/pragmas/collect/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/collect/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-```csv
-0,,,
-"SADD R3, RCB, ZERO","SADD R3, RCB, ZERO",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-"SADD R3, R2, R3","SADD R3, R2, R3",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+Full CSV: `docs-site/snippets/pragmas/collect/02-advanced.csv`.
 
-## Diagnostics
+## Case C — Invalid usage
 
-- invalid axis/value combinations -> parse diagnostics
-- invalid `via` for lane geometry -> semantic diagnostics
-- out-of-range lanes -> coordinate diagnostics
+<<< ../../snippets/pragmas/collect/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Builds axis-constrained collection passes and sink combine writes.
+
+## Related patterns
+
+- `std::gather(...)` for point sink
+- `std::broadcast(...)` for reverse fan-out direction

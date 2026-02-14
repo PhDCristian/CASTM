@@ -2,6 +2,12 @@
 
 This page defines the recommended writing style for production OpenEdgeDSL sources.
 
+## Target and assumptions
+
+- All executable examples are canonical and include `target "uma-cgra-base";`.
+- CSV shown is generated from snippet artifacts.
+- Use this style as the default for new kernels and refactors.
+
 ## Declaration Style
 
 - use `let` for values, register aliases, and arrays.
@@ -33,3 +39,12 @@ This page defines the recommended writing style for production OpenEdgeDSL sourc
 
 - validate with `openedge check` before emit.
 - use `openedge analyze` to inspect diagnostics and phase stats.
+
+## Canonical style sample (OpenEdgeDSL ↔ CSV)
+
+::: code-group
+<<< ../snippets/reference/porting-guide/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/reference/porting-guide/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/reference/porting-guide/01-main.csv`.

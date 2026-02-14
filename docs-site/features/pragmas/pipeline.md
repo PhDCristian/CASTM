@@ -1,48 +1,58 @@
 # `pipeline(...)`
 
-Ordered function-call sequencing macro for stage composition.
+## When to use
+
+Use ordered composition of function stages while keeping each stage reusable and isolated.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-pipeline(step0(), step1(arg0), step2(arg0, arg1), ...);
+pipeline(stageA(...), stageB(...), stageC(...));
 ```
 
-## Rules
+## Parameters
 
-- each entry must be a function call
-- entries expand left-to-right
-- expansion keeps call-site order deterministic
+| Parameter | Required | Description |
+|---|---|---|
+| `stages` | yes | Ordered function calls executed in lexical sequence. |
 
-## DSL to CSV Example (Matrix)
+## Case A — Minimal
 
 ::: code-group
-```openedge [OpenEdgeDSL]
-target "uma-cgra-base";
-
-function stage_load(src) {
-  cycle { @0,0: SADD R2, src, ZERO; }
-}
-
-function stage_mix(dst) {
-  cycle { @0,1: SADD dst, R2, ZERO; }
-}
-
-kernel "pipeline_doc" {
-  pipeline(stage_load(R0), stage_mix(R3));
-}
-```
-
-```csv [CSV matrix excerpt]
-0,,,
-"SADD R2, R0, ZERO",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-NOP,"SADD R3, R2, ZERO",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+<<< ../../snippets/pragmas/pipeline/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/pipeline/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
+
+Full CSV: `docs-site/snippets/pragmas/pipeline/01-minimal.csv`.
+
+## Case B — Advanced options
+
+::: code-group
+<<< ../../snippets/pragmas/pipeline/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/pipeline/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/pipeline/02-advanced.csv`.
+
+## Case C — Invalid usage
+
+<<< ../../snippets/pragmas/pipeline/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Expands function calls in strict lexical order; stage boundaries remain explicit in emitted cycles.
+
+## Related patterns
+
+- `function` definitions for reusable blocks
+- `std::latency_hide(...)` for post-lowering compaction hints

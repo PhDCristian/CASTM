@@ -5,8 +5,8 @@ This page shows canonical loop strategy modifiers for static loops.
 ## 1) Static baseline loop
 
 ::: code-group
-<<< ./artifacts/loop-strategies.edsl{openedge} [OpenEdgeDSL]
-<<< ./artifacts/loop-strategies.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+<<< ../snippets/examples/loop-strategies/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/loop-strategies/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
 ## 2) Static `unroll(2)`
@@ -75,4 +75,4 @@ kernel "ex_loop_runtime_invalid" {
 - use `collapse(n)` for perfectly nested static loops.
 - runtime loops are explicit and do not accept static modifiers.
 
-Full generated CSV: `docs-site/examples/artifacts/loop-strategies.csv`.
+Full generated CSV: `docs-site/snippets/examples/loop-strategies/01-main.csv`.

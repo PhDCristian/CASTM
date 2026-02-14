@@ -1,88 +1,64 @@
 # `std::accumulate(...)`
 
-Deterministic NxM accumulation pattern over row, column, or anti-diagonal topology.
+## When to use
+
+Use pattern-driven accumulation with configurable combine, steps, and optional scope.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::accumulate(pattern=row|col|anti_diagonal, products=RS, accum=RA, out=RD[, combine=add|sum|sub|and|or|xor|mul][, steps=<int>=1][, scope=all|row(i)|col(j)]);
+std::accumulate(pattern=row|col|anti_diagonal, products=Rs, accum=Ra, out=Rd, combine=add, steps=1, scope=all|row(i)|col(j));
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Description |
+| Parameter | Required | Description |
 |---|---|---|
-| `pattern` | yes | accumulation topology (`row`, `col`, `anti_diagonal`) |
-| `products` | yes | source per-PE value register |
-| `accum` | yes | intermediate accumulation register |
-| `out` | yes | final output register |
-| `combine` | no | combiner opcode selector (default `add`) |
-| `steps` | no | propagation passes per pattern stage (default `1`) |
-| `scope` | no | spatial subset (`all` default, or `row(i)` / `col(j)`) |
+| `pattern` | yes | Accumulation topology. |
+| `products` | yes | Input products register. |
+| `accum` | yes | Accumulator register. |
+| `out` | yes | Final output register. |
+| `combine` | no | Combiner (`add` default). |
+| `steps` | no | Propagation iterations. |
+| `scope` | no | `all` (default) or scoped row/col. |
 
-## Lowering Shape
+## Case A — Minimal
 
-1. Seed stage on every PE: `SADD accum, products, ZERO`
-2. Pattern stage(s), repeated `steps` times:
-   - `row`: one lane pass using horizontal incoming
-   - `col`: one lane pass using vertical incoming
-   - `anti_diagonal`: two passes for anti-diagonal propagation
-3. Final stage on every PE: `SADD out, accum, ZERO`
+::: code-group
+<<< ../../snippets/pragmas/accumulate/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/accumulate/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-Deterministic lowering optimization:
+Full CSV: `docs-site/snippets/pragmas/accumulate/01-minimal.csv`.
 
-- Seed stage is omitted when `products == accum`.
-- Final stage is omitted when `accum == out`.
+## Case B — Advanced options
 
-Grid-aware `steps` limits:
+::: code-group
+<<< ../../snippets/pragmas/accumulate/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/accumulate/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-- `row`: `steps <= cols - 1`
-- `col`: `steps <= rows - 1`
-- `anti_diagonal`: `steps <= max(rows - 1, cols - 1)`
+Full CSV: `docs-site/snippets/pragmas/accumulate/02-advanced.csv`.
 
-Scope compatibility:
+## Case C — Invalid usage
 
-- `scope=all`: `row`, `col`, and `anti_diagonal`.
-- `scope=row(i)`: only `pattern=row`.
-- `scope=col(j)`: only `pattern=col`.
+<<< ../../snippets/pragmas/accumulate/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
-## Executable Example
+Expected: explicit diagnostic with source span and actionable hint.
 
-```openedge
-target "uma-cgra-base";
-kernel "accumulate_doc" {
-  std::accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add, steps=2);
-  std::accumulate(pattern=row, products=R2, accum=R3, out=ROUT, scope=row(1));
-}
-```
+## Lowering notes
 
-## CSV Excerpt (Matrix)
+Emits seed, propagation, and finalize stages according to pattern and scope.
 
-```csv
-0,,,
-"SADD R3, R2, ZERO","SADD R3, R2, ZERO",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-NOP,"SADD R3, R3, RCT",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-2,,,
-NOP,"SADD R3, R3, RCR",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-3,,,
-"SADD ROUT, R3, ZERO","SADD ROUT, R3, ZERO",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+## Related patterns
 
-## Diagnostics
-
-- Invalid argument sets -> parse diagnostic.
-- Unsupported combiner/pattern -> parse or semantic diagnostic with explicit hint.
-- Step limits that exceed grid/pattern capacity -> semantic diagnostic with explicit limit hint.
+- `std::scan(...)` for directional prefix behavior
+- `std::reduce(...)` for terminal axis collapse

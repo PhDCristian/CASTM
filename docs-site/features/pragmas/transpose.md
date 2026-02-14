@@ -1,6 +1,16 @@
 # `std::transpose(...)`
 
-In-place matrix transpose lowering for square grids.
+## When to use
+
+Use for grid-wise transposition of lane-carried values.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
@@ -8,51 +18,41 @@ In-place matrix transpose lowering for square grids.
 std::transpose(reg=R0);
 ```
 
-## Semantics
+## Parameters
 
-For each off-diagonal pair `(i,j) <-> (j,i)`:
+| Parameter | Required | Description |
+|---|---|---|
+| `reg` | yes | Register to transpose across the grid. |
 
-1. route `reg` from A to B into scratch A
-2. route `reg` from B to A into scratch B
-3. swap-write both points in one cycle
+## Case A — Minimal
 
-Requires a square grid and available scratch registers.
+::: code-group
+<<< ../../snippets/pragmas/transpose/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/transpose/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-## Executable Example
+Full CSV: `docs-site/snippets/pragmas/transpose/01-minimal.csv`.
 
-```openedge
-target "uma-cgra-base";
-kernel "transpose_doc" {
-  std::transpose(reg=R0);
-}
-```
+## Case B — Advanced options
 
-## DSL to CSV Example (Matrix)
+::: code-group
+<<< ../../snippets/pragmas/transpose/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/transpose/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-```csv [CSV matrix excerpt]
-0,,,
-NOP,"SADD ROUT, R0, ZERO",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-"SADD ROUT, RCR, ZERO",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-2,,,
-NOP,NOP,NOP,NOP
-"SADD R3, RCT, ZERO",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-3,,,
-NOP,NOP,NOP,NOP
-"SADD ROUT, R0, ZERO",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+Full CSV: `docs-site/snippets/pragmas/transpose/02-advanced.csv`.
 
-## Diagnostics
+## Case C — Invalid usage
 
-- non-square grids -> unsupported operation diagnostics
-- missing scratch registers -> unsupported operation diagnostics
+<<< ../../snippets/pragmas/transpose/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Generates stable transpose choreography with deterministic cycle ordering.
+
+## Related patterns
+
+- `std::gather(...)` for destination-centric collection
+- `std::route(...)` for explicit pairwise movement

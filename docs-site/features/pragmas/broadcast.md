@@ -1,6 +1,16 @@
 # `std::broadcast(...)`
 
-Spatial fan-out from a single source point across a row, column, or the full grid.
+## When to use
+
+Use when one PE must distribute a value to a row, column, or the full grid.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
@@ -8,34 +18,43 @@ Spatial fan-out from a single source point across a row, column, or the full gri
 std::broadcast(value=R0, from=@r,c, to=row|column|all);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Description |
+| Parameter | Required | Description |
 |---|---|---|
-| `value` | yes | register value to broadcast |
-| `from` | yes | source point |
-| `to` | yes | destination scope |
+| `value` | yes | Register value to broadcast. |
+| `from` | yes | Source PE coordinate. |
+| `to` | yes | Broadcast scope: row, column, or all. |
 
-## DSL to CSV Example (Matrix)
+## Case A — Minimal
 
 ::: code-group
-```openedge [OpenEdgeDSL]
-target "uma-cgra-base";
-kernel "broadcast_doc" {
-  std::broadcast(value=R1, from=@0,0, to=row);
-}
-```
-
-```csv [CSV matrix excerpt]
-0,,,
-"SADD ROUT, R1, ZERO",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-"SADD R1, R1, RCR","SADD R1, R1, RCL",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+<<< ../../snippets/pragmas/broadcast/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/broadcast/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
+
+Full CSV: `docs-site/snippets/pragmas/broadcast/01-minimal.csv`.
+
+## Case B — Advanced options
+
+::: code-group
+<<< ../../snippets/pragmas/broadcast/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/broadcast/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/broadcast/02-advanced.csv`.
+
+## Case C — Invalid usage
+
+<<< ../../snippets/pragmas/broadcast/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Generates deterministic propagation cycles from the source point to the selected scope.
+
+## Related patterns
+
+- `std::route(...)` for point-to-point movement
+- `std::allreduce(...)` for aggregate then fan-out

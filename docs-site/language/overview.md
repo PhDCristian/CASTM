@@ -47,3 +47,13 @@ kernel "overview" {
 - [Compilation Pipeline](/language/compilation)
 - [DSL to CSV Equivalence](/language/dsl-csv-equivalence)
 - [Formal Grammar](/language/grammar)
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/language/overview/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/overview/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/language/overview/01-main.csv`.

@@ -29,3 +29,13 @@ kernel "array2d" {
   }
 }
 ```
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/features/2d-arrays/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/2d-arrays/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/2d-arrays/01-main.csv`.

@@ -1,51 +1,61 @@
 # `std::shift(...)`
 
-Directional lane shift with explicit edge fill.
+## When to use
+
+Use directional shifting with explicit fill semantics.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::shift(reg=R0, direction=left|right[, distance=N][, fill=IMM]);
+std::shift(reg=R0, direction=left|right, distance=1, fill=0);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Default | Description |
-|---|---|---|---|
-| `reg` | yes | - | register to shift |
-| `direction` | yes | - | `left` or `right` |
-| `distance` | no | `1` | shift distance |
-| `fill` | no | `0` | edge fill value |
+| Parameter | Required | Description |
+|---|---|---|
+| `reg` | yes | Register to shift. |
+| `direction` | yes | `left` or `right`. |
+| `distance` | no | Positive integer distance (default `1`). |
+| `fill` | no | Fill value inserted at exposed boundary. |
 
-## Semantics
+## Case A — Minimal
 
-Each shift step emits two cycles:
+::: code-group
+<<< ../../snippets/pragmas/shift/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/shift/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-1. route send stage (`SADD ROUT, reg, ZERO`)
-2. receive/fill stage:
-   - edge column gets `fill`
-   - inner columns read directional incoming
+Full CSV: `docs-site/snippets/pragmas/shift/01-minimal.csv`.
 
-## Executable Example
+## Case B — Advanced options
 
-```openedge
-target "uma-cgra-base";
-kernel "shift_doc" {
-  std::shift(reg=R0, direction=right, distance=1, fill=0);
-}
-```
+::: code-group
+<<< ../../snippets/pragmas/shift/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/shift/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-## DSL to CSV Example (Matrix)
+Full CSV: `docs-site/snippets/pragmas/shift/02-advanced.csv`.
 
-```csv [CSV matrix excerpt]
-0,,,
-"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
-"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
-"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
-"SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO","SADD ROUT, R0, ZERO"
-1,,,
-"SADD R0, ZERO, 0","SADD R0, RCL, ZERO","SADD R0, RCL, ZERO","SADD R0, RCL, ZERO"
-"SADD R0, ZERO, 0","SADD R0, RCL, ZERO","SADD R0, RCL, ZERO","SADD R0, RCL, ZERO"
-"SADD R0, ZERO, 0","SADD R0, RCL, ZERO","SADD R0, RCL, ZERO","SADD R0, RCL, ZERO"
-"SADD R0, ZERO, 0","SADD R0, RCL, ZERO","SADD R0, RCL, ZERO","SADD R0, RCL, ZERO"
-```
+## Case C — Invalid usage
+
+<<< ../../snippets/pragmas/shift/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Builds deterministic directional transfers and boundary fill writes.
+
+## Related patterns
+
+- `std::rotate(...)` for cyclic movement
+- `std::scan(...)` for cumulative directional ops

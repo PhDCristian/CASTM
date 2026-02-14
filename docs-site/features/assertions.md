@@ -24,3 +24,13 @@ kernel "runtime_directives" {
 ```
 
 Runtime directives are collected as compile artifacts and consumed by execution wrappers.
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/features/assertions/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/assertions/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/assertions/01-main.csv`.

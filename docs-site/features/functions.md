@@ -50,3 +50,13 @@ kernel "pipeline_calls" {
 ```
 
 Function expansion is deterministic and preserves call-site order.
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/features/functions/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/functions/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/functions/01-main.csv`.

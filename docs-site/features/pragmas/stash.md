@@ -1,51 +1,61 @@
 # `std::stash(...)`
 
-Explicit deterministic spill/restore placement using `SWI/LWI`.
+## When to use
+
+Use explicit save/restore of register state to memory regions with scoped targets.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::stash(action=save|restore, reg=R0, addr=<memory-or-address>[, target=all|row(N)|col(N)|point(r,c)]);
+std::stash(action=save|restore, reg=Rr, addr=<expr>, target=all|row(i)|col(j)|point(r,c));
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Description |
+| Parameter | Required | Description |
 |---|---|---|
-| `action` | yes | `save` (`SWI`) or `restore` (`LWI`) |
-| `reg` | yes | register to spill/restore |
-| `addr` | yes | memory symbol or raw address expression |
-| `target` | no | spatial target (`all` default) |
+| `action` | yes | `save` or `restore`. |
+| `reg` | yes | Register to persist or restore. |
+| `addr` | yes | Memory address expression. |
+| `target` | no | Spatial scope (`all` default). |
 
-## Semantics
+## Case A — Minimal
 
-- `save` emits `SWI reg, addr`
-- `restore` emits `LWI reg, addr`
-- target expands to placements over selected region
+::: code-group
+<<< ../../snippets/pragmas/stash/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stash/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-## Executable Example
+Full CSV: `docs-site/snippets/pragmas/stash/01-minimal.csv`.
 
-```openedge
-target "uma-cgra-base";
-let L @360 = { 0, 0, 0, 0 };
+## Case B — Advanced options
 
-kernel "stash_doc" {
-  std::stash(action=save, reg=R0, addr=L[0], target=point(3,0));
-  std::stash(action=restore, reg=R1, addr=L[0], target=point(3,0));
-}
-```
+::: code-group
+<<< ../../snippets/pragmas/stash/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stash/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-## DSL to CSV Example (Matrix)
+Full CSV: `docs-site/snippets/pragmas/stash/02-advanced.csv`.
 
-```csv [CSV matrix excerpt]
-0,,,
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-"SWI R0, L[0]",NOP,NOP,NOP
-1,,,
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-"LWI R1, L[0]",NOP,NOP,NOP
-```
+## Case C — Invalid usage
+
+<<< ../../snippets/pragmas/stash/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Lowers to deterministic SWI/LWI placements according to selected target subset.
+
+## Related patterns
+
+- `std::stream_load/store(...)` for IO streams
+- memory sugar inside `cycle {}` for explicit loads/stores

@@ -5,8 +5,8 @@ This page shows practical, measurable scheduler behavior with canonical DSL.
 ## OpenEdgeDSL / CSV
 
 ::: code-group
-<<< ./artifacts/scheduler-practical.edsl{openedge} [OpenEdgeDSL]
-<<< ./artifacts/scheduler-practical.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+<<< ../snippets/examples/scheduler-practical/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/scheduler-practical/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
 ## Case 1: Window compaction really reduces cycles
@@ -105,4 +105,4 @@ const result = compile(source, {
 console.log(result.stats.cycles, result.stats.schedulerMode);
 ```
 
-Full generated CSV: `docs-site/examples/artifacts/scheduler-practical.csv`.
+Full generated CSV: `docs-site/snippets/examples/scheduler-practical/01-main.csv`.

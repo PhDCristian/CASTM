@@ -1,0 +1,7 @@
+target "uma-cgra-base";
+kernel "coords" {
+  cycle {
+    @0,0..3: NOP;
+    @1..2,1: NOP;
+  }
+}

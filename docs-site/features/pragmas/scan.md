@@ -1,38 +1,62 @@
 # `std::scan(...)`
 
-Prefix scan statement with directional control and inclusive/exclusive mode.
+## When to use
+
+Use prefix-style propagation across lanes with inclusive or exclusive modes.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::scan(op=add|sum|sub|and|or|xor|mul, src=RS, dest=RD, dir=left|right|up|down[, mode=inclusive|exclusive]);
+std::scan(op=add|..., src=Rs, dest=Rd, dir=left|right|up|down, mode=inclusive|exclusive);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Default | Description |
-|---|---|---|---|
-| `op` | yes | - | scan combiner |
-| `src` | yes | - | source register |
-| `dest` | yes | - | destination register |
-| `dir` | yes | - | scan direction |
-| `mode` | no | `inclusive` | scan mode |
+| Parameter | Required | Description |
+|---|---|---|
+| `op` | yes | Scan combine operation. |
+| `src` | yes | Source register. |
+| `dest` | yes | Destination register. |
+| `dir` | yes | Propagation direction. |
+| `mode` | no | `inclusive` (default) or `exclusive`. |
 
-## DSL to CSV Example (Matrix)
+## Case A — Minimal
 
 ::: code-group
-```openedge [OpenEdgeDSL]
-target "uma-cgra-base";
-kernel "scan_doc" {
-  std::scan(op=add, src=R0, dest=R2, dir=right, mode=exclusive);
-}
-```
-
-```csv [CSV matrix excerpt]
-0,,,
-"SADD R2, ZERO, 0","SADD R2, R0, RCL",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+<<< ../../snippets/pragmas/scan/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/scan/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
+
+Full CSV: `docs-site/snippets/pragmas/scan/01-minimal.csv`.
+
+## Case B — Advanced options
+
+::: code-group
+<<< ../../snippets/pragmas/scan/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/scan/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/scan/02-advanced.csv`.
+
+## Case C — Invalid usage
+
+<<< ../../snippets/pragmas/scan/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Expands to directional lane hops plus per-lane combine stages.
+
+## Related patterns
+
+- `std::reduce(...)` for final collapse
+- `std::accumulate(...)` for pattern-driven accumulation

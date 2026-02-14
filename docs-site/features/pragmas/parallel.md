@@ -1,56 +1,61 @@
 # Loop Composition Patterns
 
-This page focuses on canonical loop composition for useful parallel work on a 4x4 grid.
+## When to use
 
-## Canonical Patterns
+Use canonical static/runtime loop composition to express parallel intent without legacy pragmas.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
+
+## Syntax
 
 ```text
-for i in range(0, N) { ... }                  // static expansion
-for i in range(0, N) unroll(k) { ... }        // static strategy hint
-for i in range(0, N) collapse(n) { ... }      // static nested-loop flattening
-for R0 in range(0, N) at @r,c runtime { ... } // runtime-controlled loop
-pipeline(stageA(), stageB(R0), stageC(R1));   // staged composition
+for i in range(0, N) { ... }
+for r in range(0, R) collapse(2) { for c in range(0, C) { ... } }
 ```
 
-## Recommended Usage
+## Parameters
 
-- Prefer static loops (`for i in range(...)`) when ranges are compile-time known.
-- Use `collapse(n)` for perfectly nested static loops to express deterministic row-major mapping.
-- Use runtime loops only when bounds/control must be hardware-driven.
-- Combine with `std::latency_hide(window=...)` only after correctness is stable.
+| Parameter | Required | Description |
+|---|---|---|
+| `unroll(k)` | optional | Static chunk expansion. |
+| `collapse(n)` | optional | Flatten nested static loops. |
+| `runtime` | optional | Explicit hardware-controlled runtime loop form. |
 
-## DSL to CSV Example (Matrix)
+## Case A — Minimal
 
-```openedge
-target "uma-cgra-base";
-kernel "parallel_patterns_doc" {
-  for i in range(0, 4) unroll(2) {
-    cycle { at @0,i: R2 = R0 + 1; }
-  }
-}
-```
+::: code-group
+<<< ../../snippets/pragmas/parallel/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/parallel/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-```csv [CSV matrix excerpt]
-0,,,
-"SADD R2, R0, 1",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-NOP,"SADD R2, R0, 1",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-2,,,
-NOP,NOP,"SADD R2, R0, 1",NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-3,,,
-NOP,NOP,NOP,"SADD R2, R0, 1"
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+Full CSV: `docs-site/snippets/pragmas/parallel/01-minimal.csv`.
 
-`NOP` cells above are matrix-format placeholders for empty PEs in that cycle, not injected scheduling barriers.
+## Case B — Advanced options
+
+::: code-group
+<<< ../../snippets/pragmas/parallel/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/parallel/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/parallel/02-advanced.csv`.
+
+## Case C — Invalid usage
+
+<<< ../../snippets/pragmas/parallel/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Loop strategy modifiers are resolved at compile time with deterministic ordering and diagnostics.
+
+## Related patterns
+
+- Loop Expansion Model (`unroll` page)
+- Control flow examples in `/examples/for-control-flow`

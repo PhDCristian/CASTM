@@ -1,10 +1,16 @@
 name: Deploy Documentation
 
 on:
+  pull_request:
+    paths:
+      - 'docs-site/**'
+      - 'tests/docs-*.test.ts'
+      - '.github/workflows/docs.yml'
   push:
     branches: [main]
     paths:
       - 'docs-site/**'
+      - 'tests/docs-*.test.ts'
       - '.github/workflows/docs.yml'
   workflow_dispatch:
 
@@ -40,8 +46,8 @@ jobs:
         run: npm ci
         working-directory: docs-site
 
-      - name: Build with VitePress
-        run: npx vitepress build
+      - name: Validate docs contracts and build
+        run: npm run docs:validate
         working-directory: docs-site
 
       - name: Upload artifact
@@ -50,6 +56,7 @@ jobs:
           path: docs-site/.vitepress/dist
 
   deploy:
+    if: github.event_name != 'pull_request'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}

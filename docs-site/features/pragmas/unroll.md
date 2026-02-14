@@ -1,88 +1,61 @@
 # Loop Expansion Model
 
-OpenEdgeDSL supports static loop expansion plus canonical loop strategy modifiers.
+## When to use
 
-## Static Expansion
+Use `unroll(k)` and `collapse(n)` to control static loop expansion strategy explicitly.
 
-- `for i in range(a, b[, step]) { ... }`
-- `for i in range(a, b[, step]) unroll(k) { ... }`
-- `for i in range(a, b[, step]) collapse(n) { ... }`
-- `for i in range(a, b[, step]) unroll(k) collapse(n) { ... }`
+## Target and assumptions
 
-## Runtime Expansion
+All executable snippets below are canonical and explicit:
 
-- `for Rn in range(a, b[, step]) at @r,c runtime { ... }`
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
-Runtime loops require explicit control PE and currently do not accept `unroll(...)` or `collapse(...)`.
+## Syntax
 
-## Example (`collapse(2)`)
-
-```openedge
-target "uma-cgra-base";
-kernel "loop_model" {
-  for r in range(0, 2) collapse(2) {
-    for c in range(0, 2) {
-      cycle { at @r,c: R3 = R1 + R2; }
-    }
-  }
-}
+```text
+for i in range(0, N) unroll(k) { ... }
+for r in range(0, R) collapse(n) { ... }
 ```
 
-## DSL to CSV Example (Matrix)
+## Parameters
 
-```csv [CSV matrix excerpt]
-0,,,
-"SADD R3, R1, R2",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-NOP,"SADD R3, R1, R2",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-2,,,
-NOP,NOP,NOP,NOP
-"SADD R3, R1, R2",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-3,,,
-NOP,NOP,NOP,NOP
-NOP,"SADD R3, R1, R2",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+| Parameter | Required | Description |
+|---|---|---|
+| `unroll(k)` | optional | Expand static loop body by factor `k`. |
+| `collapse(n)` | optional | Flatten `n` nested static loops. |
+| `constraints` | implicit | Runtime loops do not accept static modifiers. |
 
-## Example (`unroll(2)`)
+## Case A — Minimal
 
-```openedge
-target "uma-cgra-base";
-kernel "loop_model_unroll" {
-  for i in range(0, 4) unroll(2) {
-    cycle { at @0,i: R2 = R0 + 1; }
-  }
-}
-```
+::: code-group
+<<< ../../snippets/pragmas/unroll/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/unroll/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-```csv [CSV matrix excerpt]
-0,,,
-"SADD R2, R0, 1",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-NOP,"SADD R2, R0, 1",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-2,,,
-NOP,NOP,"SADD R2, R0, 1",NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-3,,,
-NOP,NOP,NOP,"SADD R2, R0, 1"
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+Full CSV: `docs-site/snippets/pragmas/unroll/01-minimal.csv`.
+
+## Case B — Advanced options
+
+::: code-group
+<<< ../../snippets/pragmas/unroll/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/unroll/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/unroll/02-advanced.csv`.
+
+## Case C — Invalid usage
+
+<<< ../../snippets/pragmas/unroll/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+`unroll` and `collapse` affect expansion order only; final lowering remains deterministic.
+
+## Related patterns
+
+- Loop Composition Patterns (`parallel` page)
+- Scheduler profiles in `/examples/scheduler-modes`

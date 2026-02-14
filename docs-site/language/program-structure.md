@@ -42,3 +42,13 @@ Inside `kernel { ... }`, canonical items are:
 
 - advanced statements preserve lexical placement in the kernel timeline.
 - compilation stages expose structured artifacts for debugging and tooling.
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/language/program-structure/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/program-structure/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/language/program-structure/01-main.csv`.

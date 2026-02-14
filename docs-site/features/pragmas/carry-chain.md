@@ -1,76 +1,64 @@
 # `std::carry_chain(...)`
 
-Deterministic limb-wise carry propagation with staged memory stores.
+## When to use
+
+Use multi-limb carry propagation with explicit row/start/direction control.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::carry_chain(src=RS, carry=RC, store=ARRAY, limbs=N, width=W, row=R[, mask=M, start=C, dir=right|left]);
+std::carry_chain(src=Rs, carry=Rc, store=Symbol, limbs=N, width=W, row=i, start=0, dir=right|left, mask=...);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Description |
+| Parameter | Required | Description |
 |---|---|---|
-| `src` | yes | working limb register |
-| `carry` | yes | carry register |
-| `store` | yes | target array symbol (`store[i]`) |
-| `limbs` | yes | number of limbs (`> 0`) |
-| `width` | yes | carry width (`1..30`) |
-| `row` | yes | row used by chain |
-| `mask` | no | limb mask (default `(1 << width) - 1`) |
-| `start` | no | start column (default `0`) |
-| `dir` | no | `right` (default) or `left` |
+| `src` | yes | Source register. |
+| `carry` | yes | Carry register. |
+| `store` | yes | Destination symbol for limb stores. |
+| `limbs` | yes | Number of limbs to process. |
+| `width` | yes | Limb width. |
+| `row` | yes | Target row index. |
+| `start/dir/mask` | no | Optional starting column, direction, and mask. |
 
-## Lowering Shape
+## Case A — Minimal
 
-Each limb emits a deterministic 4-cycle stage:
+::: code-group
+<<< ../../snippets/pragmas/carry-chain/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/carry-chain/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-1. `SADD src, src, carry`
-2. `LAND src, src, mask`
-3. `SWI src, store[i]`
-4. `SRT carry, src, width`
+Full CSV: `docs-site/snippets/pragmas/carry-chain/01-minimal.csv`.
 
-Total cycles: `4 * limbs`.
+## Case B — Advanced options
 
-## Executable Example
+::: code-group
+<<< ../../snippets/pragmas/carry-chain/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/carry-chain/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-```openedge
-target "uma-cgra-base";
-let L = { 0, 0, 0, 0 };
+Full CSV: `docs-site/snippets/pragmas/carry-chain/02-advanced.csv`.
 
-kernel "carry_chain_doc" {
-  std::carry_chain(src=R0, carry=R3, store=L, limbs=3, width=16, row=0, start=0, dir=right);
-}
-```
+## Case C — Invalid usage
 
-## CSV Excerpt (Matrix)
+<<< ../../snippets/pragmas/carry-chain/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
-```csv
-0,,,
-"SADD R0, R0, R3",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-"LAND R0, R0, 65535",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-2,,,
-"SWI R0, L[0]",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-3,,,
-"SRT R3, R0, 16",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+Expected: explicit diagnostic with source span and actionable hint.
 
-## Diagnostics
+## Lowering notes
 
-- malformed argument lists -> parse diagnostics
-- invalid direction/width/limb values -> parse diagnostics
-- geometry overflow -> coordinate diagnostics
+Emits add/mask/shift/store chain with deterministic lane progression.
+
+## Related patterns
+
+- `std::normalize(...)` for lane carry application
+- `std::conditional_sub(...)` for final modular correction

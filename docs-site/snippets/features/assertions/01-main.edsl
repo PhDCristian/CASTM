@@ -1,0 +1,9 @@
+target "uma-cgra-base";
+kernel "runtime_directives" {
+  .io_load 0, 4, 8
+  .io_store 16, 20
+  .limit 64
+  .assert cycle=0 @0,0 R0 == 0
+
+  cycle { at @0,0: NOP; }
+}

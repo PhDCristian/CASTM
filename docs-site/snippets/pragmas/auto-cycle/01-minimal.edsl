@@ -1,0 +1,6 @@
+target "uma-cgra-base";
+kernel "lat_hide_min" {
+  std::latency_hide(window=1, mode=conservative);
+  cycle { at @0,0: SADD R1, R0, 1; }
+  cycle { at @0,1: SADD R2, R0, 1; }
+}

@@ -6,6 +6,21 @@ Canonical grammar source-of-truth lives in:
 
 This page mirrors the public-facing subset used by the current compiler.
 
+## Target and assumptions
+
+- Grammar examples are canonical syntax only.
+- Executable snippets include `target "uma-cgra-base";`.
+- CSV excerpts are generated from snippet artifacts.
+
+## Grammar sample (OpenEdgeDSL ↔ CSV)
+
+::: code-group
+<<< ../snippets/language/grammar/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/grammar/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/language/grammar/01-main.csv`.
+
 ## Program
 
 ```text

@@ -1,42 +1,61 @@
 # `std::reduce(...)`
 
-Lane-wise reduction over row or column axis.
+## When to use
+
+Use axis reduction when all lane values must be combined into a destination register.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::reduce(op=add|sum|sub|and|or|xor|mul, dest=RD, src=RS[, axis=row|col]);
+std::reduce(op=add|xor|..., dest=Rd, src=Rs, axis=row|col);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Default | Description |
-|---|---|---|---|
-| `op` | yes | - | reduction combiner |
-| `dest` | yes | - | destination register |
-| `src` | yes | - | source register |
-| `axis` | no | `row` | reduction orientation |
+| Parameter | Required | Description |
+|---|---|---|
+| `op` | yes | Reduction operation. |
+| `dest` | yes | Destination register. |
+| `src` | yes | Source register. |
+| `axis` | no | Reduction axis (`row` default, or `col`). |
 
-## DSL to CSV Example (Matrix)
+## Case A — Minimal
 
 ::: code-group
-```openedge [OpenEdgeDSL]
-target "uma-cgra-base";
-kernel "reduce_doc" {
-  std::reduce(op=add, dest=R1, src=R0, axis=row);
-}
-```
-
-```csv [CSV matrix excerpt]
-0,,,
-"SADD R1, R0, ZERO","SADD R1, R0, ZERO",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-"SADD R1, R1, RCL","SADD R1, R1, RCL",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+<<< ../../snippets/pragmas/reduce/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/reduce/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
+
+Full CSV: `docs-site/snippets/pragmas/reduce/01-minimal.csv`.
+
+## Case B — Advanced options
+
+::: code-group
+<<< ../../snippets/pragmas/reduce/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/reduce/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/reduce/02-advanced.csv`.
+
+## Case C — Invalid usage
+
+<<< ../../snippets/pragmas/reduce/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Builds axis-aware combine phases with stable row-major emission.
+
+## Related patterns
+
+- `std::scan(...)` for prefix-style accumulation
+- `std::allreduce(...)` for globalized reduction

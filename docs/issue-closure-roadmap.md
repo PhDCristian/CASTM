@@ -538,3 +538,67 @@ For every new issue or closure:
 2. Add or update regression tests in `tests/issues/`.
 3. Append evidence in this roadmap (workstream + date + rationale).
 4. If cross-repo behavior changes, mirror with simulator contract tests.
+
+### WS-21 — Documentation Canonicalization (DSL↔CSV one-click)
+
+Status: `done` (phase 1: pragmas + core feature equivalences)  
+Completed: `2026-02-14`
+
+Why:
+
+- documentation drift was causing ambiguity between syntax, lowering and real compiler behavior.
+- advanced statements required consistent side-by-side DSL/CSV visibility to make transformations inspectable.
+
+Subtasks:
+
+- [x] Added canonical snippets source-of-truth under `docs-site/snippets/**`.
+- [x] Added generated CSV pipeline for docs snippets (`docs-site/scripts/generate-doc-artifacts.ts`).
+- [x] Added docs contracts checker (`docs-site/scripts/check-doc-contracts.ts`).
+- [x] Enforced pragma page template with 3 cases (minimal/advanced/invalid) and tabs DSL↔CSV.
+- [x] Added `route` split coverage via `docs-site/features/pragmas/route-variants.md`.
+- [x] Added docs tests:
+  - `tests/docs-pragmas-contract.test.ts`
+  - `tests/docs-csv-generated.contract.test.ts`
+  - extended `tests/docs-snippets.contract.test.ts` for snippet corpus and include integrity.
+- [x] Added CI/docs gate via `docs-site` script `docs:validate` and workflow integration.
+
+Evidence:
+
+- Scripts: `docs-site/scripts/generate-doc-artifacts.ts`, `docs-site/scripts/check-doc-contracts.ts`.
+- Tests: `tests/docs-pragmas-contract.test.ts`, `tests/docs-csv-generated.contract.test.ts`, `tests/docs-snippets.contract.test.ts`, `tests/docs-loop-features.contract.test.ts`.
+- Workflow: `.github/workflows/docs.yml`.
+
+### WS-22 — Documentation Canonicalization (Phase 2: full page parity)
+
+Status: `done` (phase 2: examples/language/guide/reference/home parity)  
+Completed: `2026-02-14`
+
+Why:
+
+- remaining conceptual pages still had mixed formatting and missing one-click DSL↔CSV views.
+- docs quality required full parity, not only pragmas.
+
+Subtasks:
+
+- [x] Migrated examples pages to generated snippet includes under `docs-site/snippets/examples/**`.
+- [x] Reworked `examples/kernel-compaction.md` to generated cases only (no manual CSV blocks).
+- [x] Added generated equivalence sections to:
+  - `docs-site/language/README.md`
+  - `docs-site/language/compilation.md`
+  - `docs-site/language/grammar.md`
+  - `docs-site/language/instruction-set.md`
+  - `docs-site/language/dsl-csv-equivalence.md`
+  - `docs-site/guide/cli-reference.md`
+  - `docs-site/guide/library-usage.md`
+  - `docs-site/reference/error-codes.md`
+  - `docs-site/reference/porting-guide.md`
+  - `docs-site/index.md`
+- [x] Extended docs contract checks to include non-pragmas critical pages.
+- [x] Achieved page-level parity audit:
+  - markdown pages with CSV includes: `66/66`
+  - markdown pages with OpenEdge examples: `66/66`
+
+Evidence:
+
+- Docs validation: `cd docs-site && npm run docs:validate` (green).
+- Tests: `npx vitest run tests/docs-snippets.contract.test.ts tests/docs-pragmas-contract.test.ts tests/docs-csv-generated.contract.test.ts tests/docs-loop-features.contract.test.ts` (green).

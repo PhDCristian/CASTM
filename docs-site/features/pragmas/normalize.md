@@ -1,71 +1,64 @@
 # `std::normalize(...)`
 
-Lane normalization with carry extraction and directional relay.
+## When to use
+
+Use to apply carry register across fixed-width lanes and clamp with mask.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::normalize(reg=R, carry=RC, width=W, lane=N[, mask=M, axis=row|col, dir=right|left|down|up]);
+std::normalize(reg=Rr, carry=Rc, width=W, lane=i, axis=row|col, dir=right|left|up|down, mask=...);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Description |
+| Parameter | Required | Description |
 |---|---|---|
-| `reg` | yes | value register to normalize |
-| `carry` | yes | temporary carry register |
-| `width` | yes | carry width (`1..30`) |
-| `lane` | yes | selected lane index |
-| `mask` | no | normalization mask |
-| `axis` | no | `row` (default) or `col` |
-| `dir` | no | axis-compatible direction |
+| `reg` | yes | Primary value register. |
+| `carry` | yes | Carry source register. |
+| `width` | yes | Lane width in bits. |
+| `lane` | yes | Lane index along axis. |
+| `axis` | no | `row` default or `col`. |
+| `dir` | no | Directional propagation for selected axis. |
+| `mask` | no | Explicit mask override. |
 
-## Lowering Shape
+## Case A — Minimal
 
-Four deterministic cycles on selected lane:
+::: code-group
+<<< ../../snippets/pragmas/normalize/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/normalize/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-1. `SRT carry, reg, width`
-2. `LAND reg, reg, mask`
-3. `SADD ROUT, carry, ZERO`
-4. `SADD reg, reg, incoming`
+Full CSV: `docs-site/snippets/pragmas/normalize/01-minimal.csv`.
 
-`incoming` depends on `axis` + `dir` + lane position.
+## Case B — Advanced options
 
-## Executable Example
+::: code-group
+<<< ../../snippets/pragmas/normalize/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/normalize/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-```openedge
-target "uma-cgra-base";
-kernel "normalize_doc" {
-  std::normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
-}
-```
+Full CSV: `docs-site/snippets/pragmas/normalize/02-advanced.csv`.
 
-## DSL to CSV Example (Matrix)
+## Case C — Invalid usage
 
-```csv [CSV matrix excerpt]
-0,,,
-"SRT R1, R3, 16","SRT R1, R3, 16","SRT R1, R3, 16","SRT R1, R3, 16"
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-"LAND R3, R3, 65535","LAND R3, R3, 65535","LAND R3, R3, 65535","LAND R3, R3, 65535"
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-2,,,
-"SADD ROUT, R1, ZERO","SADD ROUT, R1, ZERO","SADD ROUT, R1, ZERO","SADD ROUT, R1, ZERO"
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-3,,,
-"SADD R3, R3, ZERO","SADD R3, R3, RCL","SADD R3, R3, RCL","SADD R3, R3, RCL"
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+<<< ../../snippets/pragmas/normalize/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
-## Diagnostics
+Expected: explicit diagnostic with source span and actionable hint.
 
-- invalid axis/direction combinations -> parse diagnostics
-- out-of-range lanes -> coordinate diagnostics
+## Lowering notes
+
+Emits shift/mask/route/add stages with axis-direction consistency checks.
+
+## Related patterns
+
+- `std::carry_chain(...)` for carry generation
+- `std::extract_bytes(...)` for post-normalization byte slicing

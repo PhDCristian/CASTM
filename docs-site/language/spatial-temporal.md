@@ -34,3 +34,13 @@ kernel "space_time" {
   cycle { @0,0: R0 = R0 + 1; @0,1: R1 = R1 + 1; }
 }
 ```
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/language/spatial-temporal/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/spatial-temporal/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/language/spatial-temporal/01-main.csv`.

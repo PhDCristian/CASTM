@@ -53,8 +53,8 @@ For concrete measurements and CSV-level examples, see:
 ## DSL Example used by all modes
 
 ::: code-group
-<<< ./artifacts/scheduler-modes.edsl{openedge} [OpenEdgeDSL]
-<<< ./artifacts/scheduler-modes.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+<<< ../snippets/examples/scheduler-modes/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/scheduler-modes/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
-Full generated CSV: `docs-site/examples/artifacts/scheduler-modes.csv`.
+Full generated CSV: `docs-site/snippets/examples/scheduler-modes/01-main.csv`.

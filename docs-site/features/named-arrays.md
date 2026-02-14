@@ -28,3 +28,13 @@ kernel "decls" {
   }
 }
 ```
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/features/named-arrays/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/named-arrays/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/named-arrays/01-main.csv`.

@@ -30,3 +30,13 @@ kernel "expr" {
 
 - Non-resolvable symbolic expressions are preserved when legal for the target lowering stage.
 - Diagnostics are emitted for invalid expression shapes.
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/features/expressions/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/expressions/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/expressions/01-main.csv`.

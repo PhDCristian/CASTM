@@ -66,3 +66,13 @@ openedge analyze hello.dsl
 - [Language Overview](/language/overview)
 - [Features](/features/expressions)
 - [Examples](/examples/basic)
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/guide/getting-started/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/guide/getting-started/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/guide/getting-started/01-main.csv`.

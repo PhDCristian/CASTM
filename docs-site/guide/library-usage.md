@@ -7,6 +7,20 @@ outline: deep
 
 Use `@openedge/compiler-api` for typed compilation phases.
 
+## Target and assumptions
+
+- Source snippets are canonical and include `target "uma-cgra-base";`.
+- Artifact examples assume deterministic lowering in the default base profile.
+
+## OpenEdgeDSL ↔ CSV quick sample
+
+::: code-group
+<<< ../snippets/guide/library-usage/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/guide/library-usage/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/guide/library-usage/01-main.csv`.
+
 ## Install
 
 ```bash

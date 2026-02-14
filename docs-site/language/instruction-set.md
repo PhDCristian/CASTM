@@ -2,6 +2,12 @@
 
 OpenEdgeDSL lowers to the ISA catalog in `packages/lang-spec/src/instruction-set.json`.
 
+## Target and assumptions
+
+- Target profile examples assume `target "uma-cgra-base";`.
+- Register/opcode availability is profile-dependent; this page reflects current base profile.
+- CSV shown is generated from executable snippets.
+
 ## Registers and Neighbor Inputs (default profile)
 
 | Class | Values |
@@ -26,5 +32,14 @@ OpenEdgeDSL lowers to the ISA catalog in `packages/lang-spec/src/instruction-set
 - `R2 = R0 + R1;` -> `SADD R2, R0, R1`
 - `R0 = A[i];` -> `LWI R0, <resolved-address>`
 - `A[i] = R0;` -> `SWI R0, <resolved-address>`
+
+## Executable ISA sample (OpenEdgeDSL ↔ CSV)
+
+::: code-group
+<<< ../snippets/language/instruction-set/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/instruction-set/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/language/instruction-set/01-main.csv`.
 
 For full side-by-side examples, see [DSL to CSV Equivalence](/language/dsl-csv-equivalence).

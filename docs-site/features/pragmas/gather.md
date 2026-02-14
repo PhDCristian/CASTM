@@ -1,63 +1,61 @@
 # `std::gather(...)`
 
-Gather values from all source points to one destination point with selectable combiner.
+## When to use
+
+Use to collect values from the mesh into a specific destination point and register.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::gather(src=RS, dest=@r,c, destReg=RD, op=add|sum|sub|and|or|xor|mul);
+std::gather(src=Rs, dest=@r,c, destReg=Rd, op=add|...);
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Description |
+| Parameter | Required | Description |
 |---|---|---|
-| `src` | yes | source register sampled at each point |
-| `dest` | yes | destination point |
-| `destReg` | yes | accumulation register at destination |
-| `op` | yes | combine operation |
+| `src` | yes | Source register on producers. |
+| `dest` | yes | Destination point coordinate. |
+| `destReg` | yes | Destination register on sink. |
+| `op` | yes | Combine operation at destination. |
 
-## Semantics
+## Case A — Minimal
 
-- destination is initialized with local source value
-- remaining points are transferred by route cycles
-- destination combines incoming relay values using selected operation
+::: code-group
+<<< ../../snippets/pragmas/gather/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/gather/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-## Executable Example
+Full CSV: `docs-site/snippets/pragmas/gather/01-minimal.csv`.
 
-```openedge
-target "uma-cgra-base";
-kernel "gather_doc" {
-  std::gather(src=R0, dest=@0,0, destReg=R1, op=add);
-}
-```
+## Case B — Advanced options
 
-## DSL to CSV Example (Matrix)
+::: code-group
+<<< ../../snippets/pragmas/gather/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/gather/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-```csv [CSV matrix excerpt]
-0,,,
-"SADD R1, R0, ZERO",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-NOP,"SADD ROUT, R0, ZERO",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-2,,,
-"SADD R3, RCR, ZERO",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-3,,,
-"SADD R1, R1, R3",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+Full CSV: `docs-site/snippets/pragmas/gather/02-advanced.csv`.
 
-## Diagnostics
+## Case C — Invalid usage
 
-- out-of-grid destination -> coordinate diagnostics
-- unsupported op -> semantic diagnostics
+<<< ../../snippets/pragmas/gather/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Builds deterministic gather routes ending in operation at sink point.
+
+## Related patterns
+
+- `std::collect(...)` for axis-constrained gathering
+- `std::route(...)` for explicit source-destination pathing

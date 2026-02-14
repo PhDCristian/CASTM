@@ -1,0 +1,8 @@
+target "uma-cgra-base";
+kernel "if_else_basic" {
+  if (R0 == 0) at @0,0 {
+    cycle { at @0,1: R1 = R1 + 1; }
+  } else {
+    cycle { at @0,1: R1 = R1 + 2; }
+  }
+}

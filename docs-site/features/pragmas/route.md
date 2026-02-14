@@ -1,54 +1,60 @@
 # `std::route(...)`
 
-Deterministic point-to-point transfer with optional custom combine operation.
+## When to use
+
+Use deterministic point-to-point transfers when source and destination PEs are known and routing order matters.
+
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
 std::route(@r1,c1 -> @r2,c2, payload=Rx, accum=Ry);
-std::route(@r1,c1 -> @r2,c2, payload=Rx, dest=Rd, op=OP(Rd, Ra, Rb));
 ```
 
-## Options
+## Parameters
 
-| Key | Required | Description |
+| Parameter | Required | Description |
 |---|---|---|
-| `payload` | yes | register to inject into route path |
-| `accum` | yes (simple form) | destination accumulation register |
-| `dest` | yes (custom form) | destination register used by custom op |
-| `op` | yes (custom form) | operation expression `OP(Rd, Ra, Rb)` |
+| `payload` | yes | Register injected into the route path. |
+| `accum` | yes | Destination accumulation register at target PE. |
 
-## DSL to CSV Example (Matrix)
+## Case A — Minimal
 
 ::: code-group
-```openedge [OpenEdgeDSL]
-target "uma-cgra-base";
-kernel "route_doc" {
-  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
-}
-```
-
-```csv [CSV matrix excerpt]
-0,,,
-NOP,"SADD ROUT, R3, ZERO",NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-1,,,
-"SADD R1, R1, RCR",NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+<<< ../../snippets/pragmas/route/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
 
-## Custom Operation Example
+Full CSV: `docs-site/snippets/pragmas/route/01-minimal.csv`.
 
-```openedge
-target "uma-cgra-base";
-kernel "route_custom_doc" {
-  std::route(@1,0 -> @2,2, payload=R0, dest=R2, op=SMUL(R2, R1, INCOMING));
-}
-```
+## Case B — Advanced options
 
-Generated route cycles preserve lexical position inside the kernel timeline.
+::: code-group
+<<< ../../snippets/pragmas/route/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/route/02-advanced.csv`.
+
+## Case C — Invalid usage
+
+<<< ../../snippets/pragmas/route/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Lowers to deterministic hop cycles that preserve lexical statement order in the kernel timeline.
+
+## Related patterns
+
+- `std::broadcast(...)` for fan-out from one source
+- `std::collect(...)` for axis collection
+- `std::route(...) variants` for custom sink operations: [/features/pragmas/route-variants](/features/pragmas/route-variants)

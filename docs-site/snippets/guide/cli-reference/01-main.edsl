@@ -1,0 +1,14 @@
+target "uma-cgra-base";
+let X = { 4, 9 };
+let Y @160 = { 0 };
+
+kernel "cli_ref" {
+  cycle {
+    at @0,0: R0 = X[0];
+    at @0,1: R1 = X[1];
+  }
+  cycle {
+    at @0,0: R2 = R0 * R1;
+    at @0,1: Y[0] = R2;
+  }
+}

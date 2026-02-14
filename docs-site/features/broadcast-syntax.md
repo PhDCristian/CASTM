@@ -19,3 +19,13 @@ This lowers to one placement per column at row `1`.
 
 - Applies to `at row` form with one instruction payload.
 - `at col` and `at all` also expand spatially over their target sets.
+
+
+## OpenEdgeDSL ↔ CSV
+
+::: code-group
+<<< ../snippets/features/broadcast-syntax/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/broadcast-syntax/01-main.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/broadcast-syntax/01-main.csv`.

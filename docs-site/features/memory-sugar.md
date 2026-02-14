@@ -2,6 +2,12 @@
 
 Canonical memory sugar is available inside `cycle {}` and lowers to existing `LWI/SWI` ISA forms.
 
+## Target and assumptions
+
+- Snippets use `target "uma-cgra-base";`.
+- Address expressions are resolved at compile-time.
+- CSV output shown is generated from the linked snippet.
+
 ## Supported Forms
 
 - `R3 = A[i];`
@@ -21,26 +27,8 @@ Canonical memory sugar is available inside `cycle {}` and lowers to existing `LW
 ## DSL to CSV Example (Matrix)
 
 ::: code-group
-```openedge [OpenEdgeDSL]
-target "uma-cgra-base";
-let A = { 10, 20, 30, 40 };
-let B @100 = { 0, 0, 0, 0 };
-
-kernel "mem_sugar" {
-  cycle {
-    at @0,0: R0 = A[1];
-    at @0,1: B[2] = R0;
-    at @0,2: [360 + 2*4] = R1;
-    at @0,3: R2 = [360 + 2*4];
-  }
-}
-```
-
-```csv [CSV matrix excerpt]
-0,,,
-"LWI R0, 4","SWI R0, 108","SWI R1, 368","LWI R2, 368"
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-NOP,NOP,NOP,NOP
-```
+<<< ../snippets/features/memory-sugar/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/memory-sugar/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
+
+Full CSV: `docs-site/snippets/features/memory-sugar/01-main.csv`.

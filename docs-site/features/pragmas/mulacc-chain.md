@@ -1,68 +1,65 @@
 # `std::mulacc_chain(...)`
 
-Deterministic multiply-accumulate lane chain for row/column targets.
+## When to use
 
-Use this statement when you need the repeated pattern:
+Use deterministic multiply-accumulate propagation across a selected target region.
 
-1. multiply `src * coeff`,
-2. accumulate with lane incoming (`RC*`) in a fixed direction,
-3. mask/normalize by lane width.
+## Target and assumptions
+
+All executable snippets below are canonical and explicit:
+
+- `target "uma-cgra-base";`
+- default grid: `4x4` toroidal profile unless overridden at compile time
+- deterministic lowering: same source + options => same CSV
 
 ## Syntax
 
 ```text
-std::mulacc_chain(src=RS, coeff=RC, acc=RA, out=RO, target=row(i)|col(j)[, lanes=N][, width=16][, mask=65535][, dir=right|left|down|up]);
+std::mulacc_chain(src=Rs, coeff=Rc, acc=Ra, out=Ro, target=row(i)|col(j)|all, lanes=4, width=16, mask=65535, dir=right|left|up|down);
 ```
 
-## Arguments
+## Parameters
 
-| Key | Required | Description |
+| Parameter | Required | Description |
 |---|---|---|
-| `src` | yes | source register (multiplier input) |
-| `coeff` | yes | coefficient register |
-| `acc` | yes | accumulation register used during propagation |
-| `out` | yes | output register |
-| `target` | yes | lane target (`row(i)` or `col(j)`) |
-| `lanes` | no | number of active PEs in lane (default: full lane) |
-| `width` | no | carry width in bits (default `16`) |
-| `mask` | no | low-part mask (default `(1<<width)-1` for width<=31, else explicit value required) |
-| `dir` | no | propagation direction (`right` for row, `down` for col by default) |
+| `src` | yes | Input multiplicand register. |
+| `coeff` | yes | Coefficient register. |
+| `acc` | yes | Accumulator register. |
+| `out` | yes | Output register. |
+| `target` | yes | Target rows/cols/all. |
+| `width` | yes | Fixed-point width. |
+| `dir` | yes | Propagation direction. |
+| `lanes/mask` | no | Optional lane count and explicit mask. |
 
-## Determinism Contract
+## Case A — Minimal
 
-- Lowering is deterministic row-major by lane coordinate.
-- Same source + same options => same emitted CSV.
-- Geometry is validated against grid bounds (`rows`, `cols`).
+::: code-group
+<<< ../../snippets/pragmas/mulacc-chain/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/mulacc-chain/01-minimal.excerpt.csv{csv} [CSV excerpt]
+:::
 
-## Executable Example
+Full CSV: `docs-site/snippets/pragmas/mulacc-chain/01-minimal.csv`.
 
-```openedge
-target "uma-cgra-base";
+## Case B — Advanced options
 
-kernel "mulacc_chain_demo" {
-  std::mulacc_chain(src=R0, coeff=R1, acc=R3, out=R2, target=row(0), lanes=4, width=16, mask=65535, dir=right);
-}
-```
+::: code-group
+<<< ../../snippets/pragmas/mulacc-chain/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/mulacc-chain/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
 
-## Representative CSV (flat)
+Full CSV: `docs-site/snippets/pragmas/mulacc-chain/02-advanced.csv`.
 
-```csv
-cycle,row,col,instruction
-0,0,0,SMUL R3 R0 R1
-0,0,1,SMUL R3 R0 R1
-0,0,2,SMUL R3 R0 R1
-0,0,3,SMUL R3 R0 R1
-1,0,1,SADD R3 R3 RCL
-1,0,2,SADD R3 R3 RCL
-1,0,3,SADD R3 R3 RCL
-2,0,0,LAND R2 R3 65535
-2,0,1,LAND R2 R3 65535
-2,0,2,LAND R2 R3 65535
-2,0,3,LAND R2 R3 65535
-```
+## Case C — Invalid usage
 
-## Diagnostics
+<<< ../../snippets/pragmas/mulacc-chain/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
-- target out of bounds -> semantic coordinate diagnostic.
-- incompatible direction/target axis -> parse diagnostic.
-- invalid `lanes` for target lane size -> semantic diagnostic.
+Expected: explicit diagnostic with source span and actionable hint.
+
+## Lowering notes
+
+Lowers to staged multiply/add/carry updates aligned with selected target traversal.
+
+## Related patterns
+
+- `std::carry_chain(...)` for carry materialization
+- `std::normalize(...)` for post-propagation normalization
