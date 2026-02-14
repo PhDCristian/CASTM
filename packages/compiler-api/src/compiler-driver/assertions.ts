@@ -4,6 +4,40 @@ import {
 } from '@openedge/compiler-ir';
 import { parseNumericLiteral } from './numbers.js';
 
+function splitTopLevel(text: string, delimiter: string): string[] {
+  const out: string[] = [];
+  let current = '';
+  let depthParen = 0;
+  let depthBracket = 0;
+  let depthBrace = 0;
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '(') depthParen += 1;
+    else if (ch === ')') depthParen = Math.max(0, depthParen - 1);
+    else if (ch === '[') depthBracket += 1;
+    else if (ch === ']') depthBracket = Math.max(0, depthBracket - 1);
+    else if (ch === '{') depthBrace += 1;
+    else if (ch === '}') depthBrace = Math.max(0, depthBrace - 1);
+
+    if (
+      ch === delimiter
+      && depthParen === 0
+      && depthBracket === 0
+      && depthBrace === 0
+    ) {
+      out.push(current);
+      current = '';
+      continue;
+    }
+
+    current += ch;
+  }
+
+  out.push(current);
+  return out;
+}
+
 interface AssertionFieldTokens {
   cycleText?: string;
   rowText: string;
@@ -43,35 +77,38 @@ function inferDefaultAssertionCycle(ast: AstProgram, span: SourceSpan): number {
 }
 
 function parseAssertionTokens(rawValue: string): AssertionFieldTokens | null {
-  const shorthand = rawValue.match(
-    /^\.assert\s+(?:cycle\s*=\s*([^\s]+)\s+)?@\s*([^,:\s]+)\s*,\s*([^:\s]+)\s*:?\s*([A-Za-z_][A-Za-z0-9_]*)\s*==\s*(.+)\s*$/i
-  );
-  if (shorthand) {
-    return {
-      cycleText: shorthand[1]?.trim(),
-      rowText: shorthand[2].trim(),
-      colText: shorthand[3].trim(),
-      registerText: shorthand[4].trim(),
-      valueText: shorthand[5].trim()
-    };
+  const call = rawValue.match(/^assert\s*\(([\s\S]*)\)\s*;?\s*$/i);
+  if (!call) return null;
+
+  const body = call[1].trim();
+  const atMatch = body.match(/\bat\s*=\s*@\s*([^,\s]+)\s*,\s*([^\s,]+)\s*/i);
+  if (!atMatch) return null;
+
+  const remaining = body
+    .replace(atMatch[0], '')
+    .replace(/^\s*,\s*/, '')
+    .replace(/\s*,\s*$/, '');
+  const kvPairs = remaining.length > 0
+    ? splitTopLevel(remaining, ',').map((part) => part.trim()).filter(Boolean)
+    : [];
+
+  const args = new Map<string, string>();
+  for (const pair of kvPairs) {
+    const kv = pair.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/);
+    if (!kv) return null;
+    args.set(kv[1].toLowerCase(), kv[2].trim());
   }
 
-  const object = rawValue.match(/^\.assert\s*\{([\s\S]*)\}\s*$/i);
-  if (!object) return null;
-
-  const body = object[1];
-  const cycleMatch = body.match(/\bcycle\s*:\s*([^,}]+)/i);
-  const locationMatch = body.match(/\blocation\s*:\s*([^,}]+)\s*,\s*([^,}]+)/i);
-  const registerMatch = body.match(/\bregister\s*:\s*([A-Za-z_][A-Za-z0-9_]*)/i);
-  const valueMatch = body.match(/\bvalue\s*:\s*([^,}]+)/i);
-  if (!locationMatch || !registerMatch || !valueMatch) return null;
+  const registerText = args.get('reg');
+  const valueText = args.get('equals');
+  if (!registerText || !valueText) return null;
 
   return {
-    cycleText: cycleMatch?.[1]?.trim(),
-    rowText: locationMatch[1].trim().replace(/^@/, ''),
-    colText: locationMatch[2].trim(),
-    registerText: registerMatch[1].trim(),
-    valueText: valueMatch[1].trim()
+    cycleText: args.get('cycle'),
+    rowText: atMatch[1].trim(),
+    colText: atMatch[2].trim(),
+    registerText,
+    valueText
   };
 }
 
@@ -83,15 +120,15 @@ export function parseAssertionDirectiveValue(
   const tokens = parseAssertionTokens(rawValue);
   if (!tokens) {
     return {
-      message: `Invalid .assert directive payload '${rawValue}'.`,
-      hint: 'Expected `.assert cycle=0 @0,0 R1 == 42` or `.assert { cycle: 0, location: 0,0, register: R1, value: 42 }`.'
+      message: `Invalid assert(...) payload '${rawValue}'.`,
+      hint: 'Expected `assert(at=@0,0, reg=R1, equals=42, cycle=0)`.'
     };
   }
 
   const row = parseNumericLiteral(tokens.rowText);
   if (row === null || !Number.isInteger(row) || row < 0) {
     return {
-      message: `Invalid .assert row '${tokens.rowText}'.`,
+      message: `Invalid assert row '${tokens.rowText}'.`,
       hint: 'Row must be a non-negative integer.'
     };
   }
@@ -99,7 +136,7 @@ export function parseAssertionDirectiveValue(
   const col = parseNumericLiteral(tokens.colText);
   if (col === null || !Number.isInteger(col) || col < 0) {
     return {
-      message: `Invalid .assert column '${tokens.colText}'.`,
+      message: `Invalid assert column '${tokens.colText}'.`,
       hint: 'Column must be a non-negative integer.'
     };
   }
@@ -109,7 +146,7 @@ export function parseAssertionDirectiveValue(
     const parsedCycle = parseNumericLiteral(tokens.cycleText);
     if (parsedCycle === null || !Number.isInteger(parsedCycle) || parsedCycle < 0) {
       return {
-        message: `Invalid .assert cycle '${tokens.cycleText}'.`,
+        message: `Invalid assert cycle '${tokens.cycleText}'.`,
         hint: 'Cycle must be a non-negative integer.'
       };
     }
@@ -121,7 +158,7 @@ export function parseAssertionDirectiveValue(
   const value = parseNumericLiteral(tokens.valueText);
   if (value === null || !Number.isInteger(value)) {
     return {
-      message: `Invalid .assert value '${tokens.valueText}'.`,
+      message: `Invalid assert value '${tokens.valueText}'.`,
       hint: 'Assertion value must be an integer literal (decimal or hex).'
     };
   }

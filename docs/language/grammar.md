@@ -5,10 +5,18 @@ This grammar defines the canonical OpenEdgeDSL syntax profile.
 ## Program
 
 ```text
-program          ::= target_decl declaration* function_def* kernel_decl
-target_decl      ::= "target" string_lit ";"
+program          ::= target_decl build_block? declaration* function_def* kernel_decl
+target_decl      ::= "target" (string_lit | ident) ";"
+build_block      ::= "build" "{" build_stmt* "}"
+build_stmt       ::= optimize_stmt | scheduler_stmt | scheduler_window_stmt | memory_reorder_stmt | prune_noop_stmt | grid_stmt
+optimize_stmt    ::= "optimize" ("O0" | "O1" | "O2" | "O3") ";"
+scheduler_stmt   ::= "scheduler" ("safe" | "balanced" | "aggressive") ";"
+scheduler_window_stmt ::= "scheduler_window" ("auto" | int_expr) ";"
+memory_reorder_stmt ::= "memory_reorder" ("strict" | "same_address_fence") ";"
+prune_noop_stmt  ::= "prune_noop_cycles" ("on" | "off" | "true" | "false") ";"
+grid_stmt        ::= "grid" int_expr "x" int_expr ("torus" | "mesh")? ";"
 kernel_decl      ::= "kernel" string_lit "{" kernel_item* "}"
-kernel_item      ::= config_stmt | runtime_directive | cycle_block | control_stmt | for_stmt | advanced_stmt | pipeline_stmt | function_call
+kernel_item      ::= config_stmt | runtime_stmt | cycle_block | control_stmt | for_stmt | advanced_stmt | pipeline_stmt | function_call
 ```
 
 ## Declarations
@@ -21,11 +29,11 @@ let_data         ::= "let" ident "=" "{" int_list "}" ";"
 let_data_fixed   ::= "let" ident "@" int_expr "=" "{" int_list "}" ";"
 let_data2d       ::= "let" ident "[" int_expr "]" "[" int_expr "]" "=" "{" int_list "}" ";"
 let_data2d_zero  ::= "let" ident "[" int_expr "]" "[" int_expr "]" ";"
-runtime_directive ::= io_load | io_store | limit | assert
-io_load          ::= ".io_load" int_expr "," int_expr ("," int_expr)* 
-io_store         ::= ".io_store" int_expr "," int_expr ("," int_expr)* 
-limit            ::= ".limit" int_expr
-assert           ::= ".assert" assert_expr
+runtime_stmt     ::= io_load | io_store | limit | assert
+io_load          ::= "io.load" "(" int_expr ("," int_expr)* ")" ";"
+io_store         ::= "io.store" "(" int_expr ("," int_expr)* ")" ";"
+limit            ::= "limit" "(" int_expr ")" ";"
+assert           ::= "assert" "(" "at" "=" "@" int_expr "," int_expr "," "reg" "=" register "," "equals" "=" int_expr ("," "cycle" "=" int_expr)? ")" ";"
 ```
 
 ## Spatial / Cycle
@@ -107,7 +115,7 @@ triangle_stmt    ::= std_prefix "triangle" "(" "shape" "=" ("upper" | "lower") [
 ## Executable snippet
 
 ```dsl
-target "uma-cgra-base";
+target base;
 let A = { 10, 20, 30, 40 };
 kernel "grammar_example" {
   std::route(@0,1 -> @0,0, payload=R3, accum=R1);

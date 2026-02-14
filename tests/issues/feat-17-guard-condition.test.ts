@@ -60,18 +60,15 @@ kernel "feat17_truthy" {
   it('respects NxM grid shape in guard evaluation', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  grid 3x5 mesh;
+}
 kernel "feat17_nxm" {
   guard(cond=row<2, op=SADD, dest=R0, srcA=ZERO, srcB=ZERO);
 }
 `;
 
-    const result = compile(source, {
-      grid: {
-        rows: 3,
-        cols: 5,
-        topology: 'mesh'
-      }
-    });
+    const result = compile(source);
 
     expect(result.success).toBe(true);
     const lines = csvData(result.artifacts.csv ?? '');

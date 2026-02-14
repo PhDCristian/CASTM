@@ -25,16 +25,16 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 | `for ... in range(...)` (kernel + `cycle`) | done | `tests/compiler-api.contract.test.ts`, `tests/issues/bug-07-computed-loop-coords.test.ts` | Supports compile-time unroll (including descending ranges) in kernel/cycle scopes, explicit runtime loop form (`at @r,c runtime`), and computed spatial coordinates like `@k/4,k%4`. |
 | Multi-statement cycle-line parsing | done | `tests/issues/issue-03-multi-statement-cycle-line.test.ts` | `cycle { ... }` bodies support semicolon-separated placements on the same line without instruction-text corruption. |
 
-## Declarations & Runtime Directives
+## Declarations & Runtime Statements
 
 | Feature | Status | Tests | Notes |
 |---|---|---|---|
 | `let` const/alias parse | done | indirect (`compile` contracts) | Exposed via `artifacts.symbols`. |
 | `let` 1D arrays + regions | done | `tests/compiler-api.contract.test.ts` | Also exposed in `memoryRegions`. |
 | `let` 2D arrays | done | `tests/compiler-api.contract.test.ts` | Supports declaration, region allocation, literal and dynamic 2D index lowering to address expressions. |
-| `.io_load`, `.io_store` | done | `tests/compiler-api.contract.test.ts` | Parsed into `ioConfig` with non-negative validation and propagated through simulator adapter contract tests. |
-| `.assert` | done | `tests/compiler-api.contract.test.ts` | Structured assertion artifacts parsed and propagated to simulator adapter/runtime contract tests. |
-| `.limit` | done | `tests/compiler-api.contract.test.ts` | Parsed from directives, exposed in `artifacts.cycleLimit`, and enforced against expanded cycle count. |
+| `io.load(...)`, `io.store(...)` | done | `tests/compiler-api.contract.test.ts` | Parsed into typed runtime statements, validated as non-negative addresses, and propagated through `ioConfig` artifacts. |
+| `assert(...)` | done | `tests/compiler-api.contract.test.ts` | Parsed as typed assertion runtime statements and propagated to simulator/runtime contract artifacts. |
+| `limit(...)` | done | `tests/compiler-api.contract.test.ts` | Parsed as typed runtime statement, exposed in `artifacts.cycleLimit`, and enforced against expanded cycle count. |
 
 ## Advanced Statements
 
@@ -88,7 +88,7 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 ## Executable Snippet
 
 ```openedge
-target "uma-cgra-base";
+target base;
 kernel "snippet_ok" {
   cycle {
     @0,0: EXIT;

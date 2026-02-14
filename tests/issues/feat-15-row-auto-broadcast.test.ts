@@ -31,6 +31,11 @@ kernel "feat15_row" {
   it('uses current grid columns for row auto-broadcast in NxM mode', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  optimize O0;
+  prune_noop_cycles off;
+  grid 3x6 mesh;
+}
 kernel "feat15_row_nxm" {
   cycle {
     at row 0: NOP;
@@ -38,13 +43,7 @@ kernel "feat15_row_nxm" {
 }
 `;
 
-    const result = compile(source, {
-      grid: {
-        rows: 3,
-        cols: 6,
-        topology: 'mesh'
-      }
-    });
+    const result = compile(source);
 
     expect(result.success).toBe(true);
     const lines = csvRows(result.artifacts.csv ?? '');

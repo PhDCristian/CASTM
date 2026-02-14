@@ -141,7 +141,7 @@ describe('branch coverage round 2', () => {
     expect(parseDirective('let D = {1,2};', 4)).toMatchObject({ kind: 'data' });
     expect(parseDirective('let acc = R1;', 5)).toMatchObject({ kind: 'alias' });
     expect(parseDirective('let MASK = 0xFF;', 6)).toMatchObject({ kind: 'const' });
-    expect(parseDirective('.io_load 100, 104', 7)).toMatchObject({ kind: 'io_load' });
+    expect(parseDirective('.io_load 100, 104', 7)).toBeNull();
     expect(parseDirective('not a directive', 8)).toBeNull();
   });
 

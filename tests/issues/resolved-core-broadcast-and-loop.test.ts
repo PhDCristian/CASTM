@@ -46,6 +46,10 @@ kernel "issue5_row_broadcast" {
   it('keeps Issue-9 fixed: at col syntax broadcasts across rows', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  optimize O0;
+  prune_noop_cycles off;
+}
 kernel "issue9_col_broadcast" {
   cycle {
     at col 2: NOP;

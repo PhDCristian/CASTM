@@ -29,13 +29,13 @@ export interface StructuredParseResult extends ParseResult {
 
 function validateStructuredMinimum(structuredAst: StructuredProgramAst): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
-  if (!structuredAst.targetProfileId) {
+  if (!structuredAst.targetProfileId || !structuredAst.target) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Parse.MissingTarget,
       'error',
       spanAt(1, 1, 1),
       'Missing required target declaration.',
-      'Add: target "uma-cgra-base";'
+      'Add: target base;'
     ));
   }
   if (!structuredAst.kernel) {

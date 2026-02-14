@@ -76,6 +76,10 @@ kernel "mem2mem" {
   it('accepts canonical spatial namespace forms', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+  prune_noop_cycles off;
+}
 kernel "spatial" {
   cycle {
     at row 0: NOP;
@@ -133,6 +137,10 @@ kernel "runtime_for" {
   it('supports static loop modifiers unroll/collapse in canonical headers', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+  prune_noop_cycles off;
+}
 kernel "loop_modifiers" {
   for i in range(0, 2) unroll(2) collapse(2) {
     for j in range(0, 2) {
@@ -235,6 +243,9 @@ kernel "structured_boundary" {
   it('records semantic and staged lowering phases in compile stats', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+}
 kernel "phase_trace" {
   cycle { @0,0: NOP; }
 }
@@ -257,15 +268,23 @@ kernel "scheduler_mode_trace" {
   cycle { @0,1: SADD R2, R0, 1; }
 }
 `;
-    const first = compile(source, { schedulerMode: 'balanced' });
-    const second = compile(source, { schedulerMode: 'balanced' });
+    const balancedSource = source.replace(
+      'kernel "scheduler_mode_trace" {',
+      'build { scheduler balanced; }\nkernel "scheduler_mode_trace" {'
+    );
+    const first = compile(balancedSource);
+    const second = compile(balancedSource);
     expect(first.success).toBe(true);
     expect(second.success).toBe(true);
     expect(first.stats.schedulerMode).toBe('balanced');
     expect(first.stats.loweredPasses).toContain('scheduler:balanced');
     expect(first.artifacts.csv).toBe(second.artifacts.csv);
 
-    const safe = compile(source, { schedulerMode: 'safe' });
+    const safeSource = source.replace(
+      'kernel "scheduler_mode_trace" {',
+      'build { scheduler safe; }\nkernel "scheduler_mode_trace" {'
+    );
+    const safe = compile(safeSource);
     expect(safe.success).toBe(true);
     expect(first.stats.cycles).toBeLessThanOrEqual(safe.stats.cycles);
   });

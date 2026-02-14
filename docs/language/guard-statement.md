@@ -48,7 +48,7 @@ std::guard(cond=(idx%2)==0, op=SADD, dest=R3, srcA=R0, srcB=ZERO);
 ## Executable Snippet
 
 ```dsl
-target "uma-cgra-base";
+target base;
 kernel "guard_doc" {
   std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 }

@@ -32,41 +32,44 @@ afterEach(() => {
 describe('branch coverage round 4', () => {
   it('covers assertion parser object syntax and failures', () => {
     const ast: any = {
+      target: { id: 'uma-cgra-base', raw: 'uma-cgra-base', span },
       targetProfileId: 'uma-cgra-base',
       span,
       kernel: {
         name: 'k',
         config: undefined,
         directives: [],
+        runtime: [],
         pragmas: [],
         cycles: [{ index: 7, statements: [], span }],
         span
       }
     };
-    const ok = parseAssertionDirectiveValue(ast, span, '.assert { location: 0,1, register: R1, value: 42 }');
+    const ok = parseAssertionDirectiveValue(ast, span, 'assert(at=@0,1, reg=R1, equals=42)');
     expect('message' in ok).toBe(false);
     expect((ok as any).cycle).toBe(7);
 
-    expect(parseAssertionDirectiveValue(ast, span, '.assert bad payload')).toMatchObject({
-      message: expect.stringContaining('Invalid .assert directive payload')
+    expect(parseAssertionDirectiveValue(ast, span, 'assert(bad payload)')).toMatchObject({
+      message: expect.stringContaining('Invalid assert(...) payload')
     });
-    expect(parseAssertionDirectiveValue(ast, span, '.assert cycle=0 @-1,0 R1 == 1')).toMatchObject({
-      message: expect.stringContaining('Invalid .assert row')
+    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@-1,0, reg=R1, equals=1, cycle=0)')).toMatchObject({
+      message: expect.stringContaining('Invalid assert row')
     });
-    expect(parseAssertionDirectiveValue(ast, span, '.assert cycle=0 @0,-1 R1 == 1')).toMatchObject({
-      message: expect.stringContaining('Invalid .assert column')
+    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@0,-1, reg=R1, equals=1, cycle=0)')).toMatchObject({
+      message: expect.stringContaining('Invalid assert column')
     });
-    expect(parseAssertionDirectiveValue(ast, span, '.assert cycle=-1 @0,0 R1 == 1')).toMatchObject({
-      message: expect.stringContaining('Invalid .assert cycle')
+    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@0,0, reg=R1, equals=1, cycle=-1)')).toMatchObject({
+      message: expect.stringContaining('Invalid assert cycle')
     });
-    expect(parseAssertionDirectiveValue(ast, span, '.assert cycle=0 @0,0 R1 == nope')).toMatchObject({
-      message: expect.stringContaining('Invalid .assert value')
+    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@0,0, reg=R1, equals=nope, cycle=0)')).toMatchObject({
+      message: expect.stringContaining('Invalid assert value')
     });
   });
 
   it('covers runtime directive artifact failures for io/assert/limit', () => {
     const diagnostics: Diagnostic[] = [];
     const ast: any = {
+      target: { id: 'uma-cgra-base', raw: 'uma-cgra-base', span },
       targetProfileId: 'uma-cgra-base',
       span,
       kernel: {
@@ -74,12 +77,13 @@ describe('branch coverage round 4', () => {
         config: undefined,
         cycles: [],
         pragmas: [],
-        directives: [
-          { kind: 'io_load', name: 'io_load', value: '.io_load nope', span },
-          { kind: 'io_store', name: 'io_store', value: '.io_store ', span },
-          { kind: 'io_store', name: 'io_store', value: '.io_store -1', span },
-          { kind: 'assert', name: 'assert', value: '.assert bad payload', span },
-          { kind: 'limit', name: 'limit', value: '.limit nope', span }
+        directives: [],
+        runtime: [
+          { kind: 'io_load', addresses: ['nope'], raw: 'io.load(nope)', span },
+          { kind: 'io_store', addresses: [], raw: 'io.store()', span },
+          { kind: 'io_store', addresses: ['-1'], raw: 'io.store(-1)', span },
+          { kind: 'assert', at: { row: 'x', col: '0' }, reg: 'R1', equals: '1', raw: 'assert(at=@x,0, reg=R1, equals=1)', span },
+          { kind: 'limit', value: 'nope', raw: 'limit(nope)', span }
         ],
         span
       }

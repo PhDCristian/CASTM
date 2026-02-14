@@ -1,6 +1,6 @@
-import { DirectiveAst, spanAt } from '@openedge/compiler-ir';
+import { DeclarationAst, spanAt } from '@openedge/compiler-ir';
 
-export function parseDirective(clean: string, line: number): DirectiveAst | null {
+export function parseDirective(clean: string, line: number): DeclarationAst | null {
   const letData2d = clean.match(
     /^let\s+([A-Za-z_][A-Za-z0-9_]*)\s*\[\s*([^\]]+)\s*\]\s*\[\s*([^\]]+)\s*\]\s*(?:=\s*\{([\s\S]*)\})?\s*;?\s*$/i
   );
@@ -70,17 +70,6 @@ export function parseDirective(clean: string, line: number): DirectiveAst | null
       kind: 'const',
       name,
       value,
-      span: spanAt(line, 1, clean.length)
-    };
-  }
-
-  const rawDirectiveMatch = clean.match(/^\.(io_load|io_store|limit|assert)\b/i);
-  if (rawDirectiveMatch) {
-    const kind = rawDirectiveMatch[1].toLowerCase() as 'io_load' | 'io_store' | 'limit' | 'assert';
-    return {
-      kind,
-      name: kind,
-      value: clean,
       span: spanAt(line, 1, clean.length)
     };
   }

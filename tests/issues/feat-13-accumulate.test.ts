@@ -31,12 +31,13 @@ kernel "feat13_antidiag" {
   it('supports row and column accumulation modes on NxM grids', () => {
     const rowResult = compile(`
 target "uma-cgra-base";
+build {
+  grid 2x3 mesh;
+}
 kernel "feat13_row" {
   accumulate(pattern=row, products=R1, accum=R4, out=R5, combine=xor);
 }
-`, {
-      grid: { rows: 2, cols: 3, topology: 'mesh' }
-    });
+`);
     expect(rowResult.success).toBe(true);
     const rowCsv = rowResult.artifacts.csv ?? '';
     expect(csvRows(rowCsv)).toHaveLength(18);
@@ -45,12 +46,13 @@ kernel "feat13_row" {
 
     const colResult = compile(`
 target "uma-cgra-base";
+build {
+  grid 3x2 mesh;
+}
 kernel "feat13_col" {
   accumulate(pattern=col, products=R1, accum=R4, out=R5, combine=sub);
 }
-`, {
-      grid: { rows: 3, cols: 2, topology: 'mesh' }
-    });
+`);
     expect(colResult.success).toBe(true);
     const colCsv = colResult.artifacts.csv ?? '';
     expect(csvRows(colCsv)).toHaveLength(18);
@@ -61,23 +63,25 @@ kernel "feat13_col" {
   it('supports explicit steps and validates step limits against grid shape', () => {
     const stepped = compile(`
 target "uma-cgra-base";
+build {
+  grid 2x3 mesh;
+}
 kernel "feat13_steps" {
   accumulate(pattern=row, products=R1, accum=R4, out=R5, combine=xor, steps=2);
 }
-`, {
-      grid: { rows: 2, cols: 3, topology: 'mesh' }
-    });
+`);
     expect(stepped.success).toBe(true);
     expect(stepped.artifacts.mir?.cycles).toHaveLength(4);
 
     const tooDeep = compile(`
 target "uma-cgra-base";
+build {
+  grid 2x3 mesh;
+}
 kernel "feat13_too_deep" {
   accumulate(pattern=row, products=R1, accum=R4, out=R5, steps=8);
 }
-`, {
-      grid: { rows: 2, cols: 3, topology: 'mesh' }
-    });
+`);
     expect(tooDeep.success).toBe(false);
     expect(tooDeep.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
   });

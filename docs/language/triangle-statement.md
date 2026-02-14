@@ -43,7 +43,7 @@ std::triangle(shape=lower, inclusive=false, op=SADD, dest=R3, srcA=R1, srcB=R2);
 ## Executable Snippet
 
 ```dsl
-target "uma-cgra-base";
+target base;
 kernel "triangle_doc" {
   std::triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 }

@@ -52,17 +52,43 @@ export interface CycleAst {
   span: SourceSpan;
 }
 
-export interface DirectiveAst {
-  kind: 'const' | 'alias' | 'data' | 'data2d' | 'io_load' | 'io_store' | 'limit' | 'assert';
+export interface DeclarationAst {
+  kind: 'const' | 'alias' | 'data' | 'data2d';
   name: string;
   value: string;
   span: SourceSpan;
 }
 
-export interface DeclarationAst {
-  kind: 'const' | 'alias' | 'data' | 'data2d' | 'io_load' | 'io_store' | 'limit' | 'assert';
-  name: string;
-  value: string;
+export type DirectiveAst = DeclarationAst;
+
+export interface TargetAst {
+  /**
+   * Canonical profile id when known (`uma-cgra-base`, `uma-cgra-mesh`, ...).
+   * Parser stores the raw token first; resolver may normalize aliases later.
+   */
+  id: string;
+  raw: string;
+  resolvedId?: string;
+  span: SourceSpan;
+}
+
+export type OptimizeLevel = 'O0' | 'O1' | 'O2' | 'O3';
+export type SchedulerMode = 'safe' | 'balanced' | 'aggressive';
+export type SchedulerWindow = number | 'auto';
+export type MemoryReorderPolicy = 'strict' | 'same_address_fence';
+export type BuildTopology = 'torus' | 'mesh';
+
+export interface BuildConfigAst {
+  optimize?: OptimizeLevel;
+  scheduler?: SchedulerMode;
+  schedulerWindow?: SchedulerWindow;
+  memoryReorder?: MemoryReorderPolicy;
+  pruneNoopCycles?: boolean;
+  grid?: {
+    rows: number;
+    cols: number;
+    topology?: BuildTopology;
+  };
   span: SourceSpan;
 }
 
@@ -87,11 +113,52 @@ export interface RuntimeForAst {
 
 export type SpatialStmtAst = CycleStatementAst;
 
+export interface IoLoadStmtAst {
+  kind: 'io_load';
+  addresses: string[];
+  raw: string;
+  span: SourceSpan;
+}
+
+export interface IoStoreStmtAst {
+  kind: 'io_store';
+  addresses: string[];
+  raw: string;
+  span: SourceSpan;
+}
+
+export interface LimitStmtAst {
+  kind: 'limit';
+  value: string;
+  raw: string;
+  span: SourceSpan;
+}
+
+export interface AssertStmtAst {
+  kind: 'assert';
+  at: {
+    row: string;
+    col: string;
+  };
+  reg: string;
+  equals: string;
+  cycle?: string;
+  raw: string;
+  span: SourceSpan;
+}
+
+export type RuntimeStmtAst =
+  | IoLoadStmtAst
+  | IoStoreStmtAst
+  | LimitStmtAst
+  | AssertStmtAst;
+
 export interface KernelAst {
   name: string;
   config?: { mask: number; startAddr: number; span: SourceSpan };
   cycles: CycleAst[];
-  directives: DirectiveAst[];
+  directives: DeclarationAst[];
+  runtime?: RuntimeStmtAst[];
   declarations?: DeclarationAst[];
   pragmas: PragmaAst[];
   advancedStatements?: AdvancedStmtAst[];
@@ -99,7 +166,9 @@ export interface KernelAst {
 }
 
 export interface AstProgram {
+  target?: TargetAst | null;
   targetProfileId: string | null;
+  build?: BuildConfigAst;
   kernel: KernelAst | null;
   span: SourceSpan;
 }
@@ -169,13 +238,16 @@ export type StructuredKernelStmtAst =
 export interface StructuredKernelAst {
   name: string;
   config?: { mask: number; startAddr: number; span: SourceSpan };
-  directives: DirectiveAst[];
+  directives: DeclarationAst[];
+  runtime?: RuntimeStmtAst[];
   body: StructuredKernelStmtAst[];
   span: SourceSpan;
 }
 
 export interface StructuredProgramAst {
+  target?: TargetAst | null;
   targetProfileId: string | null;
+  build?: BuildConfigAst;
   kernel: StructuredKernelAst | null;
   functions: StructuredFunctionDefAst[];
   span: SourceSpan;

@@ -20,12 +20,14 @@ import { runSemanticChecker } from '../packages/compiler-api/src/compiler-driver
 function makeAst(): AstProgram {
   const span = spanAt(1, 1, 1);
   return {
+    target: { id: 'uma-cgra-base', raw: 'uma-cgra-base', span },
     targetProfileId: 'uma-cgra-base',
     span,
     kernel: {
       name: 'k',
       cycles: [{ index: 0, label: 'L0', statements: [], span }],
       directives: [],
+      runtime: [],
       pragmas: [],
       span
     }
@@ -83,11 +85,21 @@ describe('compiler-api compiler-driver modules', () => {
     const ast = makeAst();
     ast.kernel!.directives.push(
       { kind: 'const', name: 'MASK', value: '0xFFFF', span: spanAt(2, 1, 1) },
-      { kind: 'alias', name: 'acc', value: 'R1', span: spanAt(3, 1, 1) },
-      { kind: 'io_load', name: 'io_load', value: '.io_load 100, 104', span: spanAt(4, 1, 1) },
-      { kind: 'io_store', name: 'io_store', value: '.io_store 200', span: spanAt(5, 1, 1) },
-      { kind: 'limit', name: 'limit', value: '.limit 12', span: spanAt(6, 1, 1) },
-      { kind: 'assert', name: 'assert', value: '.assert cycle=0 @0,0 R1 == 42', span: spanAt(7, 1, 1) }
+      { kind: 'alias', name: 'acc', value: 'R1', span: spanAt(3, 1, 1) }
+    );
+    ast.kernel!.runtime!.push(
+      { kind: 'io_load', addresses: ['100', '104'], raw: 'io.load(100, 104)', span: spanAt(4, 1, 1) },
+      { kind: 'io_store', addresses: ['200'], raw: 'io.store(200)', span: spanAt(5, 1, 1) },
+      { kind: 'limit', value: '12', raw: 'limit(12)', span: spanAt(6, 1, 1) },
+      {
+        kind: 'assert',
+        at: { row: '0', col: '0' },
+        reg: 'R1',
+        equals: '42',
+        cycle: '0',
+        raw: 'assert(at=@0,0, reg=R1, equals=42, cycle=0)',
+        span: spanAt(7, 1, 1)
+      }
     );
 
     const diagnostics: Diagnostic[] = [];
@@ -103,23 +115,21 @@ describe('compiler-api compiler-driver modules', () => {
     expect(runtime.symbols.labels.L0).toBe(0);
   });
 
-  it('resolves grid from options/target profile and validates dimensions', () => {
+  it('resolves grid from target/build and validates dimensions', () => {
     const ast = makeAst();
     const diagnostics: Diagnostic[] = [];
 
-    const resolved = resolveGrid(ast, {}, diagnostics);
+    const resolved = resolveGrid(ast, diagnostics);
     expect(resolved).not.toBeNull();
     expect(resolved?.targetProfileId).toBe('uma-cgra-base');
     expect(resolved?.grid.rows).toBeGreaterThan(0);
 
+    ast.build = {
+      grid: { rows: 0, cols: 4, topology: 'torus' },
+      span: spanAt(1, 1, 1)
+    };
     const badDiagnostics: Diagnostic[] = [];
-    const bad = resolveGrid(ast, {
-      grid: {
-        rows: 0,
-        cols: 4,
-        topology: 'torus'
-      }
-    }, badDiagnostics);
+    const bad = resolveGrid(ast, badDiagnostics);
     expect(bad).toBeNull();
     expect(badDiagnostics.some((d) => d.code === ErrorCodes.Semantic.InvalidGridSpec)).toBe(true);
   });

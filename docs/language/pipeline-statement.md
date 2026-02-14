@@ -29,12 +29,12 @@ c(y,z);
 Expansion happens before function-body lowering, so label hygiene and existing function expansion rules remain unchanged.
 
 After expansion, normal scheduler compaction rules still apply.  
-This means independent stage placements may be packed into fewer cycles depending on `schedulerMode` / `schedulerWindow`.
+Independent stage placements may be packed into fewer cycles depending on source `build { ... }` settings (`optimize`, `scheduler`, `scheduler_window`).
 
 ## Example
 
 ```dsl
-target "uma-cgra-base";
+target base;
 
 function stage_load(src) {
   cycle { @0,0: SADD R2, src, ZERO; }

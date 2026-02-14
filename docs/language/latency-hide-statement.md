@@ -17,7 +17,7 @@ Accepted values:
 
 `std::latency_hide(...)` runs as a deterministic post-expansion scheduler.
 
-Packing is placement-level inside a bounded lookahead window (`schedulerWindow`), not only full-cycle merge.
+Packing is placement-level inside a bounded lookahead window (`scheduler_window` from `build { ... }`), not only full-cycle merge.
 
 Placements are moved earlier only when all conditions hold:
 
@@ -47,7 +47,7 @@ The second cycle is compacted into the first one when hazards are absent.
 ## Executable Snippet
 
 ```dsl
-target "uma-cgra-base";
+target base;
 kernel "latency_hide_doc" {
   std::latency_hide(window=1, mode=conservative);
   cycle { at row 1: SMUL R2, R0, R1; }

@@ -98,12 +98,14 @@ afterEach(() => {
 
 function makeAst(overrides: Partial<AstProgram> = {}): AstProgram {
   return {
+    target: { id: 'uma-cgra-base', raw: 'uma-cgra-base', span },
     targetProfileId: 'uma-cgra-base',
     span,
     kernel: {
       name: 'k',
       config: undefined,
       directives: [],
+      runtime: [],
       pragmas: [],
       cycles: [],
       span
@@ -135,9 +137,9 @@ describe('branch coverage round 9 - compiler api helpers', () => {
 
   it('covers runtime directive fallback branches and symbol continues', () => {
     const ast = makeAst();
-    ast.kernel!.directives.push(
-      { kind: 'limit', name: 'limit', value: '.limit', span },
-      { kind: 'io_load', name: 'io_load', value: '.io_load -1', span }
+    ast.kernel!.runtime!.push(
+      { kind: 'limit', value: '', raw: 'limit()', span },
+      { kind: 'io_load', addresses: ['-1'], raw: 'io.load(-1)', span }
     );
     const diagnostics: any[] = [];
     const symbols = createEmptySymbolCollections();
@@ -164,10 +166,9 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     const checked = runSemanticChecker({ targetProfileId: 'uma-cgra-base', kernel: null, span } as AstProgram, diagnostics);
     expect(checked.loweredPasses).toContain('semantic-checker');
 
-    const resolved = resolveGrid(makeAst(), {
-      targetProfile: 'uma-cgra-base',
-      grid: { rows: 2, cols: 2, topology: 'mesh' }
-    }, diagnostics);
+    const ast = makeAst();
+    ast.build = { grid: { rows: 2, cols: 2, topology: 'mesh' }, span };
+    const resolved = resolveGrid(ast, diagnostics);
     expect(resolved?.grid.wrapPolicy).toBe('clamp');
   });
 
@@ -188,10 +189,10 @@ describe('branch coverage round 9 - compiler api helpers', () => {
       }
     };
 
-    const a = parseAssertionDirectiveValue(ast, spanAt(1, 1, 1), '.assert @0,0: R1 == 1');
+    const a = parseAssertionDirectiveValue(ast, spanAt(1, 1, 1), 'assert(at=@0,0, reg=R1, equals=1)');
     expect('cycle' in a && a.cycle).toBe(13);
 
-    const b = parseAssertionDirectiveValue(ast, spanAt(15, 1, 1), '.assert @0,0: R1 == 1');
+    const b = parseAssertionDirectiveValue(ast, spanAt(15, 1, 1), 'assert(at=@0,0, reg=R1, equals=1)');
     expect('cycle' in b && b.cycle).toBe(9);
   });
 
@@ -396,11 +397,35 @@ describe('branch coverage round 9 - compiler api helpers', () => {
       };
     });
     const { analyze } = await import('../packages/compiler-api/src/compiler-driver/analyze-driver.js');
-    const result = analyze(
-      makeAst({ kernel: { ...makeAst().kernel!, cycles: [{ index: 0, span, statements: [] }] } }),
-      { schedulerWindow: 0 }
-    );
-    expect(result.diagnostics.some((d) => d.message.includes('.limit'))).toBe(true);
+    const ast = makeAst({
+      build: {
+        optimize: 'O0',
+        scheduler: 'safe',
+        schedulerWindow: 0,
+        pruneNoopCycles: false,
+        span
+      },
+      kernel: {
+        ...makeAst().kernel!,
+        cycles: [
+          {
+            index: 0,
+            span,
+            statements: [
+              {
+                kind: 'at',
+                row: 0,
+                col: 0,
+                instruction: createInstruction('NOP', [], span),
+                span
+              }
+            ]
+          }
+        ]
+      }
+    });
+    const result = analyze(ast);
+    expect(result.diagnostics.some((d) => d.message.includes('limit(...)'))).toBe(true);
   });
 
   it('covers expand-pragmas missing branches with mocked registry sets', async () => {
@@ -455,7 +480,7 @@ describe('branch coverage round 9 - compiler front helpers', () => {
     expect(empty.program.span.endColumn).toBe(1);
 
     const headers = parseProgramHeadersFromTokens('target x; kernel "k" { }');
-    expect(headers.targetProfileId).toBeNull();
+    expect(headers.targetProfileId).toBe('x');
   });
 
   it('covers statement parser stop branches and matcher guards', () => {
@@ -464,7 +489,7 @@ describe('branch coverage round 9 - compiler front helpers', () => {
     const out = parseStructuredStatements(entries as any, { value: 0 }, diagnostics);
     expect(out.length).toBe(1);
 
-    expect(shouldSkipStructuredLine('.assert @0,0: R1 == 1')).toBe(true);
+    expect(shouldSkipStructuredLine('assert(at=@0,0, reg=R1, equals=1)')).toBe(true);
     expect(parseFunctionCall('route(a=b)')).toBeNull();
     expect(parseFunctionCall('if(x)')).toBeNull();
   });

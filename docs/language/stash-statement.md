@@ -49,7 +49,7 @@ std::stash(action=save, reg=R4, addr=360, target=all);
 ## Executable Snippet
 
 ```dsl
-target "uma-cgra-base";
+target base;
 let L @360 = { 0, 0, 0, 0 };
 kernel "stash_doc" {
   std::stash(action=save, reg=R0, addr=L[0], target=point(3,0));

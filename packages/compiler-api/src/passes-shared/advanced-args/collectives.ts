@@ -89,20 +89,20 @@ function defaultMaskForWidth(width: number): number | null {
 
 function parseMulaccTarget(value: string): MulaccChainPragmaArgs['target'] | null {
   const normalized = value.trim();
-  if (normalized.toLowerCase() === 'all') return { kind: 'all' };
+  if (normalized.toLowerCase() === 'all') return { kind: 'all' as const };
 
   const rowMatch = normalized.match(/^row\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
   if (rowMatch) {
     const index = parseIntegerLiteral(rowMatch[1]);
     if (index === null) return null;
-    return { kind: 'row', index };
+    return { kind: 'row' as const, index };
   }
 
   const colMatch = normalized.match(/^col\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
   if (colMatch) {
     const index = parseIntegerLiteral(colMatch[1]);
     if (index === null) return null;
-    return { kind: 'col', index };
+    return { kind: 'col' as const, index };
   }
 
   return null;
@@ -143,8 +143,12 @@ export function parseMulaccChainPragmaArgs(text: string): MulaccChainPragmaArgs 
   if (mask === null) return null;
 
   const lanesRaw = args.get('lanes');
-  const lanes = lanesRaw ? parseIntegerLiteral(lanesRaw) : undefined;
-  if (lanes !== undefined && lanes <= 0) return null;
+  let lanes: number | undefined;
+  if (lanesRaw !== undefined) {
+    const parsedLanes = parseIntegerLiteral(lanesRaw);
+    if (parsedLanes === null || parsedLanes <= 0) return null;
+    lanes = parsedLanes;
+  }
 
   return {
     srcReg,
@@ -323,8 +327,14 @@ export function parseAccumulatePragmaArgs(text: string): AccumulatePragmaArgs | 
   }
 
   const scopeRaw = args.get('scope');
-  const scope = scopeRaw ? parseAccumulateScope(scopeRaw) : { kind: 'all' };
-  if (!scope) return null;
+  let scope: AccumulatePragmaArgs['scope'];
+  if (scopeRaw !== undefined) {
+    const parsedScope = parseAccumulateScope(scopeRaw);
+    if (!parsedScope) return null;
+    scope = parsedScope;
+  } else {
+    scope = { kind: 'all' as const };
+  }
 
   return {
     pattern,
@@ -340,17 +350,17 @@ export function parseAccumulatePragmaArgs(text: string): AccumulatePragmaArgs | 
 function parseConditionalSubTarget(value: string): ConditionalSubPragmaArgs['target'] | null {
   const normalized = value.trim();
   if (normalized.toLowerCase() === 'all') {
-    return { kind: 'all' };
+    return { kind: 'all' as const };
   }
 
   const rowMatch = normalized.match(/^row\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
   if (rowMatch) {
-    return { kind: 'row', index: Number(rowMatch[1]) };
+    return { kind: 'row' as const, index: Number(rowMatch[1]) };
   }
 
   const colMatch = normalized.match(/^col\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
   if (colMatch) {
-    return { kind: 'col', index: Number(colMatch[1]) };
+    return { kind: 'col' as const, index: Number(colMatch[1]) };
   }
 
   const pointMatch = normalized.match(/^point\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*,\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);

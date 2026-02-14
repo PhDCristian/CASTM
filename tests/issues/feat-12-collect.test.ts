@@ -46,18 +46,15 @@ kernel "feat12_shift_add" {
   it('supports column collection in NxM grids', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  grid 3x5 mesh;
+}
 kernel "feat12_col_xor" {
   collect(from=col(2), to=col(1), via=RCR, local=R4, into=R5, combine=xor);
 }
 `;
 
-    const result = compile(source, {
-      grid: {
-        rows: 3,
-        cols: 5,
-        topology: 'mesh'
-      }
-    });
+    const result = compile(source);
 
     expect(result.success).toBe(true);
     const lines = csvRows(result.artifacts.csv ?? '');

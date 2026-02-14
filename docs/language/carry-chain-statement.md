@@ -48,7 +48,7 @@ std::carry_chain(src=R4, carry=R5, store=L, limbs=2, width=8, mask=255, row=1, s
 ## Executable Snippet
 
 ```dsl
-target "uma-cgra-base";
+target base;
 let L = { 0, 0, 0, 0 };
 kernel "carry_chain_doc" {
   std::carry_chain(src=R0, carry=R3, store=L, limbs=3, width=16, row=0);

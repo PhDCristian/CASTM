@@ -7,8 +7,7 @@ import {
   SourceSpan,
   makeDiagnostic
 } from '@openedge/compiler-ir';
-import { parseAssertionDirectiveValue } from '../assertions.js';
-import { parseNumericList, parseNumericLiteral } from '../numbers.js';
+import { parseNumericLiteral } from '../numbers.js';
 import { SymbolCollections } from './symbols.js';
 
 export interface RuntimeDirectiveArtifacts {
@@ -28,29 +27,39 @@ export function collectDirectiveArtifacts(
   let cycleLimitSpan: SourceSpan | undefined;
   const assertions: AssertionInfo[] = [];
 
-  const directives = ast.kernel?.directives ?? [];
-  for (const directive of directives) {
-    if (directive.kind === 'const') {
-      symbols.constants[directive.name] = directive.value;
+  const declarations = ast.kernel?.directives ?? [];
+  for (const declaration of declarations) {
+    if (declaration.kind === 'const') {
+      symbols.constants[declaration.name] = declaration.value;
       continue;
     }
 
-    if (directive.kind === 'alias') {
-      symbols.aliases[directive.name] = directive.value;
+    if (declaration.kind === 'alias') {
+      symbols.aliases[declaration.name] = declaration.value;
       continue;
     }
+  }
 
-    if (directive.kind === 'io_load' || directive.kind === 'io_store') {
-      const payloadMatch = directive.value.match(/^\.io_(?:load|store)\s+(.+)$/i);
-      const payload = payloadMatch ? payloadMatch[1].trim() : '';
-      const parsed = parseNumericList(payload);
-      if (parsed === null) {
+  const runtimeStatements = ast.kernel?.runtime ?? [];
+  for (const statement of runtimeStatements) {
+    if (statement.kind === 'io_load' || statement.kind === 'io_store') {
+      const parsed: number[] = [];
+      let invalidAddress: string | null = null;
+      for (const address of statement.addresses) {
+        const numeric = parseNumericLiteral(address);
+        if (numeric === null || !Number.isInteger(numeric)) {
+          invalidAddress = address;
+          break;
+        }
+        parsed.push(numeric);
+      }
+      if (invalidAddress !== null) {
         diagnostics.push(makeDiagnostic(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
-          directive.span,
-          `Invalid ${directive.kind} directive payload '${payload}'.`,
-          'Expected numeric addresses separated by commas or spaces.'
+          statement.span,
+          `Invalid ${statement.kind === 'io_load' ? 'io.load' : 'io.store'} address '${invalidAddress}'.`,
+          'Expected integer addresses (decimal or hex).'
         ));
         continue;
       }
@@ -58,9 +67,9 @@ export function collectDirectiveArtifacts(
         diagnostics.push(makeDiagnostic(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
-          directive.span,
-          `Invalid ${directive.kind} directive payload '${payload}'.`,
-          'Expected at least one address: .io_load 100, 104'
+          statement.span,
+          `Invalid ${statement.kind === 'io_load' ? 'io.load' : 'io.store'} statement.`,
+          `Expected at least one address: ${statement.kind === 'io_load' ? 'io.load(100, 104)' : 'io.store(200)'}`
         ));
         continue;
       }
@@ -68,14 +77,14 @@ export function collectDirectiveArtifacts(
         diagnostics.push(makeDiagnostic(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
-          directive.span,
-          `Invalid ${directive.kind} directive payload '${payload}'.`,
+          statement.span,
+          `Invalid ${statement.kind === 'io_load' ? 'io.load' : 'io.store'} addresses.`,
           'I/O addresses must be non-negative integers.'
         ));
         continue;
       }
 
-      if (directive.kind === 'io_load') {
+      if (statement.kind === 'io_load') {
         ioConfig.loadAddrs.push(...parsed);
       } else {
         ioConfig.storeAddrs.push(...parsed);
@@ -83,48 +92,96 @@ export function collectDirectiveArtifacts(
       continue;
     }
 
-    if (directive.kind === 'assert') {
-      const parsedAssertion = parseAssertionDirectiveValue(ast, directive.span, directive.value);
-      if ('message' in parsedAssertion) {
+    if (statement.kind === 'assert') {
+      const row = parseNumericLiteral(statement.at.row);
+      const col = parseNumericLiteral(statement.at.col);
+      const value = parseNumericLiteral(statement.equals);
+      const cycle = statement.cycle !== undefined
+        ? parseNumericLiteral(statement.cycle)
+        : undefined;
+
+      if (row === null || !Number.isInteger(row) || row < 0) {
         diagnostics.push(makeDiagnostic(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
-          directive.span,
-          parsedAssertion.message,
-          parsedAssertion.hint
+          statement.span,
+          `Invalid assert row '${statement.at.row}'.`,
+          'Assert row must be a non-negative integer.'
+        ));
+        continue;
+      }
+
+      if (col === null || !Number.isInteger(col) || col < 0) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          statement.span,
+          `Invalid assert col '${statement.at.col}'.`,
+          'Assert col must be a non-negative integer.'
+        ));
+        continue;
+      }
+
+      if (!/^(?:R\d+|ROUT|ZERO|RC[A-Z]+)$/i.test(statement.reg)) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          statement.span,
+          `Invalid assert register '${statement.reg}'.`,
+          'Use a valid register (for example R0, R1, R2, R3, ROUT, ZERO).'
+        ));
+        continue;
+      }
+
+      if (value === null || !Number.isInteger(value)) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          statement.span,
+          `Invalid assert equals value '${statement.equals}'.`,
+          'Assert equals must be an integer literal (decimal or hex).'
+        ));
+        continue;
+      }
+
+      if (cycle !== undefined && (cycle === null || !Number.isInteger(cycle) || cycle < 0)) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          statement.span,
+          `Invalid assert cycle '${statement.cycle}'.`,
+          'Assert cycle must be a non-negative integer when provided.'
         ));
         continue;
       }
 
       assertions.push({
-        cycle: parsedAssertion.cycle,
-        row: parsedAssertion.row,
-        col: parsedAssertion.col,
-        register: parsedAssertion.register,
-        value: parsedAssertion.value,
-        raw: directive.value,
-        span: { ...directive.span }
+        ...(cycle !== undefined ? { cycle } : {}),
+        row,
+        col,
+        register: statement.reg,
+        value,
+        raw: statement.raw,
+        span: { ...statement.span }
       });
       continue;
     }
 
-    if (directive.kind === 'limit') {
-      const payloadMatch = directive.value.match(/^\.limit\s*(?:=\s*)?(.+)$/i);
-      const payload = payloadMatch ? payloadMatch[1].trim() : '';
-      const parsed = parseNumericLiteral(payload);
+    if (statement.kind === 'limit') {
+      const parsed = parseNumericLiteral(statement.value);
       if (parsed === null || parsed < 0 || !Number.isInteger(parsed)) {
         diagnostics.push(makeDiagnostic(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
-          directive.span,
-          `Invalid .limit directive payload '${payload}'.`,
-          'Expected a non-negative integer: .limit 100'
+          statement.span,
+          `Invalid limit(...) payload '${statement.value}'.`,
+          'Expected a non-negative integer: limit(100)'
         ));
         continue;
       }
 
       cycleLimit = parsed;
-      cycleLimitSpan = { ...directive.span };
+      cycleLimitSpan = { ...statement.span };
     }
   }
 

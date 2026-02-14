@@ -47,7 +47,7 @@ std::extract_bytes(src=R2, dest=R3, axis=row, byteWidth=4, mask=15);
 ## Executable Snippet
 
 ```dsl
-target "uma-cgra-base";
+target base;
 kernel "extract_doc" {
   std::extract_bytes(src=R0, dest=R1, axis=col);
 }

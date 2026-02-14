@@ -85,7 +85,7 @@ std::accumulate(pattern=row, products=R1, accum=R4, out=R5, scope=row(1));
 ## Executable Snippet
 
 ```dsl
-target "uma-cgra-base";
+target base;
 kernel "accumulate_doc" {
   std::accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
 }

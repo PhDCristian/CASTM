@@ -6,6 +6,10 @@ describe('issues/BUG-7 computed loop coordinates', () => {
   it('compiles variable coordinates inside canonical for loops', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+  prune_noop_cycles off;
+}
 kernel "bug7_var_coords" {
   for i in range(4) {
     cycle { @0,i: NOP; }
@@ -24,6 +28,10 @@ kernel "bug7_var_coords" {
   it('compiles computed coordinates inside canonical for loops', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+  prune_noop_cycles off;
+}
 kernel "bug7_expr_coords" {
   for k in range(16) {
     cycle { @k/4,k%4: NOP; }
@@ -42,6 +50,10 @@ kernel "bug7_expr_coords" {
   it('rejects unresolved computed coordinates outside expansion context', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+  prune_noop_cycles off;
+}
 kernel "bug7_unresolved" {
   cycle { @0,i: NOP; }
 }

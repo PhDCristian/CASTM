@@ -57,14 +57,15 @@ function buildLanePlacements(
   diagnostics: Diagnostic[]
 ): LanePlacement[] | null {
   const placements: LanePlacement[] = [];
+  const target = pragma.target;
 
-  if (pragma.target.kind === 'row') {
-    if (!inBounds(pragma.target.index, grid.rows)) {
+  if (target.kind === 'row') {
+    if (!inBounds(target.index, grid.rows)) {
       diagnostics.push(makeDiagnostic(
         ErrorCodes.Semantic.CoordinateOutOfBounds,
         'error',
         span,
-        `mulacc_chain target row(${pragma.target.index}) is out of bounds for ${grid.rows}x${grid.cols} grid.`,
+        `mulacc_chain target row(${target.index}) is out of bounds for ${grid.rows}x${grid.cols} grid.`,
         `Use row index in range [0, ${Math.max(0, grid.rows - 1)}].`
       ));
       return null;
@@ -94,7 +95,7 @@ function buildLanePlacements(
     const orderedCols = buildOrderedIndices(grid.cols, pragma.direction).slice(0, laneCount);
     orderedCols.forEach((col, lane) => {
       placements.push({
-        row: pragma.target.index,
+        row: target.index,
         col,
         boundary: lane === 0
       });
@@ -102,13 +103,13 @@ function buildLanePlacements(
     return placements;
   }
 
-  if (pragma.target.kind === 'col') {
-    if (!inBounds(pragma.target.index, grid.cols)) {
+  if (target.kind === 'col') {
+    if (!inBounds(target.index, grid.cols)) {
       diagnostics.push(makeDiagnostic(
         ErrorCodes.Semantic.CoordinateOutOfBounds,
         'error',
         span,
-        `mulacc_chain target col(${pragma.target.index}) is out of bounds for ${grid.rows}x${grid.cols} grid.`,
+        `mulacc_chain target col(${target.index}) is out of bounds for ${grid.rows}x${grid.cols} grid.`,
         `Use col index in range [0, ${Math.max(0, grid.cols - 1)}].`
       ));
       return null;
@@ -139,7 +140,7 @@ function buildLanePlacements(
     orderedRows.forEach((row, lane) => {
       placements.push({
         row,
-        col: pragma.target.index,
+        col: target.index,
         boundary: lane === 0
       });
     });

@@ -40,7 +40,7 @@ describe('docs pragmas contract', () => {
       const hasFailFence = /```openedge-fail\b[\s\S]*?```/im.test(content);
       const hasFailInclude = /^\s*<<<\s+.+\{openedge-fail\}.+$/gim.test(content);
       expect(hasFailFence || hasFailInclude, `missing invalid snippet in ${page}`).toBe(true);
-      expect(content, `missing target mention in ${page}`).toMatch(/target\s+"uma-cgra-base"/i);
+      expect(content, `missing target mention in ${page}`).toMatch(/target\s+base|target\s+"uma-cgra-base"/i);
       expect(content, `missing related examples link in ${page}`).toMatch(/\]\(\/examples\//);
     }
   });

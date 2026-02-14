@@ -6,6 +6,10 @@ describe('issues/FEAT-8 range coordinate syntax', () => {
   it('expands horizontal ranges in a cycle statement', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+  prune_noop_cycles off;
+}
 kernel "feat8_horizontal" {
   cycle {
     @0,0..3: NOP;
@@ -25,6 +29,10 @@ kernel "feat8_horizontal" {
   it('expands vertical ranges in a cycle statement', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+  prune_noop_cycles off;
+}
 kernel "feat8_vertical" {
   cycle {
     @0..3,2: NOP;
@@ -63,6 +71,10 @@ kernel "feat8_rect" {
   it('supports descending ranges with inclusive expansion', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+  prune_noop_cycles off;
+}
 kernel "feat8_descending" {
   cycle {
     @0,3..1: NOP;
@@ -81,6 +93,10 @@ kernel "feat8_descending" {
   it('supports range syntax with loop-bound coordinates inside cycle scope', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+  prune_noop_cycles off;
+}
 kernel "feat8_loop_bound" {
   for r in range(2) {
     cycle {
@@ -102,6 +118,10 @@ kernel "feat8_loop_bound" {
   it('rejects unresolved range coordinates outside expansion context', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+  prune_noop_cycles off;
+}
 kernel "feat8_invalid_unresolved" {
   cycle {
     @r,0..1: NOP;
@@ -117,6 +137,10 @@ kernel "feat8_invalid_unresolved" {
   it('preserves unresolved non-range axis when paired with a range', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  scheduler safe;
+  prune_noop_cycles off;
+}
 kernel "feat8_unresolved_axis" {
   cycle {
     @0..1,c: NOP;

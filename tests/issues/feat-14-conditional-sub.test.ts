@@ -30,12 +30,13 @@ kernel "feat14_all" {
   it('supports row/point targets for localized conditional subtraction', () => {
     const rowResult = compile(`
 target "uma-cgra-base";
+build {
+  grid 3x5 mesh;
+}
 kernel "feat14_row" {
   conditional_sub(value=R4, sub=R5, dest=R6, target=row(1));
 }
-`, {
-      grid: { rows: 3, cols: 5, topology: 'mesh' }
-    });
+`);
     expect(rowResult.success).toBe(true);
     const rowCsv = rowResult.artifacts.csv ?? '';
     expect(csvRows(rowCsv)).toHaveLength(10);
@@ -45,12 +46,13 @@ kernel "feat14_row" {
 
     const pointResult = compile(`
 target "uma-cgra-base";
+build {
+  grid 3x5 mesh;
+}
 kernel "feat14_point" {
   conditional_sub(value=R7, sub=R1, dest=R0, target=point(1,2));
 }
-`, {
-      grid: { rows: 3, cols: 5, topology: 'mesh' }
-    });
+`);
     expect(pointResult.success).toBe(true);
     const pointCsv = pointResult.artifacts.csv ?? '';
     expect(csvRows(pointCsv)).toHaveLength(2);

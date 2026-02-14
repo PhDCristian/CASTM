@@ -47,7 +47,7 @@ std::conditional_sub(value=R7, sub=R1, dest=R0, target=point(1,2));
 ## Executable Snippet
 
 ```dsl
-target "uma-cgra-base";
+target base;
 kernel "conditional_sub_doc" {
   std::conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
 }

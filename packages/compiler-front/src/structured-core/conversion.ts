@@ -101,6 +101,7 @@ function lowerStructuredBodyWithExpansionKernel(
     name: kernel.name,
     config: kernel.config,
     directives: kernel.directives,
+    runtime: kernel.runtime ?? [],
     pragmas: [],
     cycles: [],
     span: kernel.span
@@ -150,6 +151,8 @@ export function toStructuredProgramAst(ast: AstProgram): StructuredProgramAst {
   if (!cloned.kernel) {
     return {
       targetProfileId: cloned.targetProfileId,
+      target: cloned.target,
+      ...(cloned.build ? { build: cloned.build } : {}),
       kernel: null,
       functions: [],
       span: cloned.span
@@ -181,10 +184,13 @@ export function toStructuredProgramAst(ast: AstProgram): StructuredProgramAst {
 
   return {
     targetProfileId: cloned.targetProfileId,
+    target: cloned.target,
+    ...(cloned.build ? { build: cloned.build } : {}),
     kernel: {
       name: cloned.kernel.name,
       config: cloned.kernel.config,
       directives: cloned.kernel.directives,
+      runtime: cloned.kernel.runtime ?? [],
       body,
       span: cloned.kernel.span
     },
@@ -204,6 +210,8 @@ export function lowerStructuredProgramToAstDetailed(
     return {
       ast: {
         targetProfileId: structured.targetProfileId,
+        target: structured.target,
+        ...(structured.build ? { build: structured.build } : {}),
         kernel: null,
         span: structured.span
       },
@@ -216,6 +224,8 @@ export function lowerStructuredProgramToAstDetailed(
   return {
     ast: {
       targetProfileId: structured.targetProfileId,
+      target: structured.target,
+      ...(structured.build ? { build: structured.build } : {}),
       kernel: lowered.kernel,
       span: structured.span
     },

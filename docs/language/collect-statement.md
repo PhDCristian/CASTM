@@ -47,7 +47,7 @@ std::collect(from=col(2), to=col(1), via=RCR, local=R4, into=R5, combine=xor);
 ## Executable Snippet
 
 ```dsl
-target "uma-cgra-base";
+target base;
 kernel "collect_doc" {
   std::collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
 }

@@ -49,33 +49,27 @@ kernel "feat6_lower_exclusive" {
   it('uses current grid dimensions (NxM) when expanding the pattern', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  grid 2x4 mesh;
+}
 kernel "feat6_nxm" {
   triangle(shape=upper, inclusive=true, op=NOP);
 }
 `;
 
-    const result = compile(source, {
-      grid: {
-        rows: 2,
-        cols: 4,
-        topology: 'mesh'
-      }
-    });
+    const result = compile(source);
     expect(result.success).toBe(false);
 
     const fixedSource = `
 target "uma-cgra-base";
+build {
+  grid 2x4 mesh;
+}
 kernel "feat6_nxm_fixed" {
   triangle(shape=upper, inclusive=true, op=SADD, dest=R1, srcA=R0, srcB=ZERO);
 }
 `;
-    const fixed = compile(fixedSource, {
-      grid: {
-        rows: 2,
-        cols: 4,
-        topology: 'mesh'
-      }
-    });
+    const fixed = compile(fixedSource);
 
     expect(fixed.success).toBe(true);
     const csv = fixed.artifacts.csv ?? '';

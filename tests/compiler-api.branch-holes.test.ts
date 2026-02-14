@@ -48,6 +48,7 @@ function makeCycle(index: number, text = 'NOP') {
 
 function makeAst(cycleCount = 1, targetProfileId: string | null = 'uma-cgra-base'): AstProgram {
   return {
+    target: targetProfileId ? { id: targetProfileId, raw: targetProfileId, span } : null,
     targetProfileId,
     span,
     kernel: {
@@ -56,6 +57,7 @@ function makeAst(cycleCount = 1, targetProfileId: string | null = 'uma-cgra-base
       cycles: Array.from({ length: cycleCount }, (_, index) => makeCycle(index)),
       pragmas: [],
       directives: [],
+      runtime: [],
       span
     }
   };
@@ -77,12 +79,18 @@ describe('compiler-api branch holes', () => {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.MissingTarget)).toBe(true);
   });
 
-  it('analyze enforces .limit after lowering', () => {
+  it('analyze enforces limit(...) after lowering', () => {
     const ast = makeAst(2, 'uma-cgra-base');
-    ast.kernel!.directives.push({
+    ast.build = {
+      optimize: 'O0',
+      scheduler: 'safe',
+      pruneNoopCycles: false,
+      span
+    };
+    ast.kernel!.runtime!.push({
       kind: 'limit',
-      name: 'limit',
-      value: '.limit 1',
+      value: '1',
+      raw: 'limit(1)',
       span
     });
 
@@ -90,7 +98,7 @@ describe('compiler-api branch holes', () => {
     expect(result.success).toBe(false);
     expect(result.diagnostics.some((d) =>
       d.code === ErrorCodes.Semantic.UnsupportedOperation
-      && d.message.includes('.limit')
+      && d.message.includes('limit(...)')
     )).toBe(true);
   });
 

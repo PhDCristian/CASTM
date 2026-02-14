@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { compile } from '@openedge/compiler-api';
 
 describe('FEAT-19 scheduler modes', () => {
-  const source = `
+  const baseKernel = `
 target "uma-cgra-base";
 kernel "scheduler_modes" {
   cycle { at @0,0: SADD R1, R0, 1; }
@@ -11,8 +11,16 @@ kernel "scheduler_modes" {
 `;
 
   it('keeps deterministic output for same mode and input', () => {
-    const first = compile(source, { schedulerMode: 'aggressive' });
-    const second = compile(source, { schedulerMode: 'aggressive' });
+    const source = `
+target "uma-cgra-base";
+build { scheduler aggressive; }
+kernel "scheduler_modes" {
+  cycle { at @0,0: SADD R1, R0, 1; }
+  cycle { at @0,1: SADD R2, R0, 1; }
+}
+`;
+    const first = compile(source);
+    const second = compile(source);
 
     expect(first.success).toBe(true);
     expect(second.success).toBe(true);
@@ -21,23 +29,51 @@ kernel "scheduler_modes" {
     expect(first.stats.loweredPasses).toContain('scheduler:aggressive');
   });
 
-  it('uses safe mode by default and matches explicit safe behavior', () => {
-    const implicit = compile(source);
-    const explicit = compile(source, { schedulerMode: 'safe' });
+  it('uses balanced mode by default (O2) and matches explicit balanced behavior', () => {
+    const implicit = compile(baseKernel);
+    const explicit = compile(`
+target "uma-cgra-base";
+build { scheduler balanced; }
+kernel "scheduler_modes" {
+  cycle { at @0,0: SADD R1, R0, 1; }
+  cycle { at @0,1: SADD R2, R0, 1; }
+}
+`);
 
     expect(implicit.success).toBe(true);
     expect(explicit.success).toBe(true);
-    expect(implicit.stats.schedulerMode).toBe('safe');
-    expect(explicit.stats.schedulerMode).toBe('safe');
+    expect(implicit.stats.schedulerMode).toBe('balanced');
+    expect(explicit.stats.schedulerMode).toBe('balanced');
     expect(implicit.artifacts.csv).toBe(explicit.artifacts.csv);
-    expect(implicit.stats.loweredPasses).not.toContain('scheduler:balanced');
+    expect(implicit.stats.loweredPasses).toContain('scheduler:balanced');
     expect(implicit.stats.loweredPasses).not.toContain('scheduler:aggressive');
   });
 
   it('keeps observable instruction workload while allowing cycle compaction', () => {
-    const safe = compile(source, { schedulerMode: 'safe' });
-    const balanced = compile(source, { schedulerMode: 'balanced' });
-    const aggressive = compile(source, { schedulerMode: 'aggressive' });
+    const safe = compile(`
+target "uma-cgra-base";
+build { scheduler safe; }
+kernel "scheduler_modes" {
+  cycle { at @0,0: SADD R1, R0, 1; }
+  cycle { at @0,1: SADD R2, R0, 1; }
+}
+`);
+    const balanced = compile(`
+target "uma-cgra-base";
+build { scheduler balanced; }
+kernel "scheduler_modes" {
+  cycle { at @0,0: SADD R1, R0, 1; }
+  cycle { at @0,1: SADD R2, R0, 1; }
+}
+`);
+    const aggressive = compile(`
+target "uma-cgra-base";
+build { scheduler aggressive; }
+kernel "scheduler_modes" {
+  cycle { at @0,0: SADD R1, R0, 1; }
+  cycle { at @0,1: SADD R2, R0, 1; }
+}
+`);
 
     expect(safe.success).toBe(true);
     expect(balanced.success).toBe(true);

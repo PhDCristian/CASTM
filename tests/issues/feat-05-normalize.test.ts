@@ -31,18 +31,15 @@ kernel "feat5_row" {
   it('supports column normalization with explicit upward direction', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  grid 3x5 mesh;
+}
 kernel "feat5_col" {
   normalize(reg=R2, carry=R0, width=8, mask=255, axis=col, lane=1, dir=up);
 }
 `;
 
-    const result = compile(source, {
-      grid: {
-        rows: 3,
-        cols: 5,
-        topology: 'mesh'
-      }
-    });
+    const result = compile(source);
 
     expect(result.success).toBe(true);
     const csv = result.artifacts.csv ?? '';

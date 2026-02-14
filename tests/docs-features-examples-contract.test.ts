@@ -38,7 +38,7 @@ describe('docs features/examples contracts', () => {
       const file = path.resolve(process.cwd(), relative);
       const content = fs.readFileSync(file, 'utf8');
 
-      expect(content, `missing target mention in ${relative}`).toMatch(/target\s+"uma-cgra-base"/i);
+      expect(content, `missing target mention in ${relative}`).toMatch(/target\s+base|target\s+"uma-cgra-base"/i);
 
       const codeGroups = (content.match(/:::\s*code-group/g) ?? []).length;
       expect(codeGroups, `insufficient code-group blocks in ${relative}`).toBeGreaterThanOrEqual(5);
@@ -65,7 +65,7 @@ describe('docs features/examples contracts', () => {
         expect(content, `missing ${heading} in ${file}`).toContain(heading);
       }
 
-      expect(content, `missing target mention in ${file}`).toMatch(/target\s+"uma-cgra-base"/i);
+      expect(content, `missing target mention in ${file}`).toMatch(/target\s+base|target\s+"uma-cgra-base"/i);
 
       const codeGroups = (content.match(/:::\s*code-group/g) ?? []).length;
       expect(codeGroups, `missing code-group in ${file}`).toBeGreaterThanOrEqual(1);

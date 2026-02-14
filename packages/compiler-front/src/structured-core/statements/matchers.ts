@@ -10,7 +10,9 @@ export function shouldSkipStructuredLine(cleanLine: string): boolean {
   return (
     /^config\s*\(/i.test(cleanLine) ||
     /^let\s+/i.test(cleanLine) ||
-    /^\.(io_load|io_store|limit|assert)\b/i.test(cleanLine)
+    /^io\.(load|store)\s*\(/i.test(cleanLine) ||
+    /^limit\s*\(/i.test(cleanLine) ||
+    /^assert\s*\(/i.test(cleanLine)
   );
 }
 

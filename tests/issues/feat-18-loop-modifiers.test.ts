@@ -5,6 +5,10 @@ describe('FEAT-18 loop modifiers: unroll/collapse', () => {
   it('expands collapse(2) in deterministic row-major order', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  optimize O0;
+  prune_noop_cycles off;
+}
 kernel "collapse_row_major" {
   for i in range(0, 2) collapse(2) {
     for j in range(0, 2) {
@@ -28,6 +32,10 @@ kernel "collapse_row_major" {
   it('accepts unroll(k) on static loops and preserves deterministic output', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  optimize O0;
+  prune_noop_cycles off;
+}
 kernel "unroll_static" {
   for i in range(0, 4) unroll(2) {
     cycle { @0,i: NOP; }

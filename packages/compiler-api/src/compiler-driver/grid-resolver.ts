@@ -1,13 +1,12 @@
 import {
   AstProgram,
-  CompileOptions,
   Diagnostic,
   ErrorCodes,
   GridSpec,
   makeDiagnostic,
   spanAt
 } from '@openedge/compiler-ir';
-import { getTargetProfile } from '@openedge/lang-spec';
+import { getTargetProfile, resolveTargetProfileId } from '@openedge/lang-spec';
 
 export interface ResolvedGridTarget {
   targetProfileId: string;
@@ -16,17 +15,28 @@ export interface ResolvedGridTarget {
 
 export function resolveGrid(
   ast: AstProgram,
-  options: CompileOptions,
   diagnostics: Diagnostic[]
 ): ResolvedGridTarget | null {
-  const targetProfileId = options.targetProfile ?? ast.targetProfileId;
-  if (!targetProfileId) {
+  const targetRaw = ast.target?.id ?? ast.targetProfileId;
+  if (!targetRaw) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Parse.MissingTarget,
       'error',
       spanAt(1, 1, 1),
       'Missing target profile for analysis.',
-      'Set target in source (target "...") or CompileOptions.targetProfile.'
+      'Set target in source, for example: target base;'
+    ));
+    return null;
+  }
+
+  const targetProfileId = resolveTargetProfileId(targetRaw);
+  if (!targetProfileId) {
+    diagnostics.push(makeDiagnostic(
+      ErrorCodes.Semantic.UnknownTargetProfile,
+      'error',
+      ast.target?.span ?? spanAt(1, 1, 1),
+      `Unknown target profile '${targetRaw}'.`,
+      'Use a known target id (uma-cgra-base, uma-cgra-mesh) or alias (base, mesh).'
     ));
     return null;
   }
@@ -43,15 +53,15 @@ export function resolveGrid(
     return null;
   }
 
-  const rows = options.grid?.rows ?? profile.grid.rows;
-  const cols = options.grid?.cols ?? profile.grid.cols;
-  const topology = options.grid?.topology ?? profile.grid.topology;
+  const rows = ast.build?.grid?.rows ?? profile.grid.rows;
+  const cols = ast.build?.grid?.cols ?? profile.grid.cols;
+  const topology = ast.build?.grid?.topology ?? profile.grid.topology;
 
   if (!Number.isInteger(rows) || !Number.isInteger(cols) || rows <= 0 || cols <= 0) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.InvalidGridSpec,
       'error',
-      spanAt(1, 1, 1),
+      ast.build?.span ?? spanAt(1, 1, 1),
       `Invalid grid dimensions rows=${rows}, cols=${cols}.`,
       'Rows and cols must be positive integers.'
     ));

@@ -33,6 +33,10 @@ export interface TargetProfileSpec {
 const INSTRUCTIONS = instructionSet as InstructionSpec[];
 const PRAGMAS = pragmaSet as PragmaSpec[];
 const TARGETS = targetProfiles as TargetProfileSpec[];
+const TARGET_ALIASES: Record<string, string> = {
+  base: 'uma-cgra-base',
+  mesh: 'uma-cgra-mesh'
+};
 
 export function getInstructionSet(): InstructionSpec[] {
   return INSTRUCTIONS.map((x) => ({ ...x, operands: [...x.operands] }));
@@ -60,6 +64,17 @@ export function getTargetProfile(id: string): TargetProfileSpec | null {
     neighbors: [...found.neighbors],
     grid: { ...found.grid }
   };
+}
+
+export function resolveTargetProfileId(raw: string): string | null {
+  const normalized = raw.trim();
+  if (!normalized) return null;
+  const direct = TARGETS.find((x) => x.id === normalized);
+  if (direct) return direct.id;
+
+  const byAlias = TARGET_ALIASES[normalized.toLowerCase()];
+  if (!byAlias) return null;
+  return TARGETS.some((x) => x.id === byAlias) ? byAlias : null;
 }
 
 export function isOpcode(opcode: string): boolean {

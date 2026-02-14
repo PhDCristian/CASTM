@@ -7,10 +7,6 @@ import { compile, emit } from '@openedge/compiler-api';
 interface BaseArgs {
   input?: string;
   output?: string;
-  targetProfile?: string;
-  rows?: number;
-  cols?: number;
-  topology?: 'torus' | 'mesh';
   format?: 'flat-csv' | 'sim-matrix-csv';
 }
 
@@ -42,29 +38,6 @@ function parseArgs(argv: string[]): ParsedCli {
       continue;
     }
 
-    if (token === '--target') {
-      args.targetProfile = rest.shift();
-      continue;
-    }
-
-    if (token === '--rows') {
-      const rows = Number(rest.shift());
-      if (Number.isFinite(rows)) args.rows = rows;
-      continue;
-    }
-
-    if (token === '--cols') {
-      const cols = Number(rest.shift());
-      if (Number.isFinite(cols)) args.cols = cols;
-      continue;
-    }
-
-    if (token === '--topology') {
-      const topology = rest.shift();
-      if (topology === 'torus' || topology === 'mesh') args.topology = topology;
-      continue;
-    }
-
     if (token === '--format') {
       const format = rest.shift();
       if (format === 'flat-csv' || format === 'sim-matrix-csv') args.format = format;
@@ -78,9 +51,9 @@ function parseArgs(argv: string[]): ParsedCli {
 function printUsage(): void {
   process.stderr.write(
     'Usage:\n' +
-      '  openedge emit <input.dsl> [-o out.csv] [--format flat-csv|sim-matrix-csv] [--target profile] [--rows N] [--cols N] [--topology torus|mesh]\n' +
-      '  openedge check <input.dsl> [--target profile] [--rows N] [--cols N] [--topology torus|mesh]\n' +
-      '  openedge analyze <input.dsl> [--target profile] [--rows N] [--cols N] [--topology torus|mesh]\n'
+      '  openedge emit <input.dsl> [-o out.csv] [--format flat-csv|sim-matrix-csv]\n' +
+      '  openedge check <input.dsl>\n' +
+      '  openedge analyze <input.dsl>\n'
   );
 }
 
@@ -108,14 +81,7 @@ export async function runCli(argv = process.argv.slice(2)): Promise<number> {
   const sourcePath = resolveInputOrThrow(args.input);
   const source = await readFile(sourcePath, 'utf8');
 
-  const baseOptions = {
-    targetProfile: args.targetProfile,
-    grid: {
-      rows: args.rows,
-      cols: args.cols,
-      topology: args.topology
-    }
-  };
+  const baseOptions = {};
 
   if (command === 'check') {
     const result = compile(source, { ...baseOptions, emitArtifacts: ['ast'] });

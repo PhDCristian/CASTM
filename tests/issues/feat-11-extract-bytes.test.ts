@@ -31,18 +31,15 @@ kernel "feat11_col" {
   it('supports row axis and custom byte width/mask', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  grid 3x5 mesh;
+}
 kernel "feat11_row" {
   std::extract_bytes(src=R2, dest=R3, axis=row, byteWidth=4, mask=15);
 }
 `;
 
-    const result = compile(source, {
-      grid: {
-        rows: 3,
-        cols: 5,
-        topology: 'mesh'
-      }
-    });
+    const result = compile(source);
 
     expect(result.success).toBe(true);
     const csv = result.artifacts.csv ?? '';

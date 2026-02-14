@@ -10,17 +10,56 @@ export function cloneInstruction(instruction: InstructionAst): InstructionAst {
 
 export function cloneAst(ast: AstProgram): AstProgram {
   if (!ast.kernel) {
-    return { ...ast, span: { ...ast.span } };
+    return {
+      ...ast,
+      span: { ...ast.span },
+      target: ast.target ? { ...ast.target, span: { ...ast.target.span } } : ast.target,
+      build: ast.build
+        ? {
+            ...ast.build,
+            ...(ast.build.grid ? { grid: { ...ast.build.grid } } : {}),
+            span: { ...ast.build.span }
+          }
+        : ast.build
+    };
   }
 
   return {
     ...ast,
     span: { ...ast.span },
+    target: ast.target ? { ...ast.target, span: { ...ast.target.span } } : ast.target,
+    build: ast.build
+      ? {
+          ...ast.build,
+          ...(ast.build.grid ? { grid: { ...ast.build.grid } } : {}),
+          span: { ...ast.build.span }
+        }
+      : ast.build,
     kernel: {
       ...ast.kernel,
       span: { ...ast.kernel.span },
       config: ast.kernel.config ? { ...ast.kernel.config, span: { ...ast.kernel.config.span } } : undefined,
       directives: ast.kernel.directives.map((d) => ({ ...d, span: { ...d.span } })),
+      runtime: (ast.kernel.runtime ?? []).map((statement) => {
+        if (statement.kind === 'io_load' || statement.kind === 'io_store') {
+          return {
+            ...statement,
+            addresses: [...statement.addresses],
+            span: { ...statement.span }
+          };
+        }
+        if (statement.kind === 'assert') {
+          return {
+            ...statement,
+            at: { ...statement.at },
+            span: { ...statement.span }
+          };
+        }
+        return {
+          ...statement,
+          span: { ...statement.span }
+        };
+      }),
       pragmas: ast.kernel.pragmas.map((p) => ({ ...p, span: { ...p.span } })),
       cycles: ast.kernel.cycles.map((cycle) => ({
         ...cycle,

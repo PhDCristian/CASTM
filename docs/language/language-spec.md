@@ -16,12 +16,21 @@ Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas 
 - explicit stash statement (`std::stash(...)`) for deterministic register spill/restore placement
 - explicit runtime loop form
 - static loop strategy modifiers in headers: `unroll(k)` and `collapse(n)`
-- runtime directives (`.io_load`, `.io_store`, `.limit`, `.assert`)
+- runtime statements (`io.load(...)`, `io.store(...)`, `limit(...)`, `assert(...)`)
+- source-owned build configuration (`build { optimize/scheduler/... }`)
 
 ## Example (executable)
 
 ```dsl
-target "uma-cgra-base";
+target base;
+build {
+  optimize O2;
+  scheduler balanced;
+  scheduler_window auto;
+  memory_reorder same_address_fence;
+  prune_noop_cycles on;
+  grid 4x4 torus;
+}
 let MASK = 0xFFFF;
 let acc = R1;
 let input = { 10, 20, 30, 40 };
@@ -37,6 +46,11 @@ function helper_stage_b(src) {
 }
 
 kernel "canonical_example" {
+  io.load(0, 4, 8);
+  io.store(16, 20);
+  limit(256);
+  assert(at=@0,0, reg=R0, equals=0, cycle=0);
+
   std::latency_hide(window=1, mode=conservative);
   std::stash(action=save, reg=R0, addr=output[0], target=point(3,0));
   std::route(@0,1 -> @0,0, payload=R3, accum=R1);
@@ -89,10 +103,10 @@ kernel "canonical_example" {
   - `unroll(k)` controls static expansion chunking.
   - `collapse(n)` currently requires perfectly nested static loops and applies row-major mapping.
 - `std::latency_hide(...)` applies deterministic post-expansion slot packing with explicit hazard guards (PE overlap, route-hop dependencies, control barriers, memory policy fences), can overlap disjoint route steps safely, and remaps numeric branch targets when noop cycles are removed.
-- Compiler scheduling options are explicit and deterministic:
-  - `schedulerMode`: `safe`, `balanced`, `aggressive`.
-  - `schedulerWindow`: slot-pack lookahead window override (`>=0`).
-  - `memoryReorderPolicy`: `"strict"` or `"same-address-fence"`.
+- Build configuration is source-owned and deterministic:
+  - `optimize` preset: `O0`, `O1`, `O2`, `O3`.
+  - optional overrides in `build {}`: `scheduler`, `scheduler_window`, `memory_reorder`, `prune_noop_cycles`, `grid`.
+  - explicit `build` keys override `optimize` defaults.
 - `std::stash(...)` provides deterministic explicit spill/restore lowering to `SWI/LWI` for selected spatial targets (`all`, `row`, `col`, `point`).
 - Inside `cycle { ... }`, semicolon-separated placements on the same line are supported.
 - Inside `cycle { ... }`, short point form `@r,c:` is canonical and equivalent to `at @r,c:`.

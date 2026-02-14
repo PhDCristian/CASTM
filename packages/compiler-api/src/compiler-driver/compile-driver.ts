@@ -1,4 +1,5 @@
 import {
+  AstProgram,
   CompileOptions,
   CompileResult,
   Diagnostic,
@@ -13,10 +14,12 @@ import { analyze } from './analyze-driver.js';
 import { emit } from './emit-driver.js';
 import { parse } from './parse-driver.js';
 
-function normalizeSchedulerMode(
-  mode: CompileOptions['schedulerMode']
-): 'safe' | 'balanced' | 'aggressive' {
-  return mode ?? 'safe';
+function inferSchedulerMode(ast: AstProgram | undefined): 'safe' | 'balanced' | 'aggressive' {
+  if (!ast?.build) return 'balanced';
+  if (ast.build.scheduler) return ast.build.scheduler;
+  if (ast.build.optimize === 'O0' || ast.build.optimize === 'O1') return 'safe';
+  if (ast.build.optimize === 'O3') return 'aggressive';
+  return 'balanced';
 }
 
 function computeMirStats(mir: MirProgram | undefined) {
@@ -50,7 +53,7 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
   const parseResult = parse(source, options);
   const diagnostics: Diagnostic[] = [...parseResult.diagnostics];
   const want = new Set(options.emitArtifacts ?? ['structured', 'ast', 'hir', 'mir', 'lir', 'csv']);
-  const schedulerMode = normalizeSchedulerMode(options.schedulerMode);
+  const schedulerMode = inferSchedulerMode(parseResult.ast);
   const parsedRuntime = parseResult.ast
     ? collectRuntimeArtifacts(parseResult.ast, [], diagnostics)
     : createEmptyRuntimeArtifacts();
@@ -104,10 +107,7 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
   const analysis = analyze({
     ast: analysisAst,
     structuredAst: parseResult.structuredAst
-  }, {
-    ...options,
-    targetProfile: options.targetProfile ?? analysisAst.targetProfileId ?? undefined
-  });
+  }, options);
   diagnostics.push(...analysis.diagnostics);
 
   let csv: string | undefined;

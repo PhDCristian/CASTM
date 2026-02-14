@@ -56,7 +56,7 @@ std::normalize(reg=R2, carry=R0, width=8, mask=255, axis=col, lane=1, dir=up);
 ## Executable Snippet
 
 ```dsl
-target "uma-cgra-base";
+target base;
 kernel "normalize_doc" {
   std::normalize(reg=R3, carry=R1, width=16, lane=0);
 }

@@ -19,6 +19,28 @@ Source of truth:
 
 ## Workstreams
 
+### WS-00 — Source-Owned Build/Runtime Configuration
+
+Status: `done`  
+Completed: `2026-02-14`
+
+Why:
+
+- remove split responsibility between source and external compile knobs.
+- make `.edsl` the single source of truth for target/build/runtime behavior.
+
+Subtasks:
+
+- [x] Add canonical `build { ... }` block parsing (`optimize`, `scheduler`, `scheduler_window`, `memory_reorder`, `prune_noop_cycles`, `grid`).
+- [x] Replace legacy runtime dot directives with typed runtime statements (`io.load`, `io.store`, `limit`, `assert`).
+- [x] Remove external behavior overrides from `CompileOptions` (keep tooling-only options).
+- [x] Migrate tests and docs to source-owned config model.
+
+Evidence:
+
+- Tests: full suite green (`70` files, `382` tests).
+- Updated docs: `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs-site/language/compilation.md`, `docs-site/guide/library-usage.md`.
+
 ### WS-01 — Canonical Language Hardening
 
 Status: `done`  

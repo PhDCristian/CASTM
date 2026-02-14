@@ -22,6 +22,10 @@ kernel "bug6_regression" {
   it('keeps canonical spatial forms and for-in-cycle behavior', () => {
     const source = `
 target "uma-cgra-base";
+build {
+  optimize O0;
+  prune_noop_cycles off;
+}
 kernel "spatial_regression" {
   cycle {
     at all: NOP;

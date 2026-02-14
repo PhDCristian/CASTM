@@ -1,6 +1,7 @@
 import {
   AnalysisResult,
   AstProgram,
+  BuildConfigAst,
   CompileOptions,
   Diagnostic,
   ErrorCodes,
@@ -38,21 +39,68 @@ export type AnalyzeInput =
       structuredAst?: StructuredProgramAst;
     };
 
-function defaultSchedulerWindow(mode: NonNullable<CompileOptions['schedulerMode']>): number {
-  if (mode === 'aggressive') return 4;
-  if (mode === 'balanced') return 2;
-  return 1;
+interface EffectiveBuildSettings {
+  schedulerMode: 'safe' | 'balanced' | 'aggressive';
+  schedulerWindow: number;
+  memoryReorderPolicy: 'strict' | 'same-address-fence';
+  pruneNoopCycles: boolean;
 }
 
-function normalizeSchedulerWindow(
-  mode: NonNullable<CompileOptions['schedulerMode']>,
-  value: CompileOptions['schedulerWindow']
-): number {
-  if (value === undefined) return defaultSchedulerWindow(mode);
-  if (!Number.isFinite(value)) return defaultSchedulerWindow(mode);
+function presetFromOptimize(level: BuildConfigAst['optimize']): EffectiveBuildSettings {
+  if (level === 'O0') {
+    return {
+      schedulerMode: 'safe',
+      schedulerWindow: 0,
+      memoryReorderPolicy: 'strict',
+      pruneNoopCycles: false
+    };
+  }
+
+  if (level === 'O1') {
+    return {
+      schedulerMode: 'safe',
+      schedulerWindow: 1,
+      memoryReorderPolicy: 'strict',
+      pruneNoopCycles: true
+    };
+  }
+
+  if (level === 'O3') {
+    return {
+      schedulerMode: 'aggressive',
+      schedulerWindow: 4,
+      memoryReorderPolicy: 'same-address-fence',
+      pruneNoopCycles: true
+    };
+  }
+
+  return {
+    schedulerMode: 'balanced',
+    schedulerWindow: 2,
+    memoryReorderPolicy: 'same-address-fence',
+    pruneNoopCycles: true
+  };
+}
+
+function normalizeSchedulerWindow(value: number | 'auto' | undefined, fallback: number): number {
+  if (value === undefined || value === 'auto') return fallback;
+  if (!Number.isFinite(value)) return fallback;
   const normalized = Math.floor(value);
-  if (normalized < 0) return 0;
-  return normalized;
+  return normalized < 0 ? 0 : normalized;
+}
+
+function resolveEffectiveBuildSettings(ast: AstProgram): EffectiveBuildSettings {
+  const preset = presetFromOptimize(ast.build?.optimize ?? 'O2');
+  return {
+    schedulerMode: ast.build?.scheduler ?? preset.schedulerMode,
+    schedulerWindow: normalizeSchedulerWindow(ast.build?.schedulerWindow, preset.schedulerWindow),
+    memoryReorderPolicy: ast.build?.memoryReorder === 'strict'
+      ? 'strict'
+      : ast.build?.memoryReorder === 'same_address_fence'
+        ? 'same-address-fence'
+        : preset.memoryReorderPolicy,
+    pruneNoopCycles: ast.build?.pruneNoopCycles ?? preset.pruneNoopCycles
+  };
 }
 
 export function analyze(input: AnalyzeInput, options: CompileOptions = {}): AnalysisResult {
@@ -65,14 +113,13 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
 
   const memory = collectDataRegions(semaAst, diagnostics);
   const runtime = collectRuntimeArtifacts(semaAst, memory.regions, diagnostics);
-  const target = resolveGrid(semaAst, options, diagnostics);
+  const target = resolveGrid(semaAst, diagnostics);
   const strictUnsupported = options.strictUnsupported !== false;
-  const schedulerMode = options.schedulerMode ?? 'safe';
-  const schedulerWindow = normalizeSchedulerWindow(schedulerMode, options.schedulerWindow);
-  const memoryReorderPolicy = options.memoryReorderPolicy
-    ?? (schedulerMode === 'safe' ? 'strict' : 'same-address-fence');
-  const effectiveSchedulerWindow = schedulerWindow;
-  const pruneNoopCycles = options.pruneNoopCycles === true;
+  const buildSettings = resolveEffectiveBuildSettings(semaAst);
+  const schedulerMode = buildSettings.schedulerMode;
+  const effectiveSchedulerWindow = buildSettings.schedulerWindow;
+  const memoryReorderPolicy = buildSettings.memoryReorderPolicy;
+  const pruneNoopCycles = buildSettings.pruneNoopCycles;
 
   if (!target) {
     return {
@@ -146,8 +193,8 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       runtime.cycleLimitSpan ?? semaAst.span,
-      `Kernel expands to ${mir.cycles.length} cycles but .limit is ${runtime.cycleLimit}.`,
-      'Increase .limit or reduce generated cycles.'
+      `Kernel expands to ${mir.cycles.length} cycles but limit(...) is ${runtime.cycleLimit}.`,
+      'Increase limit(...) or reduce generated cycles.'
     ));
   }
 

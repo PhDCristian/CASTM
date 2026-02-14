@@ -320,8 +320,7 @@ describe('branch coverage round 3', () => {
   it('covers grid-resolver unknown target profile branch', () => {
     const diagnostics: Diagnostic[] = [];
     const resolved = resolveGrid(
-      { targetProfileId: 'unknown-target', kernel: null, span } as any,
-      {},
+      { targetProfileId: 'unknown-target', target: { id: 'unknown-target', raw: 'unknown-target', span }, kernel: null, span } as any,
       diagnostics
     );
     expect(resolved).toBeNull();

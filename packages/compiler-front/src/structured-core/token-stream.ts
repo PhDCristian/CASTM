@@ -31,6 +31,14 @@ function parseStringLiteral(token: FrontToken | null): string | null {
   return token.value.slice(1, -1);
 }
 
+function parseTargetIdentifier(token: FrontToken | null): string | null {
+  if (!token) return null;
+  if (token.type === 'identifier' || token.type === 'keyword') {
+    return token.value;
+  }
+  return null;
+}
+
 export function parseProgramHeadersFromTokens(source: string): ParsedProgramHeaders {
   const cursor = new TokenCursor(tokenizeSource(source));
   let targetProfileId: string | null = null;
@@ -44,8 +52,10 @@ export function parseProgramHeadersFromTokens(source: string): ParsedProgramHead
 
     if (keyword === 'target') {
       const maybeString = parseStringLiteral(cursor.peek());
-      if (maybeString !== null) {
-        targetProfileId = maybeString;
+      const maybeIdent = maybeString === null ? parseTargetIdentifier(cursor.peek()) : null;
+      const value = maybeString ?? maybeIdent;
+      if (value !== null) {
+        targetProfileId = value;
         cursor.advance();
       }
       continue;

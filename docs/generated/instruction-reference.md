@@ -31,5 +31,5 @@
 
 ## Target Profiles
 
-- `uma-cgra-base`: UMA CGRA baseline profile (4x4, torus, wrap)
+- `uma-cgra-base` (canonical alias in source: `target base;`): UMA CGRA baseline profile (4x4, torus, wrap)
 - `uma-cgra-mesh`: Portable mesh-oriented profile for larger arrays (8x8, mesh, clamp)
