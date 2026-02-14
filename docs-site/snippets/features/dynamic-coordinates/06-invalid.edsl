@@ -1,0 +1,7 @@
+// expect-error: E3011
+target "uma-cgra-base";
+kernel "dyn_coords_invalid" {
+  cycle {
+    @k/4,k%4: NOP;
+  }
+}

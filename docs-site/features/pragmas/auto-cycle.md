@@ -43,7 +43,25 @@ Full CSV: `docs-site/snippets/pragmas/auto-cycle/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/auto-cycle/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/auto-cycle/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/auto-cycle/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/auto-cycle/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/auto-cycle/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/auto-cycle/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/auto-cycle/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/auto-cycle/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -54,6 +72,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Acts as optimizer hint; does not emit standalone ISA operations by itself.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `schedulerMode` options in compiler API
 - `std::stash(...)` for explicit save/restore boundaries

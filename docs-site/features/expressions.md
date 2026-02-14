@@ -1,42 +1,70 @@
 # Expressions
 
-OpenEdgeDSL supports C-like assignment expressions in cycle placements.
+Canonical OpenEdgeDSL supports C-like assignment expressions that lower deterministically to ISA operations.
 
-## Supported Forms
+## When to use
 
-- `R2 = R0 + R1;`
-- `R2 = R0 - 1;`
-- `R2 = R0 << 2;`
-- `R2 = R0 >> 8;`
-- `R2 = R0 & MASK;`
+- Use expression sugar for readability (`R2 = R0 + R1`) instead of raw opcodes when possible.
+- Use inline arithmetic in operands when compile-time foldable.
 
-Expressions are lowered to ISA opcodes (`SADD`, `SSUB`, `SLT`, `SRT`, `LAND`, ...).
+## Target and assumptions
 
-## Inline Arithmetic in Operands
+- Snippets use `target "uma-cgra-base";`.
+- Lowering is deterministic for fixed source/options.
+- CSV shown is generated automatically from snippets.
 
-Resolvable arithmetic in operands is folded at compile time.
-
-```openedge
-target "uma-cgra-base";
-kernel "expr" {
-  cycle {
-    at @0,0: SRT R1, R0, (2+3)*2;
-    at @0,1: LWI R2, 360 + 2*4;
-  }
-}
-```
-
-## Notes
-
-- Non-resolvable symbolic expressions are preserved when legal for the target lowering stage.
-- Diagnostics are emitted for invalid expression shapes.
-
-
-## OpenEdgeDSL ↔ CSV
+## Case A — Minimal arithmetic assignment
 
 ::: code-group
-<<< ../snippets/features/expressions/01-main.edsl{openedge} [OpenEdgeDSL]
-<<< ../snippets/features/expressions/01-main.excerpt.csv{csv} [CSV excerpt]
+<<< ../snippets/features/expressions/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/expressions/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
 
-Full CSV: `docs-site/snippets/features/expressions/01-main.csv`.
+Full CSV: `docs-site/snippets/features/expressions/01-minimal.csv`.
+
+## Case B — Bit and mask operations
+
+::: code-group
+<<< ../snippets/features/expressions/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/expressions/02-advanced.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/expressions/02-advanced.csv`.
+
+## Case C — Inline arithmetic folding in operands
+
+::: code-group
+<<< ../snippets/features/expressions/03-inline-arith.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/expressions/03-inline-arith.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/expressions/03-inline-arith.csv`.
+
+## Case D — Function integration with expressions
+
+::: code-group
+<<< ../snippets/features/expressions/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/expressions/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/expressions/04-integration.csv`.
+
+## Case E — Edge operators and constants
+
+::: code-group
+<<< ../snippets/features/expressions/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/expressions/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/expressions/05-edge.csv`.
+
+## Case F — Invalid memory-to-memory assignment
+
+<<< ../snippets/features/expressions/06-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected diagnostic: `E3001`.
+
+## Related examples
+
+- [/examples/basic](/examples/basic)
+- [/examples/barrett](/examples/barrett)

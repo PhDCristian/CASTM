@@ -49,7 +49,25 @@ Full CSV: `docs-site/snippets/pragmas/mulacc-chain/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/mulacc-chain/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/mulacc-chain/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/mulacc-chain/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/mulacc-chain/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/mulacc-chain/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/mulacc-chain/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/mulacc-chain/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/mulacc-chain/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -60,6 +78,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Lowers to staged multiply/add/carry updates aligned with selected target traversal.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `std::carry_chain(...)` for carry materialization
 - `std::normalize(...)` for post-propagation normalization

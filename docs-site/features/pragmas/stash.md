@@ -45,7 +45,25 @@ Full CSV: `docs-site/snippets/pragmas/stash/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/stash/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/stash/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stash/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/stash/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/stash/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stash/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/stash/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/stash/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -56,6 +74,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Lowers to deterministic SWI/LWI placements according to selected target subset.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `std::stream_load/store(...)` for IO streams
 - memory sugar inside `cycle {}` for explicit loads/stores

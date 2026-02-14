@@ -1,0 +1,7 @@
+// expect-error: E2002
+target "uma-cgra-base";
+kernel "invalid_row_without_at" {
+  cycle {
+    row 0: SADD R0, ZERO, ZERO | NOP | NOP | NOP;
+  }
+}

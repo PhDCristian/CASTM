@@ -1,0 +1,7 @@
+target "uma-cgra-base";
+kernel "expr_inline" {
+  cycle {
+    @0,0: SRT R1, R0, (2+3)*2;
+    @0,1: LWI R2, 360 + 2*4;
+  }
+}

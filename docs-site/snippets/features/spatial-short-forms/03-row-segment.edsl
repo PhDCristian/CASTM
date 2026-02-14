@@ -1,0 +1,7 @@
+target "uma-cgra-base";
+kernel "row_segmented" {
+  cycle {
+    at row 0: SADD R0, ZERO, ZERO | NOP | SADD R1, R1, 1 | SMUL R2, R2, 2;
+    at row 3: NOP | NOP | SADD R3, R3, 1 | NOP;
+  }
+}

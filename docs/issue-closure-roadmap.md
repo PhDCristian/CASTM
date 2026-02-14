@@ -602,3 +602,51 @@ Evidence:
 
 - Docs validation: `cd docs-site && npm run docs:validate` (green).
 - Tests: `npx vitest run tests/docs-snippets.contract.test.ts tests/docs-pragmas-contract.test.ts tests/docs-csv-generated.contract.test.ts tests/docs-loop-features.contract.test.ts` (green).
+
+### WS-23 — Docs IA/UX Pass (Navigation + Short Spatial Forms)
+
+Status: `done`  
+Completed: `2026-02-14`
+
+Why:
+
+- `features` vs `examples` navigation was still hard to follow in practice.
+- short canonical spatial forms (`@r,c:`, `at row ... | ...`) were supported by compiler but under-documented.
+- pragma pages needed uniform depth (5 cases) and explicit cross-links to practical examples.
+
+Subtasks:
+
+- [x] Added dedicated page `docs-site/features/spatial-short-forms.md` with canonical short syntax coverage (`5` valid + `1` invalid case).
+- [x] Expanded all `docs-site/features/pragmas/*.md` to uniform 5-case structure:
+  - Case A minimal
+  - Case B advanced options
+  - Case C integration in kernel
+  - Case D edge/boundary
+  - Case E invalid usage
+- [x] Added generated snippet sets `04-integration` and `05-edge` for all pragma statements.
+- [x] Reworked `docs-site/examples/*.md` into a consistent template:
+  - `What this demonstrates`
+  - `When to use`
+  - `Target and assumptions`
+  - `OpenEdgeDSL ↔ CSV`
+  - `Why this CSV looks like this`
+  - `Related features`
+  - `Continue`
+- [x] Strengthened docs contract tooling in `docs-site/scripts/check-doc-contracts.ts`:
+  - pragma pages now enforce 5-case structure and >=4 DSL↔CSV groups,
+  - core feature pages enforce >=5 DSL↔CSV groups + invalid case,
+  - examples pages enforce required sections + cross-links.
+- [x] Added test guard `tests/docs-features-examples-contract.test.ts`.
+
+Evidence:
+
+- Docs tooling:
+  - `docs-site/scripts/check-doc-contracts.ts`
+  - `docs-site/scripts/generate-doc-artifacts.ts`
+- New/updated tests:
+  - `tests/docs-features-examples-contract.test.ts`
+  - updated `tests/docs-pragmas-contract.test.ts`
+  - updated `tests/docs-csv-generated.contract.test.ts`
+- Validation runs (green):
+  - `cd docs-site && npm run docs:validate`
+  - `npx vitest run tests/docs-snippets.contract.test.ts tests/docs-pragmas-contract.test.ts tests/docs-csv-generated.contract.test.ts tests/docs-loop-features.contract.test.ts tests/docs-features-examples-contract.test.ts`

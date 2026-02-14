@@ -2,7 +2,23 @@
 
 This page shows practical, measurable scheduler behavior with canonical DSL.
 
-## OpenEdgeDSL / CSV
+## What this demonstrates
+
+- measurable impact of scheduling window and policy,
+- branch-target remapping safety under compaction,
+- real-kernel profiling context.
+
+## When to use
+
+Use this page when validating scheduler behavior against concrete cycle budgets.
+
+## Target and assumptions
+
+- All examples assume `target "uma-cgra-base";`.
+- Measurements are deterministic for fixed scheduler options.
+- CSV excerpt is generated from the linked snippet.
+
+## OpenEdgeDSL ↔ CSV
 
 ::: code-group
 <<< ../snippets/examples/scheduler-practical/01-main.edsl{openedge} [OpenEdgeDSL]
@@ -106,3 +122,19 @@ console.log(result.stats.cycles, result.stats.schedulerMode);
 ```
 
 Full generated CSV: `docs-site/snippets/examples/scheduler-practical/01-main.csv`.
+
+## Why this CSV looks like this
+
+The excerpt shows compactable independent placements and control rows that remain deterministic after legal remapping.
+
+## Related features
+
+- [/features/pragmas/auto-cycle](/features/pragmas/auto-cycle)
+- [/features/pragmas/stash](/features/pragmas/stash)
+- [/features/pragmas/parallel](/features/pragmas/parallel)
+- [/examples/scheduler-modes](/examples/scheduler-modes)
+
+## Continue
+
+- Next: [/examples/kernel-compaction](/examples/kernel-compaction)
+- All examples: [/examples](/examples/index)

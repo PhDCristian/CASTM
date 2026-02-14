@@ -34,7 +34,7 @@ describe('docs generated CSV policy', () => {
       expect(manualMatrixRows, `manual matrix CSV rows found in ${page}`).toBe(false);
 
       const includes = content.match(/^\s*<<<\s+(.+\{csv\}.+)$/gim) ?? [];
-      expect(includes.length, `no CSV include found in ${page}`).toBeGreaterThanOrEqual(2);
+      expect(includes.length, `insufficient CSV includes in ${page}`).toBeGreaterThanOrEqual(4);
 
       for (const line of includes) {
         const includePath = line.replace(/^\s*<<<\s+/, '').trim();

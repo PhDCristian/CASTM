@@ -45,7 +45,25 @@ Full CSV: `docs-site/snippets/pragmas/guard/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/guard/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/guard/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/guard/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/guard/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/guard/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/guard/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/guard/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/guard/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -56,6 +74,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Predicate is resolved per PE at compile time, then matching placements are emitted in row-major order.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `std::triangle(...)` for geometric masks
 - `std::stencil(...)` for neighborhood activation

@@ -45,7 +45,25 @@ Full CSV: `docs-site/snippets/pragmas/gather/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/gather/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/gather/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/gather/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/gather/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/gather/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/gather/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/gather/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/gather/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -56,6 +74,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Builds deterministic gather routes ending in operation at sink point.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `std::collect(...)` for axis-constrained gathering
 - `std::route(...)` for explicit source-destination pathing

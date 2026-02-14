@@ -1,0 +1,6 @@
+target "uma-cgra-base";
+kernel "row_single" {
+  cycle {
+    at row 1: NOP;
+  }
+}

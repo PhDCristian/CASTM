@@ -1,115 +1,71 @@
 # Loops
 
-OpenEdgeDSL supports static and runtime `for` loops with explicit canonical syntax.
+Canonical OpenEdgeDSL supports static and runtime `for` with explicit semantics.
 
-## Static `for`
+## When to use
 
-```openedge
-target "uma-cgra-base";
-kernel "for_static" {
-  for i in range(0, 4) {
-    cycle { @0,i: R2 = R0 + 1; }
-  }
-}
-```
+- Use static `for` for compile-time expansion.
+- Use `unroll(k)`/`collapse(n)` on static loops for deterministic strategy control.
+- Use runtime `for` with explicit control PE for hardware-controlled iteration.
 
-## Static `for` with strategy modifiers
+## Target and assumptions
 
-```openedge
-target "uma-cgra-base";
-kernel "for_static_modifiers" {
-  for i in range(0, 4) unroll(2) {
-    cycle { @0,i: R2 = R0 + 1; }
-  }
+- Snippets use `target "uma-cgra-base";`.
+- Static modifiers are valid only in static loops.
+- CSV shown is generated from snippets.
 
-  for r in range(0, 2) collapse(2) {
-    for c in range(0, 2) {
-      cycle { @r,c: R3 = R1 + R2; }
-    }
-  }
-}
-```
-
-## Static `for` with combined strategy
-
-```openedge
-target "uma-cgra-base";
-kernel "for_static_combo" {
-  for r in range(0, 2) unroll(2) collapse(2) {
-    for c in range(0, 2) {
-      cycle { at @r,c: R3 = R1 + R2; }
-    }
-  }
-}
-```
-
-## Runtime `for`
-
-```openedge
-target "uma-cgra-base";
-kernel "for_runtime" {
-  for R0 in range(0, 3) at @0,0 runtime {
-    cycle { at @0,1: R1 = R0 + 1; }
-  }
-}
-```
-
-## Notes
-
-- `unroll(k)` and `collapse(n)` are static-only loop modifiers.
-- `collapse(n)` currently requires perfectly nested static loops and lowers in deterministic row-major order.
-- Runtime loops require a register loop variable and explicit control location.
-
-## Invalid Loop Modifier Examples
-
-```openedge-fail
-// expect-error: E2002
-target "uma-cgra-base";
-kernel "invalid_runtime_collapse" {
-  for R0 in range(0, 4) at @0,0 runtime collapse(2) {
-    cycle { at @0,1: R1 = R0 + 1; }
-  }
-}
-```
-
-```openedge-fail
-// expect-error: E2002
-target "uma-cgra-base";
-kernel "invalid_collapse_depth" {
-  for i in range(0, 4) collapse(2) {
-    cycle { at @0,i: NOP; }
-  }
-}
-```
-
-```openedge-fail
-// expect-error: E2002
-target "uma-cgra-base";
-kernel "invalid_cycle_scope_unroll" {
-  cycle {
-    for i in range(0, 4) unroll(2) {
-      @0,i: NOP;
-    }
-  }
-}
-```
-
-```openedge-fail
-// expect-error: E2002
-target "uma-cgra-base";
-kernel "invalid_unroll_zero" {
-  for i in range(0, 4) unroll(0) {
-    cycle { at @0,i: NOP; }
-  }
-}
-```
-
-
-## OpenEdgeDSL ↔ CSV
+## Case A — Static loop
 
 ::: code-group
-<<< ../snippets/features/loops/01-main.edsl{openedge} [OpenEdgeDSL]
-<<< ../snippets/features/loops/01-main.excerpt.csv{csv} [CSV excerpt]
+<<< ../snippets/features/loops/01-static.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/loops/01-static.excerpt.csv{csv} [CSV excerpt]
 :::
 
-Full CSV: `docs-site/snippets/features/loops/01-main.csv`.
+Full CSV: `docs-site/snippets/features/loops/01-static.csv`.
+
+## Case B — Static loop with `unroll`
+
+::: code-group
+<<< ../snippets/features/loops/02-unroll.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/loops/02-unroll.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/loops/02-unroll.csv`.
+
+## Case C — Nested static loops with `collapse`
+
+::: code-group
+<<< ../snippets/features/loops/03-collapse.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/loops/03-collapse.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/loops/03-collapse.csv`.
+
+## Case D — Runtime loop
+
+::: code-group
+<<< ../snippets/features/loops/04-runtime.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/loops/04-runtime.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/loops/04-runtime.csv`.
+
+## Case E — Combined static strategy (`unroll + collapse`)
+
+::: code-group
+<<< ../snippets/features/loops/05-combined.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/loops/05-combined.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/loops/05-combined.csv`.
+
+## Case F — Invalid runtime + static modifier mix
+
+<<< ../snippets/features/loops/06-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected diagnostic: `E2002`.
+
+## Related examples
+
+- [/examples/loops](/examples/loops)
+- [/examples/loop-strategies](/examples/loop-strategies)

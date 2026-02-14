@@ -1,31 +1,71 @@
-# Row Auto-Broadcast
+# Row/Col/All Spatial Expansion
 
-A single placement at `at row N:` auto-broadcasts across all columns in that row.
+Canonical spatial scopes support concise full-row, full-column, and full-grid placement.
 
-## Example
+## When to use
 
-```openedge
-target "uma-cgra-base";
-kernel "row_broadcast" {
-  cycle {
-    at row 1: NOP;
-  }
-}
-```
+- Use `at row N:` for row-wide operations.
+- Use row segmented form with `|` for explicit per-column payload.
+- Use `at col N:` and `at all:` for scope-based expansion.
 
-This lowers to one placement per column at row `1`.
+## Target and assumptions
 
-## Notes
+- Snippets use `target "uma-cgra-base";`.
+- `at row N: INSTR;` auto-broadcasts when one instruction is provided.
+- `row N:` without `at` is intentionally invalid.
 
-- Applies to `at row` form with one instruction payload.
-- `at col` and `at all` also expand spatially over their target sets.
-
-
-## OpenEdgeDSL ↔ CSV
+## Case A — Row auto-broadcast
 
 ::: code-group
-<<< ../snippets/features/broadcast-syntax/01-main.edsl{openedge} [OpenEdgeDSL]
-<<< ../snippets/features/broadcast-syntax/01-main.excerpt.csv{csv} [CSV excerpt]
+<<< ../snippets/features/broadcast-syntax/01-row-single.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/broadcast-syntax/01-row-single.excerpt.csv{csv} [CSV excerpt]
 :::
 
-Full CSV: `docs-site/snippets/features/broadcast-syntax/01-main.csv`.
+Full CSV: `docs-site/snippets/features/broadcast-syntax/01-row-single.csv`.
+
+## Case B — Row segmented payload with `|`
+
+::: code-group
+<<< ../snippets/features/broadcast-syntax/02-row-segment.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/broadcast-syntax/02-row-segment.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/broadcast-syntax/02-row-segment.csv`.
+
+## Case C — Column expansion
+
+::: code-group
+<<< ../snippets/features/broadcast-syntax/03-col-single.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/broadcast-syntax/03-col-single.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/broadcast-syntax/03-col-single.csv`.
+
+## Case D — Full-grid expansion
+
+::: code-group
+<<< ../snippets/features/broadcast-syntax/04-all-single.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/broadcast-syntax/04-all-single.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/broadcast-syntax/04-all-single.csv`.
+
+## Case E — Short-point multi-placement in one line
+
+::: code-group
+<<< ../snippets/features/broadcast-syntax/05-short-point-multi.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/broadcast-syntax/05-short-point-multi.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/broadcast-syntax/05-short-point-multi.csv`.
+
+## Case F — Invalid row namespace without `at`
+
+<<< ../snippets/features/broadcast-syntax/06-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected diagnostic: `E2002`.
+
+## Related examples
+
+- [/examples/kernel-compaction](/examples/kernel-compaction)
+- [/features/spatial-short-forms](/features/spatial-short-forms)

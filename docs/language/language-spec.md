@@ -95,9 +95,12 @@ kernel "canonical_example" {
   - `memoryReorderPolicy`: `"strict"` or `"same-address-fence"`.
 - `std::stash(...)` provides deterministic explicit spill/restore lowering to `SWI/LWI` for selected spatial targets (`all`, `row`, `col`, `point`).
 - Inside `cycle { ... }`, semicolon-separated placements on the same line are supported.
+- Inside `cycle { ... }`, short point form `@r,c:` is canonical and equivalent to `at @r,c:`.
 - Computed spatial coordinates in loops (for example `@k/4,k%4`) are valid canonical syntax.
 - Coordinate ranges are valid in canonical placements: `@r,c0..c1`, `@r0..r1,c`, and `@r0..r1,c0..c1` (inclusive expansion).
 - Row placements auto-broadcast when a single instruction is provided: `at row 1: INSTR;` expands to every column in row `1`.
+- Segmented row payload is canonical: `at row N: instr0 | instr1 | ...`.
+- `row N: ...` without `at` is intentionally unsupported and yields parse diagnostic `E2002`.
 - Inline arithmetic in instruction operands is supported and folded when resolvable at compile time (for example `(2+3)*4` or `LWI R0, 360 + 2*4`).
 - Canonical optimization includes specialization of algebraic identities (`SMUL * 1/0`, `SADD +0`, `SSUB -0`, `LAND/LOR/LXOR` with neutral constants, shifts by `0`).
 - Triangle spatial-pattern reference: `docs/language/triangle-statement.md`.

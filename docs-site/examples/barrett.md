@@ -6,20 +6,24 @@
 - lane normalization (`std::normalize(...)`),
 - branchless modular correction (`std::conditional_sub(...)`).
 
+## When to use
+
+Use this when you need a canonical multi-limb arithmetic backbone for modular reduction style kernels.
+
 ## Target and assumptions
 
 - `target "uma-cgra-base";` is explicit in the linked snippet.
 - default profile assumes `4x4` toroidal grid.
 - CSV shown is generated from the exact snippet (no manual transcription).
 
-## OpenEdgeDSL / CSV
+## OpenEdgeDSL ↔ CSV
 
 ::: code-group
 <<< ../snippets/examples/barrett/01-main.edsl{openedge} [OpenEdgeDSL]
 <<< ../snippets/examples/barrett/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
-## Practical reading
+## Why this CSV looks like this
 
 This composition is the core building block for Barrett-like multi-limb pipelines:
 
@@ -28,3 +32,14 @@ This composition is the core building block for Barrett-like multi-limb pipeline
 - final conditional subtraction without control-flow divergence.
 
 Full generated CSV: `docs-site/snippets/examples/barrett/01-main.csv`.
+
+## Related features
+
+- [/features/pragmas/carry-chain](/features/pragmas/carry-chain)
+- [/features/pragmas/normalize](/features/pragmas/normalize)
+- [/features/pragmas/conditional-sub](/features/pragmas/conditional-sub)
+
+## Continue
+
+- Next: [/examples/fft](/examples/fft)
+- All examples: [/examples](/examples/index)

@@ -1,0 +1,6 @@
+target "uma-cgra-base";
+kernel "ctrl_if" {
+  if (R0 == 0) at @0,0 {
+    cycle { @0,1: R1 = R1 + 1; }
+  }
+}

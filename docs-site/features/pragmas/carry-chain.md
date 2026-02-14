@@ -48,7 +48,25 @@ Full CSV: `docs-site/snippets/pragmas/carry-chain/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/carry-chain/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/carry-chain/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/carry-chain/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/carry-chain/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/carry-chain/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/carry-chain/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/carry-chain/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/carry-chain/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -59,6 +77,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Emits add/mask/shift/store chain with deterministic lane progression.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `std::normalize(...)` for lane carry application
 - `std::conditional_sub(...)` for final modular correction

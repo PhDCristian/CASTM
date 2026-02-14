@@ -46,7 +46,25 @@ Full CSV: `docs-site/snippets/pragmas/triangle/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/triangle/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/triangle/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/triangle/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/triangle/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/triangle/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/triangle/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/triangle/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/triangle/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -57,6 +75,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Computes triangular membership at compile-time and emits deterministic row-major placements.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `std::guard(...)` for arbitrary predicates
 - `std::collect(...)` for post-mask aggregation

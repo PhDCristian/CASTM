@@ -3,6 +3,26 @@
 `schedulerMode` controls deterministic scheduling strategy in the compiler API.
 `slot-pack` is active in all modes and uses a mode-specific default window.
 
+## What this demonstrates
+
+- scheduler configuration through compile options,
+- deterministic mode behavior and defaults,
+- override knobs (`schedulerWindow`, `memoryReorderPolicy`).
+
+## When to use
+
+Use this page when you need to tune scheduling policy while preserving deterministic compilation.
+
+## Target and assumptions
+
+- API examples assume canonical source with `target "uma-cgra-base";`.
+- same source + same scheduler options = deterministic output.
+- CSV snippet below is generated from the linked DSL case.
+
+## Why this CSV looks like this
+
+The same DSL source is compiled under different scheduler policies; output differences come from legal packing choices only.
+
 ## API Usage
 
 ```ts
@@ -50,7 +70,9 @@ For concrete measurements and CSV-level examples, see:
 
 - [/examples/scheduler-practical](/examples/scheduler-practical)
 
-## DSL Example used by all modes
+## OpenEdgeDSL ↔ CSV
+
+## DSL example used by all modes
 
 ::: code-group
 <<< ../snippets/examples/scheduler-modes/01-main.edsl{openedge} [OpenEdgeDSL]
@@ -58,3 +80,14 @@ For concrete measurements and CSV-level examples, see:
 :::
 
 Full generated CSV: `docs-site/snippets/examples/scheduler-modes/01-main.csv`.
+
+## Related features
+
+- [/features/pragmas/auto-cycle](/features/pragmas/auto-cycle)
+- [/features/pragmas/stash](/features/pragmas/stash)
+- [/features/pragmas/parallel](/features/pragmas/parallel)
+
+## Continue
+
+- Next: [/examples/scheduler-practical](/examples/scheduler-practical)
+- All examples: [/examples](/examples/index)

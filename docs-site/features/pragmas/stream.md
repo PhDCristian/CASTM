@@ -45,7 +45,25 @@ Full CSV: `docs-site/snippets/pragmas/stream/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/stream/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/stream/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stream/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/stream/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/stream/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stream/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/stream/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/stream/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -56,6 +74,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Lowers to LWD/SWD stream memory operations in deterministic order.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `std::route(...)` for in-grid post-load distribution
 - `std::shift(...)` for row-local movement

@@ -6,21 +6,36 @@
 - in-grid data movement (`std::rotate`, `std::shift`),
 - explicit point-to-point transfer with `std::route(...)`.
 
+## When to use
+
+Use this pattern when data enters/exits via stream endpoints and needs deterministic in-grid transport.
+
 ## Target and assumptions
 
 - `target "uma-cgra-base";` is explicit in the linked snippet.
 - default profile assumes `4x4` toroidal grid.
 - CSV shown is generated from the exact snippet (no manual transcription).
 
-## OpenEdgeDSL / CSV
+## OpenEdgeDSL ↔ CSV
 
 ::: code-group
 <<< ../snippets/examples/fft/01-main.edsl{openedge} [OpenEdgeDSL]
 <<< ../snippets/examples/fft/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
-## Practical reading
+## Why this CSV looks like this
 
-Use this pattern when data comes from stream endpoints and then needs deterministic in-grid transport before storing back.
+The first cycles place stream ingress/egress operations and then route transfer cycles according to the declared source and sink points.
 
 Full generated CSV: `docs-site/snippets/examples/fft/01-main.csv`.
+
+## Related features
+
+- [/features/pragmas/stream](/features/pragmas/stream)
+- [/features/pragmas/route](/features/pragmas/route)
+- [/features/pragmas/route-variants](/features/pragmas/route-variants)
+
+## Continue
+
+- Back to index: [/examples](/examples/index)
+- Start path: [/examples/basic](/examples/basic)

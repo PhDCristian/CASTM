@@ -1,0 +1,7 @@
+target "uma-cgra-base";
+kernel "mem_raw" {
+  cycle {
+    @0,0: [360 + 4] = R1;
+    @0,1: R2 = [360 + 4];
+  }
+}

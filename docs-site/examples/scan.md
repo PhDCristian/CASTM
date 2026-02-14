@@ -6,23 +6,38 @@
 - lane reduction with `std::reduce(...)`,
 - global fanout with `std::allreduce(...)`.
 
+## When to use
+
+Use this when you need lane-wise prefix and reduction collectives instead of manual route chains.
+
 ## Target and assumptions
 
 - `target "uma-cgra-base";` is explicit in the linked snippet.
 - default profile assumes `4x4` toroidal grid.
 - CSV shown is generated from the exact snippet (no manual transcription).
 
-## OpenEdgeDSL / CSV
+## OpenEdgeDSL ↔ CSV
 
 ::: code-group
 <<< ../snippets/examples/scan/01-main.edsl{openedge} [OpenEdgeDSL]
 <<< ../snippets/examples/scan/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
-## Practical reading
+## Why this CSV looks like this
 
 - use `scan` for cumulative per-lane state.
 - use `reduce` to aggregate per row/column.
 - use `allreduce` when every PE must receive the aggregate.
 
 Full generated CSV: `docs-site/snippets/examples/scan/01-main.csv`.
+
+## Related features
+
+- [/features/pragmas/scan](/features/pragmas/scan)
+- [/features/pragmas/reduce](/features/pragmas/reduce)
+- [/features/pragmas/allreduce](/features/pragmas/allreduce)
+
+## Continue
+
+- Next: [/examples/stencil](/examples/stencil)
+- All examples: [/examples](/examples/index)

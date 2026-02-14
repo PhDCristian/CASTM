@@ -1,6 +1,22 @@
 # Loops: Unroll and Collapse
 
-This page shows canonical loop strategy modifiers for static loops.
+## What this demonstrates
+
+- static loop expansion controls (`unroll`, `collapse`),
+- deterministic row-major flattening for nested static loops,
+- explicit separation between static strategies and runtime loops.
+
+## When to use
+
+Use this when a loop is compile-time resolvable and you want predictable expansion shape with less source boilerplate.
+
+## Target and assumptions
+
+- Snippets use `target "uma-cgra-base";`.
+- `unroll(k)` and `collapse(n)` apply to static loops.
+- CSV is generated from the executable snippet.
+
+## OpenEdgeDSL ↔ CSV
 
 ## 1) Static baseline loop
 
@@ -69,6 +85,12 @@ kernel "ex_loop_runtime_invalid" {
 }
 ```
 
+## Why this CSV looks like this
+
+- `unroll(k)` duplicates static loop bodies in deterministic chunks.
+- `collapse(n)` flattens nested static indices in row-major order.
+- runtime loops remain explicit control-flow and reject static-only modifiers.
+
 ## Practical rule
 
 - use `unroll(k)` when you want wider static expansion chunks.
@@ -76,3 +98,14 @@ kernel "ex_loop_runtime_invalid" {
 - runtime loops are explicit and do not accept static modifiers.
 
 Full generated CSV: `docs-site/snippets/examples/loop-strategies/01-main.csv`.
+
+## Related features
+
+- [/features/loops](/features/loops)
+- [/features/pragmas/unroll](/features/pragmas/unroll)
+- [/features/pragmas/parallel](/features/pragmas/parallel)
+
+## Continue
+
+- Next: [/examples/for-control-flow](/examples/for-control-flow)
+- All examples: [/examples](/examples/index)

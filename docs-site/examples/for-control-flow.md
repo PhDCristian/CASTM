@@ -2,7 +2,23 @@
 
 Executable canonical patterns for control-flow inside kernels.
 
-## OpenEdgeDSL / CSV
+## What this demonstrates
+
+- static `for` placement expansion,
+- runtime `for` with explicit control PE,
+- explicit `if/else` and `while` control headers.
+
+## When to use
+
+Use this page when you need explicit control placement while mixing looping and branching in a single kernel.
+
+## Target and assumptions
+
+- `target "uma-cgra-base";` is explicit in snippets.
+- control-flow placement stays explicit (`at @r,c`).
+- CSV shown is generated from source artifacts.
+
+## OpenEdgeDSL ↔ CSV
 
 ::: code-group
 <<< ../snippets/examples/for-control-flow/01-main.edsl{openedge} [OpenEdgeDSL]
@@ -82,9 +98,26 @@ kernel "ex_bad_if_header" {
 }
 ```
 
+## Why this CSV looks like this
+
+- static loops expand deterministically by iteration order,
+- runtime loops emit control-flow instructions at the declared control PE,
+- `if/else` and `while` introduce branch cycles tied to explicit control headers.
+
 ## Practical rule
 
 - `if`/`while` require explicit control PE (`at @r,c` in the header).
 - static `for` and runtime `for` are different constructs; runtime form keeps control explicit.
 
 Full generated CSV: `docs-site/snippets/examples/for-control-flow/01-main.csv`.
+
+## Related features
+
+- [/features/control-flow](/features/control-flow)
+- [/features/loops](/features/loops)
+- [/features/dynamic-coordinates](/features/dynamic-coordinates)
+
+## Continue
+
+- Next: [/examples/scheduler-modes](/examples/scheduler-modes)
+- All examples: [/examples](/examples/index)

@@ -1,0 +1,6 @@
+target "uma-cgra-base";
+kernel "all_single" {
+  cycle {
+    at all: NOP;
+  }
+}

@@ -4,23 +4,28 @@ import { fileURLToPath } from 'node:url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const pragmasDir = path.resolve(__dirname, '../features/pragmas');
 const docsRoot = path.resolve(__dirname, '..');
-
-const requiredReferencePages = [
-  'index.md',
-  'examples/overview.md',
-  'examples/kernel-compaction.md',
+const pragmasDir = path.resolve(docsRoot, 'features/pragmas');
+const examplesDir = path.resolve(docsRoot, 'examples');
+const coreFeaturePages = [
+  'features/expressions.md',
   'features/memory-sugar.md',
-  'language/README.md',
-  'language/compilation.md',
-  'language/dsl-csv-equivalence.md',
-  'language/grammar.md',
-  'language/instruction-set.md',
-  'guide/cli-reference.md',
-  'guide/library-usage.md',
-  'reference/error-codes.md',
-  'reference/porting-guide.md',
+  'features/loops.md',
+  'features/control-flow.md',
+  'features/coordinate-expressions.md',
+  'features/dynamic-coordinates.md',
+  'features/broadcast-syntax.md',
+  'features/functions.md',
+  'features/spatial-short-forms.md',
+];
+const requiredExampleSections = [
+  '## What this demonstrates',
+  '## When to use',
+  '## Target and assumptions',
+  '## OpenEdgeDSL ↔ CSV',
+  '## Why this CSV looks like this',
+  '## Related features',
+  '## Continue',
 ];
 
 interface Violation {
@@ -36,18 +41,49 @@ function listPragmaPages(): string[] {
     .map((name) => path.join(pragmasDir, name));
 }
 
-function checkPage(file: string): Violation[] {
+function listExamplePages(): string[] {
+  return fs
+    .readdirSync(examplesDir)
+    .filter((name) => name.endsWith('.md'))
+    .sort()
+    .map((name) => path.join(examplesDir, name));
+}
+
+function count(content: string, pattern: RegExp): number {
+  return (content.match(pattern) ?? []).length;
+}
+
+function checkPragmaPage(file: string): Violation[] {
   const content = fs.readFileSync(file, 'utf8');
   const violations: Violation[] = [];
 
-  const codeGroups = (content.match(/:::\s*code-group/g) ?? []).length;
-  if (codeGroups < 2) {
-    violations.push({ file, message: `expected at least 2 code-group blocks, found ${codeGroups}` });
+  const requiredHeadings = [
+    '## When to use',
+    '## Target and assumptions',
+    '## Syntax',
+    '## Parameters',
+    '## Case A — Minimal',
+    '## Case B — Advanced options',
+    '## Case C — Integration in kernel',
+    '## Case D — Edge / boundary',
+    '## Case E — Invalid usage',
+    '## Lowering notes',
+    '## Related patterns',
+  ];
+  for (const heading of requiredHeadings) {
+    if (!content.includes(heading)) {
+      violations.push({ file, message: `missing heading: ${heading}` });
+    }
   }
 
-  const csvIncludes = (content.match(/^\s*<<<\s+.+\{csv\}.+$/gim) ?? []).length;
-  if (csvIncludes < 2) {
-    violations.push({ file, message: `expected at least 2 CSV includes, found ${csvIncludes}` });
+  const codeGroups = count(content, /:::\s*code-group/g);
+  if (codeGroups < 4) {
+    violations.push({ file, message: `expected at least 4 code-group blocks, found ${codeGroups}` });
+  }
+
+  const csvIncludes = count(content, /^\s*<<<\s+.+\{csv\}.+$/gim);
+  if (csvIncludes < 4) {
+    violations.push({ file, message: `expected at least 4 CSV includes, found ${csvIncludes}` });
   }
 
   const hasFailFence = /```openedge-fail\b[\s\S]*?```/im.test(content);
@@ -60,48 +96,97 @@ function checkPage(file: string): Violation[] {
     violations.push({ file, message: 'missing explicit target mention (`target "uma-cgra-base"`)' });
   }
 
-  if (/```csv[\s\S]*?(?:^\s*[^<\n].*$)+/gim.test(content)) {
-    // Allow fenced CSV only if it is a pure include line.
-    const csvFences = content.match(/```csv[\s\S]*?```/gim) ?? [];
-    for (const block of csvFences) {
-      const inner = block
-        .replace(/^```csv\s*/i, '')
-        .replace(/```\s*$/i, '')
-        .trim();
-      if (!/^<<<\s+.+\{csv\}.+$/i.test(inner)) {
-        violations.push({ file, message: 'inline/manual CSV block detected; use generated include' });
-      }
+  const csvFences = content.match(/```csv[\s\S]*?```/gim) ?? [];
+  for (const block of csvFences) {
+    const inner = block
+      .replace(/^```csv\s*/i, '')
+      .replace(/```\s*$/i, '')
+      .trim();
+    if (!/^<<<\s+.+\{csv\}.+$/i.test(inner)) {
+      violations.push({ file, message: 'inline/manual CSV block detected; use generated include' });
     }
+  }
+
+  const exampleLinks = count(content, /\]\(\/examples\//g);
+  if (exampleLinks < 1) {
+    violations.push({ file, message: 'expected at least one related /examples/ link' });
+  }
+
+  return violations;
+}
+
+function checkCoreFeaturePage(file: string): Violation[] {
+  const content = fs.readFileSync(file, 'utf8');
+  const violations: Violation[] = [];
+
+  if (!/target\s+"uma-cgra-base"/i.test(content)) {
+    violations.push({ file, message: 'missing explicit target mention (`target "uma-cgra-base"`)' });
+  }
+
+  const codeGroups = count(content, /:::\s*code-group/g);
+  if (codeGroups < 5) {
+    violations.push({ file, message: `expected at least 5 code-group blocks, found ${codeGroups}` });
+  }
+
+  const csvIncludes = count(content, /^\s*<<<\s+.+\{csv\}.+$/gim);
+  if (csvIncludes < 5) {
+    violations.push({ file, message: `expected at least 5 CSV includes, found ${csvIncludes}` });
+  }
+
+  const hasFailFence = /```openedge-fail\b[\s\S]*?```/im.test(content);
+  const hasFailInclude = /^\s*<<<\s+.+\{openedge-fail\}.+$/gim.test(content);
+  if (!hasFailFence && !hasFailInclude) {
+    violations.push({ file, message: 'expected at least one openedge-fail block/include' });
+  }
+
+  const exampleLinks = count(content, /\]\(\/examples\//g);
+  if (exampleLinks < 1) {
+    violations.push({ file, message: 'expected at least one related /examples/ link' });
+  }
+
+  return violations;
+}
+
+function checkExamplePage(file: string): Violation[] {
+  const content = fs.readFileSync(file, 'utf8');
+  const violations: Violation[] = [];
+
+  for (const heading of requiredExampleSections) {
+    if (!content.includes(heading)) {
+      violations.push({ file, message: `missing heading: ${heading}` });
+    }
+  }
+
+  if (!/target\s+"uma-cgra-base"/i.test(content)) {
+    violations.push({ file, message: 'missing explicit target mention (`target "uma-cgra-base"`)' });
+  }
+
+  const codeGroups = count(content, /:::\s*code-group/g);
+  if (codeGroups < 1) {
+    violations.push({ file, message: `expected at least 1 code-group block, found ${codeGroups}` });
+  }
+
+  const csvIncludes = count(content, /^\s*<<<\s+.+\{csv\}.+$/gim);
+  if (csvIncludes < 1) {
+    violations.push({ file, message: `expected at least 1 CSV include, found ${csvIncludes}` });
+  }
+
+  const featureLinks = count(content, /\]\(\/features\//g);
+  if (featureLinks < 3) {
+    violations.push({ file, message: `expected at least 3 related /features/ links, found ${featureLinks}` });
   }
 
   return violations;
 }
 
 function main(): void {
-  const pages = listPragmaPages();
-  const violations = pages.flatMap(checkPage);
-  const referenceViolations: Violation[] = [];
-
-  for (const relativePath of requiredReferencePages) {
-    const file = path.join(docsRoot, relativePath);
-    const content = fs.readFileSync(file, 'utf8');
-
-    const codeGroups = (content.match(/:::\s*code-group/g) ?? []).length;
-    if (codeGroups < 1) {
-      referenceViolations.push({ file, message: `expected at least 1 code-group block, found ${codeGroups}` });
-    }
-
-    const csvIncludes = (content.match(/^\s*<<<\s+.+\{csv\}.+$/gim) ?? []).length;
-    if (csvIncludes < 1) {
-      referenceViolations.push({ file, message: `expected at least 1 CSV include, found ${csvIncludes}` });
-    }
-
-    if (!/target\s+"uma-cgra-base"/i.test(content)) {
-      referenceViolations.push({ file, message: 'missing explicit target mention (`target "uma-cgra-base"`)' });
-    }
-  }
-
-  const allViolations = [...violations, ...referenceViolations];
+  const pragmaPages = listPragmaPages();
+  const examplePages = listExamplePages();
+  const allViolations = [
+    ...pragmaPages.flatMap(checkPragmaPage),
+    ...coreFeaturePages.flatMap((relativePath) => checkCoreFeaturePage(path.join(docsRoot, relativePath))),
+    ...examplePages.flatMap(checkExamplePage),
+  ];
 
   if (allViolations.length > 0) {
     console.error('Documentation contract violations found:');
@@ -112,7 +197,7 @@ function main(): void {
   }
 
   console.log(
-    `Documentation contract passed for ${pages.length} pragmas pages + ${requiredReferencePages.length} reference pages.`,
+    `Documentation contract passed for ${pragmaPages.length} pragmas pages, ${coreFeaturePages.length} core feature pages and ${examplePages.length} examples pages.`,
   );
 }
 

@@ -1,0 +1,7 @@
+// expect-error: E3011
+target "uma-cgra-base";
+kernel "coords_invalid" {
+  cycle {
+    @0,i: NOP;
+  }
+}

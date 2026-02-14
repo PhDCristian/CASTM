@@ -6,20 +6,24 @@
 - memory sugar (`R = A[i]`, `A[i] = R`),
 - simple arithmetic lowering (`R2 = R0 + R1`).
 
+## When to use
+
+Use this as the first reference for validating end-to-end toolchain setup and DSL↔CSV understanding.
+
 ## Target and assumptions
 
 - `target "uma-cgra-base";` is explicit in the linked snippet.
 - default profile assumes `4x4` toroidal grid.
 - CSV shown is generated from the exact snippet (no manual transcription).
 
-## OpenEdgeDSL / CSV
+## OpenEdgeDSL ↔ CSV
 
 ::: code-group
 <<< ../snippets/examples/basic/01-main.edsl{openedge} [OpenEdgeDSL]
 <<< ../snippets/examples/basic/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
-## Expected effect
+## Why this CSV looks like this
 
 - 2 cycles total.
 - Cycle 0 loads two values.
@@ -35,3 +39,14 @@ console.log(result.success, result.stats.cycles);
 ```
 
 Full generated CSV: `docs-site/snippets/examples/basic/01-main.csv`.
+
+## Related features
+
+- [/features/expressions](/features/expressions)
+- [/features/memory-sugar](/features/memory-sugar)
+- [/features/named-arrays](/features/named-arrays)
+
+## Continue
+
+- Next: [/examples/loops](/examples/loops)
+- All examples: [/examples](/examples/index)

@@ -1,0 +1,8 @@
+target "uma-cgra-base";
+kernel "mixed_spatial" {
+  cycle {
+    @0,0: NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    @2,2: NOP;
+  }
+}

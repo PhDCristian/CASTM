@@ -1,0 +1,4 @@
+target "uma-cgra-base";
+kernel "gather_adv" {
+  std::gather(src=R1, dest=@3,3, destReg=R3, op=xor);
+}

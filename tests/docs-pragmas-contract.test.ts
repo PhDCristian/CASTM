@@ -25,20 +25,23 @@ describe('docs pragmas contract', () => {
       expect(content).toContain('## Parameters');
       expect(content).toContain('## Case A — Minimal');
       expect(content).toContain('## Case B — Advanced options');
-      expect(content).toContain('## Case C — Invalid usage');
+      expect(content).toContain('## Case C — Integration in kernel');
+      expect(content).toContain('## Case D — Edge / boundary');
+      expect(content).toContain('## Case E — Invalid usage');
       expect(content).toContain('## Lowering notes');
       expect(content).toContain('## Related patterns');
 
       const codeGroups = (content.match(/:::\s*code-group/g) ?? []).length;
-      expect(codeGroups, `missing code groups in ${page}`).toBeGreaterThanOrEqual(2);
+      expect(codeGroups, `missing code groups in ${page}`).toBeGreaterThanOrEqual(4);
 
       const csvIncludes = (content.match(/^\s*<<<\s+.+\{csv\}.+$/gim) ?? []).length;
-      expect(csvIncludes, `missing CSV includes in ${page}`).toBeGreaterThanOrEqual(2);
+      expect(csvIncludes, `missing CSV includes in ${page}`).toBeGreaterThanOrEqual(4);
 
       const hasFailFence = /```openedge-fail\b[\s\S]*?```/im.test(content);
       const hasFailInclude = /^\s*<<<\s+.+\{openedge-fail\}.+$/gim.test(content);
       expect(hasFailFence || hasFailInclude, `missing invalid snippet in ${page}`).toBe(true);
       expect(content, `missing target mention in ${page}`).toMatch(/target\s+"uma-cgra-base"/i);
+      expect(content, `missing related examples link in ${page}`).toMatch(/\]\(\/examples\//);
     }
   });
 });

@@ -1,85 +1,71 @@
 # Control Flow
 
-Control-flow in canonical OpenEdgeDSL is explicit and spatial:
+Control-flow in canonical OpenEdgeDSL is explicit and spatial (`if/while ... at @r,c`).
 
-- `if (...) at @row,col { ... } else { ... }`
-- `while (...) at @row,col { ... }`
+## When to use
 
-The `at @row,col` location is the control PE where branch instructions are emitted.
+- Use `if/else` for branch-dependent cycle blocks.
+- Use `while` for explicit hardware loop control.
+- Keep control PE placement explicit in headers.
 
-## If-Else {#if-else}
+## Target and assumptions
 
-```openedge
-target "uma-cgra-base";
-kernel "if_else_basic" {
-  if (R0 == 0) at @0,0 {
-    cycle { at @0,1: R1 = R1 + 1; }
-  } else {
-    cycle { at @0,1: R1 = R1 + 2; }
-  }
-}
-```
+- Snippets use `target "uma-cgra-base";`.
+- `if`/`while` require `at @row,col` in header.
+- CSV shown is generated from snippets.
 
-## For + If-Else Composition
-
-```openedge
-target "uma-cgra-base";
-kernel "if_else_in_for" {
-  for i in range(0, 2) {
-    if (R0 == 0) at @0,0 {
-      cycle { at @0,i: R1 = R1 + 1; }
-    } else {
-      cycle { at @1,i: R1 = R1 + 2; }
-    }
-  }
-}
-```
-
-## While
-
-```openedge
-target "uma-cgra-base";
-kernel "while_loop" {
-  while (R1 < 3) at @0,0 {
-    cycle { at @0,1: R1 = R1 + 1; }
-  }
-}
-```
-
-## Invalid Headers (diagnostics)
-
-```openedge-fail
-// expect-error: E2002
-target "uma-cgra-base";
-kernel "bad_if_header" {
-  if (R0 == 0) {
-    cycle { at @0,1: R1 = R1 + 1; }
-  }
-}
-```
-
-```openedge-fail
-// expect-error: E2002
-target "uma-cgra-base";
-kernel "bad_while_control" {
-  while (R0 < 3) at @x,0 {
-    cycle { at @0,1: R0 = R0 + 1; }
-  }
-}
-```
-
-## Notes
-
-- `else` does not take its own control location; it pairs with the preceding `if (...) at @...`.
-- control coordinates are explicit integer literals (decimal or hex).
-- lowering emits deterministic branch labels/cycles from these canonical headers.
-
-
-## OpenEdgeDSL ↔ CSV
+## Case A — `if` with explicit control PE
 
 ::: code-group
-<<< ../snippets/features/control-flow/01-main.edsl{openedge} [OpenEdgeDSL]
-<<< ../snippets/features/control-flow/01-main.excerpt.csv{csv} [CSV excerpt]
+<<< ../snippets/features/control-flow/01-if.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/control-flow/01-if.excerpt.csv{csv} [CSV excerpt]
 :::
 
-Full CSV: `docs-site/snippets/features/control-flow/01-main.csv`.
+Full CSV: `docs-site/snippets/features/control-flow/01-if.csv`.
+
+## Case B — `if/else`
+
+::: code-group
+<<< ../snippets/features/control-flow/02-if-else.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/control-flow/02-if-else.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/control-flow/02-if-else.csv`.
+
+## Case C — `while`
+
+::: code-group
+<<< ../snippets/features/control-flow/03-while.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/control-flow/03-while.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/control-flow/03-while.csv`.
+
+## Case D — Composition with `for`
+
+::: code-group
+<<< ../snippets/features/control-flow/04-for-if.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/control-flow/04-for-if.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/control-flow/04-for-if.csv`.
+
+## Case E — Short-point placements inside control block
+
+::: code-group
+<<< ../snippets/features/control-flow/05-short-point.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/control-flow/05-short-point.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/control-flow/05-short-point.csv`.
+
+## Case F — Invalid header (missing control location)
+
+<<< ../snippets/features/control-flow/06-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected diagnostic: `E2002`.
+
+## Related examples
+
+- [/examples/for-control-flow](/examples/for-control-flow)
+- [/examples/loops](/examples/loops)

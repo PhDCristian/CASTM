@@ -1,0 +1,6 @@
+target "uma-cgra-base";
+kernel "multi_short" {
+  cycle {
+    @0,0: NOP; @0,1: NOP; @0,2: NOP; @0,3: NOP;
+  }
+}

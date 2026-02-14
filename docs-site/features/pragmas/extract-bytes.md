@@ -46,7 +46,25 @@ Full CSV: `docs-site/snippets/pragmas/extract-bytes/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/extract-bytes/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/extract-bytes/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/extract-bytes/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/extract-bytes/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/extract-bytes/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/extract-bytes/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/extract-bytes/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/extract-bytes/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -57,6 +75,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Lowers to shift + mask pattern mapped deterministically across lanes.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `std::normalize(...)` for width-aware carry behavior
 - `std::mulacc_chain(...)` for subsequent arithmetic chains

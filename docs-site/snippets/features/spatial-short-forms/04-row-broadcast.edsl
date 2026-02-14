@@ -1,0 +1,6 @@
+target "uma-cgra-base";
+kernel "row_broadcast" {
+  cycle {
+    at row 0: NOP;
+  }
+}

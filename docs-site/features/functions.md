@@ -1,62 +1,71 @@
 # Functions
 
-Functions are first-class canonical blocks and can be invoked from kernels.
+Functions are canonical reusable blocks and expand deterministically at call sites.
 
-## Function Definition
+## When to use
 
-```text
-function stage(dst, src) {
-  cycle { at @0,0: dst = src >> 16; }
-}
-```
+- Encapsulate repeated cycle patterns.
+- Keep kernels readable with named stages.
+- Use `pipeline(...)` for explicit ordered staging.
 
-## Calling Functions
+## Target and assumptions
 
-```openedge
-target "uma-cgra-base";
+- Snippets use `target "uma-cgra-base";`.
+- Function expansion preserves lexical call order.
+- CSV shown is generated from snippets.
 
-function load(src) {
-  cycle { at @0,0: SADD R2, src, ZERO; }
-}
-
-function mix(dst) {
-  cycle { at @0,1: SADD dst, R2, ZERO; }
-}
-
-kernel "functions" {
-  load(R0);
-  mix(R3);
-}
-```
-
-## Pipeline Macro
-
-You can sequence function calls explicitly:
-
-```openedge
-target "uma-cgra-base";
-
-function stage_load(src) {
-  cycle { @0,0: SADD R2, src, ZERO; }
-}
-
-function stage_mix(dst) {
-  cycle { @0,1: SADD dst, R2, ZERO; }
-}
-
-kernel "pipeline_calls" {
-  pipeline(stage_load(R0), stage_mix(R3));
-}
-```
-
-Function expansion is deterministic and preserves call-site order.
-
-
-## OpenEdgeDSL ↔ CSV
+## Case A — Basic function call
 
 ::: code-group
-<<< ../snippets/features/functions/01-main.edsl{openedge} [OpenEdgeDSL]
-<<< ../snippets/features/functions/01-main.excerpt.csv{csv} [CSV excerpt]
+<<< ../snippets/features/functions/01-basic-call.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/functions/01-basic-call.excerpt.csv{csv} [CSV excerpt]
 :::
 
-Full CSV: `docs-site/snippets/features/functions/01-main.csv`.
+Full CSV: `docs-site/snippets/features/functions/01-basic-call.csv`.
+
+## Case B — Parameterized function body
+
+::: code-group
+<<< ../snippets/features/functions/02-params.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/functions/02-params.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/functions/02-params.csv`.
+
+## Case C — Multi-function composition
+
+::: code-group
+<<< ../snippets/features/functions/03-nested-call.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/functions/03-nested-call.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/functions/03-nested-call.csv`.
+
+## Case D — `pipeline(...)` with functions
+
+::: code-group
+<<< ../snippets/features/functions/04-pipeline.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/functions/04-pipeline.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/functions/04-pipeline.csv`.
+
+## Case E — Short-point function body placements
+
+::: code-group
+<<< ../snippets/features/functions/05-short-point.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/functions/05-short-point.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/features/functions/05-short-point.csv`.
+
+## Case F — Invalid undefined function call
+
+<<< ../snippets/features/functions/06-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+
+Expected diagnostic: `E2002`.
+
+## Related examples
+
+- [/examples/parallel](/examples/parallel)
+- [/features/pragmas/pipeline](/features/pragmas/pipeline)

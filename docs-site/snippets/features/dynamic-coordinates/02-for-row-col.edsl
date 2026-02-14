@@ -1,0 +1,8 @@
+target "uma-cgra-base";
+kernel "dyn_coords_row_col" {
+  for r in range(0, 4) {
+    for c in range(0, 4) {
+      cycle { @r,c: NOP; }
+    }
+  }
+}

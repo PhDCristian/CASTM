@@ -48,7 +48,25 @@ Full CSV: `docs-site/snippets/pragmas/accumulate/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/accumulate/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/accumulate/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/accumulate/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/accumulate/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/accumulate/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/accumulate/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/accumulate/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/accumulate/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -59,6 +77,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Emits seed, propagation, and finalize stages according to pattern and scope.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `std::scan(...)` for directional prefix behavior
 - `std::reduce(...)` for terminal axis collapse

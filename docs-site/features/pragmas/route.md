@@ -43,7 +43,25 @@ Full CSV: `docs-site/snippets/pragmas/route/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/route/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/route/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/route/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/route/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/route/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/route/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -54,6 +72,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Lowers to deterministic hop cycles that preserve lexical statement order in the kernel timeline.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `std::broadcast(...)` for fan-out from one source
 - `std::collect(...)` for axis collection

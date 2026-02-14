@@ -45,7 +45,25 @@ Full CSV: `docs-site/snippets/pragmas/parallel/01-minimal.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/parallel/02-advanced.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
+
+::: code-group
+<<< ../../snippets/pragmas/parallel/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/parallel/04-integration.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/parallel/04-integration.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/parallel/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/parallel/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/parallel/05-edge.csv`.
+
+## Case E — Invalid usage
 
 <<< ../../snippets/pragmas/parallel/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
@@ -56,6 +74,8 @@ Expected: explicit diagnostic with source span and actionable hint.
 Loop strategy modifiers are resolved at compile time with deterministic ordering and diagnostics.
 
 ## Related patterns
+
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - Loop Expansion Model (`unroll` page)
 - Control flow examples in `/examples/for-control-flow`

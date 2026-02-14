@@ -13,7 +13,7 @@ export default defineConfig({
 
   lastUpdated: true,
   cleanUrls: true,
-  ignoreDeadLinks: true,
+  ignoreDeadLinks: false,
 
   themeConfig: {
     logo: '/logo.svg',
@@ -22,8 +22,8 @@ export default defineConfig({
     nav: [
       { text: 'Guide', link: '/guide/getting-started', activeMatch: '/guide/' },
       { text: 'Language', link: '/language/overview', activeMatch: '/language/' },
-      { text: 'Features', link: '/features/expressions', activeMatch: '/features/' },
-      { text: 'Examples', link: '/examples/overview', activeMatch: '/examples/' },
+      { text: 'Features', link: '/features/index', activeMatch: '/features/' },
+      { text: 'Examples', link: '/examples/index', activeMatch: '/examples/' },
       { text: 'Reference', link: '/reference/error-codes', activeMatch: '/reference/' },
     ],
 
@@ -54,6 +54,12 @@ export default defineConfig({
       ],
       '/features/': [
         {
+          text: 'Start Here',
+          items: [
+            { text: 'Features Overview', link: '/features/index' },
+          ]
+        },
+        {
           text: 'Core Syntax',
           items: [
             { text: 'Expressions', link: '/features/expressions' },
@@ -63,6 +69,7 @@ export default defineConfig({
             { text: 'Computed Constants', link: '/features/computed-constants' },
             { text: 'Coordinate Expressions', link: '/features/coordinate-expressions' },
             { text: 'Dynamic Coordinates', link: '/features/dynamic-coordinates' },
+            { text: 'Spatial Short Forms', link: '/features/spatial-short-forms' },
             { text: 'Row Auto-Broadcast', link: '/features/broadcast-syntax' },
             { text: 'Functions', link: '/features/functions' },
             { text: 'Loops', link: '/features/loops' },
@@ -114,7 +121,8 @@ export default defineConfig({
         {
           text: 'Examples',
           items: [
-            { text: 'Overview (Start Here)', link: '/examples/overview' },
+            { text: 'Examples Index (Start Here)', link: '/examples/index' },
+            { text: 'Overview', link: '/examples/overview' },
             { text: 'Basic: Load + Add + Store', link: '/examples/basic' },
             { text: 'Loops: Static and Runtime', link: '/examples/loops' },
             { text: 'Loops: Unroll and Collapse', link: '/examples/loop-strategies' },

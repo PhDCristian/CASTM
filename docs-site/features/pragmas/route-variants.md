@@ -46,9 +46,27 @@ Full CSV: `docs-site/snippets/pragmas/route-variants/02-long-path.csv`.
 
 Full CSV: `docs-site/snippets/pragmas/route-variants/01-custom-op.csv`.
 
-## Case C — Invalid usage
+## Case C — Integration in kernel
 
-<<< ../../snippets/pragmas/route-variants/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+::: code-group
+<<< ../../snippets/pragmas/route-variants/03-compare.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route-variants/03-compare.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/route-variants/03-compare.csv`.
+
+## Case D — Edge / boundary
+
+::: code-group
+<<< ../../snippets/pragmas/route-variants/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route-variants/05-edge.excerpt.csv{csv} [CSV excerpt]
+:::
+
+Full CSV: `docs-site/snippets/pragmas/route-variants/05-edge.csv`.
+
+## Case E — Invalid usage
+
+<<< ../../snippets/pragmas/route-variants/06-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
 
 Expected: explicit diagnostic with source span and actionable hint.
 
@@ -59,12 +77,7 @@ Expected: explicit diagnostic with source span and actionable hint.
 
 ## Related patterns
 
+- Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
+
 - `std::route(...)` core page: [/features/pragmas/route](/features/pragmas/route)
-- Comparison snippet (`accum` vs `dest+op`):
-
-::: code-group
-<<< ../../snippets/pragmas/route-variants/03-compare.edsl{openedge} [OpenEdgeDSL]
-<<< ../../snippets/pragmas/route-variants/03-compare.excerpt.csv{csv} [CSV excerpt]
-:::
-
-Full CSV: `docs-site/snippets/pragmas/route-variants/03-compare.csv`.
+- `std::broadcast(...)` when fan-out is needed instead of point-to-point transfer

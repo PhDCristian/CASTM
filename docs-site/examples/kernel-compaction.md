@@ -2,11 +2,23 @@
 
 This page shows how to replace repetitive spatial boilerplate with canonical compact statements while keeping deterministic output.
 
+## What this demonstrates
+
+- replacing repeated spatial placements with compact `std::*` blocks,
+- equivalent explicit forms using `for` and coordinate expressions,
+- readability improvements without semantic drift.
+
+## When to use
+
+Use this page when your kernel is functionally correct but too verbose and you want to reduce source size safely.
+
 ## Target and assumptions
 
 - All snippets use `target "uma-cgra-base";`.
 - CSV is generated automatically from the exact snippet shown.
 - Default interpretation is `4x4` torus.
+
+## OpenEdgeDSL ↔ CSV
 
 ## Case A — Compact extraction via `std::extract_bytes`
 
@@ -44,6 +56,12 @@ Full CSV: `docs-site/snippets/examples/kernel-compaction/03-load-all.csv`.
 
 Full CSV: `docs-site/snippets/examples/kernel-compaction/04-qhat-compact.csv`.
 
+## Why this CSV looks like this
+
+- compact statements expand to deterministic placement cycles,
+- explicit and compact forms preserve the same observable semantics,
+- cycle growth comes from declared operations, not documentation shorthand.
+
 ## Practical rules
 
 - Prefer `std::*` blocks for known reusable patterns (`extract_bytes`, `accumulate`, `normalize`, etc.).
@@ -69,3 +87,14 @@ Reproduce:
 npx tsx scripts/sbox/stats.ts --file ./examples/dsl_port/sbox_k7_v10_compact.edsl --scheduler safe
 npx tsx scripts/sbox/stats.ts --file ./examples/dsl_port/sbox_k7_v10_nocompact.edsl --scheduler safe
 ```
+
+## Related features
+
+- [/features/pragmas/extract-bytes](/features/pragmas/extract-bytes)
+- [/features/coordinate-expressions](/features/coordinate-expressions)
+- [/features/loops](/features/loops)
+
+## Continue
+
+- Next: [/examples/parallel](/examples/parallel)
+- All examples: [/examples](/examples/index)
