@@ -26,7 +26,7 @@ pnpm -r build
 Create `hello.dsl`:
 
 ```openedge
-target "uma-cgra-base";
+target base;
 let input = { 10, 20 };
 let output @100 = { 0 };
 
@@ -41,6 +41,9 @@ kernel "hello" {
   }
 }
 ```
+
+`target base;` is the canonical user-facing alias for the default OpenEdge CGRA profile.
+You do not need to remember internal profile IDs.
 
 ## Compile
 
@@ -57,13 +60,14 @@ openedge analyze hello.dsl
 
 ## Authoring Rules
 
-- Start every program with `target "...";`.
+- Start every program with `target base;` (or another valid target alias).
 - Use `let` for constants, aliases, and arrays.
 - Use canonical advanced statements such as `route(...)`, `reduce(...)`, and `scan(...)`.
 
 ## Next
 
 - [Language Overview](/language/overview)
+- [Configuration in Source](/language/configuration)
 - [Features](/features/expressions)
 - [Examples](/examples/basic)
 

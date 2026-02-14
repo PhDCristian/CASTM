@@ -4,7 +4,7 @@ This page maps canonical DSL snippets to simulator-oriented matrix CSV (`sim-mat
 
 ## Target and assumptions
 
-- Every snippet includes `target "uma-cgra-base";`.
+- Every snippet includes `target base;`.
 - CSV is generated automatically from the snippet (never handwritten).
 - Matrix layout is `cycle header + 4 PE rows + 4 PE columns`.
 

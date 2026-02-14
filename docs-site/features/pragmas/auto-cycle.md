@@ -8,9 +8,9 @@ Use conservative slot compaction hints while preserving deterministic semantics.
 
 All executable snippets below are canonical and explicit:
 
-- `target "uma-cgra-base";`
-- default grid: `4x4` toroidal profile unless overridden at compile time
-- deterministic lowering: same source + options => same CSV
+- `target base;`
+- default grid: `4x4` toroidal profile unless overridden in source `build { ... }`
+- deterministic lowering: same source => same CSV
 
 ## Syntax
 
@@ -75,5 +75,5 @@ Acts as optimizer hint; does not emit standalone ISA operations by itself.
 
 - Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
-- `schedulerMode` options in compiler API
+- `build { scheduler ...; scheduler_window ...; memory_reorder ... }`
 - `std::stash(...)` for explicit save/restore boundaries

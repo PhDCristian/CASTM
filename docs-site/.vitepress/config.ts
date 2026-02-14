@@ -44,6 +44,8 @@ export default defineConfig({
           items: [
             { text: 'Overview', link: '/language/overview' },
             { text: 'Program Structure', link: '/language/program-structure' },
+            { text: 'Configuration in Source', link: '/language/configuration' },
+            { text: 'Target Profiles', link: '/language/target-profiles' },
             { text: 'Spatial-Temporal Model', link: '/language/spatial-temporal' },
             { text: 'Instruction Set', link: '/language/instruction-set' },
             { text: 'Compilation Pipeline', link: '/language/compilation' },
@@ -74,7 +76,7 @@ export default defineConfig({
             { text: 'Functions', link: '/features/functions' },
             { text: 'Loops', link: '/features/loops' },
             { text: 'Control Flow', link: '/features/control-flow' },
-            { text: 'Runtime Directives', link: '/features/assertions' },
+            { text: 'Runtime Statements', link: '/features/assertions' },
           ]
         },
         {
@@ -129,6 +131,7 @@ export default defineConfig({
             { text: 'Control Flow with For/If/While', link: '/examples/for-control-flow' },
             { text: 'Scheduler Profiles', link: '/examples/scheduler-modes' },
             { text: 'Scheduler Practical Cases', link: '/examples/scheduler-practical' },
+            { text: 'Optimization Profiles (Same Kernel)', link: '/examples/optimization-profiles' },
             { text: 'Kernel Compaction Patterns', link: '/examples/kernel-compaction' },
             { text: 'Pipeline with Functions', link: '/examples/parallel' },
             { text: 'Scan + Reduce + Allreduce', link: '/examples/scan' },

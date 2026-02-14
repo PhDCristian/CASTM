@@ -7,7 +7,7 @@ Canonical advanced statements use the `std::` namespace and always lower determi
 Every `std::*` page now follows the same contract:
 
 1. **When to use**
-2. **Target and assumptions** (`target "uma-cgra-base";` explicit)
+2. **Target and assumptions** (`target base;` explicit)
 3. **Syntax + Parameters**
 4. **Case A** minimal with `OpenEdgeDSL ↔ CSV` tabs
 5. **Case B** advanced options with `OpenEdgeDSL ↔ CSV` tabs

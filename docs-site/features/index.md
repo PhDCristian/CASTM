@@ -11,7 +11,7 @@ Use this section as the canonical feature map of OpenEdgeDSL.
 ## Target and assumptions
 
 - Canonical syntax only.
-- Snippets include `target "uma-cgra-base";`.
+- Snippets include `target base;`.
 - CSV shown is generated from source artifacts.
 
 ## Quick OpenEdgeDSL ↔ CSV preview

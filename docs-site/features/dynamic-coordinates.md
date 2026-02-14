@@ -9,7 +9,7 @@ Computed coordinates are valid canonical syntax when expressions resolve through
 
 ## Target and assumptions
 
-- Snippets use `target "uma-cgra-base";`.
+- Snippets use `target base;`.
 - Coordinate expressions must resolve after loop expansion.
 - CSV shown is generated from snippets.
 

@@ -5,7 +5,7 @@ Canonical diagnostics currently exposed by `@openedge/compiler-ir`.
 ## Target and assumptions
 
 - Diagnostic examples are canonical syntax.
-- Snippets use `target "uma-cgra-base";`.
+- Snippets use `target base;`.
 - CSV excerpt is generated from a valid example snippet.
 
 ## Parse

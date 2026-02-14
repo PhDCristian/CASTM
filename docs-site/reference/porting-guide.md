@@ -4,7 +4,7 @@ This page defines the recommended writing style for production OpenEdgeDSL sourc
 
 ## Target and assumptions
 
-- All executable examples are canonical and include `target "uma-cgra-base";`.
+- All executable examples are canonical and include `target base;`.
 - CSV shown is generated from snippet artifacts.
 - Use this style as the default for new kernels and refactors.
 

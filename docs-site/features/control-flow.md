@@ -10,7 +10,7 @@ Control-flow in canonical OpenEdgeDSL is explicit and spatial (`if/while ... at 
 
 ## Target and assumptions
 
-- Snippets use `target "uma-cgra-base";`.
+- Snippets use `target base;`.
 - `if`/`while` require `at @row,col` in header.
 - CSV shown is generated from snippets.
 

@@ -10,7 +10,7 @@ Canonical spatial scopes support concise full-row, full-column, and full-grid pl
 
 ## Target and assumptions
 
-- Snippets use `target "uma-cgra-base";`.
+- Snippets use `target base;`.
 - `at row N: INSTR;` auto-broadcasts when one instruction is provided.
 - `row N:` without `at` is intentionally invalid.
 

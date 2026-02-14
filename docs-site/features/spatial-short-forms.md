@@ -10,7 +10,7 @@ Canonical spatial syntax supports concise point placements and row-segment paylo
 
 ## Target and assumptions
 
-- Every snippet includes `target "uma-cgra-base";`.
+- Every snippet includes `target base;`.
 - Default grid is `4x4` torus.
 - CSV shown is generated from snippets (no manual transcription).
 

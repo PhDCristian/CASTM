@@ -14,7 +14,7 @@ Canonical OpenEdgeDSL uses `let` for constants, aliases, and arrays.
 ## Executable Snippet
 
 ```openedge
-target "uma-cgra-base";
+target base;
 let MASK = 0xFFFF;
 let acc = R1;
 let A = { 1, 2, 3, 4 };

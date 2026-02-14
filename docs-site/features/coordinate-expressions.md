@@ -9,7 +9,7 @@ Canonical placements accept expressions and ranges in coordinates.
 
 ## Target and assumptions
 
-- Snippets use `target "uma-cgra-base";`.
+- Snippets use `target base;`.
 - Range expansion is inclusive.
 - Unresolved coordinates are rejected during semantic/lowering stage.
 

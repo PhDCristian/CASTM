@@ -18,12 +18,21 @@ OpenEdgeDSL uses a single canonical syntax profile.
 | control-flow | `if`, `while`, `for`, runtime `for`, static modifiers `unroll(k)` / `collapse(n)` |
 | composition | `function`, `pipeline(...)` |
 | advanced operations | `std::route(...)`, `std::reduce(...)`, `std::scan(...)`, `std::collect(...)`, `std::carry_chain(...)`, ... |
-| runtime directives | `.io_load`, `.io_store`, `.limit`, `.assert` |
+| source config + runtime | `build { ... }`, `io.load(...)`, `io.store(...)`, `limit(...)`, `assert(...)` |
+
+## Target Alias
+
+- Canonical docs use `target base;`.
+- `base` resolves internally to the baseline profile ID.
+- This keeps source clean while preserving deterministic compilation.
 
 ## Minimal Program (Executable)
 
 ```openedge
-target "uma-cgra-base";
+target base;
+build {
+  optimize O2;
+}
 let A = { 1, 2, 3, 4 };
 
 kernel "overview" {
@@ -44,6 +53,8 @@ kernel "overview" {
 ## References
 
 - [Program Structure](/language/program-structure)
+- [Configuration in Source](/language/configuration)
+- [Target Profiles](/language/target-profiles)
 - [Compilation Pipeline](/language/compilation)
 - [DSL to CSV Equivalence](/language/dsl-csv-equivalence)
 - [Formal Grammar](/language/grammar)

@@ -4,9 +4,10 @@ OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifact
 
 ## Target and assumptions
 
-- Snippets in this page use `target "uma-cgra-base";`.
-- Pipeline behavior is deterministic for a fixed source and compile options.
+- Snippets in this page use canonical source-owned config (`target` + optional `build`).
+- Pipeline behavior is deterministic for a fixed source.
 - CSV snippets are generated through `docs:artifacts:generate`.
+- Canonical target alias is `target base;` (no need to use internal profile IDs in source).
 
 ## Pipeline Stages
 
@@ -33,17 +34,14 @@ OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifact
 
 Full CSV: `docs-site/snippets/language/compilation/01-main.csv`.
 
-## Compile Options
+## Compiler Options (tooling only)
 
 | Option | Type | Purpose |
 |---|---|---|
-| `targetProfile` | `string` | select target profile from `lang-spec` |
-| `grid` | `{ rows?, cols?, topology? }` | override effective grid at compile time |
 | `emitArtifacts` | `Array<'structured'|'ast'|'hir'|'mir'|'lir'|'csv'>` | request phase artifacts |
 | `strictUnsupported` | `boolean` | enforce strict validation for unsupported forms |
-| `schedulerMode` | `"safe" \| "balanced" \| "aggressive"` | deterministic scheduling profile selection |
-| `schedulerWindow` | `number` | slot-pack lookahead window override (`>=0`) |
-| `memoryReorderPolicy` | `"strict" \| "same-address-fence"` | memory scheduling fence policy |
+
+Build/runtime behavior (target, grid, scheduler, memory policy, noop pruning, io pointers, cycle limits, assertions) is configured in source via `target`, `build { ... }`, and runtime statements.
 
 ## Compile Result Artifacts
 
@@ -65,12 +63,31 @@ Full CSV: `docs-site/snippets/language/compilation/01-main.csv`.
 - `schedulerMode`
 - `loweredPasses`
 
-## Scheduling Notes
+## Scheduling Notes (source-driven)
 
 - slot packing is placement-level (not only whole-cycle merge) and deterministic.
 - numeric branch targets are remapped when intermediate noop cycles are removed.
 - in non-strict memory policy, `ROUT` producers may move earlier when no incoming-read dependency is crossed.
 - control-flow ops (`BEQ/BNE/.../EXIT`) remain barriers.
+
+Scheduler policy comes from source:
+
+```openedge
+target base;
+build {
+  optimize O2;
+  scheduler balanced;
+  scheduler_window auto;
+  memory_reorder same_address_fence;
+  prune_noop_cycles on;
+}
+kernel "build_config_example" {
+  cycle { at @0,0: SADD R1, R0, 1; }
+}
+```
+
+See full configuration recipes (O0/O1/O2/O3 and explicit overrides):
+- [Configuration in Source](/language/configuration)
 
 ## Reproduce with artifacts
 

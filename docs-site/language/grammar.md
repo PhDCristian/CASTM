@@ -9,7 +9,7 @@ This page mirrors the public-facing subset used by the current compiler.
 ## Target and assumptions
 
 - Grammar examples are canonical syntax only.
-- Executable snippets include `target "uma-cgra-base";`.
+- Executable snippets include `target base;`.
 - CSV excerpts are generated from snippet artifacts.
 
 ## Grammar sample (OpenEdgeDSL ↔ CSV)
@@ -24,8 +24,9 @@ Full CSV: `docs-site/snippets/language/grammar/01-main.csv`.
 ## Program
 
 ```text
-program          ::= target_decl declaration* function_def* kernel_decl
-target_decl      ::= "target" string_lit ";"
+program          ::= target_decl build_block? declaration* function_def* kernel_decl
+target_decl      ::= "target" (string_lit | ident) ";"
+build_block      ::= "build" "{" build_item* "}"
 kernel_decl      ::= "kernel" string_lit "{" kernel_item* "}"
 ```
 

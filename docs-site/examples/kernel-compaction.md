@@ -14,7 +14,7 @@ Use this page when your kernel is functionally correct but too verbose and you w
 
 ## Target and assumptions
 
-- All snippets use `target "uma-cgra-base";`.
+- All snippets use `target base;`.
 - CSV is generated automatically from the exact snippet shown.
 - Default interpretation is `4x4` torus.
 

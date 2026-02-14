@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compile, emit } from '../../packages/compiler-api/src/index.ts';
-import type { CompileOptions } from '../../packages/compiler-ir/src/options.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,10 +11,6 @@ const excerptLineLimit = 28;
 interface SnippetEntry {
   sourcePath: string;
   expectsFailure: boolean;
-}
-
-interface SnippetCompileConfig {
-  compileOptions?: Partial<CompileOptions>;
 }
 
 function collectEdslFiles(dir: string): string[] {
@@ -45,24 +40,14 @@ function classifySnippet(sourcePath: string): SnippetEntry {
   };
 }
 
-function readSnippetCompileOptions(sourcePath: string): Partial<CompileOptions> {
+function assertNoLegacyCompileConfig(sourcePath: string): void {
   const configPath = sourcePath.replace(/\.edsl$/i, '.compile.json');
-  if (!fs.existsSync(configPath)) return {};
-  const raw = fs.readFileSync(configPath, 'utf8');
-  let parsed: SnippetCompileConfig;
-  try {
-    parsed = JSON.parse(raw) as SnippetCompileConfig;
-  } catch (error) {
-    throw new Error(`Invalid JSON in snippet compile config: ${configPath} (${String(error)})`);
+  if (fs.existsSync(configPath)) {
+    throw new Error(
+      `Legacy compile-config sidecar is not allowed: ${configPath}. ` +
+      'Move build/runtime settings into the snippet source (`target` + `build` + runtime statements).'
+    );
   }
-  if (!parsed || typeof parsed !== 'object') {
-    throw new Error(`Snippet compile config must be an object: ${configPath}`);
-  }
-  if (!parsed.compileOptions) return {};
-  if (typeof parsed.compileOptions !== 'object') {
-    throw new Error(`compileOptions must be an object in: ${configPath}`);
-  }
-  return parsed.compileOptions;
 }
 
 function removeCsvArtifacts(sourcePath: string): void {
@@ -88,11 +73,10 @@ function main(): void {
   for (const sourcePath of files) {
     const entry = classifySnippet(sourcePath);
     const source = fs.readFileSync(sourcePath, 'utf8');
-    const snippetCompileOptions = readSnippetCompileOptions(sourcePath);
+    assertNoLegacyCompileConfig(sourcePath);
     const result = compile(source, {
       emitArtifacts: ['mir'],
-      strictUnsupported: false,
-      ...snippetCompileOptions
+      strictUnsupported: false
     });
 
     if (entry.expectsFailure) {

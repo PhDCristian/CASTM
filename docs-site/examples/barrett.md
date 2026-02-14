@@ -12,7 +12,7 @@ Use this when you need a canonical multi-limb arithmetic backbone for modular re
 
 ## Target and assumptions
 
-- `target "uma-cgra-base";` is explicit in the linked snippet.
+- `target base;` is explicit in the linked snippet.
 - default profile assumes `4x4` toroidal grid.
 - CSV shown is generated from the exact snippet (no manual transcription).
 

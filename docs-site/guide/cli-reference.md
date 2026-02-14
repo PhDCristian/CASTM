@@ -9,7 +9,7 @@ The `openedge` CLI exposes three canonical commands.
 
 ## Target and assumptions
 
-- CLI examples assume canonical source with `target "uma-cgra-base";`.
+- CLI examples assume canonical source with `target base;`.
 - `sim-matrix-csv` is the default documentation view format for DSL↔CSV equivalence.
 
 ## OpenEdgeDSL ↔ CSV quick sample
@@ -24,9 +24,9 @@ Full CSV: `docs-site/snippets/guide/cli-reference/01-main.csv`.
 ## Usage
 
 ```bash
-openedge emit <input.dsl> [-o out.csv] [--format flat-csv|sim-matrix-csv] [--target profile] [--rows N] [--cols N] [--topology torus|mesh]
-openedge check <input.dsl> [--target profile] [--rows N] [--cols N] [--topology torus|mesh]
-openedge analyze <input.dsl> [--target profile] [--rows N] [--cols N] [--topology torus|mesh]
+openedge emit <input.dsl> [-o out.csv] [--format flat-csv|sim-matrix-csv]
+openedge check <input.dsl>
+openedge analyze <input.dsl>
 ```
 
 ## Commands
@@ -61,13 +61,12 @@ Returns JSON with stats and diagnostics.
 openedge analyze kernel.dsl
 ```
 
-## Grid Overrides
+## Source-owned configuration
 
-Use runtime grid overrides without changing source:
+Target/grid/scheduler settings are configured in the source (`target` + `build { ... }`), not via CLI flags.
 
-```bash
-openedge emit kernel.dsl --rows 8 --cols 8 --topology mesh
-```
+- [Configuration in Source](/language/configuration)
+- [Target Profiles](/language/target-profiles)
 
 ## Exit Codes
 

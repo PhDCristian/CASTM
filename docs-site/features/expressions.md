@@ -9,7 +9,7 @@ Canonical OpenEdgeDSL supports C-like assignment expressions that lower determin
 
 ## Target and assumptions
 
-- Snippets use `target "uma-cgra-base";`.
+- Snippets use `target base;`.
 - Lowering is deterministic for fixed source/options.
 - CSV shown is generated automatically from snippets.
 

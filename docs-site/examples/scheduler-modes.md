@@ -1,79 +1,50 @@
 # Scheduler Modes
 
-`schedulerMode` controls deterministic scheduling strategy in the compiler API.
-`slot-pack` is active in all modes and uses a mode-specific default window.
+Scheduler behavior is configured in-source via `build { ... }`.
+`slot-pack` stays deterministic for a fixed source.
 
 ## What this demonstrates
 
-- scheduler configuration through compile options,
-- deterministic mode behavior and defaults,
-- override knobs (`schedulerWindow`, `memoryReorderPolicy`).
+- scheduler presets from `optimize`,
+- explicit scheduler overrides in source,
+- deterministic behavior for the same source configuration.
 
 ## When to use
 
-Use this page when you need to tune scheduling policy while preserving deterministic compilation.
+Use this page when you want to tune scheduler behavior without leaving the `.edsl` source.
 
 ## Target and assumptions
 
-- API examples assume canonical source with `target "uma-cgra-base";`.
-- same source + same scheduler options = deterministic output.
-- CSV snippet below is generated from the linked DSL case.
+- snippets use canonical syntax and include `target base;`.
+- same source + same `build` scheduler fields => same CSV output.
 
-## Why this CSV looks like this
+## In-source configuration
 
-The same DSL source is compiled under different scheduler policies; output differences come from legal packing choices only.
-
-## API Usage
-
-```ts
-import { compile } from '@openedge/compiler-api';
-
-const source = `
-target "uma-cgra-base";
+```openedge
+target base;
+build {
+  optimize O2;
+  scheduler balanced;
+  scheduler_window auto;
+  memory_reorder same_address_fence;
+  prune_noop_cycles on;
+}
 kernel "sched_demo" {
   cycle { at @0,0: SADD R1, R0, 1; }
   cycle { at @0,1: SADD R2, R0, 1; }
 }
-`;
-
-const safe = compile(source, { schedulerMode: 'safe' });
-const balanced = compile(source, { schedulerMode: 'balanced' });
-const aggressive = compile(source, { schedulerMode: 'aggressive' });
-
-const tunedSafe = compile(source, {
-  schedulerMode: 'safe',
-  schedulerWindow: 2,
-  memoryReorderPolicy: 'strict'
-});
-
-console.log(safe.stats.cycles, balanced.stats.cycles, aggressive.stats.cycles);
 ```
 
-## Determinism Contract
+## Preset mapping
 
-- same source + same `schedulerMode` => same emitted CSV.
-- same source + same `schedulerMode` + same scheduler options => same emitted CSV.
-- `safe` defaults to `schedulerWindow=1` and `memoryReorderPolicy="strict"`.
-- `balanced` defaults to `schedulerWindow=2` and `memoryReorderPolicy="same-address-fence"`.
-- `aggressive` defaults to `schedulerWindow=4` and `memoryReorderPolicy="same-address-fence"`.
-- `schedulerWindow` can be overridden (`>=0` integer).
-- `memoryReorderPolicy` can be overridden:
-  - `"strict"`: memory ops stay pinned; ALU-only placements may still compact across memory cycles when legal.
-  - `"same-address-fence"`: allows more compaction while fencing same-address memory interactions.
+- `O0` => `safe`, window `0`, `strict`, prune `off`
+- `O1` => `safe`, window `1`, `strict`, prune `on`
+- `O2` => `balanced`, window `2`, `same_address_fence`, prune `on`
+- `O3` => `aggressive`, window `4`, `same_address_fence`, prune `on`
 
-Additional scheduler guarantees:
-
-- numeric branch targets are remapped deterministically if noop cycles are removed.
-- `ROUT` producers can be packed earlier in both policies when legal.
-- in `"strict"`, route-writer ordering is preserved and route writers never cross incoming-read dependencies (`RCL/RCR/RCT/RCB/INCOMING`).
-
-For concrete measurements and CSV-level examples, see:
-
-- [/examples/scheduler-practical](/examples/scheduler-practical)
+Explicit keys in `build` override preset values.
 
 ## OpenEdgeDSL ↔ CSV
-
-## DSL example used by all modes
 
 ::: code-group
 <<< ../snippets/examples/scheduler-modes/01-main.edsl{openedge} [OpenEdgeDSL]
@@ -82,13 +53,19 @@ For concrete measurements and CSV-level examples, see:
 
 Full generated CSV: `docs-site/snippets/examples/scheduler-modes/01-main.csv`.
 
+## Why this CSV looks like this
+
+The snippet contains two independent placements on different PEs. With balanced defaults (`O2`), slot packing can keep the cycle budget minimal while preserving deterministic ordering and hazards.
+
 ## Related features
 
 - [/features/pragmas/auto-cycle](/features/pragmas/auto-cycle)
+- [/features/pragmas/pipeline](/features/pragmas/pipeline)
 - [/features/pragmas/stash](/features/pragmas/stash)
-- [/features/pragmas/parallel](/features/pragmas/parallel)
+- [/language/compilation](/language/compilation)
+- [/examples/scheduler-practical](/examples/scheduler-practical)
 
 ## Continue
 
 - Next: [/examples/scheduler-practical](/examples/scheduler-practical)
-- All examples: [/examples](/examples/index)
+- All examples: [/examples/index](/examples/index)

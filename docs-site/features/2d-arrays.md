@@ -19,7 +19,7 @@ These lower to `LWI/SWI` with resolved linear addresses.
 ## Executable Snippet
 
 ```openedge
-target "uma-cgra-base";
+target base;
 let M[2][2] = { 10, 20, 30, 40 };
 
 kernel "array2d" {

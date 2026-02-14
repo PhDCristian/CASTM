@@ -9,7 +9,7 @@ Canonical memory sugar is available inside `cycle {}` and lowers to existing `LW
 
 ## Target and assumptions
 
-- Snippets use `target "uma-cgra-base";`.
+- Snippets use `target base;`.
 - Address expressions are compile-time resolved.
 - CSV shown is generated from snippets.
 

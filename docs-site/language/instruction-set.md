@@ -4,7 +4,7 @@ OpenEdgeDSL lowers to the ISA catalog in `packages/lang-spec/src/instruction-set
 
 ## Target and assumptions
 
-- Target profile examples assume `target "uma-cgra-base";`.
+- Target profile examples assume `target base;`.
 - Register/opcode availability is profile-dependent; this page reflects current base profile.
 - CSV shown is generated from executable snippets.
 

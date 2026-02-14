@@ -14,7 +14,7 @@ Use this page to choose the right example based on your current goal (learning p
 
 ## Target and assumptions
 
-- Every runnable snippet uses `target "uma-cgra-base";`.
+- Every runnable snippet uses `target base;`.
 - CSV shown in examples is generated from source snippets (never handwritten).
 - Default interpretation is `4x4` torus unless a page states otherwise.
 
@@ -37,7 +37,8 @@ Full CSV: `docs-site/snippets/examples/overview/01-main.csv`.
 4. [/examples/for-control-flow](/examples/for-control-flow)
 5. [/examples/scheduler-modes](/examples/scheduler-modes)
 6. [/examples/scheduler-practical](/examples/scheduler-practical)
-7. [/examples/kernel-compaction](/examples/kernel-compaction)
+7. [/examples/optimization-profiles](/examples/optimization-profiles)
+8. [/examples/kernel-compaction](/examples/kernel-compaction)
 
 ## What each page demonstrates
 
@@ -49,6 +50,7 @@ Full CSV: `docs-site/snippets/examples/overview/01-main.csv`.
 | [/examples/for-control-flow](/examples/for-control-flow) | `for` with `if/else` and `while` | explicit control-flow placement in kernel |
 | [/examples/scheduler-modes](/examples/scheduler-modes) | API options | deterministic scheduler configuration |
 | [/examples/scheduler-practical](/examples/scheduler-practical) | measured scheduler behavior | real cycle deltas and branch remap behavior |
+| [/examples/optimization-profiles](/examples/optimization-profiles) | same kernel, different presets | direct O0/O1/O2/O3 cycle comparison |
 | [/examples/kernel-compaction](/examples/kernel-compaction) | replacing boilerplate | shorter source with same semantics |
 | [/examples/parallel](/examples/parallel) | `pipeline(...)` | ordered function composition |
 | [/examples/scan](/examples/scan) | lane collectives | scan/reduce/allreduce composition |

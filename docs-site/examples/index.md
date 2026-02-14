@@ -14,7 +14,7 @@ Use this as your starting point before opening individual examples.
 
 ## Target and assumptions
 
-- Every runnable snippet in examples uses `target "uma-cgra-base";`.
+- Every runnable snippet in examples uses `target base;`.
 - CSV is generated from the same OpenEdgeDSL snippet shown in each page.
 
 ## OpenEdgeDSL ↔ CSV
@@ -36,7 +36,8 @@ Full CSV: `docs-site/snippets/examples/index/01-main.csv`.
 4. [/examples/for-control-flow](/examples/for-control-flow)
 5. [/examples/scheduler-modes](/examples/scheduler-modes)
 6. [/examples/scheduler-practical](/examples/scheduler-practical)
-7. [/examples/kernel-compaction](/examples/kernel-compaction)
+7. [/examples/optimization-profiles](/examples/optimization-profiles)
+8. [/examples/kernel-compaction](/examples/kernel-compaction)
 
 ## Domain-oriented path
 
@@ -45,6 +46,7 @@ Full CSV: `docs-site/snippets/examples/index/01-main.csv`.
 - Neighborhood + predicates: [/examples/stencil](/examples/stencil)
 - Collectives: [/examples/scan](/examples/scan)
 - Function sequencing: [/examples/parallel](/examples/parallel)
+- Same-kernel profile comparison: [/examples/optimization-profiles](/examples/optimization-profiles)
 
 ## Bridge to features
 

@@ -10,7 +10,7 @@ Canonical OpenEdgeDSL supports static and runtime `for` with explicit semantics.
 
 ## Target and assumptions
 
-- Snippets use `target "uma-cgra-base";`.
+- Snippets use `target base;`.
 - Static modifiers are valid only in static loops.
 - CSV shown is generated from snippets.
 

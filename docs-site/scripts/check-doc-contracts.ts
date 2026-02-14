@@ -53,6 +53,10 @@ function count(content: string, pattern: RegExp): number {
   return (content.match(pattern) ?? []).length;
 }
 
+function hasCanonicalTargetMention(content: string): boolean {
+  return /target\s+base\b/i.test(content) || /target\s+"uma-cgra-base"/i.test(content);
+}
+
 function checkPragmaPage(file: string): Violation[] {
   const content = fs.readFileSync(file, 'utf8');
   const violations: Violation[] = [];
@@ -92,8 +96,8 @@ function checkPragmaPage(file: string): Violation[] {
     violations.push({ file, message: 'expected at least one openedge-fail block' });
   }
 
-  if (!/target\s+"uma-cgra-base"/i.test(content)) {
-    violations.push({ file, message: 'missing explicit target mention (`target "uma-cgra-base"`)' });
+  if (!hasCanonicalTargetMention(content)) {
+    violations.push({ file, message: 'missing explicit target mention (`target base;`)' });
   }
 
   const csvFences = content.match(/```csv[\s\S]*?```/gim) ?? [];
@@ -119,8 +123,8 @@ function checkCoreFeaturePage(file: string): Violation[] {
   const content = fs.readFileSync(file, 'utf8');
   const violations: Violation[] = [];
 
-  if (!/target\s+"uma-cgra-base"/i.test(content)) {
-    violations.push({ file, message: 'missing explicit target mention (`target "uma-cgra-base"`)' });
+  if (!hasCanonicalTargetMention(content)) {
+    violations.push({ file, message: 'missing explicit target mention (`target base;`)' });
   }
 
   const codeGroups = count(content, /:::\s*code-group/g);
@@ -157,8 +161,8 @@ function checkExamplePage(file: string): Violation[] {
     }
   }
 
-  if (!/target\s+"uma-cgra-base"/i.test(content)) {
-    violations.push({ file, message: 'missing explicit target mention (`target "uma-cgra-base"`)' });
+  if (!hasCanonicalTargetMention(content)) {
+    violations.push({ file, message: 'missing explicit target mention (`target base;`)' });
   }
 
   const codeGroups = count(content, /:::\s*code-group/g);

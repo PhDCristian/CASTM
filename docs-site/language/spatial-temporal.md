@@ -26,7 +26,7 @@ Coordinate expressions and ranges are supported:
 ## Executable Snippet
 
 ```openedge
-target "uma-cgra-base";
+target base;
 kernel "space_time" {
   for k in range(0, 16) {
     cycle { @k/4,k%4: NOP; }

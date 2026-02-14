@@ -8,7 +8,7 @@ Use deterministic multiply-accumulate propagation across a selected target regio
 
 All executable snippets below are canonical and explicit:
 
-- `target "uma-cgra-base";`
+- `target base;`
 - default grid: `4x4` toroidal profile unless overridden at compile time
 - deterministic lowering: same source + options => same CSV
 

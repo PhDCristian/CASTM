@@ -9,7 +9,7 @@ Use `@openedge/compiler-api` for typed compilation phases.
 
 ## Target and assumptions
 
-- Source snippets are canonical and include `target "uma-cgra-base";`.
+- Source snippets are canonical and include `target base;`.
 - Artifact examples assume deterministic lowering in the default base profile.
 
 ## OpenEdgeDSL ↔ CSV quick sample
@@ -33,18 +33,22 @@ pnpm add @openedge/compiler-api
 import { compile } from '@openedge/compiler-api';
 
 const source = `
-target "uma-cgra-base";
+target base;
+build {
+  optimize O2;
+  scheduler balanced;
+  scheduler_window auto;
+  memory_reorder same_address_fence;
+  prune_noop_cycles on;
+}
 kernel "lib_example" {
   cycle { at @0,0: NOP; }
 }
 `;
 
 const result = compile(source, {
-  grid: { rows: 4, cols: 4, topology: 'torus' },
   emitArtifacts: ['structured', 'ast', 'hir', 'mir', 'lir', 'csv'],
-  schedulerMode: 'safe',
-  schedulerWindow: 1,
-  memoryReorderPolicy: 'strict'
+  strictUnsupported: true
 });
 
 if (!result.success) {
@@ -85,13 +89,10 @@ const emitted = emit(analyzed.lir, { format: 'flat-csv' });
 
 ## Compile Options
 
-- `targetProfile?: string`
-- `grid?: { rows?: number; cols?: number; topology?: "torus" | "mesh" }`
 - `emitArtifacts?: Array<'structured' | 'ast' | 'hir' | 'mir' | 'lir' | 'csv'>`
 - `strictUnsupported?: boolean`
-- `schedulerMode?: "safe" | "balanced" | "aggressive"`
-- `schedulerWindow?: number`
-- `memoryReorderPolicy?: "strict" | "same-address-fence"`
+
+Behavior configuration is source-owned (`target`, `build`, runtime statements), not compile-option driven.
 
 ## Compile Stats
 

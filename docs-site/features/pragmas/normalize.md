@@ -8,7 +8,7 @@ Use to apply carry register across fixed-width lanes and clamp with mask.
 
 All executable snippets below are canonical and explicit:
 
-- `target "uma-cgra-base";`
+- `target base;`
 - default grid: `4x4` toroidal profile unless overridden at compile time
 - deterministic lowering: same source + options => same CSV
 

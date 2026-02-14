@@ -1,23 +1,23 @@
-# Runtime Directives
+# Runtime Statements
 
-OpenEdgeDSL supports runtime directives inside kernels for IO pointers, limits, and assertions.
+OpenEdgeDSL supports typed runtime statements inside kernels for IO pointers, limits, and assertions.
 
-## Supported Directives
+## Supported Statements
 
-- `.io_load <addr0>, <addr1>, ...`
-- `.io_store <addr0>, <addr1>, ...`
-- `.limit <max_cycles>`
-- `.assert <expr>`
+- `io.load(<addr0>, <addr1>, ...)`
+- `io.store(<addr0>, <addr1>, ...)`
+- `limit(<max_cycles>)`
+- `assert(at=@r,c, reg=R0, equals=0, cycle=0)`
 
 ## Executable Snippet
 
 ```openedge
-target "uma-cgra-base";
+target base;
 kernel "runtime_directives" {
-  .io_load 0, 4, 8
-  .io_store 16, 20
-  .limit 64
-  .assert cycle=0 @0,0 R0 == 0
+  io.load(0, 4, 8);
+  io.store(16, 20);
+  limit(64);
+  assert(at=@0,0, reg=R0, equals=0, cycle=0);
 
   cycle { at @0,0: SADD R0, R0, 1; }
 }

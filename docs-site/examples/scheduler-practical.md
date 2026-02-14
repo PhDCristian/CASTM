@@ -1,22 +1,21 @@
 # Scheduler Practical Cases
 
-This page shows practical, measurable scheduler behavior with canonical DSL.
+This page shows measurable scheduler behavior using source-owned `build` configuration.
 
 ## What this demonstrates
 
-- measurable impact of scheduling window and policy,
-- branch-target remapping safety under compaction,
-- real-kernel profiling context.
+- compaction impact from `scheduler_window`,
+- safe branch-target remapping after cycle pruning,
+- deterministic outcomes for fixed source settings.
 
 ## When to use
 
-Use this page when validating scheduler behavior against concrete cycle budgets.
+Use this page when you need concrete cycle-level expectations for scheduler settings.
 
 ## Target and assumptions
 
-- All examples assume `target "uma-cgra-base";`.
-- Measurements are deterministic for fixed scheduler options.
-- CSV excerpt is generated from the linked snippet.
+- all examples use canonical syntax with `target base;`.
+- measurements are deterministic for a fixed source.
 
 ## OpenEdgeDSL ↔ CSV
 
@@ -25,38 +24,41 @@ Use this page when validating scheduler behavior against concrete cycle budgets.
 <<< ../snippets/examples/scheduler-practical/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
-## Case 1: Window compaction really reduces cycles
+Full CSV: `docs-site/snippets/examples/scheduler-practical/01-main.csv`.
 
-Source:
+## Case 1: Window compaction
 
 ```openedge
-target "uma-cgra-base";
-kernel "window_demo" {
+target base;
+build { optimize O0; scheduler safe; scheduler_window 0; memory_reorder strict; prune_noop_cycles off; }
+kernel "window_demo_o0" {
   cycle { at @0,0: SADD R1, R0, 1; }
   cycle { at @0,1: SADD R2, R0, 1; }
   cycle { at @0,2: SADD R3, R0, 1; }
 }
 ```
 
-Measured with `compile(...).stats.cycles`:
+```openedge
+target base;
+build { optimize O2; scheduler safe; scheduler_window 1; memory_reorder strict; prune_noop_cycles on; }
+kernel "window_demo_o2" {
+  cycle { at @0,0: SADD R1, R0, 1; }
+  cycle { at @0,1: SADD R2, R0, 1; }
+  cycle { at @0,2: SADD R3, R0, 1; }
+}
+```
 
-- `schedulerWindow=0` -> `3` cycles
-- `schedulerWindow=1` -> `2` cycles
-- `schedulerWindow=2` -> `1` cycle
+Typical behavior:
 
-Why it compacts:
+- `scheduler_window 0` => 3 cycles
+- `scheduler_window 1` => 2 cycles
+- `scheduler_window 2` => 1 cycle (when no hazards block compaction)
 
-- no PE collisions,
-- no control-flow barriers,
-- no memory ops,
-- no route-hop dependencies.
-
-## Case 2: Numeric branch targets are remapped after compaction
-
-Source:
+## Case 2: Branch remapping under compaction
 
 ```openedge
-target "uma-cgra-base";
+target base;
+build { optimize O2; scheduler safe; scheduler_window 1; memory_reorder strict; prune_noop_cycles on; }
 kernel "branch_remap" {
   cycle { at @0,0: BEQ R0, 0, 3; }
   cycle { at @0,0: NOP; }
@@ -65,76 +67,22 @@ kernel "branch_remap" {
 }
 ```
 
-Measured:
-
-- baseline (`schedulerWindow=0`): `4` cycles, branch row `BEQ R0 0 3`
-- packed (`schedulerWindow=1`): `3` cycles, branch row `BEQ R0 0 2`
-
-Practical impact:
-
-- noop cycles can be removed safely,
-- numeric branch destinations are updated deterministically to keep control-flow correct.
-
-## Case 3: `ROUT` writer movement in non-strict policy
-
-Source:
-
-```openedge
-target "uma-cgra-base";
-kernel "route_move" {
-  cycle { at @0,0: SADD R1, R0, 1; }
-  cycle { at @0,1: SADD ROUT, R2, ZERO; }
-}
-```
-
-Measured:
-
-- `memoryReorderPolicy="strict"` -> `2` cycles
-- `memoryReorderPolicy="same-address-fence"` -> `1` cycle
-
-Safety rule:
-
-- `ROUT` producers may move earlier only if they do not cross incoming-read placements (`RCL`, `RCR`, `RCT`, `RCB`, `INCOMING`).
-
-## Real kernel check (SBOX K7 v10)
-
-For real workload context, current SBOX kernels remain:
-
-- `safe`: `205` cycles
-- `balanced`: `205` cycles
-- `aggressive`: `205` cycles
-
-This means scheduler legality is preserved, but the current bottleneck is algorithmic dependency structure (`compute_qhat` / `mul_qhat_p`), not simple slot packing.
-
-## Reproduction script
-
-```ts
-import { compile } from '@openedge/compiler-api';
-
-const source = `target "uma-cgra-base"; kernel "k" { cycle { at @0,0: NOP; } }`;
-const result = compile(source, {
-  schedulerMode: 'safe',
-  schedulerWindow: 1,
-  memoryReorderPolicy: 'strict'
-});
-
-console.log(result.stats.cycles, result.stats.schedulerMode);
-```
-
-Full generated CSV: `docs-site/snippets/examples/scheduler-practical/01-main.csv`.
+When a noop cycle is removed, numeric branch targets are remapped deterministically.
 
 ## Why this CSV looks like this
 
-The excerpt shows compactable independent placements and control rows that remain deterministic after legal remapping.
+The generated matrix shows where compaction legally merged placements and where barriers (`BEQ`/`BNE`, memory fences, route hazards) forced cycle boundaries.
 
 ## Related features
 
 - [/features/pragmas/auto-cycle](/features/pragmas/auto-cycle)
+- [/features/pragmas/pipeline](/features/pragmas/pipeline)
+- [/features/pragmas/route](/features/pragmas/route)
 - [/features/pragmas/stash](/features/pragmas/stash)
-- [/features/pragmas/parallel](/features/pragmas/parallel)
 - [/examples/scheduler-modes](/examples/scheduler-modes)
+- [/examples/kernel-compaction](/examples/kernel-compaction)
 
 ## Continue
 
 - Next: [/examples/kernel-compaction](/examples/kernel-compaction)
-- All examples: [/examples](/examples/index)
+- All examples: [/examples/index](/examples/index)

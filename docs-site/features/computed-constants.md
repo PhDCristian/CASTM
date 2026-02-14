@@ -12,7 +12,7 @@ Integer expressions are supported in canonical source where numeric expressions 
 ## Executable Snippet
 
 ```openedge
-target "uma-cgra-base";
+target base;
 let BASE = 360;
 
 kernel "computed" {

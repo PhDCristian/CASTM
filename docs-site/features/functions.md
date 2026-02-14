@@ -10,7 +10,7 @@ Functions are canonical reusable blocks and expand deterministically at call sit
 
 ## Target and assumptions
 
-- Snippets use `target "uma-cgra-base";`.
+- Snippets use `target base;`.
 - Function expansion preserves lexical call order.
 - CSV shown is generated from snippets.
 

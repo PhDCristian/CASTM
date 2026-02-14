@@ -1,16 +1,24 @@
 # Program Structure
 
-A canonical OpenEdgeDSL source has four top-level zones.
+A canonical OpenEdgeDSL source has five top-level zones.
 
 1. `target` declaration (required)
-2. `let` declarations (optional)
-3. `function` definitions (optional)
-4. one `kernel` block (required)
+2. `build` block (optional)
+3. `let` declarations (optional)
+4. `function` definitions (optional)
+5. one `kernel` block (required)
+
+`target base;` is the canonical target entrypoint for users.
 
 ## Canonical Skeleton
 
 ```openedge
-target "uma-cgra-base";
+target base;
+
+build {
+  optimize O2;
+  scheduler balanced;
+}
 
 let MASK = 0xFFFF;
 let acc = R1;
@@ -32,7 +40,7 @@ kernel "structure" {
 Inside `kernel { ... }`, canonical items are:
 
 - `config(...)`
-- runtime directives (`.io_load`, `.io_store`, `.limit`, `.assert`)
+- runtime statements (`io.load(...)`, `io.store(...)`, `limit(...)`, `assert(...)`)
 - `cycle { ... }`
 - `if/else`, `while`, `for`
 - advanced statements (`std::route(...)`, `std::scan(...)`, `std::latency_hide(...)`, etc.)

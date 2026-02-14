@@ -8,9 +8,9 @@ Use ordered composition of function stages while keeping each stage reusable and
 
 All executable snippets below are canonical and explicit:
 
-- `target "uma-cgra-base";`
-- default grid: `4x4` toroidal profile unless overridden at compile time
-- deterministic lowering: same source + options => same CSV
+- `target base;`
+- default grid: `4x4` toroidal profile unless overridden in `build { ... }`
+- deterministic lowering: same source => same CSV
 
 ## Syntax
 
@@ -40,7 +40,7 @@ Full CSV: `docs-site/snippets/pragmas/pipeline/01-minimal.csv`.
 
 ## Case B — Advanced options
 
-### B1 — Default (`safe`, `schedulerWindow=1`)
+### B1 — Source-configured safe profile (`scheduler_window=1`)
 
 ::: code-group
 <<< ../../snippets/pragmas/pipeline/02-advanced.edsl{openedge} [OpenEdgeDSL]
@@ -55,30 +55,20 @@ Interpretation:
 - the scheduler compacts with one-cycle lookahead,
 - first two placements may end in cycle `0`, while the third stays in cycle `1`.
 
-### B2 — Same DSL with explicit override (`schedulerWindow=2`)
-
-```ts
-import { compile } from '@openedge/compiler-api';
-
-const result = compile(source, {
-  schedulerMode: 'safe',
-  schedulerWindow: 2
-});
-```
+### B2 — Same DSL with source override (`build { scheduler_window 2; }`)
 
 Expected effect for this specific source: `1` cycle.
 
 ::: code-group
 <<< ../../snippets/pragmas/pipeline/02-window2.edsl{openedge} [OpenEdgeDSL]
-<<< ../../snippets/pragmas/pipeline/02-window2.excerpt.csv{csv} [CSV excerpt (`schedulerWindow=2`)]
+<<< ../../snippets/pragmas/pipeline/02-window2.excerpt.csv{csv} [CSV excerpt (`scheduler_window=2`)]
 :::
 
 Full CSV: `docs-site/snippets/pragmas/pipeline/02-window2.csv`.
 
 Where this is configured:
 
-- **Not** in `target`.
-- It is a compiler option (`CompileOptions`) passed to `compile(...)`.
+- In source `build { ... }`, not in external compile overrides.
 - See:
   - [/language/compilation](/language/compilation)
   - [/guide/library-usage](/guide/library-usage)
@@ -120,18 +110,18 @@ After that, scheduler compaction may merge placements into earlier cycles when l
 For the `Case B` example:
 
 - Raw expansion is 3 cycles (`s0`, `s1`, `s2`).
-- Default `safe` mode uses `schedulerWindow=1`.
+- Source `build { scheduler safe; scheduler_window 1; }` uses window `1`.
 - With `window=1`, `s1` can move from cycle 1 to cycle 0, and `s2` can move from cycle 2 to cycle 1.
 - So `s2` appears in cycle 1 (not cycle 0) by design.
 
 Compaction horizon summary (same source):
 
-- `schedulerWindow=0` -> 3 cycles
-- `schedulerWindow=1` -> 2 cycles
-- `schedulerWindow>=2` -> 1 cycle
+- `scheduler_window 0` -> 3 cycles
+- `scheduler_window 1` -> 2 cycles
+- `scheduler_window >= 2` -> 1 cycle
 
 This is deterministic behavior, not a pipeline semantic bug.
-Current `safe` mode is conservative for control/memory, but no longer blocks legal `ROUT` writer compaction when no route hazards are crossed.
+`safe` mode is conservative for control/memory, but no longer blocks legal `ROUT` writer compaction when no route hazards are crossed.
 
 ## Related patterns
 
