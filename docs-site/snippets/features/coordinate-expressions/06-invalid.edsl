@@ -2,6 +2,6 @@
 target "uma-cgra-base";
 kernel "coords_invalid" {
   cycle {
-    @0,i: NOP;
+    @0,i: SADD R0, R0, 1;
   }
 }

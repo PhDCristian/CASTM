@@ -1,6 +1,6 @@
 target "uma-cgra-base";
 kernel "row_broadcast" {
   cycle {
-    at row 1: NOP;
+    at row 1: SADD R0, R0, 1;
   }
 }

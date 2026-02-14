@@ -74,6 +74,35 @@ kernel "feat16_arity" {
     expect(csv).toMatch(/\n\d+,0,1,SADD R1 R0 R3(?:\n|$)/);
   });
 
+  it('does not assume cross-PE register-name dependency between stages', () => {
+    const source = `
+target "uma-cgra-base";
+
+function s0(v) {
+  cycle { @0,0: SADD R1, v, ZERO; }
+}
+
+function s1(v) {
+  cycle { @0,1: SADD R2, v, R1; }
+}
+
+function s2(v) {
+  cycle { @0,2: SADD R3, v, R2; }
+}
+
+kernel "feat16_cross_pe_local_regs" {
+  pipeline(s0(R0), s1(R0), s2(R0));
+}
+`;
+
+    const packed = compile(source, { schedulerWindow: 2 });
+    expect(packed.success).toBe(true);
+    const csv = packed.artifacts.csv ?? '';
+    expect(csv).toMatch(/\n0,0,0,SADD R1 R0 ZERO(?:\n|$)/);
+    expect(csv).toMatch(/\n0,0,1,SADD R2 R0 R1(?:\n|$)/);
+    expect(csv).toMatch(/\n0,0,2,SADD R3 R0 R2(?:\n|$)/);
+  });
+
   it('rejects malformed pipeline statements and non-function entries', () => {
     const empty = compile(`
 target "uma-cgra-base";

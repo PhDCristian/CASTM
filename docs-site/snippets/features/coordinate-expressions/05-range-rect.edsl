@@ -1,6 +1,6 @@
 target "uma-cgra-base";
 kernel "coords_range_rect" {
   cycle {
-    @0..1,0..1: NOP;
+    @0..1,0..1: SADD R0, R0, 1;
   }
 }

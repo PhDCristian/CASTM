@@ -1,6 +1,6 @@
 target "uma-cgra-base";
 kernel "dyn_coords_range" {
   for r in range(0, 2) {
-    cycle { @r,0..3: NOP; }
+    cycle { @r,0..3: SADD R0, R0, 1; }
   }
 }

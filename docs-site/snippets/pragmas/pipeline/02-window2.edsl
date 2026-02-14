@@ -1,5 +1,5 @@
 target "uma-cgra-base";
-// Note: registers are local per PE; cross-PE dataflow still requires explicit routing/incoming semantics.
+// Compiled for docs with schedulerWindow=2 (see 02-window2.compile.json).
 function s0(v) {
   cycle { at @0,0: SADD R1, v, ZERO; }
 }
@@ -9,6 +9,6 @@ function s1(v) {
 function s2(v) {
   cycle { at @0,2: SADD R3, v, R2; }
 }
-kernel "pipeline_adv" {
+kernel "pipeline_adv_window2" {
   pipeline(s0(R0), s1(R0), s2(R0));
 }

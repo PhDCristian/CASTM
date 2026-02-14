@@ -13,6 +13,8 @@ Rules:
 - each entry must be a function call expression.
 - entries are expanded left-to-right.
 - advanced statements (`std::route(...)`, `std::reduce(...)`, etc.) are not valid as pipeline entries.
+- `pipeline(...)` itself does not create implicit cross-PE data dependencies.
+- register names are local to each PE; cross-PE dataflow still requires explicit route/incoming mechanisms.
 
 ## Semantics
 
@@ -25,6 +27,9 @@ c(y,z);
 ```
 
 Expansion happens before function-body lowering, so label hygiene and existing function expansion rules remain unchanged.
+
+After expansion, normal scheduler compaction rules still apply.  
+This means independent stage placements may be packed into fewer cycles depending on `schedulerMode` / `schedulerWindow`.
 
 ## Example
 

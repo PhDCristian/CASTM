@@ -2,6 +2,6 @@
 target "uma-cgra-base";
 kernel "row_invalid" {
   cycle {
-    row 0: NOP;
+    row 0: SADD R0, R0, 1;
   }
 }

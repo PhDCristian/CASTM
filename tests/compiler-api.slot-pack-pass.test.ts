@@ -212,6 +212,25 @@ describe('compiler-api slot-pack pass', () => {
     expect(opcodes).toContain('SADD');
   });
 
+  it('allows ROUT writers to move in strict policy when no incoming or route writers are crossed', () => {
+    const input = program([
+      cycle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
+      cycle(1, [at(0, 1, 'SADD', ['ROUT', 'R2', 'ZERO'])])
+    ]);
+
+    const pass = createSlotPackPass(grid, {
+      window: 1,
+      memoryReorderPolicy: 'strict'
+    });
+    const output = pass.run(input, { diagnostics: [] }).output;
+
+    expect(output.kernel.cycles).toHaveLength(1);
+    const routPlacement = output.kernel.cycles[0].statements.find(
+      (stmt: any) => stmt.row === 0 && stmt.col === 1
+    );
+    expect(routPlacement?.instruction.operands[0]).toBe('ROUT');
+  });
+
   it('does not move ROUT writers across incoming-read cycles', () => {
     const input = program([
       cycle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
@@ -230,5 +249,29 @@ describe('compiler-api slot-pack pass', () => {
       (stmt: any) => stmt.row === 0 && stmt.col === 2
     );
     expect(tail?.instruction.operands[0]).toBe('ROUT');
+  });
+
+  it('keeps ROUT writers ordered under strict policy', () => {
+    const input = program([
+      cycle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
+      cycle(1, [at(0, 1, 'SADD', ['ROUT', 'R2', 'ZERO'])]),
+      cycle(2, [at(0, 2, 'SADD', ['ROUT', 'R3', 'ZERO'])])
+    ]);
+
+    const pass = createSlotPackPass(grid, {
+      window: 2,
+      memoryReorderPolicy: 'strict'
+    });
+    const output = pass.run(input, { diagnostics: [] }).output;
+
+    const firstRouteCycle = output.kernel.cycles.findIndex((cycleNode: any) =>
+      cycleNode.statements.some((stmt: any) => stmt.row === 0 && stmt.col === 1)
+    );
+    const secondRouteCycle = output.kernel.cycles.findIndex((cycleNode: any) =>
+      cycleNode.statements.some((stmt: any) => stmt.row === 0 && stmt.col === 2)
+    );
+
+    expect(firstRouteCycle).toBeGreaterThanOrEqual(0);
+    expect(secondRouteCycle).toBeGreaterThan(firstRouteCycle);
   });
 });

@@ -294,7 +294,6 @@ function canPlacementMove(
   if (placement.isNoop) return false;
   if (placement.hasControl) return false;
   if (placement.readsIncoming) return false;
-  if (placement.routeSensitive && policy === 'strict') return false;
   if (placement.hasMemory) return false;
   return true;
 }
@@ -363,6 +362,7 @@ function canMovePlacementToCycle(
       for (const peer of cycles[cycleIndex].placements) {
         if (peer.id === placement.id) continue;
         if (peer.readsIncoming) return false;
+        if (policy === 'strict' && peer.writesRoute) return false;
       }
     }
   }

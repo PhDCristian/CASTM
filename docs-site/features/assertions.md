@@ -19,7 +19,7 @@ kernel "runtime_directives" {
   .limit 64
   .assert cycle=0 @0,0 R0 == 0
 
-  cycle { at @0,0: NOP; }
+  cycle { at @0,0: SADD R0, R0, 1; }
 }
 ```
 

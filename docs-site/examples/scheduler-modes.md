@@ -64,7 +64,8 @@ console.log(safe.stats.cycles, balanced.stats.cycles, aggressive.stats.cycles);
 Additional scheduler guarantees:
 
 - numeric branch targets are remapped deterministically if noop cycles are removed.
-- `ROUT` producers can be packed earlier in non-strict policy, but never across incoming-read dependencies (`RCL/RCR/RCT/RCB/INCOMING`).
+- `ROUT` producers can be packed earlier in both policies when legal.
+- in `"strict"`, route-writer ordering is preserved and route writers never cross incoming-read dependencies (`RCL/RCR/RCT/RCB/INCOMING`).
 
 For concrete measurements and CSV-level examples, see:
 

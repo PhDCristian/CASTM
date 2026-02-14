@@ -1,7 +1,7 @@
 target "uma-cgra-base";
 kernel "coords" {
   cycle {
-    @0,0..3: NOP;
-    @1..2,1: NOP;
+    @0,0..3: SADD R0, R0, 1;
+    @1..2,1: SMUL R1, R1, 2;
   }
 }
