@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "diag_invalid" {
   cycle {
     at @0,0: R0 = R0 + 1;

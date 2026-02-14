@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "dyn_coords_short" {
   for i in range(0, 4) {
     cycle { @0,i: R0 = R0 + 1; }

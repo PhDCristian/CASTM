@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 function stage1(src) {
   cycle { @0,0: R2 = src + 1; }
 }

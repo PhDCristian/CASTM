@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 
 function load_all(reg, addr) {
   cycle {

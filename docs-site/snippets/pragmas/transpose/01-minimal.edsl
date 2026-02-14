@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "transpose_min" {
   std::transpose(reg=R0);
 }

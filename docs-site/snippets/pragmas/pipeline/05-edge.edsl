@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 function s0(v) {
   cycle { at @0,0: SADD R1, v, ZERO; }
 }

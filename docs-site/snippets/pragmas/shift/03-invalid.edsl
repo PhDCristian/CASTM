@@ -1,5 +1,5 @@
 // expect-error: E2002
-target "uma-cgra-base";
+target base;
 kernel "shift_invalid" {
   std::shift(reg=R1, direction=right, distance=0, fill=0);
 }

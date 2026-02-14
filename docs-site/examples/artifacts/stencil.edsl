@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 
 kernel "stencil_guard_example" {
   std::stencil(cross, add, R0, R1);

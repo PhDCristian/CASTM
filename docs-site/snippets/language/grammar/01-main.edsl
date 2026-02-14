@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 let M = 0xFF;
 let DATA = { 10, 20, 30, 40 };
 

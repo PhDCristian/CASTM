@@ -1,5 +1,5 @@
 // expect-error: E2002
-target "uma-cgra-base";
+target base;
 kernel "row_invalid" {
   cycle {
     row 0: SADD R0, R0, 1;

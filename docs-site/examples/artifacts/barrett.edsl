@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 let LIMBS = { 0, 0, 0, 0 };
 
 kernel "carry_normalize_example" {

@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 let L = { 10, 20, 30, 40, 50, 60 };
 
 function compute_qhat_inregs() {

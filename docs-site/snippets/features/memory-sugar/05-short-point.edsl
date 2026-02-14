@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 let A = { 7, 8, 9, 10 };
 kernel "mem_short" {
   cycle {

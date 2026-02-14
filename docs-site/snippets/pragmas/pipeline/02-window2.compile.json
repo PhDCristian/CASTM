@@ -1,6 +1,0 @@
-{
-  "compileOptions": {
-    "schedulerMode": "safe",
-    "schedulerWindow": 2
-  }
-}

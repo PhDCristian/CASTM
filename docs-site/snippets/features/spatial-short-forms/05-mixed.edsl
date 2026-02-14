@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "mixed_spatial" {
   cycle {
     @0,0: SADD R0, R0, 1;

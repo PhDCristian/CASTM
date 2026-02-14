@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "col_single" {
   cycle {
     at col 2: SADD R0, R0, 1;

@@ -1,4 +1,10 @@
-target "uma-cgra-base";
+target base;
+build {
+  optimize O1;
+  scheduler safe;
+  scheduler_window 1;
+  memory_reorder strict;
+}
 // Note: registers are local per PE; cross-PE dataflow still requires explicit routing/incoming semantics.
 function s0(v) {
   cycle { at @0,0: SADD R1, v, ZERO; }

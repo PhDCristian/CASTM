@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 let INPUT = { 21 };
 
 kernel "readme_glance" {

@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 let M[2][2] = { 1, 2, 3, 4 };
 kernel "mem_2d" {
   cycle {

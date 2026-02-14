@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 function mix(dst, src) {
   cycle { @0,0: dst = src >> 16; }
 }

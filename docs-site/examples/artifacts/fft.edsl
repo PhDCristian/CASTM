@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 
 kernel "stream_route_example" {
   std::stream_load(dest=R0, row=0, count=2);

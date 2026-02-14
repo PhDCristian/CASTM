@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "mem_raw" {
   cycle {
     @0,0: [360 + 4] = R1;

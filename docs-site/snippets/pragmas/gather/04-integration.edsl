@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "gather_min" {
   std::gather(src=R0, dest=@0,0, destReg=R2, op=add);
 }

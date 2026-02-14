@@ -1,5 +1,5 @@
 // expect-error: E2002
-target "uma-cgra-base";
+target base;
 kernel "ctrl_invalid" {
   if (R0 == 0) {
     cycle { @0,1: R1 = R1 + 1; }

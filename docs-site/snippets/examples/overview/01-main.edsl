@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 let A = { 3, 5, 8, 13 };
 let OUT @200 = { 0 };
 

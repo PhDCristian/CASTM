@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "dynamic_coords" {
   for k in range(0, 16) {
     cycle {

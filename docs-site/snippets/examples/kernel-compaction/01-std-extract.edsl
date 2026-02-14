@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 
 function extract_bytes_row(valueSrc, valueDst) {
   std::extract_bytes(src=valueSrc, dest=valueDst, axis=row, byteWidth=8, mask=255);

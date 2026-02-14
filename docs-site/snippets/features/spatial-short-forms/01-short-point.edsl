@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 let A = { 10, 20, 30, 40 };
 kernel "short_point" {
   cycle {

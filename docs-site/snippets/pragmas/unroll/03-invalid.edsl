@@ -1,5 +1,5 @@
 // expect-error: E3006
-target "uma-cgra-base";
+target base;
 kernel "unroll_invalid" {
   for r in range(0, 2) collapse(2) {
     cycle { at @0,0: NOP; }

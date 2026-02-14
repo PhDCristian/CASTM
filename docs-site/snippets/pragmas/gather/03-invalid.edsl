@@ -1,5 +1,5 @@
 // expect-error: E2002
-target "uma-cgra-base";
+target base;
 kernel "gather_invalid" {
   std::gather(src=R0, dest=row(0), destReg=R2, op=add);
 }

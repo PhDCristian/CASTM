@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 
 kernel "explicit_extract" {
   cycle {

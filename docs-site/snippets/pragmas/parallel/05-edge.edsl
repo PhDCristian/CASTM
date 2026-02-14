@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "parallel_adv" {
   for r in range(0, 2) collapse(2) {
     for c in range(0, 2) {

@@ -1,5 +1,10 @@
-target "uma-cgra-base";
-// Compiled for docs with schedulerWindow=2 (see 02-window2.compile.json).
+target base;
+build {
+  optimize O2;
+  scheduler safe;
+  scheduler_window 2;
+  memory_reorder strict;
+}
 function s0(v) {
   cycle { at @0,0: SADD R1, v, ZERO; }
 }

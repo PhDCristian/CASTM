@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "rotate_min" {
   std::rotate(reg=R0, direction=left, distance=1);
 }

@@ -1,5 +1,5 @@
 // expect-error: E2002
-target "uma-cgra-base";
+target base;
 kernel "accumulate_invalid" {
   std::accumulate(pattern=diag, products=R2, accum=R3, out=R0);
 }

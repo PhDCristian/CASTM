@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "ctrl_for_if" {
   for i in range(0, 2) {
     if (R0 == 0) at @0,0 {

@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "transpose_adv" {
   std::transpose(reg=R2);
 }

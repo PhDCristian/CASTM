@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 let IN = { 2, 3 };
 
 kernel "features_index" {

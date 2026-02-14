@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 
 kernel "loops_example" {
   for i in range(0, 4) {

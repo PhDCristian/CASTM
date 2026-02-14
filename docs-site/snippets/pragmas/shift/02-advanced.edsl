@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 kernel "shift_adv" {
   std::shift(reg=R2, direction=left, distance=2, fill=7);
 }

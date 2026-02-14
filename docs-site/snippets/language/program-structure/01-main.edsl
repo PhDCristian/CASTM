@@ -1,4 +1,4 @@
-target "uma-cgra-base";
+target base;
 
 let MASK = 0xFFFF;
 let acc = R1;
