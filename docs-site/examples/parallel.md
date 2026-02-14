@@ -1,19 +1,22 @@
-# Pipeline + Functions
+# Pipeline with Functions
 
-Function composition with explicit `pipeline(...)` sequencing.
+## What this demonstrates
 
-```openedge
-target "uma-cgra-base";
+- reusable `function` blocks,
+- explicit sequencing with `pipeline(...)`,
+- deterministic call expansion order.
 
-function stage_load(src) {
-  cycle { at @0,0: SADD R2, src, ZERO; }
-}
+## OpenEdgeDSL / CSV
 
-function stage_mix(dst) {
-  cycle { at @0,1: SADD dst, R2, ZERO; }
-}
+::: code-group
+<<< ./artifacts/parallel.edsl{openedge} [OpenEdgeDSL]
+<<< ./artifacts/parallel.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+:::
 
-kernel "pipeline_example" {
-  pipeline(stage_load(R0), stage_mix(R3));
-}
-```
+## Practical reading
+
+- stage functions keep kernels small and composable.
+- `pipeline(...)` preserves lexical call order.
+- lowering stays canonical (no legacy macro layer).
+
+Full generated CSV: `docs-site/examples/artifacts/parallel.csv`.

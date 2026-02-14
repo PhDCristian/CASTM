@@ -1,14 +1,24 @@
-# Carry + Normalize Pattern
+# Carry + Normalize + Conditional Sub
 
-A general multi-limb pattern using canonical reusable statements.
+## What this demonstrates
 
-```openedge
-target "uma-cgra-base";
-let LIMBS = { 0, 0, 0, 0 };
+- deterministic carry propagation (`std::carry_chain(...)`),
+- lane normalization (`std::normalize(...)`),
+- branchless modular correction (`std::conditional_sub(...)`).
 
-kernel "carry_normalize_example" {
-  std::carry_chain(src=R0, carry=R3, store=LIMBS, limbs=3, width=16, row=0);
-  std::normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
-  std::conditional_sub(value=R0, sub=R1, dest=R2, target=row(0));
-}
-```
+## OpenEdgeDSL / CSV
+
+::: code-group
+<<< ./artifacts/barrett.edsl{openedge} [OpenEdgeDSL]
+<<< ./artifacts/barrett.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+:::
+
+## Practical reading
+
+This composition is the core building block for Barrett-like multi-limb pipelines:
+
+- carry in fixed width,
+- normalize in-lane,
+- final conditional subtraction without control-flow divergence.
+
+Full generated CSV: `docs-site/examples/artifacts/barrett.csv`.

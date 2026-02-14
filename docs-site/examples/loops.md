@@ -1,21 +1,23 @@
-# Loop Patterns
+# Loops: Static and Runtime
 
-Compile-time and runtime loop forms in canonical syntax.
+## What this demonstrates
 
-```openedge
-target "uma-cgra-base";
+- static `for` unrolled at compile time,
+- computed coordinates (`@k/4,k%4`),
+- runtime loop with explicit control PE.
 
-kernel "loops_example" {
-  for i in range(0, 4) {
-    cycle { @0,i: NOP; }
-  }
+## OpenEdgeDSL / CSV
 
-  for k in range(0, 16) {
-    cycle { @k/4,k%4: NOP; }
-  }
+::: code-group
+<<< ./artifacts/loops.edsl{openedge} [OpenEdgeDSL]
+<<< ./artifacts/loops.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+:::
 
-  for R0 in range(0, 3) at @0,0 runtime {
-    cycle { at @0,1: R1 = R0 + 1; }
-  }
-}
-```
+## Practical reading
+
+- first loop: explicit lane-by-lane expansion.
+- second loop: compact full-grid coverage with coordinate expressions.
+- third loop: runtime control remains explicit (`at @0,0 runtime`).
+
+The full output includes additional cycles for computed-coordinate expansion and runtime-loop control flow.
+Full generated CSV: `docs-site/examples/artifacts/loops.csv`.

@@ -41,12 +41,20 @@ console.log(safe.stats.cycles, balanced.stats.cycles, aggressive.stats.cycles);
   - `"strict"`: memory ops stay pinned; ALU-only placements may still compact across memory cycles when legal.
   - `"same-address-fence"`: allows more compaction while fencing same-address memory interactions.
 
+Additional scheduler guarantees:
+
+- numeric branch targets are remapped deterministically if noop cycles are removed.
+- `ROUT` producers can be packed earlier in non-strict policy, but never across incoming-read dependencies (`RCL/RCR/RCT/RCB/INCOMING`).
+
+For concrete measurements and CSV-level examples, see:
+
+- [/examples/scheduler-practical](/examples/scheduler-practical)
+
 ## DSL Example used by all modes
 
-```openedge
-target "uma-cgra-base";
-kernel "sched_demo" {
-  cycle { at @0,0: SADD R1, R0, 1; }
-  cycle { at @0,1: SADD R2, R0, 1; }
-}
-```
+::: code-group
+<<< ./artifacts/scheduler-modes.edsl{openedge} [OpenEdgeDSL]
+<<< ./artifacts/scheduler-modes.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+:::
+
+Full generated CSV: `docs-site/examples/artifacts/scheduler-modes.csv`.

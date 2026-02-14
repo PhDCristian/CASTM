@@ -1,6 +1,13 @@
-# For + Control-Flow Patterns
+# Control Flow with For/If/While
 
-Executable canonical patterns combining `for`, `if/else`, and `while`.
+Executable canonical patterns for control-flow inside kernels.
+
+## OpenEdgeDSL / CSV
+
+::: code-group
+<<< ./artifacts/for-control-flow.edsl{openedge} [OpenEdgeDSL]
+<<< ./artifacts/for-control-flow.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+:::
 
 ## 1) Static `for` with spatial coordinates
 
@@ -74,3 +81,10 @@ kernel "ex_bad_if_header" {
   }
 }
 ```
+
+## Practical rule
+
+- `if`/`while` require explicit control PE (`at @r,c` in the header).
+- static `for` and runtime `for` are different constructs; runtime form keeps control explicit.
+
+Full generated CSV: `docs-site/examples/artifacts/for-control-flow.csv`.

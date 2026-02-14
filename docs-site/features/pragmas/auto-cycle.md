@@ -1,6 +1,6 @@
 # `std::latency_hide(...)`
 
-Conservative post-expansion cycle compaction for safe latency hiding.
+Deterministic post-expansion slot packing for safe latency hiding.
 
 ## Syntax
 
@@ -12,17 +12,22 @@ std::latency_hide(window=1[, mode=conservative]);
 
 | Key | Required | Default | Description |
 |---|---|---|---|
-| `window` | no | `1` | max local merge attempts per anchor cycle (`1..256`) |
+| `window` | no | `1` | lookahead window for placement packing (`>=0`) |
 | `mode` | no | `conservative` | compaction strategy |
 
 ## Hazard Guards
 
-Two adjacent cycles are merged only if all checks pass:
+Placements are moved earlier only if all checks pass:
 
 1. no PE occupancy collisions
-2. no control/branch barriers
-3. no direct route-hop dependency
-4. no adjacent dual-memory hazard
+2. no control/branch barriers are crossed
+3. no direct route-hop dependency is crossed (`RCL/RCR/RCT/RCB/INCOMING`)
+4. memory policy allows the move (`strict` or `same-address-fence`)
+
+Additional guarantees:
+
+- lexical order remains deterministic,
+- numeric branch targets are remapped if noop cycles are removed.
 
 ## Example
 
@@ -44,3 +49,7 @@ NOP,NOP,NOP,"LWI R1, 4"
 NOP,NOP,NOP,NOP
 NOP,NOP,NOP,NOP
 ```
+
+## Practical cases
+
+- measurable examples: [/examples/scheduler-practical](/examples/scheduler-practical)

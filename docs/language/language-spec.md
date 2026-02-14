@@ -88,7 +88,7 @@ kernel "canonical_example" {
 - Static `for` modifiers are deterministic:
   - `unroll(k)` controls static expansion chunking.
   - `collapse(n)` currently requires perfectly nested static loops and applies row-major mapping.
-- `std::latency_hide(...)` applies conservative post-expansion cycle compaction with explicit hazard guards (PE overlap, direct route-hop dependency, control barriers, dual-memory adjacency), and can overlap disjoint route steps safely.
+- `std::latency_hide(...)` applies deterministic post-expansion slot packing with explicit hazard guards (PE overlap, route-hop dependencies, control barriers, memory policy fences), can overlap disjoint route steps safely, and remaps numeric branch targets when noop cycles are removed.
 - Compiler scheduling options are explicit and deterministic:
   - `schedulerMode`: `safe`, `balanced`, `aggressive`.
   - `schedulerWindow`: slot-pack lookahead window override (`>=0`).

@@ -1,0 +1,5 @@
+target "uma-cgra-base";
+kernel "sched_demo" {
+  cycle { at @0,0: SADD R1, R0, 1; }
+  cycle { at @0,1: SADD R2, R0, 1; }
+}

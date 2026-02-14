@@ -50,6 +50,13 @@ OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifact
 - `schedulerMode`
 - `loweredPasses`
 
+## Scheduling Notes
+
+- slot packing is placement-level (not only whole-cycle merge) and deterministic.
+- numeric branch targets are remapped when intermediate noop cycles are removed.
+- in non-strict memory policy, `ROUT` producers may move earlier when no incoming-read dependency is crossed.
+- control-flow ops (`BEQ/BNE/.../EXIT`) remain barriers.
+
 ## Diagnostics Contract
 
 Each diagnostic includes:

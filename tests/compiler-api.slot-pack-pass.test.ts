@@ -172,4 +172,63 @@ describe('compiler-api slot-pack pass', () => {
     expect(firstCycleCoords).toContainEqual([0, 0]);
     expect(secondCycleCoords).toContainEqual([0, 0]);
   });
+
+  it('remaps numeric branch targets when intermediate noop cycles are removed', () => {
+    const input = program([
+      cycle(0, [at(0, 0, 'BEQ', ['R0', '0', '3'])]),
+      cycle(1, []),
+      cycle(2, [at(0, 1, 'SADD', ['R2', 'R3', 'ZERO'])]),
+      cycle(3, [at(0, 0, 'BNE', ['R1', '0', '0'])])
+    ]);
+
+    const pass = createSlotPackPass(grid, {
+      window: 1,
+      memoryReorderPolicy: 'strict'
+    });
+    const output = pass.run(input, { diagnostics: [] }).output;
+
+    expect(output.kernel.cycles).toHaveLength(3);
+    const branch = output.kernel.cycles[0].statements.find(
+      (stmt: any) => stmt.instruction.opcode === 'BEQ'
+    );
+    expect(branch).toBeTruthy();
+    expect(branch.instruction.operands[2]).toBe('2');
+  });
+
+  it('allows ROUT writers to move in non-strict policy when no incoming consumers are crossed', () => {
+    const input = program([
+      cycle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
+      cycle(1, [at(0, 1, 'SADD', ['ROUT', 'R2', 'ZERO'])])
+    ]);
+
+    const pass = createSlotPackPass(grid, {
+      window: 1,
+      memoryReorderPolicy: 'same-address-fence'
+    });
+    const output = pass.run(input, { diagnostics: [] }).output;
+
+    expect(output.kernel.cycles).toHaveLength(1);
+    const opcodes = output.kernel.cycles[0].statements.map((stmt: any) => stmt.instruction.opcode);
+    expect(opcodes).toContain('SADD');
+  });
+
+  it('does not move ROUT writers across incoming-read cycles', () => {
+    const input = program([
+      cycle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
+      cycle(1, [at(0, 1, 'SADD', ['R2', 'RCL', 'ZERO'])]),
+      cycle(2, [at(0, 2, 'SADD', ['ROUT', 'R3', 'ZERO'])])
+    ]);
+
+    const pass = createSlotPackPass(grid, {
+      window: 2,
+      memoryReorderPolicy: 'same-address-fence'
+    });
+    const output = pass.run(input, { diagnostics: [] }).output;
+
+    expect(output.kernel.cycles).toHaveLength(3);
+    const tail = output.kernel.cycles[2].statements.find(
+      (stmt: any) => stmt.row === 0 && stmt.col === 2
+    );
+    expect(tail?.instruction.operands[0]).toBe('ROUT');
+  });
 });

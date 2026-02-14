@@ -1,15 +1,20 @@
-# Streaming + Route
+# Streaming + Route Transfer
 
-Streaming IO plus explicit route transfer.
+## What this demonstrates
 
-```openedge
-target "uma-cgra-base";
+- `std::stream_load/store(...)` for IO lanes,
+- in-grid data movement (`std::rotate`, `std::shift`),
+- explicit point-to-point transfer with `std::route(...)`.
 
-kernel "stream_route_example" {
-  std::stream_load(dest=R0, row=0, count=2);
-  std::rotate(reg=R0, direction=left, distance=1);
-  std::route(@0,1 -> @0,0, payload=R0, accum=R1);
-  std::shift(reg=R1, direction=right, distance=1, fill=0);
-  std::stream_store(src=R1, row=0, count=2);
-}
-```
+## OpenEdgeDSL / CSV
+
+::: code-group
+<<< ./artifacts/fft.edsl{openedge} [OpenEdgeDSL]
+<<< ./artifacts/fft.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+:::
+
+## Practical reading
+
+Use this pattern when data comes from stream endpoints and then needs deterministic in-grid transport before storing back.
+
+Full generated CSV: `docs-site/examples/artifacts/fft.csv`.

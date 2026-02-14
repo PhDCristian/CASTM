@@ -67,7 +67,34 @@ function extractDslSnippets(markdown: string): DslSnippet[] {
     }
   }
 
+  for (const line of markdown.split('\n')) {
+    const includeMatch = line.match(/^\s*<<<\s+.+\{(openedge|dsl|openedge-fail|dsl-fail)\}.*$/i);
+    if (!includeMatch) continue;
+    const language = includeMatch[1].toLowerCase();
+    snippets.push({
+      source: line.trim(),
+      mode: language.endsWith('-fail') ? 'fail' : 'pass',
+      expectedErrorCodes: []
+    });
+  }
+
   return snippets;
+}
+
+function resolveSnippetSource(markdownFile: string, source: string): string {
+  const trimmed = source.trim();
+  const includeMatch = trimmed.match(/^<<<\s+(.+)$/);
+  if (!includeMatch) return source;
+
+  let includePath = includeMatch[1].trim();
+  includePath = includePath.replace(/\[[^\]]*\]\s*$/, '').trim();
+  includePath = includePath.replace(/\{[^}]*\}\s*$/, '').trim();
+  if (!includePath) return source;
+
+  const resolved = includePath.startsWith('/')
+    ? includePath
+    : path.resolve(path.dirname(markdownFile), includePath);
+  return fs.readFileSync(resolved, 'utf8');
 }
 
 describe('docs snippets contracts', () => {
@@ -92,19 +119,20 @@ describe('docs snippets contracts', () => {
     expect(snippets.some(({ snippet }) => snippet.mode === 'pass')).toBe(true);
 
     for (const item of snippets) {
-      const result = compile(item.snippet.source, { strictUnsupported: false });
+      const source = resolveSnippetSource(item.file, item.snippet.source);
+      const result = compile(source, { strictUnsupported: false });
       if (item.snippet.mode === 'pass') {
-        expect(result.success, `Snippet failed in ${item.file}\n${item.snippet.source}`).toBe(true);
+        expect(result.success, `Snippet failed in ${item.file}\n${source}`).toBe(true);
         continue;
       }
 
-      expect(result.success, `Fail-snippet unexpectedly succeeded in ${item.file}\n${item.snippet.source}`).toBe(
+      expect(result.success, `Fail-snippet unexpectedly succeeded in ${item.file}\n${source}`).toBe(
         false
       );
       for (const expectedCode of item.snippet.expectedErrorCodes) {
         expect(
           result.diagnostics.some((diag) => diag.code === expectedCode),
-          `Missing expected diagnostic ${expectedCode} in ${item.file}\n${item.snippet.source}`
+          `Missing expected diagnostic ${expectedCode} in ${item.file}\n${source}`
         ).toBe(true);
       }
     }

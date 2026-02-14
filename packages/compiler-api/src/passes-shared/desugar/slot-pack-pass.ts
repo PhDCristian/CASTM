@@ -58,6 +58,8 @@ interface Placement {
   hasMemory: boolean;
   memoryAddressKey: string | null;
   routeSensitive: boolean;
+  readsIncoming: boolean;
+  writesRoute: boolean;
   isNoop: boolean;
 }
 
@@ -207,27 +209,92 @@ function expandStatement(statement: CycleStatementAst, grid: GridSpec): Expanded
   return placements;
 }
 
-function hasNumericBranchTarget(cycles: CycleBucket[]): boolean {
+function parseIntegerLiteral(text: string): number | null {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
+  if (/^[-+]?\d+$/.test(trimmed)) {
+    const value = Number.parseInt(trimmed, 10);
+    return Number.isFinite(value) ? value : null;
+  }
+  if (/^[-+]?0x[0-9a-fA-F]+$/i.test(trimmed)) {
+    const negative = trimmed.startsWith('-');
+    const unsigned = trimmed.replace(/^[-+]/, '');
+    const value = Number.parseInt(unsigned, 16);
+    if (!Number.isFinite(value)) return null;
+    return negative ? -value : value;
+  }
+  return null;
+}
+
+function formatIntegerLike(original: string, value: number): string {
+  const trimmed = original.trim();
+  if (/^[-+]?0x[0-9a-fA-F]+$/i.test(trimmed)) {
+    if (value < 0) return `-0x${Math.abs(value).toString(16)}`;
+    return `0x${value.toString(16)}`;
+  }
+  return String(value);
+}
+
+function resolveRemappedCycleTarget(
+  target: number,
+  oldToNewCycle: number[],
+  newCycleLength: number
+): number {
+  if (!Number.isFinite(target)) return target;
+  if (target < 0) return target;
+  if (target >= oldToNewCycle.length) return target;
+
+  for (let index = target; index < oldToNewCycle.length; index++) {
+    const mapped = oldToNewCycle[index];
+    if (mapped >= 0) return mapped;
+  }
+
+  // If the original target was a trailing removed noop cycle, jump to end.
+  return newCycleLength;
+}
+
+function remapNumericBranchTargets(
+  cycles: CycleBucket[],
+  oldToNewCycle: number[],
+  newCycleLength: number
+): void {
   for (const cycle of cycles) {
     for (const placement of cycle.placements) {
       const opcode = normalizeOpcode(placement.instruction);
       if (!BRANCH_WITH_NUMERIC_TARGET.has(opcode)) continue;
+
       const operands = normalizedOperands(placement.instruction);
-      const target = operands[operands.length - 1];
-      if (target && isIntegerLiteral(target)) return true;
+      if (operands.length === 0) continue;
+      const targetIndex = operands.length - 1;
+      const originalTargetToken = operands[targetIndex];
+      const target = parseIntegerLiteral(originalTargetToken);
+      if (target === null) continue;
+
+      const remappedTarget = resolveRemappedCycleTarget(target, oldToNewCycle, newCycleLength);
+      if (remappedTarget === target) continue;
+
+      const nextOperands = operands.slice();
+      nextOperands[targetIndex] = formatIntegerLike(originalTargetToken, remappedTarget);
+      placement.instruction = {
+        ...placement.instruction,
+        opcode,
+        operands: nextOperands,
+        text: `${opcode} ${nextOperands.join(', ')}`
+      };
     }
   }
-  return false;
 }
 
 function canPlacementMove(
   placement: Placement,
-  cycle: CycleBucket
+  cycle: CycleBucket,
+  policy: MemoryReorderPolicy
 ): boolean {
   if (cycle.barrier) return false;
   if (placement.isNoop) return false;
   if (placement.hasControl) return false;
-  if (placement.routeSensitive) return false;
+  if (placement.readsIncoming) return false;
+  if (placement.routeSensitive && policy === 'strict') return false;
   if (placement.hasMemory) return false;
   return true;
 }
@@ -291,6 +358,15 @@ function canMovePlacementToCycle(
     }
   }
 
+  if (placement.writesRoute) {
+    for (let cycleIndex = toCycle; cycleIndex < fromCycle; cycleIndex++) {
+      for (const peer of cycles[cycleIndex].placements) {
+        if (peer.id === placement.id) continue;
+        if (peer.readsIncoming) return false;
+      }
+    }
+  }
+
   return true;
 }
 
@@ -337,7 +413,9 @@ export function createSlotPackPass(
             const noop = isNopInstruction(candidate.instruction);
             const control = isControlInstruction(candidate.instruction);
             const memory = isMemoryInstruction(candidate.instruction);
-            const routeSensitive = writesRoute(candidate.instruction) || readsIncoming(candidate.instruction);
+            const readsRouteIncoming = readsIncoming(candidate.instruction);
+            const writesRouteOutput = writesRoute(candidate.instruction);
+            const routeSensitive = writesRouteOutput || readsRouteIncoming;
             const placement: Placement = {
               id: placementId++,
               row: candidate.row,
@@ -349,6 +427,8 @@ export function createSlotPackPass(
               hasMemory: memory,
               memoryAddressKey: extractMemoryAddressKey(candidate.instruction),
               routeSensitive,
+              readsIncoming: readsRouteIncoming,
+              writesRoute: writesRouteOutput,
               isNoop: noop
             };
             hasControl = hasControl || control;
@@ -393,7 +473,7 @@ export function createSlotPackPass(
         for (const placement of sourcePlacements) {
           const currentSourceCycle = currentCycleByPlacement.get(placement.id);
           if (currentSourceCycle === undefined) continue;
-          if (!canPlacementMove(placement, cycles[currentSourceCycle])) continue;
+          if (!canPlacementMove(placement, cycles[currentSourceCycle], policy)) continue;
 
           const minCycle = Math.max(0, currentSourceCycle - window);
           let moved = false;
@@ -428,10 +508,19 @@ export function createSlotPackPass(
         cycle.placements.sort((a, b) => a.originOrder - b.originOrder);
       }
 
-      const preserveEmpty = hasNumericBranchTarget(cycles);
+      const cycleRetained = cycles.map((cycle) => cycle.placements.length > 0 || Boolean(cycle.label));
+      const oldToNewCycle = new Array<number>(cycles.length).fill(-1);
+      let newCycleLength = 0;
+      for (let index = 0; index < cycles.length; index++) {
+        if (!cycleRetained[index]) continue;
+        oldToNewCycle[index] = newCycleLength++;
+      }
+      remapNumericBranchTargets(cycles, oldToNewCycle, newCycleLength);
+
       const rebuiltCycles: CycleAst[] = [];
-      for (const cycle of cycles) {
-        if (cycle.placements.length === 0 && !cycle.label && !preserveEmpty) {
+      for (let oldIndex = 0; oldIndex < cycles.length; oldIndex++) {
+        const cycle = cycles[oldIndex];
+        if (!cycleRetained[oldIndex]) {
           continue;
         }
 

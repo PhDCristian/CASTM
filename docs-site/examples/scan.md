@@ -1,13 +1,22 @@
-# Scan + Reduce
+# Scan + Reduce + Allreduce
 
-Collective statements over lanes.
+## What this demonstrates
 
-```openedge
-target "uma-cgra-base";
+- lane prefix computation with `std::scan(...)`,
+- lane reduction with `std::reduce(...)`,
+- global fanout with `std::allreduce(...)`.
 
-kernel "scan_reduce_example" {
-  std::scan(op=add, src=R0, dest=R1, dir=right, mode=inclusive);
-  std::reduce(op=add, dest=R2, src=R1, axis=row);
-  std::allreduce(op=add, dest=R3, src=R2, axis=col);
-}
-```
+## OpenEdgeDSL / CSV
+
+::: code-group
+<<< ./artifacts/scan.edsl{openedge} [OpenEdgeDSL]
+<<< ./artifacts/scan.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+:::
+
+## Practical reading
+
+- use `scan` for cumulative per-lane state.
+- use `reduce` to aggregate per row/column.
+- use `allreduce` when every PE must receive the aggregate.
+
+Full generated CSV: `docs-site/examples/artifacts/scan.csv`.

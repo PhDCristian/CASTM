@@ -36,7 +36,34 @@ function extractOpenEdgeSnippets(markdown: string): ExtractedSnippet[] {
     }
   }
 
+  for (const line of markdown.split('\n')) {
+    const includeMatch = line.match(/^\s*<<<\s+.+\{(openedge|dsl|openedge-fail|dsl-fail)\}.*$/i);
+    if (!includeMatch) continue;
+    const language = includeMatch[1].toLowerCase();
+    snippets.push({
+      source: line.trim(),
+      mode: language.endsWith('-fail') ? 'fail' : 'pass',
+      expectedErrorCodes: []
+    });
+  }
+
   return snippets;
+}
+
+function resolveSnippetSource(markdownFile: string, source: string): string {
+  const trimmed = source.trim();
+  const includeMatch = trimmed.match(/^<<<\s+(.+)$/);
+  if (!includeMatch) return source;
+
+  let includePath = includeMatch[1].trim();
+  includePath = includePath.replace(/\[[^\]]*\]\s*$/, '').trim();
+  includePath = includePath.replace(/\{[^}]*\}\s*$/, '').trim();
+  if (!includePath) return source;
+
+  const resolved = includePath.startsWith('/')
+    ? includePath
+    : path.resolve(path.dirname(markdownFile), includePath);
+  return fs.readFileSync(resolved, 'utf8');
 }
 
 describe('docs-site loop feature contracts', () => {
@@ -52,34 +79,46 @@ describe('docs-site loop feature contracts', () => {
       path.resolve(__dirname, '../docs-site/examples/scheduler-modes.md')
     ];
 
-    const snippets: ExtractedSnippet[] = files.flatMap((file) =>
-      extractOpenEdgeSnippets(fs.readFileSync(file, 'utf8'))
+    const snippets: Array<{ file: string; snippet: ExtractedSnippet }> = files.flatMap((file) =>
+      extractOpenEdgeSnippets(fs.readFileSync(file, 'utf8')).map((snippet) => ({ file, snippet }))
     );
 
-    const passSnippets = snippets.filter((snippet) => snippet.mode === 'pass');
-    const failSnippets = snippets.filter((snippet) => snippet.mode === 'fail');
+    const passSnippets = snippets.filter((item) => item.snippet.mode === 'pass');
+    const failSnippets = snippets.filter((item) => item.snippet.mode === 'fail');
 
     expect(passSnippets.length).toBeGreaterThanOrEqual(14);
     expect(failSnippets.length).toBeGreaterThanOrEqual(5);
 
-    expect(passSnippets.some((snippet) => /\bunroll\(/.test(snippet.source))).toBe(true);
-    expect(passSnippets.some((snippet) => /\bcollapse\(/.test(snippet.source))).toBe(true);
-    expect(passSnippets.some((snippet) => /\bruntime\b/.test(snippet.source))).toBe(true);
-    expect(passSnippets.some((snippet) => /\bif\s*\(/.test(snippet.source))).toBe(true);
-    expect(passSnippets.some((snippet) => /\bwhile\s*\(/.test(snippet.source))).toBe(true);
+    expect(passSnippets.some((item) => /\bunroll\(/.test(resolveSnippetSource(item.file, item.snippet.source)))).toBe(
+      true
+    );
+    expect(passSnippets.some((item) => /\bcollapse\(/.test(resolveSnippetSource(item.file, item.snippet.source)))).toBe(
+      true
+    );
+    expect(passSnippets.some((item) => /\bruntime\b/.test(resolveSnippetSource(item.file, item.snippet.source)))).toBe(
+      true
+    );
+    expect(passSnippets.some((item) => /\bif\s*\(/.test(resolveSnippetSource(item.file, item.snippet.source)))).toBe(
+      true
+    );
+    expect(passSnippets.some((item) => /\bwhile\s*\(/.test(resolveSnippetSource(item.file, item.snippet.source)))).toBe(
+      true
+    );
 
-    for (const snippet of passSnippets) {
-      const result = compile(snippet.source);
-      expect(result.success, `Expected docs snippet to compile:\n${snippet.source}`).toBe(true);
+    for (const item of passSnippets) {
+      const source = resolveSnippetSource(item.file, item.snippet.source);
+      const result = compile(source);
+      expect(result.success, `Expected docs snippet to compile:\n${source}`).toBe(true);
     }
 
-    for (const snippet of failSnippets) {
-      const result = compile(snippet.source);
-      expect(result.success, `Expected docs fail-snippet to fail:\n${snippet.source}`).toBe(false);
-      for (const code of snippet.expectedErrorCodes) {
+    for (const item of failSnippets) {
+      const source = resolveSnippetSource(item.file, item.snippet.source);
+      const result = compile(source);
+      expect(result.success, `Expected docs fail-snippet to fail:\n${source}`).toBe(false);
+      for (const code of item.snippet.expectedErrorCodes) {
         expect(
           result.diagnostics.some((diag) => diag.code === code),
-          `Expected diagnostic ${code} in fail-snippet:\n${snippet.source}`
+          `Expected diagnostic ${code} in fail-snippet:\n${source}`
         ).toBe(true);
       }
     }

@@ -10,23 +10,29 @@ std::latency_hide(window=1[, mode=conservative]);
 
 Accepted values:
 
-- `window`: positive integer (`1..256`) indicating how many consecutive merge attempts are allowed from each cycle anchor.
+- `window`: integer (`>=0`) indicating lookahead for placement packing (`0` disables packing).
 - `mode`: currently only `conservative`.
 
 ## Semantics
 
 `std::latency_hide(...)` runs as a deterministic post-expansion scheduler.
 
-Two adjacent cycles are compacted only when all conditions hold:
+Packing is placement-level inside a bounded lookahead window (`schedulerWindow`), not only full-cycle merge.
+
+Placements are moved earlier only when all conditions hold:
 
 1. No PE occupancy collision between both cycles.
-2. No branch/control barrier instructions in either cycle.
-3. No direct route hop dependency (a neighbor-reader in one cycle consuming a `ROUT` write from the other cycle).
-4. Not both cycles containing memory operations.
+2. No branch/control barrier is crossed.
+3. No direct route hop dependency is crossed (incoming readers `RCL/RCR/RCT/RCB/INCOMING` fence `ROUT` producers).
+4. Memory policy allows the move (`strict` or `same-address-fence`).
 
-Independent route steps on disjoint PEs can now be compacted (OPT-B baseline), while direct hop dependencies remain separated.
+Independent route steps on disjoint PEs can be compacted, while direct hop dependencies remain separated.
 
-When merged, statements are preserved in lexical order and cycle indices are re-numbered deterministically.
+When compacted:
+
+- lexical order is preserved deterministically,
+- cycle indices are re-numbered deterministically,
+- numeric branch targets are remapped to the new cycle indices.
 
 ## Example
 

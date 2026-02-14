@@ -1,13 +1,22 @@
-# Stencil + Guard
+# Stencil + Guard + Triangle
 
-Combines neighborhood stencil generation with compile-time guarded activation.
+## What this demonstrates
 
-```openedge
-target "uma-cgra-base";
+- neighborhood pattern (`std::stencil(...)`),
+- predicate-based activation (`std::guard(...)`),
+- geometric masks (`std::triangle(...)`).
 
-kernel "stencil_guard_example" {
-  std::stencil(cross, add, R0, R1);
-  std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
-  std::triangle(shape=upper, inclusive=true, op=SADD, dest=R3, srcA=R1, srcB=R2);
-}
-```
+## OpenEdgeDSL / CSV
+
+::: code-group
+<<< ./artifacts/stencil.edsl{openedge} [OpenEdgeDSL]
+<<< ./artifacts/stencil.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+:::
+
+## Practical reading
+
+- `stencil` emits neighborhood communication.
+- `guard` keeps only valid/desired PE placements.
+- `triangle` maps algebra to upper/lower matrix regions deterministically.
+
+Full generated CSV: `docs-site/examples/artifacts/stencil.csv`.

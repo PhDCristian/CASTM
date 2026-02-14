@@ -1,17 +1,13 @@
-# Loop Strategies
+# Loops: Unroll and Collapse
 
-This page groups executable examples for static and runtime loop strategies.
+This page shows canonical loop strategy modifiers for static loops.
 
 ## 1) Static baseline loop
 
-```openedge
-target "uma-cgra-base";
-kernel "ex_loop_baseline" {
-  for i in range(0, 4) {
-    cycle { at @0,i: R2 = R0 + 1; }
-  }
-}
-```
+::: code-group
+<<< ./artifacts/loop-strategies.edsl{openedge} [OpenEdgeDSL]
+<<< ./artifacts/loop-strategies.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
+:::
 
 ## 2) Static `unroll(2)`
 
@@ -50,7 +46,7 @@ kernel "ex_loop_combo" {
 }
 ```
 
-## 5) Runtime loop with explicit control PE
+## 5) Runtime loop with explicit control PE (no static modifiers)
 
 ```openedge
 target "uma-cgra-base";
@@ -72,3 +68,11 @@ kernel "ex_loop_runtime_invalid" {
   }
 }
 ```
+
+## Practical rule
+
+- use `unroll(k)` when you want wider static expansion chunks.
+- use `collapse(n)` for perfectly nested static loops.
+- runtime loops are explicit and do not accept static modifiers.
+
+Full generated CSV: `docs-site/examples/artifacts/loop-strategies.csv`.
