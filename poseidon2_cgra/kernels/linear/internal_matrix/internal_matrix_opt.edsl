@@ -1,0 +1,1545 @@
+// Auto-generated from instructions.csv (canonical baseline, deterministic).
+// Do not edit manually; regenerate from kernel CSV or replace with optimized handwritten DSL.
+target base;
+
+build {
+  optimize O0;
+  scheduler safe;
+  scheduler_window 0;
+  memory_reorder strict;
+  prune_noop_cycles off;
+  grid 4x4 torus;
+}
+
+kernel "internal_matrix_opt" {
+  cycle {
+    at row 0: LWI R3, 4100 | LWI R3, 4100 | LWI R3, 4100 | LWI R3, 4100;
+    at row 1: LWI R3, 4100 | LWI R3, 4100 | LWI R3, 4100 | LWI R3, 4100;
+    at row 2: LWI R3, 4100 | LWI R3, 4100 | LWI R3, 4100 | LWI R3, 4100;
+    at row 3: LWI R3, 4100 | LWI R3, 4100 | LWI R3, 4100 | LWI R3, 4100;
+  }
+  cycle {
+    at row 0: LWI R0, 0 | LWI R0, 4 | LWI R0, 8 | LWI R0, 12;
+    at row 1: LWI R0, 16 | LWI R0, 20 | LWI R0, 24 | LWI R0, 28;
+    at row 2: LWI R0, 32 | LWI R0, 36 | LWI R0, 40 | LWI R0, 44;
+    at row 3: LWI R0, 48 | LWI R0, 52 | LWI R0, 56 | LWI R0, 60;
+  }
+  cycle {
+    at row 0: SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO;
+    at row 1: SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO;
+    at row 2: SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO;
+    at row 3: SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO | SADD R1, ZERO, ZERO;
+  }
+  cycle {
+    at row 0: SADD R2, R0, ZERO | SADD R2, R0, ZERO | SADD R2, R0, ZERO | SADD R2, R0, ZERO;
+    at row 1: SADD R2, R0, ZERO | SADD R2, R0, ZERO | SADD R2, R0, ZERO | SADD R2, R0, ZERO;
+    at row 2: SADD R2, R0, ZERO | SADD R2, R0, ZERO | SADD R2, R0, ZERO | SADD R2, R0, ZERO;
+    at row 3: SADD R2, R0, ZERO | SADD R2, R0, ZERO | SADD R2, R0, ZERO | SADD R2, R0, ZERO;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | NOP | NOP;
+    at row 1: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 2: SADD R1, R1, R2 | NOP | NOP | NOP;
+    at row 3: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: NOP | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 2: NOP | SADD R1, R1, R2 | NOP | SADD R1, R1, R2;
+    at row 3: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 1: NOP | SADD R1, R1, R2 | NOP | NOP;
+    at row 2: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 3: SADD R1, R1, R2 | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 2: SADD R1, R1, R2 | SADD R1, R1, R2 | NOP | NOP;
+    at row 3: NOP | SADD R1, R1, R2 | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 1: NOP | NOP | SADD R1, R1, R2 | NOP;
+    at row 2: SADD R1, R1, R2 | NOP | NOP | NOP;
+    at row 3: NOP | SADD R1, R1, R2 | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | NOP | NOP;
+    at row 1: NOP | NOP | SADD R1, R1, R2 | NOP;
+    at row 2: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 3: SADD R1, R1, R2 | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | NOP | NOP | NOP;
+    at row 1: NOP | NOP | SADD R1, R1, R2 | NOP;
+    at row 2: NOP | SADD R1, R1, R2 | NOP | NOP;
+    at row 3: NOP | SADD R1, R1, R2 | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: NOP | SADD R1, R1, R2 | NOP | SADD R1, R1, R2;
+    at row 2: NOP | SADD R1, R1, R2 | NOP | NOP;
+    at row 3: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | SADD R1, R1, R2 | NOP | SADD R1, R1, R2;
+    at row 1: NOP | NOP | SADD R1, R1, R2 | NOP;
+    at row 2: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | NOP | NOP;
+    at row 1: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 2: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: NOP | NOP | NOP | SADD R1, R1, R2;
+    at row 2: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | NOP;
+    at row 3: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: NOP | NOP | NOP | SADD R1, R1, R2;
+    at row 2: SADD R1, R1, R2 | SADD R1, R1, R2 | NOP | NOP;
+    at row 3: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: SADD R1, R1, R2 | SADD R1, R1, R2 | NOP | NOP;
+    at row 2: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 3: NOP | NOP | SADD R1, R1, R2 | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | NOP | NOP | SADD R1, R1, R2;
+    at row 1: NOP | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 2: NOP | NOP | NOP | SADD R1, R1, R2;
+    at row 3: NOP | SADD R1, R1, R2 | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 1: SADD R1, R1, R2 | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | NOP | SADD R1, R1, R2 | NOP;
+    at row 1: NOP | NOP | SADD R1, R1, R2 | NOP;
+    at row 2: SADD R1, R1, R2 | NOP | NOP | SADD R1, R1, R2;
+    at row 3: NOP | SADD R1, R1, R2 | NOP | SADD R1, R1, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 2: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 3: SADD R1, R1, R2 | NOP | NOP | SADD R1, R1, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 2: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 3: NOP | SADD R1, R1, R2 | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | NOP | NOP;
+    at row 1: SADD R1, R1, R2 | NOP | NOP | SADD R1, R1, R2;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | SADD R1, R1, R2 | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: NOP | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 2: NOP | SADD R1, R1, R2 | NOP | NOP;
+    at row 3: SADD R1, R1, R2 | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 1: SADD R1, R1, R2 | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | NOP;
+    at row 2: NOP | NOP | SADD R1, R1, R2 | NOP;
+    at row 3: NOP | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | NOP;
+    at row 1: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | NOP;
+    at row 2: NOP | SADD R1, R1, R2 | NOP | SADD R1, R1, R2;
+    at row 3: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 1: NOP | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 2: NOP | NOP | NOP | SADD R1, R1, R2;
+    at row 3: NOP | SADD R1, R1, R2 | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | NOP | SADD R1, R1, R2;
+    at row 1: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 2: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 3: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | NOP;
+    at row 1: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | NOP;
+    at row 2: SADD R1, R1, R2 | NOP | NOP | NOP;
+    at row 3: NOP | NOP | SADD R1, R1, R2 | SADD R1, R1, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: NOP | SADD R1, R1, R2 | NOP | SADD R1, R1, R2;
+    at row 2: NOP | NOP | SADD R1, R1, R2 | NOP;
+    at row 3: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | SADD R1, R1, R2 | NOP | NOP;
+    at row 1: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 2: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 3: SADD R1, R1, R2 | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | NOP | SADD R1, R1, R2 | NOP;
+    at row 1: SADD R1, R1, R2 | SADD R1, R1, R2 | NOP | NOP;
+    at row 2: SADD R1, R1, R2 | NOP | NOP | NOP;
+    at row 3: SADD R1, R1, R2 | NOP | NOP | SADD R1, R1, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | NOP | NOP;
+    at row 1: SADD R1, R1, R2 | NOP | NOP | SADD R1, R1, R2;
+    at row 2: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 3: SADD R1, R1, R2 | NOP | SADD R1, R1, R2 | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 1: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 2: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+    at row 3: SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2 | SADD R2, R2, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 1: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 2: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+    at row 3: SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3 | SSUB R0, R2, R3;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 1: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 2: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+    at row 3: BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF | BSFA R2, R2, R0, SELF;
+  }
+  cycle {
+    at row 0: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 1: NOP | SADD R1, R1, R2 | NOP | NOP;
+    at row 2: NOP | SADD R1, R1, R2 | SADD R1, R1, R2 | NOP;
+    at row 3: NOP | NOP | NOP | SADD R1, R1, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: LWI R2, 0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 4 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 8 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 12 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 16 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 20 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 24 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 28 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 32 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 36 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 40 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 44 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 48 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 52 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 56 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R0, 60 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SADD R2, R2, R0 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SSUB R0, R2, R3 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: BSFA R2, R2, R0, SELF | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: SWI R2, 4604 | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+  cycle {
+    at row 0: LWI R2, 4604 | LWI R2, 4604 | LWI R2, 4604 | LWI R2, 4604;
+    at row 1: LWI R2, 4604 | LWI R2, 4604 | LWI R2, 4604 | LWI R2, 4604;
+    at row 2: LWI R2, 4604 | LWI R2, 4604 | LWI R2, 4604 | LWI R2, 4604;
+    at row 3: LWI R2, 4604 | LWI R2, 4604 | LWI R2, 4604 | LWI R2, 4604;
+  }
+  cycle {
+    at row 0: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 1: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 2: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+    at row 3: SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2 | SADD R1, R1, R2;
+  }
+  cycle {
+    at row 0: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 1: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 2: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+    at row 3: SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3 | SSUB R0, R1, R3;
+  }
+  cycle {
+    at row 0: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 1: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 2: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+    at row 3: BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF | BSFA R1, R1, R0, SELF;
+  }
+  cycle {
+    at row 0: SWI R1, 0 | SWI R1, 4 | SWI R1, 8 | SWI R1, 12;
+    at row 1: SWI R1, 16 | SWI R1, 20 | SWI R1, 24 | SWI R1, 28;
+    at row 2: SWI R1, 32 | SWI R1, 36 | SWI R1, 40 | SWI R1, 44;
+    at row 3: SWI R1, 48 | SWI R1, 52 | SWI R1, 56 | SWI R1, 60;
+  }
+  cycle {
+    at row 0: EXIT | NOP | NOP | NOP;
+    at row 1: NOP | NOP | NOP | NOP;
+    at row 2: NOP | NOP | NOP | NOP;
+    at row 3: NOP | NOP | NOP | NOP;
+  }
+}
