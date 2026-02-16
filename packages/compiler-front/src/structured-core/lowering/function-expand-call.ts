@@ -137,6 +137,7 @@ export function tryExpandFunctionCall(input: FunctionExpandStepInput): FunctionE
   }
 
   const prevCycleCount = kernel.cycles.length;
+  const prevPragmaCount = kernel.pragmas.length;
   expandBody(
     instantiated,
     kernel,
@@ -151,9 +152,14 @@ export function tryExpandFunctionCall(input: FunctionExpandStepInput): FunctionE
     false
   );
 
-  // Propagate label to first generated cycle
-  if (labelResult && kernel.cycles.length > prevCycleCount) {
-    kernel.cycles[prevCycleCount].label = labelResult.label;
+  // Propagate label to first generated cycle, or first new pragma
+  // when the function body only contains pragmas (e.g. std::extract_bytes).
+  if (labelResult) {
+    if (kernel.cycles.length > prevCycleCount) {
+      kernel.cycles[prevCycleCount].label = labelResult.label;
+    } else if (kernel.pragmas.length > prevPragmaCount) {
+      kernel.pragmas[prevPragmaCount].label = labelResult.label;
+    }
   }
 
   return { handled: true, nextIndex: index, shouldBreak: false };
