@@ -2,6 +2,7 @@ export {
   createDesugarMemoryPass,
   desugarAutoCyclePass,
   desugarExpressionsPass,
+  desugarGotoPass,
   desugarInlineArithmeticPass,
   createSlotPackPass,
   pruneNoopCyclesPass,

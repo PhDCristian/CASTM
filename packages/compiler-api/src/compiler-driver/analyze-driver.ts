@@ -19,6 +19,7 @@ import {
   createSlotPackPass,
   desugarAutoCyclePass,
   desugarExpressionsPass,
+  desugarGotoPass,
   desugarInlineArithmeticPass,
   pruneNoopCyclesPass,
   specializePass,
@@ -137,6 +138,7 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
 
   const astPasses = [
     createDesugarMemoryPass(memory.symbolsByName),
+    desugarGotoPass,
     desugarExpressionsPass,
     desugarInlineArithmeticPass,
     specializePass,

@@ -377,8 +377,14 @@ export function applyLatencyHide(
   while (cycleIndex < compacted.length - 1) {
     let mergedCount = 0;
     while (mergedCount < window && cycleIndex < compacted.length - 1) {
+      const nextCycle = compacted[cycleIndex + 1];
+      // Never absorb a labeled cycle as the "next" in a merge — its label
+      // would be lost because mergedCycleFromSummaries only preserves the
+      // label of the *current* (left) cycle.  Labeled cycles must stay as
+      // the head of their own merge group so their label is retained.
+      if (nextCycle.label) break;
       const currentSummary = summarizeCycle(compacted[cycleIndex], grid);
-      const nextSummary = summarizeCycle(compacted[cycleIndex + 1], grid);
+      const nextSummary = summarizeCycle(nextCycle, grid);
       if (!currentSummary || !nextSummary) break;
       if (!canMergeCycles(currentSummary, nextSummary, grid)) break;
 
