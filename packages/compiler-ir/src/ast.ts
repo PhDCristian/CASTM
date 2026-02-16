@@ -85,6 +85,7 @@ export interface BuildConfigAst {
   schedulerWindow?: SchedulerWindow;
   memoryReorder?: MemoryReorderPolicy;
   expansionMode?: ExpansionMode;
+  jumpReuseDepth?: number;
   pruneNoopCycles?: boolean;
   grid?: {
     rows: number;

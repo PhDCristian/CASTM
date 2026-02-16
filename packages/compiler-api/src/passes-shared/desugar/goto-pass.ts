@@ -23,8 +23,8 @@ export const desugarGotoPass: CompilerPass<AstProgram, AstProgram> = {
         return {
           ...instruction,
           opcode: 'JUMP',
-          operands: [target, 'ZERO'],
-          text: `JUMP ${target}, ZERO`
+          operands: ['ZERO', target],
+          text: `JUMP ZERO, ${target}`
         };
       }
 
@@ -33,8 +33,8 @@ export const desugarGotoPass: CompilerPass<AstProgram, AstProgram> = {
         const target = instruction.operands[0];
         return {
           ...instruction,
-          operands: [target, 'ZERO'],
-          text: `JUMP ${target}, ZERO`
+          operands: ['ZERO', target],
+          text: `JUMP ZERO, ${target}`
         };
       }
 

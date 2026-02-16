@@ -24,7 +24,7 @@ const BRANCH_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
  * This enables patterns like `SADD R3, ZERO, returnLabel`.
  */
 const CARRIER_LABEL_OPERAND_INDEX: Readonly<Record<string, number>> = {
-  JUMP: 0,
+  JUMP: 1,
   SADD: 2
 };
 
