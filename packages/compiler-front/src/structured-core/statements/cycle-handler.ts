@@ -7,7 +7,7 @@ import {
   collectBlockFromEntries,
   SourceLineEntry
 } from '../parser-utils/blocks.js';
-import { expandLoopBody, parseInlineCycleStatements } from '../lowering/cycle-expand.js';
+import { expandLoopBody, parseInlineCycleStatements, parseLabeledCycleLine } from '../lowering/cycle-expand.js';
 import { spanAt } from '../utils.js';
 
 export interface StructuredCycleParseResult {
@@ -21,7 +21,8 @@ function makeCycleNode(
   lineNo: number,
   cleanLength: number,
   index: number,
-  statements: CycleStatementAst[]
+  statements: CycleStatementAst[],
+  label?: string
 ): StructuredCycleStmtAst {
   const span = spanAt(lineNo, cleanLength);
   return {
@@ -29,6 +30,7 @@ function makeCycleNode(
     cycle: {
       index,
       statements,
+      ...(label ? { label } : {}),
       span
     },
     span
@@ -43,6 +45,41 @@ export function tryParseCycleStatement(
   cycleCounter: { value: number },
   diagnostics: Diagnostic[]
 ): StructuredCycleParseResult {
+  // ── Labeled inline cycle: label: cycle { ... } ──
+  const labeledCycle = parseLabeledCycleLine(cleanLine);
+  if (labeledCycle && labeledCycle.inlinePayload !== undefined) {
+    const cycleDiagnostics: Diagnostic[] = [];
+    const statements = parseInlineCycleStatements(
+      labeledCycle.inlinePayload,
+      lineNo,
+      new Map(),
+      cycleDiagnostics
+    );
+    diagnostics.push(...cycleDiagnostics);
+    return {
+      handled: true,
+      nextIndex: index,
+      stop: false,
+      node: makeCycleNode(lineNo, cleanLine.length, cycleCounter.value++, statements, labeledCycle.label)
+    };
+  }
+
+  // ── Labeled block cycle: label: cycle { (multi-line) ──
+  if (labeledCycle) {
+    const block = collectBlockFromEntries(entries, index);
+    const cycleDiagnostics: Diagnostic[] = [];
+    const statements = expandLoopBody(block.body, new Map(), new Map(), cycleDiagnostics);
+    diagnostics.push(...cycleDiagnostics);
+    const node = makeCycleNode(lineNo, cleanLine.length, cycleCounter.value++, statements, labeledCycle.label);
+    return {
+      handled: true,
+      nextIndex: block.endIndex ?? index,
+      stop: block.endIndex === null,
+      node
+    };
+  }
+
+  // ── Unlabeled inline cycle: cycle { ... } ──
   const inlineCycle = cleanLine.match(/^cycle\s*\{\s*(.+)\s*\}\s*$/i);
   if (inlineCycle) {
     const cycleDiagnostics: Diagnostic[] = [];

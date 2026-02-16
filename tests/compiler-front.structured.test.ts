@@ -81,8 +81,16 @@ kernel "fn_structured" {
     expect(parsed.structuredAst?.functions).toHaveLength(1);
     expect(parsed.structuredAst?.functions[0].name).toBe('add_one');
     const lowered = parsed.ast ?? lowerStructuredProgramToAst(parsed.structuredAst!);
-    expect(lowered.kernel?.cycles.length).toBe(1);
-    expect(lowered.kernel?.cycles[0].statements[0].instruction.text).toContain('R1 = R0 + IMM(1)');
+    const allInstructions = (lowered.kernel?.cycles ?? [])
+      .flatMap((cycle) => cycle.statements)
+      .map((stmt) => {
+        if (stmt.kind === 'row') {
+          return stmt.instructions.map((instruction) => instruction.text);
+        }
+        return [stmt.instruction.text];
+      })
+      .flat();
+    expect(allInstructions.filter((text) => text.includes('R1 = R0 + IMM(1)'))).toHaveLength(1);
   });
 
   it('reports invalid syntax for legacy statements without classic fallback', () => {
@@ -110,5 +118,118 @@ kernel "unknown_stmt" {
     const parsed = parseStructuredSource(source);
     expect(parsed.success).toBe(false);
     expect(parsed.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
+  });
+
+  // ── T2-V1: Labeled advanced statement ──
+  it('parses labeled advanced statement (subrC: std::extract_bytes(...))', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "labeled_adv" {
+  subrC: std::extract_bytes(src=R0, dest=R1, axis=col, byteWidth=8, mask=255);
+}
+`;
+    const result = parseStructuredSource(source);
+    expect(result.success).toBe(true);
+    const body = result.structuredAst?.kernel?.body ?? [];
+    expect(body).toHaveLength(1);
+    expect(body[0].kind).toBe('advanced');
+    if (body[0].kind === 'advanced') {
+      expect(body[0].name).toBe('extract_bytes');
+      expect(body[0].label).toBe('subrC');
+      expect(body[0].args).toContain('src=R0');
+    }
+  });
+
+  // ── T2-V2: Labeled function call ──
+  it('parses labeled function call (myLabel: myFn(R0, R1))', () => {
+    const source = `
+target "uma-cgra-base";
+function myFn(a, b) {
+  cycle { @0,0: a = b + IMM(1); }
+}
+kernel "labeled_fn" {
+  myLabel: myFn(R0, R1);
+}
+`;
+    const result = parseStructuredSource(source);
+    expect(result.success).toBe(true);
+    const body = result.structuredAst?.kernel?.body ?? [];
+    expect(body).toHaveLength(1);
+    expect(body[0].kind).toBe('fn-call');
+    if (body[0].kind === 'fn-call') {
+      expect(body[0].name).toBe('myFn');
+      expect(body[0].label).toBe('myLabel');
+    }
+  });
+
+  // ── T2-V3: Unlabeled advanced still works ──
+  it('parses unlabeled advanced statement without label field', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "unlabeled_adv" {
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
+}
+`;
+    const result = parseStructuredSource(source);
+    expect(result.success).toBe(true);
+    const body = result.structuredAst?.kernel?.body ?? [];
+    expect(body).toHaveLength(1);
+    expect(body[0].kind).toBe('advanced');
+    if (body[0].kind === 'advanced') {
+      expect(body[0].label).toBeUndefined();
+    }
+  });
+
+  // ── T2-V4: Labeled cycle still works (no regression) ──
+  it('parses labeled cycle (mainEntry: cycle { ... })', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "labeled_cycle" {
+  mainEntry: cycle { @0,0: NOP; }
+}
+`;
+    const result = parseStructuredSource(source);
+    expect(result.success).toBe(true);
+    const body = result.structuredAst?.kernel?.body ?? [];
+    expect(body).toHaveLength(1);
+    expect(body[0].kind).toBe('cycle');
+    if (body[0].kind === 'cycle') {
+      expect(body[0].cycle.label).toBe('mainEntry');
+    }
+  });
+
+  // ── T3-V1: Label propagation to PragmaAst ──
+  it('propagates label through lowering to PragmaAst', () => {
+    const source = `
+target "uma-cgra-base";
+kernel "label_pragma" {
+  subrC: std::route(@0,1 -> @0,0, payload=R3, accum=R1);
+  cycle { @0,0: NOP; }
+}
+`;
+    const parsed = parseStructuredSource(source);
+    expect(parsed.success).toBe(true);
+    const lowered = lowerStructuredProgramToAst(parsed.structuredAst!);
+    expect(lowered.kernel?.pragmas).toHaveLength(1);
+    expect(lowered.kernel?.pragmas[0].label).toBe('subrC');
+    expect(lowered.kernel?.pragmas[0].text).toContain('route(');
+  });
+
+  // ── T3-V2: Labeled fn-call propagation through lowering ──
+  it('propagates label through fn-call lowering to first cycle', () => {
+    const source = `
+target "uma-cgra-base";
+function doWork(dst, src) {
+  cycle { @0,0: dst = src + IMM(1); }
+}
+kernel "label_fn_call" {
+  entry: doWork(R1, R0);
+}
+`;
+    const parsed = parseStructuredSource(source);
+    expect(parsed.success).toBe(true);
+    const lowered = lowerStructuredProgramToAst(parsed.structuredAst!);
+    expect(lowered.kernel?.cycles).toHaveLength(1);
+    expect(lowered.kernel?.cycles[0].label).toBe('entry');
   });
 });

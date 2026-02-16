@@ -18,6 +18,17 @@ import {
 } from './statements/matchers.js';
 import { tryParseCycleStatement } from './statements/cycle-handler.js';
 import { tryParseControlStatement } from './statements/control-handler.js';
+import { RESERVED_KEYWORDS } from './constants.js';
+
+function stripLabelPrefix(clean: string): { label: string; rest: string } | null {
+  const match = clean.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$/);
+  if (!match) return null;
+  const keyword = match[1].toLowerCase();
+  if (RESERVED_KEYWORDS.has(keyword)) return null;
+  // Don't treat std::name() as label "std" — reject if rest starts with ':'
+  if (match[2].startsWith(':')) return null;
+  return { label: match[1], rest: match[2] };
+}
 
 export function parseStructuredStatements(
   entries: SourceLineEntry[],
@@ -124,6 +135,34 @@ export function parseStructuredStatements(
         span: spanAt(entry.lineNo, clean.length)
       });
       continue;
+    }
+
+    // ── Labeled advanced statement or function call ──
+    const labeled = stripLabelPrefix(clean);
+    if (labeled) {
+      const advLabeled = parseAdvancedStatement(labeled.rest);
+      if (advLabeled) {
+        out.push({
+          kind: 'advanced',
+          name: advLabeled.name,
+          args: advLabeled.args,
+          text: advLabeled.text,
+          namespace: advLabeled.namespace,
+          sourceForm: advLabeled.sourceForm,
+          label: labeled.label,
+          span: spanAt(entry.lineNo, clean.length)
+        });
+        continue;
+      }
+      const fnLabeled = parseFunctionCall(labeled.rest);
+      if (fnLabeled) {
+        out.push({
+          ...fnLabeled,
+          label: labeled.label,
+          span: spanAt(entry.lineNo, clean.length)
+        });
+        continue;
+      }
     }
 
     diagnostics.push(makeDiagnostic(

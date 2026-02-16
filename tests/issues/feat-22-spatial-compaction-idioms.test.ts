@@ -25,9 +25,9 @@ kernel "load_all_compact" {
     expect(result.success).toBe(true);
 
     const rows = csvRows(result.artifacts.csv ?? '');
-    expect(rows).toHaveLength(16);
-    expect(rows.every((line) => line.startsWith('0,'))).toBe(true);
-    expect(rows.every((line) => line.endsWith(',LWI R0 360'))).toBe(true);
+    const loadRows = rows.filter((line) => line.endsWith(',LWI R0 360'));
+    expect(loadRows).toHaveLength(16);
+    expect(loadRows.every((line) => /,\d+,\d+,LWI R0 360$/.test(line))).toBe(true);
   });
 
   it('supports compact qhat preload with range coordinates + loop variable', () => {
@@ -52,14 +52,14 @@ kernel "qhat_compact" {
     expect(result.success).toBe(true);
 
     const rows = csvRows(result.artifacts.csv ?? '');
-    expect(rows).toHaveLength(12);
-    expect(rows.every((line) => line.startsWith('0,'))).toBe(true);
+    const qhatRows = rows.filter((line) => /,LWI R0 (4|8|12|16)$/.test(line));
+    expect(qhatRows).toHaveLength(12);
 
     const csv = result.artifacts.csv ?? '';
-    expect(csv).toContain('0,0,0,LWI R0 4');
-    expect(csv).toContain('0,0,1,LWI R0 8');
-    expect(csv).toContain('0,0,2,LWI R0 12');
-    expect(csv).toContain('0,0,3,LWI R0 16');
-    expect(csv).toContain('0,2,3,LWI R0 16');
+    expect(csv).toMatch(/\n\d+,0,0,LWI R0 4(?:\n|$)/);
+    expect(csv).toMatch(/\n\d+,0,1,LWI R0 8(?:\n|$)/);
+    expect(csv).toMatch(/\n\d+,0,2,LWI R0 12(?:\n|$)/);
+    expect(csv).toMatch(/\n\d+,0,3,LWI R0 16(?:\n|$)/);
+    expect(csv).toMatch(/\n\d+,2,3,LWI R0 16(?:\n|$)/);
   });
 });

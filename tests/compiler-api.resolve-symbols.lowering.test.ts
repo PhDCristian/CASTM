@@ -88,6 +88,17 @@ describe('compiler-api resolve-symbols lowering helpers', () => {
       0,
       0,
       1,
+      inst('BNE', ['R0', 'R1', 'MISSING_LABEL']),
+      grid,
+      labels,
+      diagnostics
+    );
+    addOperation(
+      operations,
+      occupied,
+      0,
+      0,
+      2,
       inst('JUMP', ['MISSING_LABEL']),
       grid,
       labels,
@@ -101,16 +112,24 @@ describe('compiler-api resolve-symbols lowering helpers', () => {
     expect(codes).toContain(ErrorCodes.Semantic.Collision);
     expect(codes).toContain(ErrorCodes.Semantic.UnknownLabel);
 
-    expect(operations).toHaveLength(2);
+    expect(operations).toHaveLength(3);
     expect(operations[0]).toMatchObject({
       row: 0,
       col: 0,
       opcode: 'BEQ',
       operands: ['R0', 'IMM(0)', '7']
     });
+    // BNE with unknown label triggers E3009 but still emits the operation
     expect(operations[1]).toMatchObject({
       row: 0,
       col: 1,
+      opcode: 'BNE',
+      operands: ['R0', 'R1', 'MISSING_LABEL']
+    });
+    // JUMP is a carrier — unknown operands are preserved (could be registers)
+    expect(operations[2]).toMatchObject({
+      row: 0,
+      col: 2,
       opcode: 'JUMP',
       operands: ['MISSING_LABEL']
     });

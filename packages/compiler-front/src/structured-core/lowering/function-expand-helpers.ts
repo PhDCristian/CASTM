@@ -1,6 +1,7 @@
 export {
   cloneCycle,
   cycleHasControlFlow,
+  makeCallCycle,
   makeControlCycle
 } from './function-expand-helpers/cycle.js';
 export {

@@ -27,7 +27,8 @@ export function tryExpandWhileStatement(input: ExpandControlBaseInput): ExpandCo
     callStack,
     expansionCounter,
     controlFlowCounter,
-    expandBody
+    expandBody,
+    expansionContext
   } = input;
 
   const whileHeader = parseControlHeader(clean, 'while', entry.lineNo, constants, diagnostics);
@@ -68,7 +69,9 @@ export function tryExpandWhileStatement(input: ExpandControlBaseInput): ExpandCo
     loopCounter,
     callStack,
     expansionCounter,
-    controlFlowCounter
+    controlFlowCounter,
+    expansionContext,
+    false
   );
 
   const fusionPlan = buildWhileFusionPlan(loopKernel.cycles, whileHeader.row, whileHeader.col);

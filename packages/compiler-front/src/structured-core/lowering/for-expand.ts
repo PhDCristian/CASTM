@@ -10,6 +10,7 @@ import {
 } from './for-expand-types.js';
 import { expandRuntimeForLoop } from './for-expand-runtime.js';
 import { expandStaticForLoop } from './for-expand-static.js';
+import type { FunctionExpansionContext } from './function-expand-context.js';
 
 export type { ExpandForCallbacks, ExpandFunctionBodyIntoKernel, FunctionDefinitionLike } from './for-expand-types.js';
 
@@ -26,7 +27,8 @@ export function expandForLoopIntoKernel(
   callStack: string[],
   expansionCounter: { value: number },
   controlFlowCounter: { value: number },
-  callbacks: ExpandForCallbacks
+  callbacks: ExpandForCallbacks,
+  expansionContext?: FunctionExpansionContext
 ): void {
   if (expandRuntimeForLoop({
     header,
@@ -41,7 +43,8 @@ export function expandForLoopIntoKernel(
     callStack,
     expansionCounter,
     controlFlowCounter,
-    callbacks
+    callbacks,
+    expansionContext
   })) {
     return;
   }
@@ -59,6 +62,7 @@ export function expandForLoopIntoKernel(
     callStack,
     expansionCounter,
     controlFlowCounter,
-    callbacks
+    callbacks,
+    expansionContext
   });
 }

@@ -6,6 +6,7 @@ import {
   SourceSpan
 } from '@openedge/compiler-ir';
 import type { SourceLineEntry } from '../parser-utils/blocks.js';
+import type { FunctionExpansionContext } from './function-expand-context.js';
 
 export interface FunctionDefinitionLike {
   name: string;
@@ -23,7 +24,9 @@ export type ExpandFunctionBodyIntoKernel = (
   cycleCounter: { value: number },
   callStack: string[],
   expansionCounter: { value: number },
-  controlFlowCounter: { value: number }
+  controlFlowCounter: { value: number },
+  expansionContext?: FunctionExpansionContext,
+  isRoot?: boolean
 ) => void;
 
 export interface ExpandForCallbacks {

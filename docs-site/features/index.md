@@ -30,6 +30,7 @@ Full CSV: `docs-site/snippets/features/index/01-main.csv`.
 - Functions: [/features/functions](/features/functions)
 - Loops: [/features/loops](/features/loops)
 - Control flow: [/features/control-flow](/features/control-flow)
+- Labels: [/features/labels](/features/labels)
 - Coordinate model: [/features/coordinate-expressions](/features/coordinate-expressions), [/features/dynamic-coordinates](/features/dynamic-coordinates), [/features/spatial-short-forms](/features/spatial-short-forms)
 
 ## Advanced statements (by family)

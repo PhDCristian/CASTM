@@ -27,7 +27,8 @@ export function tryExpandForStatement(input: FunctionExpandStepInput): FunctionE
     callStack,
     expansionCounter,
     controlFlowCounter,
-    expandBody
+    expandBody,
+    expansionContext
   } = input;
 
   const forHeader = parseForHeader(clean, entry.lineNo, constants, new Map(), diagnostics);
@@ -66,7 +67,8 @@ export function tryExpandForStatement(input: FunctionExpandStepInput): FunctionE
       parseInstruction,
       makeControlCycle,
       expandFunctionBodyIntoKernel: expandBody
-    }
+    },
+    expansionContext
   );
 
   return { handled: true, nextIndex: loopBlock.endIndex, shouldBreak: false };

@@ -2,6 +2,7 @@ import {
   AstProgram,
   CycleStatementAst,
   Diagnostic,
+  ExpansionMode,
   KernelAst,
   StructuredKernelStmtAst,
   StructuredProgramAst
@@ -10,10 +11,24 @@ import { cloneAstProgram } from './utils.js';
 import { SourceLineEntry } from './parser-utils/blocks.js';
 import { buildConstantMap } from './lowering/top-level-scope/constants.js';
 import { expandFunctionBodyIntoKernel } from './lowering/function-expand.js';
+import { createFunctionExpansionContext } from './lowering/function-expand-context.js';
 
 export interface LowerStructuredProgramResult {
   ast: AstProgram;
   diagnostics: Diagnostic[];
+}
+
+export interface LowerStructuredProgramOptions {
+  expansionMode?: ExpansionMode;
+}
+
+function resolveExpansionMode(
+  structured: StructuredProgramAst,
+  options?: LowerStructuredProgramOptions
+): ExpansionMode {
+  if (structured.build?.expansionMode) return structured.build.expansionMode;
+  if (options?.expansionMode) return options.expansionMode;
+  return 'full-unroll';
 }
 
 function renderCycleStatement(statement: CycleStatementAst): string {
@@ -46,16 +61,18 @@ function emitStructuredBodyAsEntries(
 
   for (const stmt of body) {
     if (stmt.kind === 'advanced') {
+      const labelPrefix = stmt.label ? `${stmt.label}: ` : '';
       if (stmt.sourceForm === 'qualified' || stmt.namespace === 'std') {
-        pushLine(`std::${stmt.name}(${stmt.args});`);
+        pushLine(`${labelPrefix}std::${stmt.name}(${stmt.args});`);
       } else {
-        pushLine(`${stmt.text};`);
+        pushLine(`${labelPrefix}${stmt.text};`);
       }
       continue;
     }
 
     if (stmt.kind === 'cycle') {
-      pushLine('cycle {');
+      const prefix = stmt.cycle.label ? `${stmt.cycle.label}: ` : '';
+      pushLine(`${prefix}cycle {`);
       for (const cycleStmt of stmt.cycle.statements) {
         pushLine(renderCycleStatement(cycleStmt));
       }
@@ -89,12 +106,14 @@ function emitStructuredBodyAsEntries(
       continue;
     }
 
-    pushLine(`${stmt.name}(${stmt.args.join(', ')});`);
+    const fnLabelPrefix = stmt.label ? `${stmt.label}: ` : '';
+    pushLine(`${fnLabelPrefix}${stmt.name}(${stmt.args.join(', ')});`);
   }
 }
 
 function lowerStructuredBodyWithExpansionKernel(
-  structured: StructuredProgramAst
+  structured: StructuredProgramAst,
+  options?: LowerStructuredProgramOptions
 ): { kernel: KernelAst; diagnostics: Diagnostic[] } {
   const kernel = structured.kernel!;
   const loweredKernel: KernelAst = {
@@ -112,6 +131,7 @@ function lowerStructuredBodyWithExpansionKernel(
   const diagnostics: Diagnostic[] = [];
   const constants = buildConstantMap(loweredKernel.directives, diagnostics);
   const cycleCounter = { value: 0 };
+  const expansionContext = createFunctionExpansionContext(resolveExpansionMode(structured, options));
   const functions = new Map(
     structured.functions.map((fn) => {
       const fnEntries: SourceLineEntry[] = [];
@@ -135,8 +155,9 @@ function lowerStructuredBodyWithExpansionKernel(
     diagnostics,
     cycleCounter,
     [],
+    { value: 1 },
     { value: 0 },
-    { value: 0 }
+    expansionContext
   );
 
   loweredKernel.cycles = loweredKernel.cycles.map((cycle, index) => ({ ...cycle, index }));
@@ -204,7 +225,8 @@ export function lowerStructuredProgramToAst(structured: StructuredProgramAst): A
 }
 
 export function lowerStructuredProgramToAstDetailed(
-  structured: StructuredProgramAst
+  structured: StructuredProgramAst,
+  options?: LowerStructuredProgramOptions
 ): LowerStructuredProgramResult {
   if (!structured.kernel) {
     return {
@@ -219,7 +241,7 @@ export function lowerStructuredProgramToAstDetailed(
     };
   }
 
-  const lowered = lowerStructuredBodyWithExpansionKernel(structured);
+  const lowered = lowerStructuredBodyWithExpansionKernel(structured, options);
 
   return {
     ast: {

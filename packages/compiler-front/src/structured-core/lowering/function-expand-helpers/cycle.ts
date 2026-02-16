@@ -122,3 +122,45 @@ export function makeControlCycle(
     span: spanAt(lineNo, 1, statementText.length)
   };
 }
+
+/**
+ * Creates a single cycle containing both the SADD (set return address)
+ * and JUMP (call entry) instructions on two different PEs.
+ * This merges the call setup into one cycle, mimicking v15-style
+ * multi-PE JUMP merging.
+ */
+export function makeCallCycle(
+  index: number,
+  lineNo: number,
+  jumpRow: number,
+  jumpCol: number,
+  jumpTarget: string,
+  linkRow: number,
+  linkCol: number,
+  linkReg: string,
+  returnLabel: string
+): CycleAst {
+  const jumpText = `JUMP ${jumpTarget}, ZERO`;
+  const saddText = `SADD ${linkReg}, ZERO, ${returnLabel}`;
+  return {
+    index,
+    label: undefined,
+    statements: [
+      {
+        kind: 'at' as const,
+        row: linkRow,
+        col: linkCol,
+        instruction: parseInstruction(saddText, lineNo, 1),
+        span: spanAt(lineNo, 1, saddText.length)
+      },
+      {
+        kind: 'at' as const,
+        row: jumpRow,
+        col: jumpCol,
+        instruction: parseInstruction(jumpText, lineNo, 1),
+        span: spanAt(lineNo, 1, jumpText.length)
+      }
+    ],
+    span: spanAt(lineNo, 1, 1)
+  };
+}

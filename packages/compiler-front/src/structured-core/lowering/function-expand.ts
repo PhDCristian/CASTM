@@ -11,12 +11,17 @@ import {
 } from './for-expand.js';
 import { consumeFunctionPreludeStatement } from './function-expand-prelude.js';
 import { tryExpandKnownFunctionStatement } from './function-expand-dispatch.js';
+import {
+  FunctionExpansionContext,
+  finalizeJumpReuseFunctions
+} from './function-expand-context.js';
 
 export {
   buildWhileFusionPlan,
   cloneCycle,
   cycleHasControlFlow,
   instantiateFunctionBody,
+  makeCallCycle,
   makeControlCycle,
   rewriteConditionForWhileFusion
 } from './function-expand-helpers.js';
@@ -30,7 +35,9 @@ export function expandFunctionBodyIntoKernel(
   cycleCounter: { value: number },
   callStack: string[],
   expansionCounter: { value: number },
-  controlFlowCounter: { value: number }
+  controlFlowCounter: { value: number },
+  expansionContext?: FunctionExpansionContext,
+  isRoot: boolean = true
 ): void {
   for (let i = 0; i < body.length; i++) {
     const entry = body[i];
@@ -54,7 +61,8 @@ export function expandFunctionBodyIntoKernel(
       callStack,
       expansionCounter,
       controlFlowCounter,
-      expandBody: expandFunctionBodyIntoKernel
+      expandBody: expandFunctionBodyIntoKernel,
+      expansionContext
     });
     if (result.handled) {
       if (result.shouldBreak) break;
@@ -69,5 +77,19 @@ export function expandFunctionBodyIntoKernel(
       `Unsupported function body statement: '${clean}'.`,
       'Function bodies currently support advanced statements, for/while/if control-flow, cycle blocks, labeled cycles, and function calls.'
     ));
+  }
+
+  if (isRoot && expansionContext) {
+    finalizeJumpReuseFunctions({
+      context: expansionContext,
+      kernel,
+      functions,
+      constants,
+      diagnostics,
+      cycleCounter,
+      expansionCounter,
+      controlFlowCounter,
+      expandBody: expandFunctionBodyIntoKernel
+    });
   }
 }

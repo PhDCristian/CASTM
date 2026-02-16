@@ -4,6 +4,7 @@ import {
 } from '@openedge/compiler-ir';
 import type { FunctionDefinitionLike } from './for-expand.js';
 import type { SourceLineEntry } from '../parser-utils/blocks.js';
+import type { FunctionExpansionContext } from './function-expand-context.js';
 
 export type ExpandBodyFn = (
   body: SourceLineEntry[],
@@ -14,7 +15,9 @@ export type ExpandBodyFn = (
   cycleCounter: { value: number },
   callStack: string[],
   expansionCounter: { value: number },
-  controlFlowCounter: { value: number }
+  controlFlowCounter: { value: number },
+  expansionContext?: FunctionExpansionContext,
+  isRoot?: boolean
 ) => void;
 
 export interface ExpandControlBaseInput {
@@ -31,6 +34,7 @@ export interface ExpandControlBaseInput {
   expansionCounter: { value: number };
   controlFlowCounter: { value: number };
   expandBody: ExpandBodyFn;
+  expansionContext?: FunctionExpansionContext;
 }
 
 export interface ExpandControlFlowResult {

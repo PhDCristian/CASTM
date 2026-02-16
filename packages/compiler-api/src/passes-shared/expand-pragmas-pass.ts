@@ -71,7 +71,12 @@ export function createExpandPragmasPass(strictUnsupported: boolean, grid: GridSp
         }
 
         if (handler) {
+          const prevLen = generatedCycles.length;
           handler(pragma, context);
+          // Propagate label to first generated cycle
+          if (pragma.label && generatedCycles.length > prevLen) {
+            generatedCycles[prevLen].label = pragma.label;
+          }
           continue;
         }
 

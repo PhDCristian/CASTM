@@ -8,15 +8,18 @@ This grammar defines the canonical OpenEdgeDSL syntax profile.
 program          ::= target_decl build_block? declaration* function_def* kernel_decl
 target_decl      ::= "target" (string_lit | ident) ";"
 build_block      ::= "build" "{" build_stmt* "}"
-build_stmt       ::= optimize_stmt | scheduler_stmt | scheduler_window_stmt | memory_reorder_stmt | prune_noop_stmt | grid_stmt
+build_stmt       ::= optimize_stmt | scheduler_stmt | scheduler_window_stmt | memory_reorder_stmt | expansion_mode_stmt | prune_noop_stmt | grid_stmt
 optimize_stmt    ::= "optimize" ("O0" | "O1" | "O2" | "O3") ";"
 scheduler_stmt   ::= "scheduler" ("safe" | "balanced" | "aggressive") ";"
 scheduler_window_stmt ::= "scheduler_window" ("auto" | int_expr) ";"
 memory_reorder_stmt ::= "memory_reorder" ("strict" | "same_address_fence") ";"
+expansion_mode_stmt ::= "expansion_mode" ("full-unroll" | "jump-reuse") ";"
 prune_noop_stmt  ::= "prune_noop_cycles" ("on" | "off" | "true" | "false") ";"
 grid_stmt        ::= "grid" int_expr "x" int_expr ("torus" | "mesh")? ";"
 kernel_decl      ::= "kernel" string_lit "{" kernel_item* "}"
-kernel_item      ::= config_stmt | runtime_stmt | cycle_block | control_stmt | for_stmt | advanced_stmt | pipeline_stmt | function_call
+kernel_item      ::= config_stmt | runtime_stmt | cycle_block | labeled_stmt | control_stmt | for_stmt | advanced_stmt | pipeline_stmt | function_call
+labeled_stmt     ::= label ":" (cycle_block | advanced_stmt | function_call)
+label            ::= ident
 ```
 
 ## Declarations

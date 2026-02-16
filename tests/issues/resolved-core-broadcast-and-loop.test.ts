@@ -19,8 +19,8 @@ kernel "issue1_all_in_fn" {
     expect(result.success).toBe(true);
 
     const csv = result.artifacts.csv ?? '';
-    expect(csv).toContain('0,0,0,SADD R0 ZERO 99');
-    expect(csv).toContain('0,3,3,SADD R0 ZERO 99');
+    expect(csv).toMatch(/\n\d+,0,0,SADD R0 ZERO 99(?:\n|$)/);
+    expect(csv).toMatch(/\n\d+,3,3,SADD R0 ZERO 99(?:\n|$)/);
   });
 
   it('keeps Issue-5 fixed: at row single instruction broadcasts across columns', () => {

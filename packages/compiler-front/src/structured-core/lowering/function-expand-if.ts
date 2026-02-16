@@ -27,7 +27,8 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
     callStack,
     expansionCounter,
     controlFlowCounter,
-    expandBody
+    expandBody,
+    expansionContext
   } = input;
 
   const ifHeader = parseControlHeader(clean, 'if', entry.lineNo, constants, diagnostics);
@@ -76,7 +77,9 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
     cycleCounter,
     callStack,
     expansionCounter,
-    controlFlowCounter
+    controlFlowCounter,
+    expansionContext,
+    false
   );
 
   if (hasElse && elseBlock) {
@@ -106,7 +109,9 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
       cycleCounter,
       callStack,
       expansionCounter,
-      controlFlowCounter
+      controlFlowCounter,
+      expansionContext,
+      false
     );
   }
 

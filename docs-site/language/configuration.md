@@ -34,6 +34,7 @@ build {
   scheduler balanced;
   scheduler_window auto;
   memory_reorder same_address_fence;
+  expansion_mode full-unroll;
   prune_noop_cycles on;
   grid 4x4 torus;
 }
@@ -53,6 +54,23 @@ kernel "configured" {
 | `O3` | `aggressive` | `4` | `same_address_fence` | `on` |
 
 Rule: explicit keys inside `build { ... }` override preset values.
+
+## Expansion Mode
+
+Function composition supports two expansion strategies:
+
+- `full-unroll` (default): call-site inline expansion.
+- `jump-reuse`: shared function specialization per call signature using branch/jump control flow.
+
+```openedge
+target base;
+build {
+  expansion_mode jump-reuse;
+}
+kernel "reuse_mode" {
+  // ...
+}
+```
 
 ## Practical Recipes
 

@@ -159,6 +159,12 @@ function parseBuildConfig(
       continue;
     }
 
+    const expansionMode = clean.match(/^expansion_mode\s+(full-unroll|jump-reuse)\s*;?\s*$/i);
+    if (expansionMode) {
+      config.expansionMode = expansionMode[1].toLowerCase() as BuildConfigAst['expansionMode'];
+      continue;
+    }
+
     const prune = clean.match(/^prune_noop_cycles\s+(on|off|true|false)\s*;?\s*$/i);
     if (prune) {
       const normalized = prune[1].toLowerCase();
@@ -193,7 +199,7 @@ function parseBuildConfig(
       'error',
       spanAt(entry.lineNo, clean.length),
       `Unknown build setting '${clean}'.`,
-      'Supported keys: optimize, scheduler, scheduler_window, memory_reorder, prune_noop_cycles, grid.'
+      'Supported keys: optimize, scheduler, scheduler_window, memory_reorder, expansion_mode, prune_noop_cycles, grid.'
     ));
   }
 

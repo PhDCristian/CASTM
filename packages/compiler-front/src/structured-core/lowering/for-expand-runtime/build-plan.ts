@@ -20,7 +20,8 @@ export function buildRuntimeLoopPlan(input: ExpandRuntimeForInput): RuntimeLoopP
     callStack,
     expansionCounter,
     controlFlowCounter,
-    callbacks
+    callbacks,
+    expansionContext
   } = input;
 
   const controlRow = header.control?.row ?? 0;
@@ -47,7 +48,9 @@ export function buildRuntimeLoopPlan(input: ExpandRuntimeForInput): RuntimeLoopP
     loopCounter,
     callStack,
     expansionCounter,
-    controlFlowCounter
+    controlFlowCounter,
+    expansionContext,
+    false
   );
 
   const aggressivePlan = buildRuntimeNoUnrollAggressivePlan(

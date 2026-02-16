@@ -1,4 +1,5 @@
 import { SourceSpan } from './common.js';
+import type { ExpansionMode } from './options.js';
 
 export interface InstructionAst {
   text: string;
@@ -83,6 +84,7 @@ export interface BuildConfigAst {
   scheduler?: SchedulerMode;
   schedulerWindow?: SchedulerWindow;
   memoryReorder?: MemoryReorderPolicy;
+  expansionMode?: ExpansionMode;
   pruneNoopCycles?: boolean;
   grid?: {
     rows: number;
@@ -95,6 +97,7 @@ export interface BuildConfigAst {
 export interface PragmaAst {
   text: string;
   anchorCycleIndex?: number;
+  label?: string;
   span: SourceSpan;
 }
 
@@ -186,6 +189,7 @@ export interface StructuredAdvancedStmtAst {
   text: string;
   namespace?: 'std' | null;
   sourceForm?: 'qualified' | 'unqualified';
+  label?: string;
   span: SourceSpan;
 }
 
@@ -217,6 +221,7 @@ export interface StructuredFnCallStmtAst {
   kind: 'fn-call';
   name: string;
   args: string[];
+  label?: string;
   span: SourceSpan;
 }
 

@@ -28,6 +28,12 @@ program          ::= target_decl build_block? declaration* function_def* kernel_
 target_decl      ::= "target" (string_lit | ident) ";"
 build_block      ::= "build" "{" build_item* "}"
 kernel_decl      ::= "kernel" string_lit "{" kernel_item* "}"
+kernel_item      ::= ... | labeled_stmt | ...
+labeled_stmt     ::= label ":" (cycle_block | advanced_stmt | function_call)
+label            ::= ident
+
+build_item       ::= optimize_item | scheduler_item | scheduler_window_item | memory_reorder_item | expansion_mode_item | prune_noop_item | grid_item
+expansion_mode_item ::= "expansion_mode" ("full-unroll" | "jump-reuse") ";"
 ```
 
 ## Declarations

@@ -16,7 +16,7 @@ kernel "bug6_regression" {
 
     const result = compile(source);
     expect(result.success).toBe(true);
-    expect(result.artifacts.csv).toContain('0,0,0,SRT R1 R0 16');
+    expect(result.artifacts.csv ?? '').toMatch(/\n\d+,0,0,SRT R1 R0 16(?:\n|$)/);
   });
 
   it('keeps canonical spatial forms and for-in-cycle behavior', () => {

@@ -1,5 +1,6 @@
 import {
   AstProgram,
+  CompileOptions,
   Diagnostic,
   ErrorCodes,
   makeDiagnostic,
@@ -50,7 +51,7 @@ function validateStructuredMinimum(structuredAst: StructuredProgramAst): Diagnos
   return diagnostics;
 }
 
-export function parseStructuredSource(source: string): StructuredParseResult {
+export function parseStructuredSource(source: string, options: CompileOptions = {}): StructuredParseResult {
   const parsed = parseStructuredProgramFromSource(source);
   const structuredAst = parsed.program;
   const baseDiagnostics = [...parsed.diagnostics, ...validateStructuredMinimum(structuredAst)];
@@ -65,7 +66,9 @@ export function parseStructuredSource(source: string): StructuredParseResult {
     };
   }
 
-  const lowered = lowerStructuredProgramToAstDetailed(structuredAst);
+  const lowered = lowerStructuredProgramToAstDetailed(structuredAst, {
+    expansionMode: options.expansionMode
+  });
   const diagnostics = [...baseDiagnostics, ...lowered.diagnostics];
   const hasErrors = diagnostics.some((d) => d.severity === 'error');
 

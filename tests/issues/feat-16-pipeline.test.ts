@@ -20,6 +20,7 @@ describe('issues/FEAT-16 pipeline macro statement', () => {
   it('expands pipeline(...) into ordered function call sequence', () => {
     const source = `
 target "uma-cgra-base";
+build { expansion_mode full-unroll; }
 
 function stage_load(src) {
   cycle { @0,0: SADD R2, src, ZERO; }
@@ -53,6 +54,7 @@ kernel "feat16_pipeline" {
   it('supports pipeline steps with mixed argument arity', () => {
     const source = `
 target "uma-cgra-base";
+build { expansion_mode full-unroll; }
 
 function step0() {
   cycle { @0,0: NOP; }
@@ -77,6 +79,7 @@ kernel "feat16_arity" {
   it('does not assume cross-PE register-name dependency between stages', () => {
     const source = `
 target "uma-cgra-base";
+build { expansion_mode full-unroll; }
 
 function s0(v) {
   cycle { @0,0: SADD R1, v, ZERO; }
