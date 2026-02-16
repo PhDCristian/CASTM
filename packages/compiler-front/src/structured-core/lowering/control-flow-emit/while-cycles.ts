@@ -55,7 +55,7 @@ export function emitWhileControlFlowCycles(input: EmitWhileCyclesInput): number 
 
   let fusedBackEdge = false;
   if (fusionPlan) {
-    const jumpText = `JUMP ${startLabel}, ZERO`;
+    const jumpText = `JUMP ZERO, ${startLabel}`;
     kernel.cycles[kernel.cycles.length - 1].statements.push({
       kind: 'at',
       row,
@@ -72,7 +72,7 @@ export function emitWhileControlFlowCycles(input: EmitWhileCyclesInput): number 
       lineNo,
       row,
       col,
-      `JUMP ${startLabel}, ZERO`
+      `JUMP ZERO, ${startLabel}`
     ));
   }
 

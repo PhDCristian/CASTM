@@ -95,7 +95,7 @@ function buildSpecializationKeyWithDepth(name: string, args: string[], depth: nu
   return `${depth}:${buildSpecializationKey(name, args)}`;
 }
 
-export function createFunctionExpansionContext(mode: ExpansionMode): FunctionExpansionContext {
+export function createFunctionExpansionContext(mode: ExpansionMode, maxDepth: number = 0): FunctionExpansionContext {
   return {
     mode,
     linkRegName: 'R3',
@@ -105,7 +105,7 @@ export function createFunctionExpansionContext(mode: ExpansionMode): FunctionExp
       { row: 3, col: 0 },  // depth 0 — R3 on @3,0
       { row: 3, col: 1 }   // depth 1 — R3 on @3,1
     ],
-    maxJumpReuseDepth: 0,
+    maxJumpReuseDepth: maxDepth,
     nextReturnId: 1,
     jumpReuseSpecializations: new Map(),
     jumpReuseOrder: [],
@@ -196,6 +196,7 @@ export function finalizeJumpReuseFunctions(input: FinalizeJumpReuseInput): void 
 
     // Record the array position where the body will begin.
     const bodyStartArrayIndex = kernel.cycles.length;
+    const bodyStartPragmaIndex = kernel.pragmas.length;
 
     // Build a callStack that reflects the nesting depth so that
     // inner calls at depth+1 are handled correctly.
@@ -217,11 +218,17 @@ export function finalizeJumpReuseFunctions(input: FinalizeJumpReuseInput): void 
       false
     );
 
-    // Attach the entry label to the first cycle of the expanded body.
+    // Attach the entry label to the first cycle of the expanded body,
+    // or to the first new pragma when the body is pragma-only
+    // (e.g. std::extract_bytes).
     if (bodyStartArrayIndex < kernel.cycles.length) {
       kernel.cycles[bodyStartArrayIndex].label = spec.entryLabel;
+    } else if (bodyStartPragmaIndex < kernel.pragmas.length) {
+      // Pragma-only body: label the first pragma so that pragma
+      // expansion later attaches the label to the generated cycles.
+      kernel.pragmas[bodyStartPragmaIndex].label = spec.entryLabel;
     } else {
-      // Edge case: body generated zero cycles — emit a labelled NOP.
+      // Edge case: body generated zero cycles AND zero pragmas — emit a labelled NOP.
       const linkPe = context.linkPeByDepth[spec.depth] ?? context.linkPeByDepth[0];
       kernel.cycles.push(makeControlCycle(
         cycleCounter.value++,
@@ -240,7 +247,7 @@ export function finalizeJumpReuseFunctions(input: FinalizeJumpReuseInput): void 
       spec.lineNo,
       linkPe.row,
       linkPe.col,
-      `JUMP ${context.linkRegName}, ZERO`
+      `JUMP ZERO, ${context.linkRegName}`
     ));
   }
 }

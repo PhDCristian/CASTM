@@ -140,7 +140,7 @@ export function makeCallCycle(
   linkReg: string,
   returnLabel: string
 ): CycleAst {
-  const jumpText = `JUMP ${jumpTarget}, ZERO`;
+  const jumpText = `JUMP ZERO, ${jumpTarget}`;
   const saddText = `SADD ${linkReg}, ZERO, ${returnLabel}`;
   return {
     index,

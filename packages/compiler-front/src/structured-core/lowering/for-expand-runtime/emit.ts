@@ -83,7 +83,7 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
           kind: 'at',
           row: controlRow,
           col: jumpCol,
-          instruction: callbacks.parseInstruction(`JUMP ${startLabel}, ZERO`, lineNo, 1),
+          instruction: callbacks.parseInstruction(`JUMP ZERO, ${startLabel}`, lineNo, 1),
           span: spanAt(lineNo, 1, lineLength)
         }
       ],
@@ -113,7 +113,7 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
           kind: 'at',
           row: controlRow,
           col: jumpCol,
-          instruction: callbacks.parseInstruction(`JUMP ${startLabel}, ZERO`, lineNo, 1),
+          instruction: callbacks.parseInstruction(`JUMP ZERO, ${startLabel}`, lineNo, 1),
           span: spanAt(lineNo, 1, lineLength)
         }
       ],

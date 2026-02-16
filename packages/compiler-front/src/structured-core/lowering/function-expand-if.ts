@@ -88,7 +88,7 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
       entry.lineNo,
       ifHeader.row,
       ifHeader.col,
-      `JUMP ${endLabel}, ZERO`
+      `JUMP ZERO, ${endLabel}`
     ));
 
     kernel.cycles.push(makeControlCycle(

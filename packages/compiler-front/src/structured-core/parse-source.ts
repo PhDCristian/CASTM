@@ -165,6 +165,23 @@ function parseBuildConfig(
       continue;
     }
 
+    const jumpReuseDepth = clean.match(/^jump_reuse_depth\s+(\d+)\s*;?\s*$/i);
+    if (jumpReuseDepth) {
+      const parsed = parseInteger(jumpReuseDepth[1]);
+      if (parsed === null || parsed < 0 || parsed > 1) {
+        diagnostics.push(makeDiagnostic(
+          ErrorCodes.Parse.InvalidSyntax,
+          'error',
+          spanAt(entry.lineNo, clean.length),
+          `Invalid jump_reuse_depth value '${jumpReuseDepth[1]}'.`,
+          'Use 0 or 1.'
+        ));
+      } else {
+        config.jumpReuseDepth = parsed;
+      }
+      continue;
+    }
+
     const prune = clean.match(/^prune_noop_cycles\s+(on|off|true|false)\s*;?\s*$/i);
     if (prune) {
       const normalized = prune[1].toLowerCase();
@@ -199,7 +216,7 @@ function parseBuildConfig(
       'error',
       spanAt(entry.lineNo, clean.length),
       `Unknown build setting '${clean}'.`,
-      'Supported keys: optimize, scheduler, scheduler_window, memory_reorder, expansion_mode, prune_noop_cycles, grid.'
+      'Supported keys: optimize, scheduler, scheduler_window, memory_reorder, expansion_mode, jump_reuse_depth, prune_noop_cycles, grid.'
     ));
   }
 
