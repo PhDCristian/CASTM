@@ -1,0 +1,387 @@
+// Internal Matrix — Compact version
+// Generated from internal_matrix_opt.edsl
+// 255 compiled cycles • same semantics • ~90% fewer lines
+target base;
+
+build {
+  optimize O0;
+  scheduler safe;
+  scheduler_window 0;
+  memory_reorder strict;
+  prune_noop_cycles off;
+  grid 4x4 torus;
+}
+
+// Barrett modular reduction on both R1 and R2
+function barrett_both() {
+  cycle { at all: SSUB R0, R1, R3; }
+  cycle { at all: BSFA R1, R1, R0, SELF; }
+  cycle { at all: SADD R2, R2, R2; }
+  cycle { at all: SSUB R0, R2, R3; }
+  cycle { at all: BSFA R2, R2, R0, SELF; }
+}
+
+// Barrett on R1 only (last iteration, R2 no longer needed)
+function barrett_r1() {
+  cycle { at all: SSUB R0, R1, R3; }
+  cycle { at all: BSFA R1, R1, R0, SELF; }
+}
+
+kernel "internal_matrix_compact" {
+  // ═══ Setup ═══
+  cycle { at all: LWI R3, 4100; }
+  cycle {
+    for k in range(16) {
+      @k/4, k%4: LWI R0, k*4;
+    }
+  }
+  cycle { at all: SADD R1, ZERO, ZERO; }
+  cycle { at all: SADD R2, R0, ZERO; }
+
+  // ═══ Parallel constant-multiply (30 iterations) ═══
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @1,2: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,1: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,2: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,0: SADD R1, R1, R2;
+    @0,1: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,2: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+  }
+  barrett_both();
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+  }
+  barrett_both();
+
+  // ═══ Last accumulation + R1 Barrett ═══
+  cycle {
+    @0,1: SADD R1, R1, R2;
+    @0,2: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+  }
+  barrett_r1();
+
+  // ═══ Serial global sum at @0,0 ═══
+  cycle { @0,0: LWI R2, 0; }
+  for k in range(1, 16) {
+    cycle { @0,0: LWI R0, k*4; }
+    cycle { @0,0: SADD R2, R2, R0; }
+    cycle { @0,0: SSUB R0, R2, R3; }
+    cycle { @0,0: BSFA R2, R2, R0, SELF; }
+  }
+  cycle { @0,0: SWI R2, 4604; }
+
+  // ═══ Broadcast sum + final addition + Barrett ═══
+  cycle { at all: LWI R2, 4604; }
+  cycle { at all: SADD R1, R1, R2; }
+  barrett_r1();
+
+  // ═══ Store and exit ═══
+  cycle {
+    for k in range(16) {
+      @k/4, k%4: SWI R1, k*4;
+    }
+  }
+  cycle { @0,0: EXIT; }
+}
