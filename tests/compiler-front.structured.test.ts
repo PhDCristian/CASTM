@@ -232,4 +232,38 @@ kernel "label_fn_call" {
     expect(lowered.kernel?.cycles).toHaveLength(1);
     expect(lowered.kernel?.cycles[0].label).toBe('entry');
   });
+
+  it('E2E: labeled advanced stmt + labeled fn-call compile through full pipeline (T5-V1)', async () => {
+    const { compile } = await import('@openedge/compiler-api');
+    const source = `
+target base;
+build { optimize O0; scheduler safe; }
+
+function loadAll(val) {
+  cycle { at all: LWI R0, val; }
+}
+
+kernel "Labeled_Compound_E2E" {
+  mainEntry: cycle { at all: LWI R0, 42; }
+  routePhase: std::route(@0,0 -> @0,2, payload=R0, accum=R1);
+  loadPhase: loadAll(720);
+  cycle { @0,0: EXIT; }
+}
+`;
+    const result = compile(source);
+    expect(result.success).toBe(true);
+    expect(result.diagnostics.filter(d => d.severity === 'error')).toHaveLength(0);
+
+    const cycles = result.artifacts.ast?.kernel?.cycles ?? [];
+    expect(cycles.length).toBeGreaterThanOrEqual(4); // at least: mainEntry + route expansion + loadAll + EXIT
+
+    // mainEntry label on first cycle
+    expect(cycles[0].label).toBe('mainEntry');
+    // routePhase label on first route-expanded cycle
+    const routeCycle = cycles.find((c: { label?: string }) => c.label === 'routePhase');
+    expect(routeCycle).toBeDefined();
+    // loadPhase label on first fn-call-expanded cycle
+    const loadCycle = cycles.find((c: { label?: string }) => c.label === 'loadPhase');
+    expect(loadCycle).toBeDefined();
+  });
 });

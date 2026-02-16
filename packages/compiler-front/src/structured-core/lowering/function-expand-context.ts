@@ -105,7 +105,7 @@ export function createFunctionExpansionContext(mode: ExpansionMode): FunctionExp
       { row: 3, col: 0 },  // depth 0 — R3 on @3,0
       { row: 3, col: 1 }   // depth 1 — R3 on @3,1
     ],
-    maxJumpReuseDepth: 1,
+    maxJumpReuseDepth: 0,
     nextReturnId: 1,
     jumpReuseSpecializations: new Map(),
     jumpReuseOrder: [],

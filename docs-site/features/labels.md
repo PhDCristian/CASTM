@@ -16,7 +16,7 @@ Where `statement` is one of:
 
 ## Supported Forms
 
-```openedge
+```text
 // Labeled cycle block
 mainEntry: cycle { at all: LWI R0, 0; }
 
@@ -39,17 +39,16 @@ loadPhase: loadValues(R0, 720);
 In `expansion_mode "jump-reuse"`, labeled statements define subroutine entry points:
 
 ```openedge
-build {
-  expansion_mode "jump-reuse";
-}
+target base;
 
 function mySubroutine(dst) {
-  cycle { at all: dst = dst + IMM(1); }
+  cycle { at all: SADD dst, dst, ZERO; }
 }
 
-kernel "jump_demo" {
+kernel "label_fn_demo" {
+  init: cycle { at all: LWI R0, 42; }
   subrEntry: mySubroutine(R0);
-  // JUMP uses subrEntry as its target
+  cycle { @0,0: EXIT; }
 }
 ```
 
