@@ -21,13 +21,13 @@ import numpy as np
 
 # ── Data ─────────────────────────────────────────────────────────────────────
 
-VERSIONS = ['Compact', 'v1', 'v2', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10']
+VERSIONS = ['Compact', 'v1', 'v2', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10', 'v11', 'v12']
 
-COMPILED   = [255,  86,  78,  66,  65,  66,  57,  55,  51,  49]
-SIMULATED  = [255, 403, 352, 234, 233, 240, 231, 232, 240, 238]
-CLOCK_CYC  = [289, 529, 446, 247, 246, 253, 240, 245, 253, 251]
-STARTUP    = [779, 272, 248, 212, 209, 212, 185, 179, 167, 161]
-MEM_OPS    = [ 81, 173, 141,  48,  48,  48,  32,  48,  48,  48]
+COMPILED   = [255,  86,  78,  66,  65,  66,  57,  55,  51,  49,  52,  53]
+SIMULATED  = [255, 403, 352, 234, 233, 240, 231, 232, 240, 238, 232, 233]
+CLOCK_CYC  = [289, 529, 446, 247, 246, 253, 240, 245, 253, 251, 245, 246]
+STARTUP    = [779, 272, 248, 212, 209, 212, 185, 179, 167, 161, 170, 173]
+MEM_OPS    = [ 81, 173, 141,  48,  48,  48,  32,  48,  48,  48,  48,  48]
 
 DESCRIPTIONS = [
     'Fully unrolled, no control-flow reuse',
@@ -40,6 +40,8 @@ DESCRIPTIONS = [
     'Inverted sub, entry-point alias, R3=P',
     'Entry-point aliasing × 4 reductions',
     'Torus folding: relay+sum via RCL/RCR/RCT/RCB',
+    'Inline Torus Fold + entry-point alias',
+    'Clean CFG Torus Fold (monolithic subr.)',
 ]
 
 # 1-based row indices to highlight (Pareto-optimal)
