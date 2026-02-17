@@ -21,13 +21,13 @@ import numpy as np
 
 # ── Data ─────────────────────────────────────────────────────────────────────
 
-VERSIONS = ['Compact', 'v1', 'v2', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9']
+VERSIONS = ['Compact', 'v1', 'v2', 'v4', 'v5', 'v6', 'v7', 'v8', 'v9', 'v10']
 
-COMPILED   = [255,  86,  78,  66,  65,  66,  57,  55,  51]
-SIMULATED  = [255, 403, 352, 234, 233, 240, 231, 232, 240]
-CLOCK_CYC  = [289, 529, 446, 247, 246, 253, 240, 245, 253]
-STARTUP    = [779, 272, 248, 212, 209, 212, 185, 179, 167]
-MEM_OPS    = [ 81, 173, 141,  48,  48,  48,  32,  48,  48]
+COMPILED   = [255,  86,  78,  66,  65,  66,  57,  55,  51,  49]
+SIMULATED  = [255, 403, 352, 234, 233, 240, 231, 232, 240, 238]
+CLOCK_CYC  = [289, 529, 446, 247, 246, 253, 240, 245, 253, 251]
+STARTUP    = [779, 272, 248, 212, 209, 212, 185, 179, 167, 161]
+MEM_OPS    = [ 81, 173, 141,  48,  48,  48,  32,  48,  48,  48]
 
 DESCRIPTIONS = [
     'Fully unrolled, no control-flow reuse',
@@ -39,10 +39,11 @@ DESCRIPTIONS = [
     'DP 0-collision + unified goto R0',
     'Inverted sub, entry-point alias, R3=P',
     'Entry-point aliasing × 4 reductions',
+    'Torus folding: relay+sum via RCL/RCR/RCT/RCB',
 ]
 
 # 1-based row indices to highlight (Pareto-optimal)
-PARETO_ROWS = [7, 9]
+PARETO_ROWS = [7, 10]
 
 # ── Palette — muted, accessible, professional ────────────────────────────────
 
@@ -91,19 +92,35 @@ def generate(dpi: int = 600):
 
     for i in range(nm):
         off  = (i - (nm - 1) / 2) * w
+        best_idx = int(np.argmin(all_data[i]))
         bars = ax.bar(
             x + off, all_data[i], w,
             color=pal[i], edgecolor='white', lw=0.4,
             label=BAR_LABELS[i], zorder=3,
         )
+        # Highlight best (minimum) bar: darker-toned border + same-family hatch
+        import matplotlib.colors as mcolors
+        dark = tuple(c * 0.55 for c in mcolors.to_rgb(pal[i]))  # 55% brightness
+        best_bar = bars[best_idx]
+        best_bar.set_edgecolor(dark)
+        best_bar.set_linewidth(1.2)
+        best_bar.set_zorder(5)
+        # Hatch overlay — slightly darker than bar color
+        ax.bar(
+            x[best_idx] + off, all_data[i][best_idx], w,
+            color='none', edgecolor=dark, lw=0,
+            hatch='////', alpha=0.5, zorder=6,
+        )
         # Value labels on top of each bar
-        for b, val in zip(bars, all_data[i]):
+        for j, (b, val) in enumerate(zip(bars, all_data[i])):
+            fw = 'black' if j == best_idx else '#222'
+            fs = 10.5 if j == best_idx else 9.5
             ax.text(
                 b.get_x() + b.get_width() / 2,
                 val * 1.07,
                 str(val),
                 ha='center', va='bottom',
-                fontsize=9.5, fontweight='bold', color='#222',
+                fontsize=fs, fontweight='bold', color=fw,
                 rotation=90,
             )
 
