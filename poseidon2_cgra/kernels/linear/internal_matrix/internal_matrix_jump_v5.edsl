@@ -1,0 +1,327 @@
+// Internal Matrix — Ultra JUMP v5 (65 compiled cycles)
+// Opts: ROUT-Bypass Barrett, Torus Tree Prefix Sum, Dual Subroutines
+
+target base;
+
+build {
+  optimize O0;
+  scheduler safe;
+  scheduler_window 0;
+  memory_reorder strict;
+  prune_noop_cycles off;
+  grid 4x4 torus;
+}
+
+kernel "internal_matrix_jump_v5" {
+  // ═══ Setup (2 cycles) ═══
+  cycle { at all: LWI R3, 4100; }
+  cycle {
+    for k in range(16) {
+      @k/4, k%4: LWI R2, k*4;
+    }
+  }
+
+  // ═══════════════════════════════════════════════
+  // PARALLEL GLOBAL RING REDUCTION (15 cycles)
+  // Computes s = sum(state[0..15]) mod P in ALL PEs.
+  // Result in R1. R2 preserved.
+  // ═══════════════════════════════════════════════
+
+  // Level 1: Row sum, distance 1 (right via RCR)
+  cycle { at all: SADD R1, R2, RCR; }
+  cycle { at all: SSUB ROUT, R1, R3; }
+  cycle { at all: BSFA R1, R1, SELF, SELF; }
+
+  // Level 2: Row sum, distance 2 (right via ROUT relay)
+  cycle { at all: SADD ROUT, RCR, ZERO; }
+  cycle { at all: SADD R1, R1, RCR; }
+  cycle { at all: SSUB ROUT, R1, R3; }
+  cycle { at all: BSFA R1, R1, SELF, SELF; }
+
+  // Level 3: Column sum, distance 1 (down via RCB)
+  cycle { at all: SADD R1, R1, RCB; }
+  cycle { at all: SSUB ROUT, R1, R3; }
+  cycle { at all: BSFA R1, R1, SELF, SELF; }
+
+  // Level 4: Column sum, distance 2 (down via ROUT relay)
+  cycle { at all: SADD ROUT, RCB, ZERO; }
+  cycle { at all: SADD R1, R1, RCB; }
+  cycle { at all: SSUB ROUT, R1, R3; }
+  cycle { at all: BSFA R1, R1, SELF, SELF; }
+
+  // ═══════════════════════════════════════════════
+  // PARALLEL CONSTANT-MULTIPLY (32 cycles)
+  // R1 = s (global sum). Accumulate diag[i]*state[i] on top.
+  // ═══════════════════════════════════════════════
+
+  // iter 0 (merged)
+  cycle {
+    @0,1: SADD R1, R1, R2; @1,0: SADD R1, R1, R2; @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2; @2,0: SADD R1, R1, R2; @3,0: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret0;
+  }
+
+  // iter 1 (merged via @1,1)
+  ret0: cycle {
+    @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2; @0,3: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2; @1,3: SADD R1, R1, R2; @2,1: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2; @3,1: SADD R1, R1, R2; @3,2: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_11; @1,1: R0 = ZERO + ret1;
+  }
+
+  // iter 2 (merged)
+  ret1: cycle {
+    @0,0: SADD R1, R1, R2; @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2; @2,1: SADD R1, R1, R2; @2,2: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+    @0,3: goto subrBarrett_33; @3,3: R0 = ZERO + ret2;
+  }
+
+  // iter 3 (merged)
+  ret2: cycle {
+    @0,2: SADD R1, R1, R2; @0,3: SADD R1, R1, R2; @1,1: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2; @1,3: SADD R1, R1, R2; @2,0: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2; @3,1: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret3;
+  }
+
+  // iter 4 (merged)
+  ret3: cycle {
+    @0,0: SADD R1, R1, R2; @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2; @2,0: SADD R1, R1, R2; @3,1: SADD R1, R1, R2;
+    @0,3: goto subrBarrett_33; @3,3: R0 = ZERO + ret4;
+  }
+
+  // iter 5 (merged)
+  ret4: cycle {
+    @0,1: SADD R1, R1, R2; @1,2: SADD R1, R1, R2; @2,0: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2; @2,3: SADD R1, R1, R2; @3,0: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret5;
+  }
+
+  // iter 6 (merged)
+  ret5: cycle {
+    @1,2: SADD R1, R1, R2; @2,1: SADD R1, R1, R2; @3,1: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret6;
+  }
+
+  // iter 7 (merged)
+  ret6: cycle {
+    @0,0: SADD R1, R1, R2; @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2; @1,1: SADD R1, R1, R2; @1,3: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2; @3,0: SADD R1, R1, R2; @3,1: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+    @1,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret7;
+  }
+
+  // iter 8 (merged)
+  ret7: cycle {
+    @0,0: SADD R1, R1, R2; @0,1: SADD R1, R1, R2; @0,3: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2; @2,0: SADD R1, R1, R2; @2,1: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2;
+    @0,2: goto subrBarrett_33; @3,3: R0 = ZERO + ret8;
+  }
+
+  // iter 9 (merged)
+  ret8: cycle {
+    @0,1: SADD R1, R1, R2; @1,0: SADD R1, R1, R2; @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2; @2,0: SADD R1, R1, R2; @2,2: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret9;
+  }
+
+  // iter 10 (merged via @1,1)
+  ret9: cycle {
+    @0,0: SADD R1, R1, R2; @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2; @1,3: SADD R1, R1, R2; @2,0: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2; @3,0: SADD R1, R1, R2; @3,1: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+    @1,0: goto subrBarrett_11; @1,1: R0 = ZERO + ret10;
+  }
+
+  // iter 11 (merged via @1,1)
+  ret10: cycle {
+    @0,0: SADD R1, R1, R2; @0,2: SADD R1, R1, R2; @0,3: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2; @2,0: SADD R1, R1, R2; @2,1: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2; @3,2: SADD R1, R1, R2; @3,3: SADD R1, R1, R2;
+    @0,1: goto subrBarrett_11; @1,1: R0 = ZERO + ret11;
+  }
+
+  // iter 12 (merged)
+  ret11: cycle {
+    @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2; @0,3: SADD R1, R1, R2;
+    @1,0: SADD R1, R1, R2; @1,1: SADD R1, R1, R2; @2,0: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2; @2,3: SADD R1, R1, R2; @3,2: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret12;
+  }
+
+  // iter 13 (merged)
+  ret12: cycle {
+    @0,0: SADD R1, R1, R2; @0,3: SADD R1, R1, R2; @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2; @2,3: SADD R1, R1, R2; @3,1: SADD R1, R1, R2;
+    @0,1: goto subrBarrett_33; @3,3: R0 = ZERO + ret13;
+  }
+
+  // iter 14 (merged via @1,1)
+  ret13: cycle {
+    @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2; @1,0: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2; @3,3: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_11; @1,1: R0 = ZERO + ret14;
+  }
+
+  // iter 15 (merged via @1,1)
+  ret14: cycle {
+    @0,2: SADD R1, R1, R2; @1,2: SADD R1, R1, R2; @2,0: SADD R1, R1, R2;
+    @2,3: SADD R1, R1, R2; @3,1: SADD R1, R1, R2; @3,3: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_11; @1,1: R0 = ZERO + ret15;
+  }
+
+  // iter 16 (2 cycles: @3,3 AND @1,1 both in calc)
+  ret15: cycle {
+    @0,0: SADD R1, R1, R2; @0,2: SADD R1, R1, R2; @0,3: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2; @1,2: SADD R1, R1, R2; @2,1: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2; @2,3: SADD R1, R1, R2; @3,0: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+  }
+  cycle { @0,1: goto subrBarrett_33; @3,3: R0 = ZERO + ret16; }
+
+  // iter 17 (merged)
+  ret16: cycle {
+    @0,0: SADD R1, R1, R2; @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2; @1,1: SADD R1, R1, R2; @1,2: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2; @2,2: SADD R1, R1, R2; @2,3: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+    @1,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret17;
+  }
+
+  // iter 18 (merged)
+  ret17: cycle {
+    @0,1: SADD R1, R1, R2; @1,0: SADD R1, R1, R2; @1,3: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret18;
+  }
+
+  // iter 19 (merged)
+  ret18: cycle {
+    @0,2: SADD R1, R1, R2; @0,3: SADD R1, R1, R2; @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2; @2,1: SADD R1, R1, R2; @3,0: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret19;
+  }
+
+  // iter 20 (merged via @1,1)
+  ret19: cycle {
+    @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2; @1,0: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2; @3,2: SADD R1, R1, R2; @3,3: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_11; @1,1: R0 = ZERO + ret20;
+  }
+
+  // iter 21 (merged via @1,1)
+  ret20: cycle {
+    @0,0: SADD R1, R1, R2; @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2;
+    @0,3: SADD R1, R1, R2; @1,0: SADD R1, R1, R2; @1,2: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2; @3,2: SADD R1, R1, R2; @3,3: SADD R1, R1, R2;
+    @1,3: goto subrBarrett_11; @1,1: R0 = ZERO + ret21;
+  }
+
+  // iter 22 (merged)
+  ret21: cycle {
+    @0,0: SADD R1, R1, R2; @0,2: SADD R1, R1, R2; @1,0: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2; @2,1: SADD R1, R1, R2; @2,3: SADD R1, R1, R2;
+    @3,1: SADD R1, R1, R2; @3,2: SADD R1, R1, R2;
+    @0,1: goto subrBarrett_33; @3,3: R0 = ZERO + ret22;
+  }
+
+  // iter 23 (merged)
+  ret22: cycle {
+    @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2; @1,2: SADD R1, R1, R2;
+    @1,3: SADD R1, R1, R2; @2,3: SADD R1, R1, R2; @3,1: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret23;
+  }
+
+  // iter 24 (merged)
+  ret23: cycle {
+    @0,1: SADD R1, R1, R2; @0,3: SADD R1, R1, R2; @1,0: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2; @1,3: SADD R1, R1, R2; @2,1: SADD R1, R1, R2;
+    @2,2: SADD R1, R1, R2; @2,3: SADD R1, R1, R2; @3,1: SADD R1, R1, R2;
+    @3,2: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret24;
+  }
+
+  // iter 25 (merged via @1,1)
+  ret24: cycle {
+    @0,0: SADD R1, R1, R2; @0,2: SADD R1, R1, R2; @1,0: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2; @2,0: SADD R1, R1, R2; @3,2: SADD R1, R1, R2;
+    @3,3: SADD R1, R1, R2;
+    @0,1: goto subrBarrett_11; @1,1: R0 = ZERO + ret25;
+  }
+
+  // iter 26 (merged)
+  ret25: cycle {
+    @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2; @0,3: SADD R1, R1, R2;
+    @1,1: SADD R1, R1, R2; @1,3: SADD R1, R1, R2; @2,2: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2; @3,2: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret26;
+  }
+
+  // iter 27 (merged)
+  ret26: cycle {
+    @0,0: SADD R1, R1, R2; @0,1: SADD R1, R1, R2; @1,1: SADD R1, R1, R2;
+    @1,2: SADD R1, R1, R2; @2,1: SADD R1, R1, R2; @2,2: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2;
+    @0,2: goto subrBarrett_33; @3,3: R0 = ZERO + ret27;
+  }
+
+  // iter 28 (2 cycles: @3,3 AND @1,1 both in calc)
+  ret27: cycle {
+    @0,2: SADD R1, R1, R2; @1,0: SADD R1, R1, R2; @1,1: SADD R1, R1, R2;
+    @2,0: SADD R1, R1, R2; @3,0: SADD R1, R1, R2; @3,3: SADD R1, R1, R2;
+  }
+  cycle { @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + ret28; }
+
+  // iter 29 (merged)
+  ret28: cycle {
+    @0,1: SADD R1, R1, R2; @1,0: SADD R1, R1, R2; @1,3: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2; @2,2: SADD R1, R1, R2; @2,3: SADD R1, R1, R2;
+    @3,0: SADD R1, R1, R2; @3,2: SADD R1, R1, R2;
+    @0,0: goto subrBarrett_33; @3,3: R0 = ZERO + retLast;
+  }
+
+  // ═══ Last accumulation + inline Barrett (3 cycles) ═══
+  retLast: cycle {
+    @0,1: SADD R1, R1, R2; @0,2: SADD R1, R1, R2; @1,1: SADD R1, R1, R2;
+    @2,1: SADD R1, R1, R2; @2,2: SADD R1, R1, R2; @3,3: SADD R1, R1, R2;
+  }
+  cycle { at all: SSUB ROUT, R1, R3; }
+  cycle { at all: BSFA R1, R1, SELF, SELF; }
+
+  // ═══ Store and exit (2 cycles) ═══
+  cycle {
+    for k in range(16) {
+      @k/4, k%4: SWI R1, k*4;
+    }
+  }
+  cycle { @0,0: EXIT; }
+
+  // ═══════════════════════════════════════════════
+  // SUBROUTINE 1: Barrett via @3,3 (6 cycles)
+  // SSUB writes to ROUT not R0 → R0 preserved as return addr
+  // ═══════════════════════════════════════════════
+  subrBarrett_33: cycle { at all: SSUB ROUT, R1, R3; }
+  cycle { at all: BSFA R1, R1, SELF, SELF; }
+  cycle { at all: SADD R2, R2, R2; }
+  cycle { at all: SSUB ROUT, R2, R3; }
+  cycle { at all: BSFA R2, R2, SELF, SELF; }
+  cycle { @3,3: goto R0; }
+
+  // ═══════════════════════════════════════════════
+  // SUBROUTINE 2: Barrett via @1,1 (6 cycles)
+  // ═══════════════════════════════════════════════
+  subrBarrett_11: cycle { at all: SSUB ROUT, R1, R3; }
+  cycle { at all: BSFA R1, R1, SELF, SELF; }
+  cycle { at all: SADD R2, R2, R2; }
+  cycle { at all: SSUB ROUT, R2, R3; }
+  cycle { at all: BSFA R2, R2, SELF, SELF; }
+  cycle { @1,1: goto R0; }
+}
