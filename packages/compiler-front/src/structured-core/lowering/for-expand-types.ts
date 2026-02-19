@@ -7,6 +7,7 @@ import {
 } from '@openedge/compiler-ir';
 import type { SourceLineEntry } from '../parser-utils/blocks.js';
 import type { FunctionExpansionContext } from './function-expand-context.js';
+import type { LoopControlScope } from './loop-control-scope.js';
 
 export interface FunctionDefinitionLike {
   name: string;
@@ -26,7 +27,8 @@ export type ExpandFunctionBodyIntoKernel = (
   expansionCounter: { value: number },
   controlFlowCounter: { value: number },
   expansionContext?: FunctionExpansionContext,
-  isRoot?: boolean
+  isRoot?: boolean,
+  loopControlStack?: LoopControlScope[]
 ) => void;
 
 export interface ExpandForCallbacks {

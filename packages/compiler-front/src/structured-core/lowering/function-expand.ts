@@ -15,6 +15,7 @@ import {
   FunctionExpansionContext,
   finalizeJumpReuseFunctions
 } from './function-expand-context.js';
+import type { LoopControlScope } from './loop-control-scope.js';
 
 export {
   buildWhileFusionPlan,
@@ -37,7 +38,8 @@ export function expandFunctionBodyIntoKernel(
   expansionCounter: { value: number },
   controlFlowCounter: { value: number },
   expansionContext?: FunctionExpansionContext,
-  isRoot: boolean = true
+  isRoot: boolean = true,
+  loopControlStack: LoopControlScope[] = []
 ): void {
   for (let i = 0; i < body.length; i++) {
     const entry = body[i];
@@ -62,7 +64,8 @@ export function expandFunctionBodyIntoKernel(
       expansionCounter,
       controlFlowCounter,
       expandBody: expandFunctionBodyIntoKernel,
-      expansionContext
+      expansionContext,
+      loopControlStack
     });
     if (result.handled) {
       if (result.shouldBreak) break;
@@ -75,7 +78,7 @@ export function expandFunctionBodyIntoKernel(
       'error',
       spanAt(entry.lineNo, 1, clean.length),
       `Unsupported function body statement: '${clean}'.`,
-      'Function bodies currently support advanced statements, for/while/if control-flow, cycle blocks, labeled cycles, and function calls.'
+      'Function bodies currently support advanced statements, for/while/if control-flow, cycle blocks, labeled cycles, loop control (break/continue), and function calls.'
     ));
   }
 
@@ -89,7 +92,8 @@ export function expandFunctionBodyIntoKernel(
       cycleCounter,
       expansionCounter,
       controlFlowCounter,
-      expandBody: expandFunctionBodyIntoKernel
+      expandBody: expandFunctionBodyIntoKernel,
+      loopControlStack: []
     });
   }
 }

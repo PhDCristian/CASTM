@@ -7,6 +7,7 @@ import {
   FunctionDefinitionLike
 } from './for-expand.js';
 import { instantiateFunctionBody, makeControlCycle } from './function-expand-helpers.js';
+import type { LoopControlScope } from './loop-control-scope.js';
 
 interface JumpReuseSpecialization {
   key: string;
@@ -44,7 +45,7 @@ export interface FunctionExpansionContext {
   jumpPeCol: number;
   /**
    * Per-depth link PE: linkPeByDepth[d] is the PE where SADD sets the
-   * return address and where JUMP R3, ZERO returns at depth `d`.
+   * return address and where JUMP ZERO, R3 returns at depth `d`.
    * Depth 0 = @3,0 ; Depth 1 = @3,1 (avoids link-register clobbering).
    */
   linkPeByDepth: LinkPeConfig[];
@@ -83,8 +84,10 @@ interface FinalizeJumpReuseInput {
     expansionCounter: { value: number },
     controlFlowCounter: { value: number },
     expansionContext?: FunctionExpansionContext,
-    isRoot?: boolean
+    isRoot?: boolean,
+    loopControlStack?: LoopControlScope[]
   ) => void;
+  loopControlStack: LoopControlScope[];
 }
 
 function buildSpecializationKey(name: string, args: string[]): string {
@@ -166,7 +169,8 @@ export function finalizeJumpReuseFunctions(input: FinalizeJumpReuseInput): void 
     cycleCounter,
     expansionCounter,
     controlFlowCounter,
-    expandBody
+    expandBody,
+    loopControlStack
   } = input;
 
   if (context.mode !== 'jump-reuse' || context.finalized) {
@@ -215,7 +219,8 @@ export function finalizeJumpReuseFunctions(input: FinalizeJumpReuseInput): void 
       expansionCounter,
       controlFlowCounter,
       context,
-      false
+      false,
+      loopControlStack
     );
 
     // Attach the entry label to the first cycle of the expanded body,
@@ -240,7 +245,7 @@ export function finalizeJumpReuseFunctions(input: FinalizeJumpReuseInput): void 
       ));
     }
 
-    // Emit the register-based return: JUMP R3, ZERO on the link PE.
+    // Emit the register-based return: JUMP ZERO, R3 on the link PE.
     const linkPe = context.linkPeByDepth[spec.depth] ?? context.linkPeByDepth[0];
     kernel.cycles.push(makeControlCycle(
       cycleCounter.value++,

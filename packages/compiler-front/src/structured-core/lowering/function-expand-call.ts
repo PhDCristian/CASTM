@@ -85,7 +85,8 @@ export function tryExpandFunctionCall(input: FunctionExpandStepInput): FunctionE
         expansionCounter,
         controlFlowCounter,
         expansionContext,
-        false
+        false,
+        input.loopControlStack
       );
 
       return { handled: true, nextIndex: index, shouldBreak: false };
@@ -149,7 +150,8 @@ export function tryExpandFunctionCall(input: FunctionExpandStepInput): FunctionE
     expansionCounter,
     controlFlowCounter,
     expansionContext,
-    false
+    false,
+    input.loopControlStack
   );
 
   // Propagate label to first generated cycle, or first new pragma

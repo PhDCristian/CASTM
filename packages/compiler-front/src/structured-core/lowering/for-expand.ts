@@ -11,11 +11,13 @@ import {
 import { expandRuntimeForLoop } from './for-expand-runtime.js';
 import { expandStaticForLoop } from './for-expand-static.js';
 import type { FunctionExpansionContext } from './function-expand-context.js';
+import type { LoopControlScope } from './loop-control-scope.js';
 
 export type { ExpandForCallbacks, ExpandFunctionBodyIntoKernel, FunctionDefinitionLike } from './for-expand-types.js';
 
 export function expandForLoopIntoKernel(
   header: ForHeader,
+  loopLabel: string | undefined,
   loopBody: SourceLineEntry[],
   lineNo: number,
   lineLength: number,
@@ -28,10 +30,12 @@ export function expandForLoopIntoKernel(
   expansionCounter: { value: number },
   controlFlowCounter: { value: number },
   callbacks: ExpandForCallbacks,
-  expansionContext?: FunctionExpansionContext
+  expansionContext?: FunctionExpansionContext,
+  loopControlStack: LoopControlScope[] = []
 ): void {
   if (expandRuntimeForLoop({
     header,
+    loopLabel,
     loopBody,
     lineNo,
     lineLength,
@@ -44,13 +48,15 @@ export function expandForLoopIntoKernel(
     expansionCounter,
     controlFlowCounter,
     callbacks,
-    expansionContext
+    expansionContext,
+    loopControlStack
   })) {
     return;
   }
 
   expandStaticForLoop({
     header,
+    loopLabel,
     loopBody,
     lineNo,
     lineLength,
@@ -63,6 +69,7 @@ export function expandForLoopIntoKernel(
     expansionCounter,
     controlFlowCounter,
     callbacks,
-    expansionContext
+    expansionContext,
+    loopControlStack
   });
 }

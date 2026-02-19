@@ -46,7 +46,8 @@ export function tryParseControlStatement(
     entries: SourceLineEntry[],
     cycleCounter: { value: number },
     diagnostics: Diagnostic[]
-  ) => StructuredKernelStmtAst[]
+  ) => StructuredKernelStmtAst[],
+  label?: string
 ): StructuredControlParseResult {
   const forHeader = cleanLine.match(
     /^for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+range\s*\(([^)]*)\)\s*(?:at\s+@\s*([^,\{\s]+)\s*,\s*([^\{\s]+))?\s*(?:runtime\s*)?(?:(?:unroll|collapse)\s*\([^)]*\)\s*)*\{\s*$/i
@@ -63,6 +64,7 @@ export function tryParseControlStatement(
       node: {
         kind: 'for',
         header: cleanLine.slice(0, cleanLine.lastIndexOf('{')).trim(),
+        ...(label ? { label } : {}),
         body: parseNestedStatements(block.body, cycleCounter, diagnostics),
         span: spanAt(lineNo, cleanLine.length)
       }
@@ -137,6 +139,7 @@ export function tryParseControlStatement(
       kind: 'if',
       condition: ifHeader[1].trim(),
       control: { row, col },
+      ...(label ? { label } : {}),
       thenBody,
       ...(elseBody ? { elseBody } : {}),
       span: spanAt(lineNo, cleanLine.length)
@@ -186,6 +189,7 @@ export function tryParseControlStatement(
     kind: 'while',
     condition: whileHeader[1].trim(),
     control: { row, col },
+    ...(label ? { label } : {}),
     body: parseNestedStatements(block.body, cycleCounter, diagnostics),
     span: spanAt(lineNo, cleanLine.length)
   };

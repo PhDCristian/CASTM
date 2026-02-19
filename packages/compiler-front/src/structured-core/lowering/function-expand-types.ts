@@ -5,6 +5,7 @@ import {
 import { SourceLineEntry } from '../parser-utils/blocks.js';
 import { FunctionDefinitionLike } from './for-expand.js';
 import type { FunctionExpansionContext } from './function-expand-context.js';
+import type { LoopControlScope } from './loop-control-scope.js';
 
 export interface FunctionExpandStepInput {
   body: SourceLineEntry[];
@@ -30,9 +31,11 @@ export interface FunctionExpandStepInput {
     expansionCounter: { value: number },
     controlFlowCounter: { value: number },
     expansionContext?: FunctionExpansionContext,
-    isRoot?: boolean
+    isRoot?: boolean,
+    loopControlStack?: LoopControlScope[]
   ) => void;
   expansionContext?: FunctionExpansionContext;
+  loopControlStack: LoopControlScope[];
 }
 
 export interface FunctionExpandStepResult {

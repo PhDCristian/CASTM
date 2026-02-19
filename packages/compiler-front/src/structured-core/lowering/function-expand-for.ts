@@ -12,6 +12,16 @@ import {
   FunctionExpandStepInput,
   FunctionExpandStepResult
 } from './function-expand-types.js';
+import { RESERVED_KEYWORDS } from '../constants.js';
+
+function stripLabelPrefix(clean: string): { label: string; rest: string } | null {
+  const match = clean.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$/);
+  if (!match) return null;
+  const keyword = match[1].toLowerCase();
+  if (RESERVED_KEYWORDS.has(keyword)) return null;
+  if (match[2].startsWith(':')) return null;
+  return { label: match[1], rest: match[2] };
+}
 
 export function tryExpandForStatement(input: FunctionExpandStepInput): FunctionExpandStepResult {
   const {
@@ -31,7 +41,9 @@ export function tryExpandForStatement(input: FunctionExpandStepInput): FunctionE
     expansionContext
   } = input;
 
-  const forHeader = parseForHeader(clean, entry.lineNo, constants, new Map(), diagnostics);
+  const labelResult = stripLabelPrefix(clean);
+  const toParse = labelResult ? labelResult.rest : clean;
+  const forHeader = parseForHeader(toParse, entry.lineNo, constants, new Map(), diagnostics);
   if (!forHeader) {
     return { handled: false, nextIndex: index, shouldBreak: false };
   }
@@ -48,11 +60,14 @@ export function tryExpandForStatement(input: FunctionExpandStepInput): FunctionE
     return { handled: true, nextIndex: index, shouldBreak: true };
   }
 
+  const prevCycleCount = kernel.cycles.length;
+  const prevPragmaCount = kernel.pragmas.length;
   expandForLoopIntoKernel(
     forHeader,
+    labelResult?.label,
     loopBlock.body,
     entry.lineNo,
-    clean.length,
+    toParse.length,
     kernel,
     functions,
     constants,
@@ -68,8 +83,24 @@ export function tryExpandForStatement(input: FunctionExpandStepInput): FunctionE
       makeControlCycle,
       expandFunctionBodyIntoKernel: expandBody
     },
-    expansionContext
+    expansionContext,
+    input.loopControlStack
   );
+
+  if (labelResult) {
+    if (kernel.cycles.length > prevCycleCount) {
+      kernel.cycles[prevCycleCount].label = labelResult.label;
+    } else if (kernel.pragmas.length > prevPragmaCount) {
+      kernel.pragmas[prevPragmaCount].label = labelResult.label;
+    } else {
+      kernel.cycles.push({
+        index: cycleCounter.value++,
+        label: labelResult.label,
+        statements: [],
+        span: spanAt(entry.lineNo, 1, toParse.length)
+      });
+    }
+  }
 
   return { handled: true, nextIndex: loopBlock.endIndex, shouldBreak: false };
 }

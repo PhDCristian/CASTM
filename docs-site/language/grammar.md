@@ -28,8 +28,8 @@ program          ::= target_decl build_block? declaration* function_def* kernel_
 target_decl      ::= "target" (string_lit | ident) ";"
 build_block      ::= "build" "{" build_item* "}"
 kernel_decl      ::= "kernel" string_lit "{" kernel_item* "}"
-kernel_item      ::= ... | labeled_stmt | ...
-labeled_stmt     ::= label ":" (cycle_block | advanced_stmt | function_call)
+kernel_item      ::= ... | labeled_stmt | loop_control_stmt | ...
+labeled_stmt     ::= label ":" (cycle_block | advanced_stmt | function_call | for_stmt | if_stmt | while_stmt)
 label            ::= ident
 
 build_item       ::= optimize_item | scheduler_item | scheduler_window_item | memory_reorder_item | expansion_mode_item | prune_noop_item | grid_item
@@ -67,6 +67,7 @@ if_stmt          ::= "if" "(" cond_expr ")" "at" "@" int_expr "," int_expr "{" k
 while_stmt       ::= "while" "(" cond_expr ")" "at" "@" int_expr "," int_expr "{" kernel_item* "}"
 for_stmt         ::= "for" ident "in" "range" "(" range_args ")" loop_mod* "{" kernel_item* "}"
                   | "for" register "in" "range" "(" range_args ")" "at" "@" int_expr "," int_expr "runtime" "{" kernel_item* "}"
+loop_control_stmt ::= "break" [ ident ] ";" | "continue" [ ident ] ";"
 loop_mod         ::= "unroll" "(" int_expr ")" | "collapse" "(" int_expr ")"
 ```
 

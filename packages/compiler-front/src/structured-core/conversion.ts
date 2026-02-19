@@ -93,14 +93,16 @@ function emitStructuredBodyAsEntries(
     }
 
     if (stmt.kind === 'for') {
-      pushLine(`${stmt.header} {`);
+      const labelPrefix = stmt.label ? `${stmt.label}: ` : '';
+      pushLine(`${labelPrefix}${stmt.header} {`);
       emitStructuredBodyAsEntries(stmt.body, entries);
       pushLine('}');
       continue;
     }
 
     if (stmt.kind === 'if') {
-      pushLine(`if (${stmt.condition}) at @${stmt.control.row},${stmt.control.col} {`);
+      const labelPrefix = stmt.label ? `${stmt.label}: ` : '';
+      pushLine(`${labelPrefix}if (${stmt.condition}) at @${stmt.control.row},${stmt.control.col} {`);
       emitStructuredBodyAsEntries(stmt.thenBody, entries);
       pushLine('}');
       if (stmt.elseBody && stmt.elseBody.length > 0) {
@@ -112,9 +114,20 @@ function emitStructuredBodyAsEntries(
     }
 
     if (stmt.kind === 'while') {
-      pushLine(`while (${stmt.condition}) at @${stmt.control.row},${stmt.control.col} {`);
+      const labelPrefix = stmt.label ? `${stmt.label}: ` : '';
+      pushLine(`${labelPrefix}while (${stmt.condition}) at @${stmt.control.row},${stmt.control.col} {`);
       emitStructuredBodyAsEntries(stmt.body, entries);
       pushLine('}');
+      continue;
+    }
+
+    if (stmt.kind === 'break') {
+      pushLine(`break${stmt.targetLabel ? ` ${stmt.targetLabel}` : ''};`);
+      continue;
+    }
+
+    if (stmt.kind === 'continue') {
+      pushLine(`continue${stmt.targetLabel ? ` ${stmt.targetLabel}` : ''};`);
       continue;
     }
 
@@ -190,9 +203,8 @@ function eliminateNoopLandingPads(cycles: CycleAst[], pragmas: PragmaAst[]): Cyc
 
   // Trailing pending label — emit a final labeled empty cycle.
   if (pendingLabel) {
-    const lastSpan = cycles.length > 0
-      ? cycles[cycles.length - 1].span
-      : { startLine: 1, startColumn: 1, endLine: 1, endColumn: 1 };
+    // pendingLabel can only exist if at least one cycle was visited.
+    const lastSpan = cycles[cycles.length - 1].span;
     result.push({
       index: 0,
       label: pendingLabel,

@@ -197,6 +197,7 @@ export interface StructuredAdvancedStmtAst {
 export interface StructuredForStmtAst {
   kind: 'for';
   header: string;
+  label?: string;
   body: StructuredKernelStmtAst[];
   span: SourceSpan;
 }
@@ -205,6 +206,7 @@ export interface StructuredIfStmtAst {
   kind: 'if';
   condition: string;
   control: { row: number; col: number };
+  label?: string;
   thenBody: StructuredKernelStmtAst[];
   elseBody?: StructuredKernelStmtAst[];
   span: SourceSpan;
@@ -214,6 +216,7 @@ export interface StructuredWhileStmtAst {
   kind: 'while';
   condition: string;
   control: { row: number; col: number };
+  label?: string;
   body: StructuredKernelStmtAst[];
   span: SourceSpan;
 }
@@ -223,6 +226,18 @@ export interface StructuredFnCallStmtAst {
   name: string;
   args: string[];
   label?: string;
+  span: SourceSpan;
+}
+
+export interface StructuredBreakStmtAst {
+  kind: 'break';
+  targetLabel?: string;
+  span: SourceSpan;
+}
+
+export interface StructuredContinueStmtAst {
+  kind: 'continue';
+  targetLabel?: string;
   span: SourceSpan;
 }
 
@@ -239,7 +254,9 @@ export type StructuredKernelStmtAst =
   | StructuredForStmtAst
   | StructuredIfStmtAst
   | StructuredWhileStmtAst
-  | StructuredFnCallStmtAst;
+  | StructuredFnCallStmtAst
+  | StructuredBreakStmtAst
+  | StructuredContinueStmtAst;
 
 export interface StructuredKernelAst {
   name: string;

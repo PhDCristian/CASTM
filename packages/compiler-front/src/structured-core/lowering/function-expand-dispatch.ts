@@ -2,6 +2,7 @@ import {
   FunctionExpandStepInput,
   FunctionExpandStepResult
 } from './function-expand-types.js';
+import { tryExpandLoopControlStatement } from './function-expand-loop-control.js';
 import { tryExpandForStatement } from './function-expand-for.js';
 import {
   tryExpandIfStatement,
@@ -11,6 +12,7 @@ import { tryExpandCycleStatement } from './function-expand-cycle.js';
 import { tryExpandFunctionCall } from './function-expand-call.js';
 
 const STEP_HANDLERS: Array<(input: FunctionExpandStepInput) => FunctionExpandStepResult> = [
+  tryExpandLoopControlStatement,
   tryExpandForStatement,
   tryExpandIfStatement,
   tryExpandWhileStatement,

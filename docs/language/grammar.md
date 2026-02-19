@@ -17,8 +17,8 @@ expansion_mode_stmt ::= "expansion_mode" ("full-unroll" | "jump-reuse") ";"
 prune_noop_stmt  ::= "prune_noop_cycles" ("on" | "off" | "true" | "false") ";"
 grid_stmt        ::= "grid" int_expr "x" int_expr ("torus" | "mesh")? ";"
 kernel_decl      ::= "kernel" string_lit "{" kernel_item* "}"
-kernel_item      ::= config_stmt | runtime_stmt | cycle_block | labeled_stmt | control_stmt | for_stmt | advanced_stmt | pipeline_stmt | function_call
-labeled_stmt     ::= label ":" (cycle_block | advanced_stmt | function_call)
+kernel_item      ::= config_stmt | runtime_stmt | cycle_block | labeled_stmt | control_stmt | for_stmt | loop_control_stmt | advanced_stmt | pipeline_stmt | function_call
+labeled_stmt     ::= label ":" (cycle_block | advanced_stmt | function_call | for_stmt | if_stmt | while_stmt)
 label            ::= ident
 ```
 
@@ -66,10 +66,13 @@ Notes:
 
 ```text
 control_stmt     ::= if_stmt | while_stmt
+loop_control_stmt ::= break_stmt | continue_stmt
 if_stmt          ::= "if" "(" cond_expr ")" "at" "@" int_expr "," int_expr "{" kernel_item* "}" [ "else" "{" kernel_item* "}" ]
 while_stmt       ::= "while" "(" cond_expr ")" "at" "@" int_expr "," int_expr "{" kernel_item* "}"
 for_stmt         ::= "for" ident "in" "range" "(" range_args ")" loop_mod* "{" kernel_item* "}"
                   | "for" register "in" "range" "(" range_args ")" "at" "@" int_expr "," int_expr "runtime" "{" kernel_item* "}"
+break_stmt       ::= "break" [ ident ] ";"
+continue_stmt    ::= "continue" [ ident ] ";"
 range_args       ::= int_expr | int_expr "," int_expr | int_expr "," int_expr "," int_expr
 loop_mod         ::= "unroll" "(" int_expr ")" | "collapse" "(" int_expr ")"
 function_def     ::= "function" ident "(" ident_list? ")" "{" kernel_item* "}"
@@ -100,7 +103,7 @@ accumulate_stmt  ::= std_prefix "accumulate" "(" "pattern" "=" ("row" | "col" | 
 mulacc_chain_stmt ::= std_prefix "mulacc_chain" "(" "src" "=" register "," "coeff" "=" register "," "acc" "=" register "," "out" "=" register "," "target" "=" ("row(" int_expr ")" | "col(" int_expr ")") [ "," "lanes" "=" int_expr ] [ "," "width" "=" int_expr ] [ "," "mask" "=" int_expr ] [ "," "dir" "=" ("right" | "left" | "down" | "up") ] ")" ";"
 carry_chain_stmt ::= std_prefix "carry_chain" "(" "src" "=" register "," "carry" "=" register "," "store" "=" ident "," "limbs" "=" int_expr "," "width" "=" int_expr "," "row" "=" int_expr [ "," "mask" "=" int_expr ] [ "," "start" "=" int_expr ] [ "," "dir" "=" ("right" | "left") ] ")" ";"
 conditional_sub_stmt ::= std_prefix "conditional_sub" "(" "value" "=" register "," "sub" "=" register "," "dest" "=" register [ "," "target" "=" ("all" | "row(" int_expr ")" | "col(" int_expr ")" | "point(" int_expr "," int_expr ")") ] ")" ";"
-collect_stmt     ::= std_prefix "collect" "(" "from" "=" lane_ref [ "," "to" "=" lane_ref ] "," "via" "=" register "," "local" "=" register "," "into" "=" register [ "," "combine" "=" collect_combine ] ")" ";"
+collect_stmt     ::= std_prefix "collect" "(" "from" "=" lane_ref [ "," "to" "=" lane_ref ] "," "via" "=" register "," "local" "=" register "," "into" "=" register [ "," "combine" "=" collect_combine ] [ "," "path" "=" ("single_hop" | "multi_hop") ] [ "," "max_hops" "=" int_expr ] ")" ";"
 lane_ref         ::= ("row" | "col") "(" int_expr ")"
 collect_combine  ::= "copy" | "add" | "sum" | "sub" | "and" | "or" | "xor" | "mul" | "shift_add"
 normalize_stmt   ::= std_prefix "normalize" "(" "reg" "=" register "," "carry" "=" register "," "width" "=" int_expr "," "lane" "=" int_expr [ "," "mask" "=" int_expr ] [ "," "axis" "=" ("row" | "col") ] [ "," "dir" "=" ("right" | "left" | "down" | "up") ] ")" ";"
