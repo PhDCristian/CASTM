@@ -17,7 +17,9 @@ export const ErrorCodes = {
     UnsupportedPragma: 'E3008',
     UnknownLabel: 'E3009',
     DuplicateLabel: 'E3010',
-    UnresolvedCoordinateExpression: 'E3011'
+    UnresolvedCoordinateExpression: 'E3011',
+    InvalidLoopControl: 'E3012',
+    InvalidCollectPath: 'E3013'
   },
   Internal: {
     UnexpectedState: 'E9001'

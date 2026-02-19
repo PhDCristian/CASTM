@@ -15,7 +15,7 @@ OpenEdgeDSL uses a single canonical syntax profile.
 |---|---|
 | declarations | `let` |
 | spatial placement | `at @r,c`, `at row`, `at col`, `at all` |
-| control-flow | `if`, `while`, `for`, runtime `for`, static modifiers `unroll(k)` / `collapse(n)` |
+| control-flow | `if`, `while`, `for`, runtime `for`, `break`/`continue` (optionally labeled), static modifiers `unroll(k)` / `collapse(n)` |
 | composition | `function`, `pipeline(...)` |
 | advanced operations | `std::route(...)`, `std::reduce(...)`, `std::scan(...)`, `std::collect(...)`, `std::carry_chain(...)`, ... |
 | source config + runtime | `build { ... }`, `io.load(...)`, `io.store(...)`, `limit(...)`, `assert(...)` |

@@ -18,9 +18,11 @@ import {
 import type { ExpandForCallbacks, FunctionDefinitionLike } from './for-expand-types.js';
 import { parseForHeader } from './control-flow-for.js';
 import type { FunctionExpansionContext } from './function-expand-context.js';
+import type { LoopControlScope } from './loop-control-scope.js';
 
 interface ExpandStaticForInput {
   header: ForHeader;
+  loopLabel?: string;
   loopBody: SourceLineEntry[];
   lineNo: number;
   lineLength: number;
@@ -34,6 +36,7 @@ interface ExpandStaticForInput {
   controlFlowCounter: { value: number };
   callbacks: ExpandForCallbacks;
   expansionContext?: FunctionExpansionContext;
+  loopControlStack?: LoopControlScope[];
 }
 
 interface StaticLoopPlan {
@@ -191,7 +194,9 @@ export function expandStaticForLoop(input: ExpandStaticForInput): void {
     expansionCounter,
     controlFlowCounter,
     callbacks,
-    expansionContext
+    expansionContext,
+    loopLabel,
+    loopControlStack
   } = input;
   const plan = buildStaticLoopPlan(
     header,
@@ -230,7 +235,19 @@ export function expandStaticForLoop(input: ExpandStaticForInput): void {
         expansionCounter,
         controlFlowCounter,
         expansionContext,
-        false
+        false,
+        [
+          ...(loopControlStack ?? []),
+          {
+            kind: 'for-static',
+            label: loopLabel,
+            breakLabel: '__for_static_break__',
+            continueLabel: '__for_static_continue__',
+            row: 0,
+            col: 0,
+            supportsBreakContinue: false
+          }
+        ]
       );
 
       for (const cycle of tmpKernel.cycles) {

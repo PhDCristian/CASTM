@@ -27,6 +27,8 @@ Canonical diagnostics currently exposed by `@openedge/compiler-ir`.
 - `E3009` Unknown label
 - `E3010` Duplicate label
 - `E3011` Unresolved coordinate expression
+- `E3012` Invalid loop control usage
+- `E3013` Invalid collect path
 
 ## Internal
 

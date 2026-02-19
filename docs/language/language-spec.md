@@ -16,6 +16,8 @@ Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas 
 - explicit stash statement (`std::stash(...)`) for deterministic register spill/restore placement
 - explicit runtime loop form
 - static loop strategy modifiers in headers: `unroll(k)` and `collapse(n)`
+- loop-control statements: `break;`, `continue;`, `break label;`, `continue label;`
+- labels on compound statements: `label: cycle|for|if|while|std::...|fnCall(...)`
 - runtime statements (`io.load(...)`, `io.store(...)`, `limit(...)`, `assert(...)`)
 - source-owned build configuration (`build { optimize/scheduler/... }`)
 
@@ -93,7 +95,7 @@ kernel "canonical_example" {
 - `std::carry_chain(...)` provides deterministic limb carry propagation + store staging without manual repeated cycles.
 - `std::conditional_sub(...)` provides deterministic branchless subtraction/select (`SSUB` + `BSFA`) scoped to `all`, `row`, `col`, or one point target (`point(r,c)`).
 - `pipeline(...)` expands ordered function-call sequences and keeps function-based composition explicit without introducing legacy macro engines.
-- `std::collect(...)` provides aligned single-hop lane collection (`row/col`) with deterministic lowering and explicit geometry checks.
+- `std::collect(...)` provides deterministic lane collection (`row/col`) with explicit path modes: `single_hop` (adjacent/same-lane) and `multi_hop` (bounded hop chain via `max_hops`).
 - `std::normalize(...)` provides canonical carry-normalization over one row/column lane using deterministic multi-cycle lowering (`SRT` + `LAND` + carry relay + lane add).
 - `std::extract_bytes(...)` unifies row/column byte-lane extraction as a canonical two-cycle pattern (`SRT` + `LAND`) over the active grid.
 - `std::triangle(...)` expands deterministically in row-major order over the active grid (`shape=upper|lower`, optional `inclusive=true|false`) and emits one canonical cycle with per-PE placements.

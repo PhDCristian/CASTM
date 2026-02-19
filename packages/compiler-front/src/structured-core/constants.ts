@@ -28,6 +28,8 @@ export const RESERVED_KEYWORDS = new Set([
   'if',
   'while',
   'for',
+  'break',
+  'continue',
   'cycle',
   'at',
   'pipeline',

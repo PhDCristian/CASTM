@@ -30,6 +30,15 @@ function stripLabelPrefix(clean: string): { label: string; rest: string } | null
   return { label: match[1], rest: match[2] };
 }
 
+function parseLoopControlStatement(clean: string): { kind: 'break' | 'continue'; targetLabel?: string } | null {
+  const match = clean.match(/^(break|continue)(?:\s+([A-Za-z_][A-Za-z0-9_]*))?\s*;\s*$/i);
+  if (!match) return null;
+  return {
+    kind: match[1].toLowerCase() as 'break' | 'continue',
+    ...(match[2] ? { targetLabel: match[2] } : {})
+  };
+}
+
 export function parseStructuredStatements(
   entries: SourceLineEntry[],
   cycleCounter: { value: number },
@@ -128,6 +137,15 @@ export function parseStructuredStatements(
       continue;
     }
 
+    const loopControl = parseLoopControlStatement(clean);
+    if (loopControl) {
+      out.push({
+        ...loopControl,
+        span: spanAt(entry.lineNo, clean.length)
+      });
+      continue;
+    }
+
     const fnCall = parseFunctionCall(clean);
     if (fnCall) {
       out.push({
@@ -140,6 +158,23 @@ export function parseStructuredStatements(
     // ── Labeled advanced statement or function call ──
     const labeled = stripLabelPrefix(clean);
     if (labeled) {
+      const controlLabeled = tryParseControlStatement(
+        entries,
+        i,
+        labeled.rest,
+        entry.lineNo,
+        cycleCounter,
+        diagnostics,
+        parseStructuredStatements,
+        labeled.label
+      );
+      if (controlLabeled.handled) {
+        if (controlLabeled.node) out.push(controlLabeled.node);
+        if (controlLabeled.stop) break;
+        i = controlLabeled.nextIndex;
+        continue;
+      }
+
       const advLabeled = parseAdvancedStatement(labeled.rest);
       if (advLabeled) {
         out.push({

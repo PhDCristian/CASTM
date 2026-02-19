@@ -7,9 +7,11 @@ import type { SourceLineEntry } from '../../parser-utils/blocks.js';
 import type { ExpandForCallbacks, FunctionDefinitionLike } from '../for-expand-types.js';
 import type { RuntimeNoUnrollAggressivePlan } from '../for-expand-helpers.js';
 import type { FunctionExpansionContext } from '../function-expand-context.js';
+import type { LoopControlScope } from '../loop-control-scope.js';
 
 export interface ExpandRuntimeForInput {
   header: ForHeader;
+  loopLabel?: string;
   loopBody: SourceLineEntry[];
   lineNo: number;
   lineLength: number;
@@ -23,12 +25,14 @@ export interface ExpandRuntimeForInput {
   controlFlowCounter: { value: number };
   callbacks: ExpandForCallbacks;
   expansionContext?: FunctionExpansionContext;
+  loopControlStack?: LoopControlScope[];
 }
 
 export interface RuntimeLoopPlan {
   controlRow: number;
   controlCol: number;
   startLabel: string;
+  continueLabel: string;
   endLabel: string;
   loopKernel: KernelAst;
   aggressivePlan: RuntimeNoUnrollAggressivePlan | null;

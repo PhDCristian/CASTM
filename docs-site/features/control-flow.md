@@ -6,6 +6,7 @@ Control-flow in canonical OpenEdgeDSL is explicit and spatial (`if/while ... at 
 
 - Use `if/else` for branch-dependent cycle blocks.
 - Use `while` for explicit hardware loop control.
+- Use `break`/`continue` inside `while` and runtime `for` bodies for explicit loop exits.
 - Keep control PE placement explicit in headers.
 
 ## Target and assumptions

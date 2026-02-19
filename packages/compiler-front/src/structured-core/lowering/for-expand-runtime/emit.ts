@@ -21,6 +21,7 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
     controlRow,
     controlCol,
     startLabel,
+    continueLabel,
     endLabel,
     loopKernel,
     aggressivePlan
@@ -60,6 +61,7 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
     const jumpCol = chooseJumpColumn(controlCol, aggressivePlan.bodyCol);
     kernel.cycles.push({
       index: cycleCounter.value++,
+      label: continueLabel,
       statements: [
         {
           kind: 'at',
@@ -97,6 +99,7 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
     const jumpCol = chooseJumpColumn(controlCol);
     kernel.cycles.push({
       index: cycleCounter.value++,
+      label: continueLabel,
       statements: [
         {
           kind: 'at',

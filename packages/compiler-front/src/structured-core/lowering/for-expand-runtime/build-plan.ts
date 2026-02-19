@@ -28,6 +28,7 @@ export function buildRuntimeLoopPlan(input: ExpandRuntimeForInput): RuntimeLoopP
   const controlCol = header.control?.col ?? 0;
   const suffix = controlFlowCounter.value++;
   const startLabel = `__for_start_${suffix}`;
+  const continueLabel = `__for_continue_${suffix}`;
   const endLabel = `__for_end_${suffix}`;
 
   const loopKernel: KernelAst = {
@@ -50,7 +51,19 @@ export function buildRuntimeLoopPlan(input: ExpandRuntimeForInput): RuntimeLoopP
     expansionCounter,
     controlFlowCounter,
     expansionContext,
-    false
+    false,
+    [
+      ...(input.loopControlStack ?? []),
+      {
+        kind: 'for-runtime',
+        label: input.loopLabel,
+        breakLabel: endLabel,
+        continueLabel,
+        row: controlRow,
+        col: controlCol,
+        supportsBreakContinue: true
+      }
+    ]
   );
 
   const aggressivePlan = buildRuntimeNoUnrollAggressivePlan(
@@ -66,6 +79,7 @@ export function buildRuntimeLoopPlan(input: ExpandRuntimeForInput): RuntimeLoopP
     controlRow,
     controlCol,
     startLabel,
+    continueLabel,
     endLabel,
     loopKernel,
     aggressivePlan
