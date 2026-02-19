@@ -23,6 +23,11 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 | Labeled cycles + branch label resolution | done | `tests/compiler-api.contract.test.ts` | Supports `label: cycle { ... }`, branch/jump label resolution, duplicate/unknown label diagnostics, and expansion-safe function label prefixing. |
 | `while` / `if` | done | `tests/compiler-api.contract.test.ts` | Kernel/function lowering to branch+jump labeled cycles is in place, including fused-while neighbor-operand rewriting for control conditions. |
 | `for ... in range(...)` (kernel + `cycle`) | done | `tests/compiler-api.contract.test.ts`, `tests/issues/bug-07-computed-loop-coords.test.ts` | Supports compile-time unroll (including descending ranges) in kernel/cycle scopes, explicit runtime loop form (`at @r,c runtime`), and computed spatial coordinates like `@k/4,k%4`. |
+| Loop modifiers (`FEAT-18`): `unroll(k)` / `collapse(n)` contracts | done | `tests/issues/feat-18-loop-modifiers.test.ts`, `tests/issues/feat-20-collapse-edge-cases.test.ts` | Deterministic static expansion with duplicate/invalid modifier diagnostics and explicit runtime-loop rejection for static-only modifiers. |
+| Function expansion mode (`FEAT-18`): `full-unroll` / `jump-reuse` | done | `tests/issues/feat-18-expansion-mode.test.ts` | `full-unroll` remains default; `jump-reuse` reuses per-signature specializations with deterministic call/return lowering. |
+| Scheduler modes (`FEAT-19`) | done | `tests/issues/feat-19-scheduler-modes.test.ts` | `safe`, `balanced`, `aggressive` modes preserve deterministic output and non-regressive instruction workload invariants. |
+| For/control-flow contract hardening (`FEAT-21`) | done | `tests/issues/feat-21-for-control-flow-contract.test.ts` | Explicit parser diagnostics for malformed for/if/while headers and valid nested composition behavior. |
+| Spatial compaction idioms (`FEAT-22`) | done | `tests/issues/feat-22-spatial-compaction-idioms.test.ts` | Canonical compact idioms (`at all`, range + loop index addressing) compile deterministically to expected full-grid placements. |
 | Multi-statement cycle-line parsing | done | `tests/issues/issue-03-multi-statement-cycle-line.test.ts` | `cycle { ... }` bodies support semicolon-separated placements on the same line without instruction-text corruption. |
 
 ## Declarations & Runtime Statements

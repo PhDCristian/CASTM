@@ -465,7 +465,7 @@ Evidence:
 - Tests: `tests/issues/feat-01-latency-hide.test.ts`, `tests/compiler-api.latency-hide.test.ts`, `tests/compiler-api.expand-pragmas.handlers.test.ts`, `tests/lsp.contract.test.ts`.
 - Docs: `docs/language/latency-hide-statement.md`, `docs/language/grammar.md`, `docs/language/language-spec.md`, `docs/feature-parity-matrix.md`.
 
-## FEAT Portfolio (1..17)
+## FEAT Portfolio (1..22)
 
 This section is the canonical roadmap projection for every `FEAT-*` item from `ISSUES_SBOX_K7_PORT.md`.
 
@@ -488,6 +488,11 @@ This section is the canonical roadmap projection for every `FEAT-*` item from `I
 | FEAT-15 row auto-broadcast | syntax sugar | `resolved-verified` | `tests/issues/feat-15-row-auto-broadcast.test.ts` | Keep NxM and segmented-row regressions to preserve deterministic lowering. |
 | FEAT-16 pipeline macro | abstraction/tooling | `resolved-verified` | `tests/issues/feat-16-pipeline.test.ts` | Keep pipeline entries restricted to canonical function calls and preserve ordered expansion semantics. |
 | FEAT-17 guard condition | syntax/pattern | `resolved-verified` | `tests/issues/feat-17-guard-condition.test.ts` | Keep predicate evaluation deterministic and bounded to canonical spatial symbols. |
+| FEAT-18 loop modifiers + expansion mode | language core / function lowering | `resolved-verified` | `tests/issues/feat-18-loop-modifiers.test.ts`, `tests/issues/feat-18-expansion-mode.test.ts` | Keep `full-unroll` default stable and jump-reuse specialization deterministic for repeated signatures. |
+| FEAT-19 scheduler modes | optimizer configuration | `resolved-verified` | `tests/issues/feat-19-scheduler-modes.test.ts` | Preserve deterministic mode behavior and monotonic compaction/utilization expectations across modes. |
+| FEAT-20 collapse edge contracts | parser/lowering validation | `resolved-verified` | `tests/issues/feat-20-collapse-edge-cases.test.ts` | Maintain explicit diagnostics for invalid collapse depth/perfect-nesting/modifier misuse scenarios. |
+| FEAT-21 for/control-flow contracts | parser contract hardening | `resolved-verified` | `tests/issues/feat-21-for-control-flow-contract.test.ts` | Keep explicit parse diagnostics and avoid malformed-header fallthrough behavior. |
+| FEAT-22 spatial compaction idioms | canonical ergonomics | `resolved-verified` | `tests/issues/feat-22-spatial-compaction-idioms.test.ts` | Keep compact syntax lowering deterministic and equivalent to expanded canonical placements. |
 
 ### FEAT Backlog Execution Blocks
 

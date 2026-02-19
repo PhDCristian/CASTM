@@ -32,6 +32,7 @@ OpenEdgeDSL lowers to the ISA catalog in `packages/lang-spec/src/instruction-set
 - `R2 = R0 + R1;` -> `SADD R2, R0, R1`
 - `R0 = A[i];` -> `LWI R0, <resolved-address>`
 - `A[i] = R0;` -> `SWI R0, <resolved-address>`
+- `goto L0;` -> `JUMP ZERO, L0` (canonical operand order is `pred, label`)
 
 ## Executable ISA sample (OpenEdgeDSL ↔ CSV)
 

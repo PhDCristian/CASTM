@@ -281,7 +281,7 @@ describe('branch coverage round 3', () => {
       fusionPlan: null
     } as any);
     expect(next).toBe(3);
-    expect(k.cycles.some((cycle: any) => (cycle.statements[0] as any).instruction.text.includes('JUMP L_START'))).toBe(true);
+    expect(k.cycles.some((cycle: any) => (cycle.statements[0] as any).instruction.text.includes('JUMP ZERO, L_START'))).toBe(true);
   });
 
   it('covers compile-driver analysisAst fallback and instructions=0 path with mocks', async () => {

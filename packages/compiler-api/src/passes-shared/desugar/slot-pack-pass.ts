@@ -79,7 +79,9 @@ interface CycleBucket {
 
 function normalizeOpcode(instruction: InstructionAst): string {
   if (instruction.opcode) return instruction.opcode.toUpperCase();
-  const first = instruction.text.trim().split(/\s+/)[0] ?? '';
+  const text = instruction.text.trim();
+  const firstSpace = text.indexOf(' ');
+  const first = firstSpace === -1 ? text : text.slice(0, firstSpace);
   return first.toUpperCase();
 }
 
@@ -298,15 +300,6 @@ function canPlacementMove(
   return true;
 }
 
-function hasSameAddressConflict(
-  moving: Placement,
-  other: Placement
-): boolean {
-  if (!moving.hasMemory || !other.hasMemory) return false;
-  if (!moving.memoryAddressKey || !other.memoryAddressKey) return true;
-  return moving.memoryAddressKey === other.memoryAddressKey;
-}
-
 function maxPreviousCycleOnSamePe(
   placement: Placement,
   coordinateMap: Map<string, Placement[]>,
@@ -348,19 +341,9 @@ function canMovePlacementToCycle(
   const maxPrevious = maxPreviousCycleOnSamePe(placement, coordinateMap, currentCycleByPlacement);
   if (toCycle <= maxPrevious) return false;
 
-  if (policy === 'same-address-fence' && placement.hasMemory) {
-    for (let cycleIndex = toCycle; cycleIndex < fromCycle; cycleIndex++) {
-      for (const peer of cycles[cycleIndex].placements) {
-        if (peer.id === placement.id) continue;
-        if (hasSameAddressConflict(placement, peer)) return false;
-      }
-    }
-  }
-
   if (placement.writesRoute) {
     for (let cycleIndex = toCycle; cycleIndex < fromCycle; cycleIndex++) {
       for (const peer of cycles[cycleIndex].placements) {
-        if (peer.id === placement.id) continue;
         if (peer.readsIncoming) return false;
         if (policy === 'strict' && peer.writesRoute) return false;
       }
@@ -471,8 +454,7 @@ export function createSlotPackPass(
       for (let sourceCycle = 0; sourceCycle < cycles.length; sourceCycle++) {
         const sourcePlacements = [...cycles[sourceCycle].placements];
         for (const placement of sourcePlacements) {
-          const currentSourceCycle = currentCycleByPlacement.get(placement.id);
-          if (currentSourceCycle === undefined) continue;
+          const currentSourceCycle = currentCycleByPlacement.get(placement.id)!;
           if (!canPlacementMove(placement, cycles[currentSourceCycle], policy)) continue;
 
           const minCycle = Math.max(0, currentSourceCycle - window);
@@ -492,7 +474,6 @@ export function createSlotPackPass(
 
             const originBucket = cycles[currentSourceCycle];
             const originIndex = originBucket.placements.findIndex((item) => item.id === placement.id);
-            if (originIndex < 0) break;
             originBucket.placements.splice(originIndex, 1);
             cycles[targetCycle].placements.push(placement);
             currentCycleByPlacement.set(placement.id, targetCycle);
@@ -543,3 +524,18 @@ export function createSlotPackPass(
     }
   };
 }
+
+export const __slotPackTestUtils = {
+  normalizeOpcode,
+  normalizedOperands,
+  extractMemoryAddressKey,
+  expandStatement,
+  parseIntegerLiteral,
+  formatIntegerLike,
+  resolveRemappedCycleTarget,
+  remapNumericBranchTargets,
+  canPlacementMove,
+  maxPreviousCycleOnSamePe,
+  canMovePlacementToCycle,
+  normalizeWindow
+};

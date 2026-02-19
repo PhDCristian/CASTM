@@ -12,6 +12,16 @@ import {
   ExpandControlFlowResult
 } from './function-expand-control-types.js';
 import { resolveOptionalElseBlockInFunction } from './function-expand-if/else-resolution.js';
+import { RESERVED_KEYWORDS } from '../constants.js';
+
+function stripLabelPrefix(clean: string): { label: string; rest: string } | null {
+  const match = clean.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$/);
+  if (!match) return null;
+  const keyword = match[1].toLowerCase();
+  if (RESERVED_KEYWORDS.has(keyword)) return null;
+  if (match[2].startsWith(':')) return null;
+  return { label: match[1], rest: match[2] };
+}
 
 export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandControlFlowResult {
   const {
@@ -31,7 +41,9 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
     expansionContext
   } = input;
 
-  const ifHeader = parseControlHeader(clean, 'if', entry.lineNo, constants, diagnostics);
+  const labelResult = stripLabelPrefix(clean);
+  const toParse = labelResult ? labelResult.rest : clean;
+  const ifHeader = parseControlHeader(toParse, 'if', entry.lineNo, constants, diagnostics);
   if (!ifHeader) {
     return { handled: false, nextIndex: index, shouldBreak: false };
   }
@@ -48,6 +60,8 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
     return { handled: true, nextIndex: index, shouldBreak: true };
   }
 
+  const prevCycleCount = kernel.cycles.length;
+  const prevPragmaCount = kernel.pragmas.length;
   const suffixId = controlFlowCounter.value++;
   const elseLabel = `__if_else_${suffixId}`;
   const endLabel = `__if_end_${suffixId}`;
@@ -79,7 +93,8 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
     expansionCounter,
     controlFlowCounter,
     expansionContext,
-    false
+    false,
+    input.loopControlStack
   );
 
   if (hasElse && elseBlock) {
@@ -111,7 +126,8 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
       expansionCounter,
       controlFlowCounter,
       expansionContext,
-      false
+      false,
+      input.loopControlStack
     );
   }
 
@@ -123,6 +139,13 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
     'NOP',
     endLabel
   ));
+
+  if (labelResult) {
+    // tryExpandIfStatement always emits at least one control cycle.
+    if (kernel.cycles.length > prevCycleCount) {
+      kernel.cycles[prevCycleCount].label = labelResult.label;
+    }
+  }
 
   return { handled: true, nextIndex: consumedEnd, shouldBreak: false };
 }

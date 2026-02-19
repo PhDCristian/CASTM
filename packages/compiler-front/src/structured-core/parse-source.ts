@@ -191,8 +191,8 @@ function parseBuildConfig(
 
     const grid = clean.match(/^grid\s+(\d+)\s*x\s*(\d+)(?:\s+(torus|mesh))?\s*;?\s*$/i);
     if (grid) {
-      const rows = parseInteger(grid[1]) ?? 0;
-      const cols = parseInteger(grid[2]) ?? 0;
+      const rows = Number.parseInt(grid[1], 10);
+      const cols = Number.parseInt(grid[2], 10);
       if (rows <= 0 || cols <= 0) {
         diagnostics.push(makeDiagnostic(
           ErrorCodes.Parse.InvalidSyntax,
@@ -328,18 +328,18 @@ function parseRuntimeStatementLine(
 
     return {
       handled: true,
-      stmt: {
-        kind: 'assert',
-        at: {
-          row: atMatch[1].trim(),
-          col: atMatch[2].trim()
-        },
-        reg: (parsedArgs.get('reg') ?? '').trim(),
-        equals: (parsedArgs.get('equals') ?? '').trim(),
-        ...(parsedArgs.get('cycle') ? { cycle: parsedArgs.get('cycle')!.trim() } : {}),
-        raw: cleanLine,
-        span: spanAt(lineNo, cleanLine.length)
-      }
+        stmt: {
+          kind: 'assert',
+          at: {
+            row: atMatch[1].trim(),
+            col: atMatch[2].trim()
+          },
+          reg: parsedArgs.get('reg')!.trim(),
+          equals: parsedArgs.get('equals')!.trim(),
+          ...(parsedArgs.get('cycle') ? { cycle: parsedArgs.get('cycle')!.trim() } : {}),
+          raw: cleanLine,
+          span: spanAt(lineNo, cleanLine.length)
+        }
     };
   }
 

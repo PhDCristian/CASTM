@@ -75,3 +75,8 @@ These IDs are proposal/backlog items, not active correctness defects in canonica
 | FEAT-15 | compiler | resolved-verified | `tests/issues/feat-15-row-auto-broadcast.test.ts` | openedge-dsl |
 | FEAT-16 | compiler | resolved-verified | `tests/issues/feat-16-pipeline.test.ts` | openedge-dsl |
 | FEAT-17 | compiler | resolved-verified | `tests/issues/feat-17-guard-condition.test.ts` | openedge-dsl |
+| FEAT-18 | compiler | resolved-verified | `tests/issues/feat-18-loop-modifiers.test.ts`, `tests/issues/feat-18-expansion-mode.test.ts` | openedge-dsl |
+| FEAT-19 | compiler | resolved-verified | `tests/issues/feat-19-scheduler-modes.test.ts` | openedge-dsl |
+| FEAT-20 | compiler | resolved-verified | `tests/issues/feat-20-collapse-edge-cases.test.ts` | openedge-dsl |
+| FEAT-21 | compiler | resolved-verified | `tests/issues/feat-21-for-control-flow-contract.test.ts` | openedge-dsl |
+| FEAT-22 | compiler | resolved-verified | `tests/issues/feat-22-spatial-compaction-idioms.test.ts` | openedge-dsl |

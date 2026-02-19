@@ -55,9 +55,9 @@ kernel "feat18_jump_reuse" {
     const csv = result.artifacts.csv ?? '';
     // Body emitted once (shared specialization)
     expect(countInstruction(csv, 'SADD R2 R0 ZERO')).toBe(1);
-    // Register-based call: SADD R3 sets return address, JUMP R3 returns
+    // Register-based call: SADD R3 sets return address, JUMP ZERO,R3 returns
     expect(csv).toMatch(/SADD R3 ZERO \d+/);
-    expect(csv).toMatch(/JUMP R3 ZERO/);
+    expect(csv).toMatch(/JUMP ZERO R3/);
     // No SWI-based dispatch table
     expect(csv).not.toContain('SWI 1 262140');
     expect(csv).not.toMatch(/BEQ ROUT/);
@@ -133,7 +133,7 @@ kernel "feat18_nested_reject" {
     expect(countInstruction(csv, 'SADD R3 R0 ZERO')).toBe(1);
     // Register-based return with SADD + JUMP pattern
     expect(csv).toMatch(/SADD R3 ZERO \d+/);
-    expect(csv).toMatch(/JUMP R3 ZERO/);
+    expect(csv).toMatch(/JUMP ZERO R3/);
     // No SWI-based dispatch
     expect(csv).not.toContain('SWI 1 262140');
     expect(csv).not.toMatch(/BEQ ROUT/);

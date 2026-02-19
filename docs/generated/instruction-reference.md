@@ -27,7 +27,7 @@
 | `BNE` | branch | srcA, srcB, label | Branch if not equal |
 | `BLT` | branch | srcA, srcB, label | Branch if less than |
 | `BGE` | branch | srcA, srcB, label | Branch if greater/equal |
-| `JUMP` | branch | label, pred | Unconditional jump |
+| `JUMP` | branch | pred, label | Unconditional jump |
 
 ## Target Profiles
 

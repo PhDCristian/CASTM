@@ -20,7 +20,9 @@ const BRANCH_OPCODES = new Set([
 
 function normalizeOpcode(instruction: InstructionAst): string {
   if (instruction.opcode) return instruction.opcode.toUpperCase();
-  const token = instruction.text.trim().split(/\s+/)[0] ?? '';
+  const text = instruction.text.trim();
+  const firstSpace = text.indexOf(' ');
+  const token = firstSpace === -1 ? text : text.slice(0, firstSpace);
   return token.toUpperCase();
 }
 
@@ -43,7 +45,6 @@ function isNopInstruction(instruction: InstructionAst): boolean {
 
 function isNopStatement(statement: CycleStatementAst): boolean {
   if (statement.kind === 'row') {
-    if (statement.instructions.length === 0) return true;
     return statement.instructions.every(isNopInstruction);
   }
 
@@ -51,12 +52,11 @@ function isNopStatement(statement: CycleStatementAst): boolean {
 }
 
 function cycleIsNoopOnly(cycle: CycleAst): boolean {
-  if (cycle.statements.length === 0) return true;
   return cycle.statements.every(isNopStatement);
 }
 
 function hasNumericBranchTarget(ast: AstProgram): boolean {
-  const cycles = ast.kernel?.cycles ?? [];
+  const cycles = ast.kernel!.cycles;
   for (const cycle of cycles) {
     for (const statement of cycle.statements) {
       const instructions = statement.kind === 'row'

@@ -12,6 +12,16 @@ import {
   ExpandControlFlowResult
 } from './function-expand-control-types.js';
 import { emitWhileControlFlowCycles } from './control-flow-emit/while-cycles.js';
+import { RESERVED_KEYWORDS } from '../constants.js';
+
+function stripLabelPrefix(clean: string): { label: string; rest: string } | null {
+  const match = clean.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$/);
+  if (!match) return null;
+  const keyword = match[1].toLowerCase();
+  if (RESERVED_KEYWORDS.has(keyword)) return null;
+  if (match[2].startsWith(':')) return null;
+  return { label: match[1], rest: match[2] };
+}
 
 export function tryExpandWhileStatement(input: ExpandControlBaseInput): ExpandControlFlowResult {
   const {
@@ -31,10 +41,13 @@ export function tryExpandWhileStatement(input: ExpandControlBaseInput): ExpandCo
     expansionContext
   } = input;
 
-  const whileHeader = parseControlHeader(clean, 'while', entry.lineNo, constants, diagnostics);
+  const labelResult = stripLabelPrefix(clean);
+  const toParse = labelResult ? labelResult.rest : clean;
+  const whileHeader = parseControlHeader(toParse, 'while', entry.lineNo, constants, diagnostics);
   if (!whileHeader) {
     return { handled: false, nextIndex: index, shouldBreak: false };
   }
+  const activeLoopStack = input.loopControlStack ?? [];
 
   const loopBlock = collectBlockFromEntries(body, index);
   if (loopBlock.endIndex === null) {
@@ -71,13 +84,27 @@ export function tryExpandWhileStatement(input: ExpandControlBaseInput): ExpandCo
     expansionCounter,
     controlFlowCounter,
     expansionContext,
-    false
+    false,
+    [
+      ...activeLoopStack,
+      {
+        kind: 'while',
+        label: labelResult?.label,
+        breakLabel: endLabel,
+        continueLabel: startLabel,
+        row: whileHeader.row,
+        col: whileHeader.col,
+        supportsBreakContinue: true
+      }
+    ]
   );
 
   const fusionPlan = buildWhileFusionPlan(loopKernel.cycles, whileHeader.row, whileHeader.col);
   const branchCondition = fusionPlan
     ? rewriteConditionForWhileFusion(whileHeader.condition, fusionPlan.incomingRegister)
     : whileHeader.condition;
+  const prevCycleCount = kernel.cycles.length;
+  const prevPragmaCount = kernel.pragmas.length;
   cycleCounter.value = emitWhileControlFlowCycles({
     kernel,
     cycleIndex: cycleCounter.value,
@@ -90,6 +117,13 @@ export function tryExpandWhileStatement(input: ExpandControlBaseInput): ExpandCo
     loopCycles: loopKernel.cycles,
     fusionPlan
   });
+
+  if (labelResult) {
+    // emitWhileControlFlowCycles always emits at least one control cycle.
+    if (kernel.cycles.length > prevCycleCount) {
+      kernel.cycles[prevCycleCount].label = labelResult.label;
+    }
+  }
 
   return { handled: true, nextIndex: loopBlock.endIndex, shouldBreak: false };
 }
