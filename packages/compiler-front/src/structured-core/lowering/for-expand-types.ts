@@ -14,6 +14,7 @@ export interface FunctionDefinitionLike {
   params: string[];
   body: SourceLineEntry[];
   span: SourceSpan;
+  isMacro?: boolean;
 }
 
 export type ExpandFunctionBodyIntoKernel = (

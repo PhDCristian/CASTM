@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
@@ -80,8 +81,18 @@ export async function runCli(argv = process.argv.slice(2)): Promise<number> {
 
   const sourcePath = resolveInputOrThrow(args.input);
   const source = await readFile(sourcePath, 'utf8');
+  const sourceDir = path.dirname(sourcePath);
 
-  const baseOptions = {};
+  const resolveInclude = (includePath: string): string | null => {
+    try {
+      const resolved = path.resolve(sourceDir, includePath);
+      return readFileSync(resolved, 'utf8');
+    } catch {
+      return null;
+    }
+  };
+
+  const baseOptions = { resolveInclude };
 
   if (command === 'check') {
     const result = compile(source, { ...baseOptions, emitArtifacts: ['ast'] });

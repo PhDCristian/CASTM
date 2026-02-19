@@ -15,7 +15,7 @@ import {
 } from './parser-utils/blocks.js';
 import { splitTopLevel, stripLineComment } from './parser-utils/strings.js';
 import { parseDirective } from './lowering/declarations.js';
-import { parseFunctionHeader, parseFunctionParams } from './lowering/functions.js';
+import { parseFunctionHeader, parseMacroHeader, parseFunctionParams } from './lowering/functions.js';
 import { parseStructuredStatements } from './statements.js';
 import { parseInteger, spanAt } from './utils.js';
 import { parseProgramHeadersFromTokens } from './token-stream.js';
@@ -367,6 +367,56 @@ function parseRuntimeStatementLine(
   return { handled: false };
 }
 
+export function preprocessIncludes(
+  source: string,
+  resolveInclude: (path: string) => string | null,
+  diagnostics: Diagnostic[],
+  visitedPaths: Set<string> = new Set()
+): string {
+  const lines = source.split(/\r?\n/);
+  const result: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const clean = stripLineComment(lines[i]).trim();
+    const includeMatch = clean.match(/^include\s+"([^"]+)"\s*;?\s*$/i);
+    if (!includeMatch) {
+      result.push(lines[i]);
+      continue;
+    }
+
+    const includePath = includeMatch[1];
+    if (visitedPaths.has(includePath)) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(i + 1, clean.length),
+        `Circular include detected: '${includePath}'.`,
+        'Remove the circular include dependency.'
+      ));
+      continue;
+    }
+
+    const content = resolveInclude(includePath);
+    if (content === null) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(i + 1, clean.length),
+        `Could not resolve include '${includePath}'.`,
+        'Check that the file exists and the path is correct.'
+      ));
+      continue;
+    }
+
+    const nested = new Set(visitedPaths);
+    nested.add(includePath);
+    const expanded = preprocessIncludes(content, resolveInclude, diagnostics, nested);
+    result.push(expanded);
+  }
+
+  return result.join('\n');
+}
+
 export function parseStructuredProgramFromSource(source: string): StructuredProgramParseResult {
   const lines = source.split(/\r?\n/);
   const entries: SourceLineEntry[] = lines.map((rawLine, idx) => ({
@@ -387,8 +437,11 @@ export function parseStructuredProgramFromSource(source: string): StructuredProg
   for (let i = 0; i < entries.length; i++) {
     if (headers.kernelHeaderLine && entries[i].lineNo >= headers.kernelHeaderLine) break;
     const functionHeader = parseFunctionHeader(entries[i].cleanLine);
-    if (!functionHeader) continue;
-    const params = parseFunctionParams(functionHeader.paramsText, entries[i].lineNo, diagnostics);
+    const macroHeader = !functionHeader ? parseMacroHeader(entries[i].cleanLine) : null;
+    const header = functionHeader ?? macroHeader;
+    if (!header) continue;
+    const isMacro = !!macroHeader;
+    const params = parseFunctionParams(header.paramsText, entries[i].lineNo, diagnostics);
     const block = collectBlockFromEntries(entries, i);
     if (!params || block.endIndex === null) {
       if (block.endIndex === null) {
@@ -396,8 +449,8 @@ export function parseStructuredProgramFromSource(source: string): StructuredProg
           ErrorCodes.Parse.InvalidSyntax,
           'error',
           spanAt(entries[i].lineNo, entries[i].cleanLine.length),
-          `Unterminated function '${functionHeader.name}'.`,
-          'Add a closing brace for function { ... }.'
+          `Unterminated ${isMacro ? 'macro' : 'function'} '${header.name}'.`,
+          `Add a closing brace for ${isMacro ? 'macro' : 'function'} { ... }.`
         ));
       }
       continue;
@@ -408,10 +461,11 @@ export function parseStructuredProgramFromSource(source: string): StructuredProg
     }
 
     functions.push({
-      name: functionHeader.name,
+      name: header.name,
       params,
       body: parseStructuredStatements(block.body, { value: 0 }, diagnostics),
-      span: spanAt(entries[i].lineNo, entries[i].cleanLine.length)
+      span: spanAt(entries[i].lineNo, entries[i].cleanLine.length),
+      ...(isMacro ? { isMacro: true } : {})
     });
     i = block.endIndex;
   }
@@ -502,12 +556,22 @@ export function parseStructuredProgramFromSource(source: string): StructuredProg
     if (targetLines.has(entry.lineNo)) continue;
     if (!entry.cleanLine) continue;
     if (parseDirective(entry.cleanLine, entry.lineNo)) continue;
+    if (/^include\s+"[^"]+"\s*;?\s*$/i.test(entry.cleanLine)) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(entry.lineNo, entry.cleanLine.length),
+        `Unresolved include directive: '${entry.cleanLine}'.`,
+        'Pass a resolveInclude option to enable file includes.'
+      ));
+      continue;
+    }
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Parse.InvalidSyntax,
       'error',
       spanAt(entry.lineNo, entry.cleanLine.length),
       `Unexpected top-level statement: '${entry.cleanLine}'.`,
-      'Expected target declaration, build block, let declaration, function definition, or kernel block.'
+      'Expected target declaration, build block, let declaration, function/macro definition, or kernel block.'
     ));
   }
 

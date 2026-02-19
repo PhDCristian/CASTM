@@ -18,10 +18,10 @@ import {
 } from './statements/matchers.js';
 import { tryParseCycleStatement } from './statements/cycle-handler.js';
 import { tryParseControlStatement } from './statements/control-handler.js';
-import { RESERVED_KEYWORDS } from './constants.js';
+import { INTERPOLATED_IDENT, RESERVED_KEYWORDS } from './constants.js';
 
 function stripLabelPrefix(clean: string): { label: string; rest: string } | null {
-  const match = clean.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$/);
+  const match = clean.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*(.+)$`));
   if (!match) return null;
   const keyword = match[1].toLowerCase();
   if (RESERVED_KEYWORDS.has(keyword)) return null;

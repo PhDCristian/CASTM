@@ -268,7 +268,8 @@ function lowerStructuredBodyWithExpansionKernel(
           name: fn.name,
           params: fn.params,
           body: fnEntries,
-          span: fn.span
+          span: fn.span,
+          ...(fn.isMacro ? { isMacro: true } : {})
         }
       ] as const;
     })

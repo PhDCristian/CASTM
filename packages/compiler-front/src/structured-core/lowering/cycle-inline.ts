@@ -1,6 +1,7 @@
 import { CycleStatementAst, Diagnostic, ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
 import { parseCycleStatement } from './statements.js';
 import { splitTopLevel } from '../parser-utils/strings.js';
+import { INTERPOLATED_IDENT } from '../constants.js';
 
 export interface ParsedLabeledCycle {
   label: string;
@@ -8,7 +9,7 @@ export interface ParsedLabeledCycle {
 }
 
 export function parseLabeledCycleLine(cleanLine: string): ParsedLabeledCycle | null {
-  const inline = cleanLine.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*cycle\s*\{\s*(.+)\s*\}\s*$/i);
+  const inline = cleanLine.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*cycle\\s*\\{\\s*(.+)\\s*\\}\\s*$`, 'i'));
   if (inline) {
     return {
       label: inline[1],
@@ -16,7 +17,7 @@ export function parseLabeledCycleLine(cleanLine: string): ParsedLabeledCycle | n
     };
   }
 
-  const block = cleanLine.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*cycle\s*\{\s*$/i);
+  const block = cleanLine.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*cycle\\s*\\{\\s*$`, 'i'));
   if (block) {
     return {
       label: block[1]

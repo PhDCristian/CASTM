@@ -13,6 +13,10 @@ export function parseNumber(text: string): number {
 export function applyBindings(input: string, bindings: ReadonlyMap<string, number>): string {
   let out = input;
   for (const [name, value] of bindings.entries()) {
+    // Substitute {name} patterns first (label interpolation in for loops)
+    const braceRegex = new RegExp(`\\{${escapeRegExp(name)}\\}`, 'g');
+    out = out.replace(braceRegex, String(value));
+    // Then substitute bare word occurrences (existing behavior)
     const regex = new RegExp(`\\b${escapeRegExp(name)}\\b`, 'g');
     out = out.replace(regex, String(value));
   }

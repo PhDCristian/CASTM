@@ -246,6 +246,7 @@ export interface StructuredFunctionDefAst {
   params: string[];
   body: StructuredKernelStmtAst[];
   span: SourceSpan;
+  isMacro?: boolean;
 }
 
 export type StructuredKernelStmtAst =

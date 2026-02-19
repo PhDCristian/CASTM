@@ -13,12 +13,16 @@ import {
   lowerStructuredProgramToAstDetailed,
   toStructuredProgramAst
 } from './structured-core/conversion.js';
-import { parseStructuredProgramFromSource } from './structured-core/parse-source.js';
+import {
+  parseStructuredProgramFromSource,
+  preprocessIncludes
+} from './structured-core/parse-source.js';
 
 export {
   lowerStructuredProgramToAst,
   lowerStructuredProgramToAstDetailed,
   parseStructuredProgramFromSource,
+  preprocessIncludes,
   toStructuredProgramAst
 };
 
@@ -52,9 +56,14 @@ function validateStructuredMinimum(structuredAst: StructuredProgramAst): Diagnos
 }
 
 export function parseStructuredSource(source: string, options: CompileOptions = {}): StructuredParseResult {
-  const parsed = parseStructuredProgramFromSource(source);
+  let processedSource = source;
+  const includeDiagnostics: Diagnostic[] = [];
+  if (options.resolveInclude) {
+    processedSource = preprocessIncludes(source, options.resolveInclude, includeDiagnostics);
+  }
+  const parsed = parseStructuredProgramFromSource(processedSource);
   const structuredAst = parsed.program;
-  const baseDiagnostics = [...parsed.diagnostics, ...validateStructuredMinimum(structuredAst)];
+  const baseDiagnostics = [...includeDiagnostics, ...parsed.diagnostics, ...validateStructuredMinimum(structuredAst)];
   const hasBaseErrors = baseDiagnostics.some((d) => d.severity === 'error');
 
   if (hasBaseErrors) {

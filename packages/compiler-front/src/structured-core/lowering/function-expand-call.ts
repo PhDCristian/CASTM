@@ -14,10 +14,10 @@ import {
   FunctionExpandStepInput,
   FunctionExpandStepResult
 } from './function-expand-types.js';
-import { RESERVED_KEYWORDS } from '../constants.js';
+import { INTERPOLATED_IDENT, RESERVED_KEYWORDS } from '../constants.js';
 
 function stripLabelPrefix(clean: string): { label: string; rest: string } | null {
-  const match = clean.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*:\s*(.+)$/);
+  const match = clean.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*(.+)$`));
   if (!match) return null;
   const keyword = match[1].toLowerCase();
   if (RESERVED_KEYWORDS.has(keyword)) return null;
