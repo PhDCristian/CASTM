@@ -17,6 +17,8 @@ export interface CollectPragmaArgs {
   viaReg: string;
   localReg: string;
   destReg: string;
+  path: 'single_hop' | 'multi_hop';
+  maxHops?: number;
   combine: 'copy' | 'add' | 'sum' | 'sub' | 'and' | 'or' | 'xor' | 'mul' | 'shift_add';
 }
 

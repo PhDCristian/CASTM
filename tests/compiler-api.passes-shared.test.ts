@@ -744,7 +744,7 @@ describe('compiler-api passes shared utils', () => {
       diagnostics
     );
     expect(badCollectCycles).toEqual([]);
-    expect(diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+    expect(diagnostics.some((d) => d.code === ErrorCodes.Semantic.InvalidCollectPath)).toBe(true);
 
     const normalizeCycles = buildNormalizeCycles(
       {

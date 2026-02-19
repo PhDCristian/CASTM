@@ -45,6 +45,18 @@ function expectedViaForSingleHop(
   return null;
 }
 
+function expectedViaForDirection(
+  axis: 'row' | 'col',
+  fromIndex: number,
+  toIndex: number
+): string {
+  if (fromIndex === toIndex) return 'SELF';
+  if (axis === 'row') {
+    return fromIndex < toIndex ? 'RCT' : 'RCB';
+  }
+  return fromIndex < toIndex ? 'RCL' : 'RCR';
+}
+
 function inBounds(axis: 'row' | 'col', index: number, grid: GridSpec): boolean {
   if (axis === 'row') {
     return index >= 0 && index < grid.rows;
@@ -99,25 +111,45 @@ export function buildCollectCycles(
     return [];
   }
 
-  const expectedVia = expectedViaForSingleHop(axis, fromIndex, toIndex);
-  if (!expectedVia) {
+  const laneDistance = Math.abs(fromIndex - toIndex);
+  const pathMode = pragma.path ?? 'single_hop';
+  const expectedVia = pathMode === 'single_hop'
+    ? expectedViaForSingleHop(axis, fromIndex, toIndex)
+    : expectedViaForDirection(axis, fromIndex, toIndex);
+
+  if (pathMode === 'single_hop' && !expectedVia) {
     diagnostics.push(makeDiagnostic(
-      ErrorCodes.Semantic.UnsupportedOperation,
+      ErrorCodes.Semantic.InvalidCollectPath,
       'error',
       span,
-      `collect(from=${axis}(${fromIndex}), to=${axis}(${toIndex})) is not single-hop aligned.`,
-      `Current collect lowering supports same-lane or adjacent-lane transfers only (${axis} distance <= 1).`
+      `collect(from=${axis}(${fromIndex}), to=${axis}(${toIndex}), path=single_hop) is not single-hop aligned.`,
+      `Use path=multi_hop for distance > 1, or keep ${axis} distance <= 1.`
     ));
     return [];
   }
 
-  if (viaReg !== expectedVia) {
+  if (pathMode === 'multi_hop' && pragma.maxHops !== undefined && laneDistance > pragma.maxHops) {
     diagnostics.push(makeDiagnostic(
-      ErrorCodes.Semantic.UnsupportedOperation,
+      ErrorCodes.Semantic.InvalidCollectPath,
+      'error',
+      span,
+      `collect(..., path=multi_hop, max_hops=${pragma.maxHops}) cannot cover ${laneDistance} hops.`,
+      `Increase max_hops to at least ${laneDistance}, or reduce from/to distance.`
+    ));
+    return [];
+  }
+
+  if (expectedVia && viaReg !== expectedVia) {
+    diagnostics.push(makeDiagnostic(
+      pathMode === 'single_hop'
+        ? ErrorCodes.Semantic.UnsupportedOperation
+        : ErrorCodes.Semantic.InvalidCollectPath,
       'error',
       span,
       `Collect via register mismatch: expected ${expectedVia} for from=${axis}(${fromIndex}) to=${axis}(${toIndex}), got ${viaReg}.`,
-      'Adjust via to match the geometric neighbor direction or set from/to accordingly.'
+      pathMode === 'single_hop'
+        ? 'Adjust via to match the geometric neighbor direction or set from/to accordingly.'
+        : 'For multi_hop, use via matching the travel direction of the path.'
     ));
     return [];
   }
@@ -143,16 +175,28 @@ export function buildCollectCycles(
   const destReg = toUpperToken(pragma.destReg);
   const localReg = toUpperToken(pragma.localReg);
 
-  const copyPlacements = Array.from({ length: laneLength }, (_, lane) => {
-    const point = resolvePlacement(axis, toIndex, lane);
-    return {
-      row: point.row,
-      col: point.col,
-      instruction: createInstruction('SADD', [destReg, viaReg, 'ZERO'], span)
-    };
-  });
+  const hopTargets: number[] = [];
+  if (pathMode === 'single_hop' || laneDistance === 0) {
+    hopTargets.push(toIndex);
+  } else {
+    const step = toIndex > fromIndex ? 1 : -1;
+    for (let idx = fromIndex + step; step > 0 ? idx <= toIndex : idx >= toIndex; idx += step) {
+      hopTargets.push(idx);
+    }
+  }
 
-  const cycles: CycleAst[] = [createMultiAtCycle(startIndex, copyPlacements, span)];
+  const cycles: CycleAst[] = [];
+  for (const hopTarget of hopTargets) {
+    const copyPlacements = Array.from({ length: laneLength }, (_, lane) => {
+      const point = resolvePlacement(axis, hopTarget, lane);
+      return {
+        row: point.row,
+        col: point.col,
+        instruction: createInstruction('SADD', [destReg, viaReg, 'ZERO'], span)
+      };
+    });
+    cycles.push(createMultiAtCycle(startIndex + cycles.length, copyPlacements, span));
+  }
 
   if (combineOpcode === null) {
     return cycles;

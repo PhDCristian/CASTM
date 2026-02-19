@@ -452,7 +452,7 @@ describe('compiler-api collective/route builders', () => {
       colNonAdjacentDiagnostics
     );
     expect(colNonAdjacentCycles).toHaveLength(0);
-    expect(colNonAdjacentDiagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+    expect(colNonAdjacentDiagnostics.some((d) => d.code === ErrorCodes.Semantic.InvalidCollectPath)).toBe(true);
 
     const badBoundsDiagnostics: any[] = [];
     const badBoundsCycles = buildCollectCycles(

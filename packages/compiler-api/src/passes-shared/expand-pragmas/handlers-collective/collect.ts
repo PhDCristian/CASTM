@@ -20,7 +20,7 @@ export const handleCollect: PragmaHandler = (pragma, ctx) => {
       'error',
       pragma.span,
       `Invalid collect statement syntax: '${pragma.text}'.`,
-      'Use collect(from=row(N)|col(N), to=row(M)|col(M), via=RCB|RCT|RCL|RCR|SELF, local=R2, into=R3[, combine=add|sum|sub|and|or|xor|mul|copy|shift_add]).'
+      'Use collect(from=row(N)|col(N), to=row(M)|col(M), via=RCB|RCT|RCL|RCR|SELF, local=R2, into=R3[, combine=add|sum|sub|and|or|xor|mul|copy|shift_add][, path=single_hop|multi_hop][, max_hops=K]).'
     ));
     return;
   }

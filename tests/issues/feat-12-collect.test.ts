@@ -81,7 +81,7 @@ kernel "feat12_non_adjacent" {
 }
 `);
     expect(nonAdjacent.success).toBe(false);
-    expect(nonAdjacent.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedOperation)).toBe(true);
+    expect(nonAdjacent.diagnostics.some((d) => d.code === ErrorCodes.Semantic.InvalidCollectPath)).toBe(true);
 
     const outOfBounds = compile(`
 target "uma-cgra-base";

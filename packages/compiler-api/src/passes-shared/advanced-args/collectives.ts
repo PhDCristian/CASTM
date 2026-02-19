@@ -32,7 +32,6 @@ const COLLECT_COMBINE_VALUES = new Set([
   'mul',
   'shift_add'
 ]);
-
 const ACCUMULATE_COMBINE_VALUES = new Set([
   'add',
   'sum',
@@ -42,14 +41,12 @@ const ACCUMULATE_COMBINE_VALUES = new Set([
   'xor',
   'mul'
 ]);
-
 const MULACC_DIRECTIONS = new Set([
   'left',
   'right',
   'up',
   'down'
 ]);
-
 function parseAccumulateScope(value: string): AccumulatePragmaArgs['scope'] | null {
   const normalized = value.trim();
   if (normalized.toLowerCase() === 'all') {
@@ -58,15 +55,13 @@ function parseAccumulateScope(value: string): AccumulatePragmaArgs['scope'] | nu
 
   const rowMatch = normalized.match(/^row\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
   if (rowMatch) {
-    const index = parseIntegerLiteral(rowMatch[1]);
-    if (index === null) return null;
+    const index = parseIntegerLiteral(rowMatch[1])!;
     return { kind: 'row', index };
   }
 
   const colMatch = normalized.match(/^col\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
   if (colMatch) {
-    const index = parseIntegerLiteral(colMatch[1]);
-    if (index === null) return null;
+    const index = parseIntegerLiteral(colMatch[1])!;
     return { kind: 'col', index };
   }
 
@@ -86,22 +81,19 @@ function defaultMaskForWidth(width: number): number | null {
   if (!Number.isInteger(width) || width <= 0 || width >= 31) return null;
   return (1 << width) - 1;
 }
-
 function parseMulaccTarget(value: string): MulaccChainPragmaArgs['target'] | null {
   const normalized = value.trim();
   if (normalized.toLowerCase() === 'all') return { kind: 'all' as const };
 
   const rowMatch = normalized.match(/^row\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
   if (rowMatch) {
-    const index = parseIntegerLiteral(rowMatch[1]);
-    if (index === null) return null;
+    const index = parseIntegerLiteral(rowMatch[1])!;
     return { kind: 'row' as const, index };
   }
 
   const colMatch = normalized.match(/^col\s*\(\s*(-?(?:0x[0-9a-fA-F]+|\d+))\s*\)$/i);
   if (colMatch) {
-    const index = parseIntegerLiteral(colMatch[1]);
-    if (index === null) return null;
+    const index = parseIntegerLiteral(colMatch[1])!;
     return { kind: 'col' as const, index };
   }
 
@@ -162,7 +154,6 @@ export function parseMulaccChainPragmaArgs(text: string): MulaccChainPragmaArgs 
     direction: dirRaw as MulaccChainPragmaArgs['direction']
   };
 }
-
 export function parseStencilPragmaArgs(text: string): StencilPragmaArgs | null {
   const match = text.trim().match(/^stencil\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
@@ -194,7 +185,6 @@ function parseTriangleInclusive(value: string | undefined): boolean | null {
   if (normalized === 'false' || normalized === 'exclusive') return false;
   return null;
 }
-
 export function parseTrianglePragmaArgs(text: string): TrianglePragmaArgs | null {
   const match = text.trim().match(/^triangle\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
@@ -261,7 +251,7 @@ export function parseCollectPragmaArgs(text: string): CollectPragmaArgs | null {
   const args = parseKeyValueArgs(match[1]);
   if (!args) return null;
   for (const key of args.keys()) {
-    if (!['from', 'to', 'via', 'local', 'into', 'combine'].includes(key)) return null;
+    if (!['from', 'to', 'via', 'local', 'into', 'combine', 'path', 'max_hops'].includes(key)) return null;
   }
 
   const fromRaw = args.get('from');
@@ -284,12 +274,26 @@ export function parseCollectPragmaArgs(text: string): CollectPragmaArgs | null {
   const combine = (args.get('combine') ?? 'add').trim().toLowerCase();
   if (!COLLECT_COMBINE_VALUES.has(combine)) return null;
 
+  const pathRaw = (args.get('path') ?? 'single_hop').trim().toLowerCase();
+  if (pathRaw !== 'single_hop' && pathRaw !== 'multi_hop') return null;
+  const path = pathRaw as CollectPragmaArgs['path'];
+
+  const maxHopsRaw = args.get('max_hops');
+  let maxHops: number | undefined;
+  if (maxHopsRaw !== undefined) {
+    const parsed = parseIntegerLiteral(maxHopsRaw);
+    if (parsed === null || parsed <= 0) return null;
+    maxHops = parsed;
+  }
+
   return {
     from,
     to,
     viaReg,
     localReg,
     destReg,
+    path,
+    ...(maxHops !== undefined ? { maxHops } : {}),
     combine: combine as CollectPragmaArgs['combine']
   };
 }

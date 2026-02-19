@@ -7,9 +7,9 @@ import { transformInstructions } from '../desugar-utils.js';
 /**
  * Desugar pass for JUMP-related sugar:
  *
- * 1. `goto X`   → `JUMP X, ZERO`   (goto sugar — parser yields opcode 'GOTO')
- * 2. `JUMP X`   → `JUMP X, ZERO`   (implicit ZERO when 2nd operand omitted)
- * 3. `JUMP X, Y` is left untouched  (explicit condition preserved)
+ * 1. `goto X`   → `JUMP ZERO, X`   (goto sugar — parser yields opcode 'GOTO')
+ * 2. `JUMP X`   → `JUMP ZERO, X`   (implicit ZERO predicate when omitted)
+ * 3. `JUMP P, X` is left untouched  (explicit predicate + target preserved)
  */
 export const desugarGotoPass: CompilerPass<AstProgram, AstProgram> = {
   name: 'desugar-goto',
@@ -28,7 +28,7 @@ export const desugarGotoPass: CompilerPass<AstProgram, AstProgram> = {
         };
       }
 
-      // ── implicit ZERO: "JUMP X" (1 operand) → "JUMP X, ZERO" ──
+      // ── implicit ZERO: "JUMP X" (1 operand) → "JUMP ZERO, X" ──
       if (opcode === 'JUMP' && instruction.operands.length === 1) {
         const target = instruction.operands[0];
         return {

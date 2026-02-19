@@ -1,11 +1,11 @@
 # Collect Statement (`std::collect(...)`)
 
-`std::collect(...)` is a canonical advanced statement for aligned single-hop lane collection across rows or columns.
+`std::collect(...)` is a canonical advanced statement for aligned lane collection across rows or columns.
 
 ## Canonical Syntax
 
 ```text
-std::collect(from=row(N)|col(N), to=row(M)|col(M), via=SELF|RCT|RCB|RCL|RCR, local=RL, into=RD[, combine=copy|add|sum|sub|and|or|xor|mul|shift_add]);
+std::collect(from=row(N)|col(N), to=row(M)|col(M), via=SELF|RCT|RCB|RCL|RCR, local=RL, into=RD[, combine=copy|add|sum|sub|and|or|xor|mul|shift_add][, path=single_hop|multi_hop][, max_hops=K]);
 ```
 
 Accepted values:
@@ -16,11 +16,14 @@ Accepted values:
 - `local`: local register operand at the destination lane.
 - `into`: destination register where collected results are stored.
 - `combine`: optional, defaults to `add`.
+- `path`: optional, defaults to `single_hop`.
+- `max_hops`: optional, valid with `path=multi_hop`, caps allowed hop distance.
 
 ## Semantics
 
 - The statement lowers into deterministic row-major multi-placement cycles.
-- Current lowering is intentionally strict and supports only same-lane or adjacent-lane transfers (`abs(from.index - to.index) <= 1`).
+- `path=single_hop` supports only same-lane or adjacent-lane transfers (`abs(from.index - to.index) <= 1`).
+- `path=multi_hop` emits one deterministic copy cycle per hop toward the destination lane, then applies the optional combine stage.
 - `via` must match the geometric direction implied by `from -> to`:
   - row: `from=to-1 => RCT`, `from=to+1 => RCB`, `from=to => SELF`
   - col: `from=to-1 => RCL`, `from=to+1 => RCR`, `from=to => SELF`
@@ -44,6 +47,12 @@ Column collection in NxM:
 std::collect(from=col(2), to=col(1), via=RCR, local=R4, into=R5, combine=xor);
 ```
 
+Multi-hop row collection:
+
+```text
+std::collect(from=row(0), to=row(2), via=RCT, local=R2, into=R3, combine=add, path=multi_hop, max_hops=2);
+```
+
 ## Executable Snippet
 
 ```dsl
@@ -60,7 +69,7 @@ Malformed or unsupported forms are rejected with explicit diagnostics:
 - parse diagnostic for invalid argument shapes.
 - semantic diagnostic for out-of-bounds lane indices.
 - semantic diagnostic when `via` does not match `from/to` geometry.
-- semantic diagnostic for non single-hop lane distances.
+- semantic diagnostic for invalid path/hop constraints (`E3013`).
 
 ## Verification
 
