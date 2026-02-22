@@ -52,8 +52,7 @@ function emitSimMatrixCsv(program: CsvProgram): string {
 
   const cycles = [...program.cycles].sort((a, b) => a.index - b.index);
   for (const cycle of cycles) {
-    const cycleHeader = [String(cycle.index), ...Array.from({ length: Math.max(0, cols - 1) }, () => '')];
-    lines.push(cycleHeader.join(','));
+    lines.push(String(cycle.index));
 
     const grid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => 'NOP'));
     for (const slot of cycle.slots) {
