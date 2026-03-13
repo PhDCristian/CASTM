@@ -35,8 +35,8 @@ build_changelog() {
     if [ -n "$since_sha" ] && git rev-parse "$since_sha" >/dev/null 2>&1; then
         git log --oneline "$since_sha"..HEAD | sed 's/^[a-f0-9]* /- /'
     else
-        # First release — summarize all commits (last 50 max)
-        git log --oneline -50 | sed 's/^[a-f0-9]* /- /'
+        # First release — clean initial message, no dev history dump
+        echo "Initial public release."
     fi
     echo ""
     echo "---"
