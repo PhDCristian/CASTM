@@ -15,36 +15,36 @@ kernel "MatMul2x2" {
     for i in range(2) {
         for j in range(2) {
             // Initialize accumulator
-            cycle {
+            bundle {
                 @0,0: SADD R3, ZERO, ZERO;
             }
 
             for k in range(2) {
                 // Load A[i][k]
-                cycle {
+                bundle {
                     @0,0: LWI R0, A[i][k];
                 }
                 // Load B[k][j]
-                cycle {
+                bundle {
                     @0,0: LWI R1, B[k][j];
                 }
                 // Multiply and accumulate
-                cycle {
+                bundle {
                     @0,0: SMUL R2, R0, R1;
                 }
-                cycle {
+                bundle {
                     @0,0: SADD R3, R3, R2;
                 }
             }
 
             // Store C[i][j]
-            cycle {
+            bundle {
                 @0,0: SWI R3, C[i][j];
             }
         }
     }
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

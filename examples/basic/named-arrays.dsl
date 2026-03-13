@@ -10,18 +10,18 @@ kernel "NamedArrays" {
     config(0xF, 0);
 
     // Load first and last elements
-    cycle {
+    bundle {
         @0,0: LWI R0, input[0];       // Load input[0] = 10
         @0,1: LWI R0, input[3];       // Load input[3] = 40
     }
 
     // Store results
-    cycle {
+    bundle {
         @0,0: SWI R0, output[0];
         @0,1: SWI R0, output[1];
     }
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

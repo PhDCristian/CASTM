@@ -7,7 +7,7 @@ kernel "Shift" {
     config(0xF, 0);
 
     // Load different values into each PE
-    cycle {
+    bundle {
         @0,0: SADD R0, ZERO, 10;
         @0,1: SADD R0, ZERO, 20;
         @0,2: SADD R0, ZERO, 30;
@@ -19,7 +19,7 @@ kernel "Shift" {
     // After:  PE0=0,  PE1=10, PE2=20, PE3=30
     #pragma shift(reg=R0, direction=right, distance=1, fill=0)
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

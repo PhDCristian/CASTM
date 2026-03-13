@@ -233,6 +233,60 @@ kernel "label_fn_call" {
     expect(lowered.kernel?.cycles[0].label).toBe('entry');
   });
 
+  it('accepts "bundle" as alias for "cycle" in inline, block, and labeled forms', () => {
+    // Inline bundle
+    const r1 = parseStructuredSource(`
+target "uma-cgra-base";
+kernel "t" {
+  bundle { @0,0: NOP; }
+}
+`);
+    expect(r1.success).toBe(true);
+    expect(r1.structuredAst?.kernel?.body[0].kind).toBe('cycle');
+
+    // Labeled bundle
+    const r2 = parseStructuredSource(`
+target "uma-cgra-base";
+kernel "t" {
+  myLabel: bundle { at all: NOP; }
+}
+`);
+    expect(r2.success).toBe(true);
+    const b2 = r2.structuredAst?.kernel?.body[0];
+    expect(b2?.kind).toBe('cycle');
+    if (b2?.kind === 'cycle') expect(b2.cycle.label).toBe('myLabel');
+
+    // Block bundle (multi-line)
+    const r3 = parseStructuredSource(`
+target "uma-cgra-base";
+kernel "t" {
+  bundle {
+    @0,0: NOP;
+    at all: NOP;
+  }
+}
+`);
+    expect(r3.success).toBe(true);
+    const b3 = r3.structuredAst?.kernel?.body[0];
+    expect(b3?.kind).toBe('cycle');
+    if (b3?.kind === 'cycle') expect(b3.cycle.statements).toHaveLength(2);
+
+    // cycle still works (backward compat)
+    const r4 = parseStructuredSource(`
+target "uma-cgra-base";
+kernel "t" {
+  cycle { @0,0: NOP; }
+}
+`);
+    expect(r4.success).toBe(true);
+    expect(r4.structuredAst?.kernel?.body[0].kind).toBe('cycle');
+
+    // bundle lowers correctly
+    const lowered = lowerStructuredProgramToAst(r1.structuredAst!);
+    expect(lowered.kernel?.cycles).toHaveLength(1);
+    expect(lowered.kernel?.cycles[0].statements[0]).toMatchObject({ kind: 'at', row: 0, col: 0 });
+  });
+
   it('E2E: labeled advanced stmt + labeled fn-call compile through full pipeline (T5-V1)', async () => {
     const { compile } = await import('@openedge/compiler-api');
     const source = `

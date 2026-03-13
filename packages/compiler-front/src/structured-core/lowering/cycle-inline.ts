@@ -9,7 +9,7 @@ export interface ParsedLabeledCycle {
 }
 
 export function parseLabeledCycleLine(cleanLine: string): ParsedLabeledCycle | null {
-  const inline = cleanLine.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*cycle\\s*\\{\\s*(.+)\\s*\\}\\s*$`, 'i'));
+  const inline = cleanLine.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*(?:cycle|bundle)\\s*\\{\\s*(.+)\\s*\\}\\s*$`, 'i'));
   if (inline) {
     return {
       label: inline[1],
@@ -17,7 +17,7 @@ export function parseLabeledCycleLine(cleanLine: string): ParsedLabeledCycle | n
     };
   }
 
-  const block = cleanLine.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*cycle\\s*\\{\\s*$`, 'i'));
+  const block = cleanLine.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*(?:cycle|bundle)\\s*\\{\\s*$`, 'i'));
   if (block) {
     return {
       label: block[1]

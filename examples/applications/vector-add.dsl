@@ -13,14 +13,14 @@ kernel "VectorAdd" {
     // Load A[i] and B[i] in parallel across 4 PEs
     #pragma parallel
     for i in range(4) {
-        cycle {
+        bundle {
             @0,i: LWI R0, A[i];
         }
     }
 
     #pragma parallel
     for i in range(4) {
-        cycle {
+        bundle {
             @0,i: LWI R1, B[i];
         }
     }
@@ -28,7 +28,7 @@ kernel "VectorAdd" {
     // Compute C[i] = A[i] + B[i]
     #pragma parallel
     for i in range(4) {
-        cycle {
+        bundle {
             @0,i: SADD R2, R0, R1;
         }
     }
@@ -36,12 +36,12 @@ kernel "VectorAdd" {
     // Store results
     #pragma parallel
     for i in range(4) {
-        cycle {
+        bundle {
             @0,i: SWI R2, C[i];
         }
     }
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

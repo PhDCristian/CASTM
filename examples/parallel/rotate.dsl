@@ -7,7 +7,7 @@ kernel "Rotate" {
     config(0xF, 0);
 
     // Load different values into each PE
-    cycle {
+    bundle {
         @0,0: SADD R0, ZERO, 10;
         @0,1: SADD R0, ZERO, 20;
         @0,2: SADD R0, ZERO, 30;
@@ -19,7 +19,7 @@ kernel "Rotate" {
     // After:  PE0=20, PE1=30, PE2=40, PE3=10 (wraparound)
     #pragma rotate(reg=R0, direction=left)
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

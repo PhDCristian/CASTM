@@ -80,7 +80,7 @@ export function tryParseCycleStatement(
   }
 
   // ── Unlabeled inline cycle: cycle { ... } ──
-  const inlineCycle = cleanLine.match(/^cycle\s*\{\s*(.+)\s*\}\s*$/i);
+  const inlineCycle = cleanLine.match(/^(?:cycle|bundle)\s*\{\s*(.+)\s*\}\s*$/i);
   if (inlineCycle) {
     const cycleDiagnostics: Diagnostic[] = [];
     const statements = parseInlineCycleStatements(
@@ -98,7 +98,7 @@ export function tryParseCycleStatement(
     };
   }
 
-  if (!/^cycle\s*\{\s*$/i.test(cleanLine)) {
+  if (!/^(?:cycle|bundle)\s*\{\s*$/i.test(cleanLine)) {
     return { handled: false, nextIndex: index, stop: false };
   }
 

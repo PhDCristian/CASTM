@@ -7,7 +7,7 @@ kernel "Reduce" {
     config(0xF, 0);
 
     // Load values into each PE of row 0
-    cycle {
+    bundle {
         @0,0: SADD R0, ZERO, 10;
         @0,1: SADD R0, ZERO, 20;
         @0,2: SADD R0, ZERO, 30;
@@ -18,7 +18,7 @@ kernel "Reduce" {
     #pragma reduce(sum, R1, R0)
     // After: PE(0,0).R1 = 10+20+30+40 = 100
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

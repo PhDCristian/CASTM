@@ -12,7 +12,7 @@ kernel "DotProduct" {
     // Load A[i] into each PE
     #pragma parallel
     for i in range(4) {
-        cycle {
+        bundle {
             @0,i: LWI R0, A[i];
         }
     }
@@ -20,13 +20,13 @@ kernel "DotProduct" {
     // Load B[i] into each PE
     #pragma parallel
     for i in range(4) {
-        cycle {
+        bundle {
             @0,i: LWI R1, B[i];
         }
     }
 
     // Multiply: R2 = A[i] * B[i]
-    cycle {
+    bundle {
         @0,0: SMUL R2, R0, R1;
         @0,1: SMUL R2, R0, R1;
         @0,2: SMUL R2, R0, R1;
@@ -37,7 +37,7 @@ kernel "DotProduct" {
     #pragma reduce(sum, R3, R2)
     // Result: R3 at PE(0,0) = 1*5 + 2*6 + 3*7 + 4*8 = 5+12+21+32 = 70
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

@@ -287,7 +287,7 @@ describe('compiler-front lowering cycle/function step handlers', () => {
     const labeledUnterminated = makeInput([{ lineNo: 2, cleanLine: 'L1: cycle {' }]);
     const labeledUnterminatedResult = tryExpandCycleStatement(labeledUnterminated.input as any);
     expect(labeledUnterminatedResult.shouldBreak).toBe(true);
-    expect(labeledUnterminated.input.diagnostics[0].message).toContain('Unterminated labeled cycle');
+    expect(labeledUnterminated.input.diagnostics[0].message).toContain('Unterminated labeled bundle');
 
     const labeledBlock = makeInput([
       { lineNo: 3, cleanLine: 'L2: cycle {' },
@@ -314,6 +314,6 @@ describe('compiler-front lowering cycle/function step handlers', () => {
     const cycleUnterminatedResult = tryExpandCycleStatement(cycleUnterminated.input as any);
     expect(cycleUnterminatedResult.handled).toBe(true);
     expect(cycleUnterminatedResult.shouldBreak).toBe(true);
-    expect(cycleUnterminated.input.diagnostics[0].message).toContain('Unterminated cycle block');
+    expect(cycleUnterminated.input.diagnostics[0].message).toContain('Unterminated bundle block');
   });
 });

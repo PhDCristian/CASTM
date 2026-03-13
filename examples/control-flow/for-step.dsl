@@ -10,12 +10,12 @@ kernel "ForStep" {
 
     // Load every other value: values[0], values[2], values[4], values[6]
     for i in range(0, 8, 2) {
-        cycle {
+        bundle {
             @0,0: LWI R0, values[i];
         }
     }
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

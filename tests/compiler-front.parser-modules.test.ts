@@ -239,4 +239,21 @@ describe('compiler-front lowering module contracts', () => {
     expect(control.statements[0]).toMatchObject({ kind: 'at', row: 0, col: 0 });
     expect(diagnostics).toHaveLength(0);
   });
+
+  it('accepts "bundle" as alias for "cycle" in inline and labeled forms', () => {
+    const diagnostics: any[] = [];
+
+    // Inline bundle
+    const inline = parseInlineCycleStatements('@0,0: NOP;', 1, new Map(), diagnostics);
+    expect(inline).toHaveLength(1);
+
+    // Labeled bundle
+    expect(parseLabeledCycleLine('L0: bundle { @0,0: NOP; }')).toMatchObject({ label: 'L0', inlinePayload: '@0,0: NOP; ' });
+    expect(parseLabeledCycleLine('L1: bundle {')).toMatchObject({ label: 'L1' });
+
+    // Labeled cycle still works
+    expect(parseLabeledCycleLine('L2: cycle { @0,0: NOP; }')).toMatchObject({ label: 'L2' });
+
+    expect(diagnostics).toHaveLength(0);
+  });
 });

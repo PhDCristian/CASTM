@@ -7,7 +7,7 @@ kernel "Route" {
     config(0xF, 0);
 
     // Load value at PE(0,0)
-    cycle {
+    bundle {
         @0,0: SADD R0, ZERO, 42;
     }
 
@@ -16,7 +16,7 @@ kernel "Route" {
     // accum(R1): the destination register at PE(0,2)
     #pragma route (0,0) -> (0,2) payload(R0) accum(R1)
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

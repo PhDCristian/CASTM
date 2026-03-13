@@ -46,8 +46,8 @@ export function tryExpandCycleStatement(input: FunctionExpandStepInput): Functio
         ErrorCodes.Parse.InvalidSyntax,
         'error',
         spanAt(entry.lineNo, 1, clean.length),
-        `Unterminated labeled cycle '${labeledCycle.label}' inside function body.`,
-        'Add a closing brace for cycle { ... }.'
+        `Unterminated labeled bundle '${labeledCycle.label}' inside function body.`,
+        'Add a closing brace for bundle { ... }.'
       ));
       return { handled: true, nextIndex: index, shouldBreak: true };
     }
@@ -61,7 +61,7 @@ export function tryExpandCycleStatement(input: FunctionExpandStepInput): Functio
     return { handled: true, nextIndex: block.endIndex, shouldBreak: false };
   }
 
-  const inlineCycleMatch = clean.match(/^cycle\s*\{\s*(.+)\s*\}\s*$/i);
+  const inlineCycleMatch = clean.match(/^(?:cycle|bundle)\s*\{\s*(.+)\s*\}\s*$/i);
   if (inlineCycleMatch) {
     const cycle: CycleAst = {
       index: cycleCounter.value++,
@@ -72,7 +72,7 @@ export function tryExpandCycleStatement(input: FunctionExpandStepInput): Functio
     return { handled: true, nextIndex: index, shouldBreak: false };
   }
 
-  if (!/^cycle\s*\{\s*$/i.test(clean)) {
+  if (!/^(?:cycle|bundle)\s*\{\s*$/i.test(clean)) {
     return { handled: false, nextIndex: index, shouldBreak: false };
   }
 
@@ -82,8 +82,8 @@ export function tryExpandCycleStatement(input: FunctionExpandStepInput): Functio
       ErrorCodes.Parse.InvalidSyntax,
       'error',
       spanAt(entry.lineNo, 1, clean.length),
-      'Unterminated cycle block inside function body.',
-      'Add a closing brace for cycle { ... }.'
+      'Unterminated bundle block inside function body.',
+      'Add a closing brace for bundle { ... }.'
     ));
     return { handled: true, nextIndex: index, shouldBreak: true };
   }

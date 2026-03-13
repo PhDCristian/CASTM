@@ -9,7 +9,7 @@ kernel "NestedLoops" {
     // 2x2 iteration: (i,j) = (0,0), (0,1), (1,0), (1,1)
     for i in range(2) {
         for j in range(2) {
-            cycle {
+            bundle {
                 // Load i and j into separate registers
                 @0,0: SADD R0, ZERO, i;
                 @0,1: SADD R0, ZERO, j;
@@ -17,7 +17,7 @@ kernel "NestedLoops" {
         }
     }
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

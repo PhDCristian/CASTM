@@ -7,7 +7,7 @@ kernel "Broadcast" {
     config(0xF, 0);
 
     // Load value at PE(0,0) only
-    cycle {
+    bundle {
         @0,0: SADD R0, ZERO, 99;
     }
 
@@ -15,7 +15,7 @@ kernel "Broadcast" {
     #pragma broadcast(value=R0, from=@0,0, to=row)
     // After: all PEs in row 0 receive the value
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

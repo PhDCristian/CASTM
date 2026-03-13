@@ -7,7 +7,7 @@ export interface FrontToken {
 
 const TOKEN_RE = /"(?:\\.|[^"])*"|0x[0-9a-fA-F]+|-?\d+|[A-Za-z_][A-Za-z0-9_]*|==|!=|<=|>=|->|[{}()\[\],:;|=+\-*/%&^@]/g;
 const KEYWORDS = new Set([
-  'target', 'build', 'kernel', 'config', 'cycle',
+  'target', 'build', 'kernel', 'config', 'cycle', 'bundle',
   'let', 'at', 'row', 'col', 'all',
   'if', 'else', 'while', 'for', 'break', 'continue', 'in', 'range', 'runtime', 'pipeline',
   'optimize', 'scheduler', 'scheduler_window', 'memory_reorder', 'prune_noop_cycles', 'grid',

@@ -14,21 +14,21 @@ kernel "Data2D" {
     config(0xF, 0);
 
     // Load diagonal elements
-    cycle {
+    bundle {
         @0,0: LWI R0, matrix[0][0];   // = 1
         @0,1: LWI R0, matrix[1][1];   // = 4
     }
 
     // Add diagonal elements
-    cycle {
+    bundle {
         @0,0: SADD ROUT, R0, ZERO;
     }
 
-    cycle {
+    bundle {
         @0,1: SADD R1, R0, RCL;       // R1 = 1 + 4 = 5
     }
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

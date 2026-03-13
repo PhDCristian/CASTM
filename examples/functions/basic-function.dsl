@@ -5,7 +5,7 @@
 
 // Function to initialize a register with an immediate value
 function init_reg(reg, val) {
-    cycle {
+    bundle {
         @0,0: SADD reg, ZERO, val;
     }
 }
@@ -19,11 +19,11 @@ kernel "BasicFunction" {
     init_reg(R2, 30);   // Expands to: SADD R2, ZERO, 30
 
     // Use the initialized values
-    cycle {
+    bundle {
         @0,0: SADD R3, R0, R1;   // R3 = 10 + 20 = 30
     }
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

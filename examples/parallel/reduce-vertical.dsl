@@ -7,23 +7,23 @@ kernel "ReduceVertical" {
     config(0xF, 0);
 
     // Load values into column 0 across all rows
-    cycle {
+    bundle {
         @0,0: SADD R0, ZERO, 10;
     }
-    cycle {
+    bundle {
         @1,0: SADD R0, ZERO, 20;
     }
-    cycle {
+    bundle {
         @2,0: SADD R0, ZERO, 30;
     }
-    cycle {
+    bundle {
         @3,0: SADD R0, ZERO, 40;
     }
 
     // Vertical reduce: R1 at (0,0) = 10 + 20 + 30 + 40 = 100
     #pragma reduce(sum, R1, R0, axis=col)
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

@@ -13,21 +13,21 @@ kernel "Constants" {
     config(0xF, 0);
 
     // Initialize counter to 0
-    cycle {
+    bundle {
         @0,0: SADD counter, ZERO, ZERO;
     }
 
     // Load threshold into value register
-    cycle {
+    bundle {
         @0,0: SADD value, ZERO, .THRESHOLD;
     }
 
     // Add step to counter
-    cycle {
+    bundle {
         @0,0: SADD counter, counter, STEP;
     }
 
-    cycle {
+    bundle {
         @0,0: EXIT;
     }
 }

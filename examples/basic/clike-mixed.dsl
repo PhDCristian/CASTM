@@ -12,29 +12,29 @@
 kernel "MixedSyntax" {
     config(0xF, 0);
 
-    // Cycle 0: Load from memory (assembly - LWI has no C-like equivalent)
-    cycle {
+    // Bundle 0: Load from memory (assembly - LWI has no C-like equivalent)
+    bundle {
         @0,0: LWI R0, input[0];
         @0,1: LWI R0, input[1];
         @0,2: LWI R0, input[2];
         @0,3: LWI R0, input[3];
     }
 
-    // Cycle 1: Process with C-like expressions
-    cycle {
+    // Bundle 1: Process with C-like expressions
+    bundle {
         @0,0: R1 = R0 * R0;       // 5 * 5 = 25
         @0,1: R1 = R0 + R0;       // 10 + 10 = 20
         @0,2: R1 = R0 - 5;        // 15 - 5 = 10
         @0,3: R1 = R0 & 0xF;      // 20 & 0xF = 4
     }
 
-    // Cycle 2: Store results (assembly)
-    cycle {
+    // Bundle 2: Store results (assembly)
+    bundle {
         @0,0: SWI R1, output[0];
         @0,1: SWI R1, output[1];
         @0,2: SWI R1, output[2];
         @0,3: SWI R1, output[3];
     }
 
-    cycle { @0,0: EXIT; }
+    bundle { @0,0: EXIT; }
 }

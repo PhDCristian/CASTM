@@ -11,29 +11,29 @@
 kernel "CLikeArithmetic" {
     config(0xF, 0);
 
-    // Cycle 0: Load initial values using assembly syntax
-    cycle {
+    // Bundle 0: Load initial values using assembly syntax
+    bundle {
         @0,0: SADD R0, ZERO, 10;   // R0 = 10
         @0,1: SADD R0, ZERO, 20;   // R0 = 20
         @0,2: SADD R0, ZERO, 3;    // R0 = 3
         @0,3: SADD R0, ZERO, 7;    // R0 = 7
     }
 
-    // Cycle 1: Arithmetic using C-like expressions
-    cycle {
+    // Bundle 1: Arithmetic using C-like expressions
+    bundle {
         @0,0: R1 = R0 + R0;       // R1 = 10 + 10 = 20
         @0,1: R1 = R0 - 5;        // R1 = 20 - 5 = 15
         @0,2: R1 = R0 * R0;       // R1 = 3 * 3 = 9
         @0,3: R1 = R0 << 2;       // R1 = 7 << 2 = 28
     }
 
-    // Cycle 2: Bitwise using C-like expressions
-    cycle {
+    // Bundle 2: Bitwise using C-like expressions
+    bundle {
         @0,0: R2 = R0 & 0xF;      // R2 = 10 & 0xF = 10
         @0,1: R2 = R0 ^ R1;       // R2 = 20 ^ 15 = 27
         @0,2: R2 = R0 >> 1;       // R2 = 3 >> 1 = 1
         @0,3: R2 = R1 >>> 1;      // R2 = 28 >>> 1 = 14
     }
 
-    cycle { @0,0: EXIT; }
+    bundle { @0,0: EXIT; }
 }

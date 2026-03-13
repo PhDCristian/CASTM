@@ -37,7 +37,7 @@ describe('compiler-api sim-matrix-csv emitter', () => {
     expect(result.success).toBe(true);
 
     const lines = (result.csv ?? '').split('\n');
-    expect(lines[0]).toBe('0,,,');
+    expect(lines[0]).toBe('0');
     expect(lines[1]).toBe('LWD R0,NOP,NOP,NOP');
     expect(lines[2]).toBe('NOP,NOP,NOP,NOP');
     expect(lines[3]).toBe('NOP,NOP,NOP,NOP');

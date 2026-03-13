@@ -84,7 +84,7 @@ function emitStructuredBodyAsEntries(
 
     if (stmt.kind === 'cycle') {
       const prefix = stmt.cycle.label ? `${stmt.cycle.label}: ` : '';
-      pushLine(`${prefix}cycle {`);
+      pushLine(`${prefix}bundle {`);
       for (const cycleStmt of stmt.cycle.statements) {
         pushLine(renderCycleStatement(cycleStmt));
       }
