@@ -1,0 +1,19 @@
+# Patterns to exclude from the public CASTM release
+# One glob pattern per line. Comments (#) and blank lines are ignored.
+
+# Dev-only tooling
+coverage
+.github
+.vscode
+
+# Internal test fixtures (uncomment if desired)
+# tests
+
+# Roadmap / internal planning
+roadmap
+
+# Internal dev docs
+docs/release-workflow.md
+
+# Example kernels (uncomment to exclude)
+# examples
