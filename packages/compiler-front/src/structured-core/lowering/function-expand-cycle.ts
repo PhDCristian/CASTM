@@ -3,7 +3,7 @@ import {
   ErrorCodes,
   makeDiagnostic,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   expandLoopBody,
   parseInlineCycleStatements,

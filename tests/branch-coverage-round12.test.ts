@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AstProgram, ErrorCodes, spanAt } from '@openedge/compiler-ir';
+import { AstProgram, ErrorCodes, spanAt } from '@castm/compiler-ir';
 import { parseStructuredProgramFromSource } from '../packages/compiler-front/src/structured-core/parse-source.js';
 import { buildMulaccChainCycles } from '../packages/compiler-api/src/passes-shared/collective/mulacc-chain.js';
 import { buildAccumulateCycles } from '../packages/compiler-api/src/passes-shared/collective/accumulate.js';
@@ -80,7 +80,7 @@ kernel "k" {
   assert(reg=R1, equals=1);
   assert(at=@0,0, badtoken, reg=R1, equals=1);
   .io_load(0);
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `);
 
@@ -140,7 +140,7 @@ kernel "k" {
 target base;
 build { optimize O2; }
 build { optimize O1; }
-kernel "k" { cycle { @0,0: NOP; } }
+kernel "k" { bundle { @0,0: NOP; } }
 `);
     expect(duplicate.diagnostics.some((d) => d.message.includes('Duplicate build block'))).toBe(true);
 
@@ -149,7 +149,7 @@ target base;
 build {
   optimize O2;
 kernel "k" {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `);
     expect(unterminated.diagnostics.some((d) => d.message.includes('Unterminated build block'))).toBe(true);
@@ -157,7 +157,7 @@ kernel "k" {
     const invalidKernel = parseStructuredProgramFromSource(`
 target base;
 kernel bad {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `);
     expect(invalidKernel.program.kernel).toBeNull();
@@ -177,7 +177,7 @@ kernel bad {
 target base;
 build { optimize O2; }
 kernel bad {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `);
     expect(parsed.diagnostics.some((d) => d.message.includes('Invalid kernel declaration'))).toBe(true);
@@ -999,7 +999,7 @@ describe('branch coverage round 12 - passes and lowering edges', () => {
     const kernel: any = { name: 'k', config: undefined, directives: [], pragmas: [], cycles: [], span };
     const body = [
       { lineNo: 1, rawLine: 'for i in range(0,1) at @0,0 {', cleanLine: 'for i in range(0,1) at @0,0 {' },
-      { lineNo: 2, rawLine: 'cycle { @0,0: NOP; }', cleanLine: 'cycle { @0,0: NOP; }' },
+      { lineNo: 2, rawLine: 'bundle { @0,0: NOP; }', cleanLine: 'bundle { @0,0: NOP; }' },
       { lineNo: 3, rawLine: '}', cleanLine: '}' }
     ];
 
@@ -1025,7 +1025,7 @@ describe('branch coverage round 12 - passes and lowering edges', () => {
   it('covers labeled cycle block path and labeled-control stop branch in statements parser', () => {
     const diagnostics: any[] = [];
     const cycleEntries = [
-      { lineNo: 1, rawLine: 'L0: cycle {', cleanLine: 'L0: cycle {' },
+      { lineNo: 1, rawLine: 'L0: bundle {', cleanLine: 'L0: bundle {' },
       { lineNo: 2, rawLine: '@0,0: NOP;', cleanLine: '@0,0: NOP;' },
       { lineNo: 3, rawLine: '}', cleanLine: '}' }
     ] as any;
@@ -1045,7 +1045,7 @@ describe('branch coverage round 12 - passes and lowering edges', () => {
     expect(labeledNoise).toEqual([]);
 
     const unterminatedLabeledCycle = parseStructuredStatements([
-      { lineNo: 1, rawLine: 'LC: cycle {', cleanLine: 'LC: cycle {' }
+      { lineNo: 1, rawLine: 'LC: bundle {', cleanLine: 'LC: bundle {' }
     ] as any, { value: 0 }, diagnostics);
     expect(unterminatedLabeledCycle).toHaveLength(1);
   });
@@ -1161,7 +1161,7 @@ describe('branch coverage round 12 - passes and lowering edges', () => {
   });
 
   it('covers resolveGrid profile-missing branch via mocked lang-spec', async () => {
-    vi.doMock('@openedge/lang-spec', () => ({
+    vi.doMock('@castm/lang-spec', () => ({
       resolveTargetProfileId: () => 'uma-cgra-base',
       getTargetProfile: () => null
     }));
@@ -1183,7 +1183,7 @@ describe('branch coverage round 12 - passes and lowering edges', () => {
   });
 
   it('covers resolveGrid missing-target and invalid-grid fallback-span branches', async () => {
-    vi.unmock('@openedge/lang-spec');
+    vi.unmock('@castm/lang-spec');
     vi.resetModules();
     const mod = await import('../packages/compiler-api/src/compiler-driver/grid-resolver.js');
     const d1: any[] = [];
@@ -1202,7 +1202,7 @@ describe('branch coverage round 12 - passes and lowering edges', () => {
   });
 
   it('covers resolveGrid invalid-profile-grid branch with fallback build span', async () => {
-    vi.doMock('@openedge/lang-spec', () => ({
+    vi.doMock('@castm/lang-spec', () => ({
       resolveTargetProfileId: () => 'uma-cgra-base',
       getTargetProfile: () => ({ grid: { rows: 0, cols: 1, topology: 'mesh' } })
     }));
@@ -1219,7 +1219,7 @@ describe('branch coverage round 12 - passes and lowering edges', () => {
   });
 
   it('covers grid-resolver unknown-target branch fallback span', async () => {
-    vi.doMock('@openedge/lang-spec', () => ({
+    vi.doMock('@castm/lang-spec', () => ({
       resolveTargetProfileId: () => null,
       getTargetProfile: () => null
     }));

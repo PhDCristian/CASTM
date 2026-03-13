@@ -1,5 +1,5 @@
-import { compile } from '@openedge/compiler-api';
-import { CompileOptions, CompileResult, Diagnostic } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { CompileOptions, CompileResult, Diagnostic } from '@castm/compiler-ir';
 
 export function compileFixture(source: string, options: CompileOptions = {}): CompileResult {
   return compile(source, { ...options, emitArtifacts: ['ast', 'hir', 'mir', 'csv'] });

@@ -2,7 +2,7 @@ import {
   AstProgram,
   MemoryRegionInfo,
   SymbolArrayInfo
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 
 export interface SymbolCollections {
   constants: Record<string, string>;

@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 describe('issues resolved/non-regression and canonical legacy rejection', () => {
   it('keeps BUG-6 fixed: function parameters are valid operands in expression syntax', () => {
     const source = `
 target "uma-cgra-base";
 function extract(dst, src) {
-  cycle { @0,0: dst = src >> 16; }
+  bundle { @0,0: dst = src >> 16; }
 }
 kernel "bug6_regression" {
   extract(R1, R0);
@@ -27,16 +27,16 @@ build {
   prune_noop_cycles off;
 }
 kernel "spatial_regression" {
-  cycle {
+  bundle {
     at all: NOP;
   }
-  cycle {
+  bundle {
     at row 1: NOP;
   }
-  cycle {
+  bundle {
     at col 2: NOP;
   }
-  cycle {
+  bundle {
     for i in range(4) {
       @0,i: NOP;
     }
@@ -57,7 +57,7 @@ kernel "spatial_regression" {
 target "uma-cgra-base";
 kernel "legacy_reject" {
   #pragma route @0,1 -> @0,0 payload(R3) accum(R1)
-  cycle {
+  bundle {
     row 0: R3 = R2 | R1 = R0;
   }
 }
@@ -91,7 +91,7 @@ target "uma-cgra-base";
 kernel "legacy_parallel_reject" {
   #pragma parallel collapse(2)
   for i in range(0, 4) {
-    cycle { @0,i: NOP; }
+    bundle { @0,i: NOP; }
   }
 }
 `;

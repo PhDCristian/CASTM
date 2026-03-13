@@ -1,4 +1,4 @@
-import { AstProgram, CycleAst, InstructionAst, SourceSpan } from '@openedge/compiler-ir';
+import { AstProgram, CycleAst, InstructionAst, SourceSpan } from '@castm/compiler-ir';
 
 export function cloneInstruction(instruction: InstructionAst): InstructionAst {
   return {

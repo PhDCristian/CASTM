@@ -1,7 +1,7 @@
 import {
   AstProgram,
   Diagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { SemanticPassResult } from './types.js';
 
 export function runSemanticResolver(ast: AstProgram, diagnostics: Diagnostic[]): SemanticPassResult {

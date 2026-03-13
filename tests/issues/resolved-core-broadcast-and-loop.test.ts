@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 describe('issues resolved core regressions (broadcast + loop vars)', () => {
   it('keeps Issue-1 fixed: at all works inside function expansion', () => {
     const source = `
 target "uma-cgra-base";
 function fill_all() {
-  cycle {
+  bundle {
     at all: SADD R0, ZERO, 99;
   }
 }
@@ -27,7 +27,7 @@ kernel "issue1_all_in_fn" {
     const source = `
 target "uma-cgra-base";
 kernel "issue5_row_broadcast" {
-  cycle {
+  bundle {
     at row 0: LWI R0, 720;
   }
 }
@@ -51,7 +51,7 @@ build {
   prune_noop_cycles off;
 }
 kernel "issue9_col_broadcast" {
-  cycle {
+  bundle {
     at col 2: NOP;
   }
 }
@@ -72,7 +72,7 @@ kernel "issue9_col_broadcast" {
 target "uma-cgra-base";
 kernel "issue10_col_var" {
   for col in range(1, 3) {
-    cycle {
+    bundle {
       @0,0: SADD R1, ZERO, col;
     }
   }
@@ -91,7 +91,7 @@ kernel "issue10_col_var" {
     const source = `
 target "uma-cgra-base";
 kernel "bug1_mixed_broadcast" {
-  cycle {
+  bundle {
     at row 0: SADD R0, ZERO, 1;
     @1,1: SADD R1, ZERO, 2;
     @2,3: SADD R2, ZERO, 3;

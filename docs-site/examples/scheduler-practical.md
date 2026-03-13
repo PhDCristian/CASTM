@@ -17,10 +17,10 @@ Use this page when you need concrete cycle-level expectations for scheduler sett
 - all examples use canonical syntax with `target base;`.
 - measurements are deterministic for a fixed source.
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/examples/scheduler-practical/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/scheduler-practical/01-main.castm{castm} [CASTM]
 <<< ../snippets/examples/scheduler-practical/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
@@ -28,23 +28,23 @@ Full CSV: `docs-site/snippets/examples/scheduler-practical/01-main.csv`.
 
 ## Case 1: Window compaction
 
-```openedge
+```castm
 target base;
 build { optimize O0; scheduler safe; scheduler_window 0; memory_reorder strict; prune_noop_cycles off; }
 kernel "window_demo_o0" {
-  cycle { at @0,0: SADD R1, R0, 1; }
-  cycle { at @0,1: SADD R2, R0, 1; }
-  cycle { at @0,2: SADD R3, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
+  bundle { at @0,2: SADD R3, R0, 1; }
 }
 ```
 
-```openedge
+```castm
 target base;
 build { optimize O2; scheduler safe; scheduler_window 1; memory_reorder strict; prune_noop_cycles on; }
 kernel "window_demo_o2" {
-  cycle { at @0,0: SADD R1, R0, 1; }
-  cycle { at @0,1: SADD R2, R0, 1; }
-  cycle { at @0,2: SADD R3, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
+  bundle { at @0,2: SADD R3, R0, 1; }
 }
 ```
 
@@ -56,14 +56,14 @@ Typical behavior:
 
 ## Case 2: Branch remapping under compaction
 
-```openedge
+```castm
 target base;
 build { optimize O2; scheduler safe; scheduler_window 1; memory_reorder strict; prune_noop_cycles on; }
 kernel "branch_remap" {
-  cycle { at @0,0: BEQ R0, 0, 3; }
-  cycle { at @0,0: NOP; }
-  cycle { at @0,1: SADD R2, R3, ZERO; }
-  cycle { at @0,0: BNE R1, 0, 0; }
+  bundle { at @0,0: BEQ R0, 0, 3; }
+  bundle { at @0,0: NOP; }
+  bundle { at @0,1: SADD R2, R3, ZERO; }
+  bundle { at @0,0: BNE R1, 0, 0; }
 }
 ```
 

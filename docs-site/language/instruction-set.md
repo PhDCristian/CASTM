@@ -1,6 +1,6 @@
 # Instruction Set
 
-OpenEdgeDSL lowers to the ISA catalog in `packages/lang-spec/src/instruction-set.json`.
+CASTM lowers to the ISA catalog in `packages/lang-spec/src/instruction-set.json`.
 
 ## Target and assumptions
 
@@ -34,10 +34,10 @@ OpenEdgeDSL lowers to the ISA catalog in `packages/lang-spec/src/instruction-set
 - `A[i] = R0;` -> `SWI R0, <resolved-address>`
 - `goto L0;` -> `JUMP ZERO, L0` (canonical operand order is `pred, label`)
 
-## Executable ISA sample (OpenEdgeDSL ↔ CSV)
+## Executable ISA sample (CASTM ↔ CSV)
 
 ::: code-group
-<<< ../snippets/language/instruction-set/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/instruction-set/01-main.castm{castm} [CASTM]
 <<< ../snippets/language/instruction-set/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

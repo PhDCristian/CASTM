@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 function countInstruction(csv: string, instruction: string): number {
   return csv
@@ -18,7 +18,7 @@ target "uma-cgra-base";
 build { expansion_mode ${mode}; }
 
 function stage(src) {
-  cycle { @0,1: SADD R2, src, ZERO; }
+  bundle { @0,1: SADD R2, src, ZERO; }
 }
 
 kernel "feat18_mode_parity" {
@@ -41,7 +41,7 @@ target "uma-cgra-base";
 build { expansion_mode jump-reuse; }
 
 function stage(src) {
-  cycle { @0,1: SADD R2, src, ZERO; }
+  bundle { @0,1: SADD R2, src, ZERO; }
 }
 
 kernel "feat18_jump_reuse" {
@@ -68,7 +68,7 @@ kernel "feat18_jump_reuse" {
 target "uma-cgra-base";
 
 function stage(src) {
-  cycle { @0,1: SADD R2, src, ZERO; }
+  bundle { @0,1: SADD R2, src, ZERO; }
 }
 
 kernel "feat18_default_unroll" {
@@ -88,7 +88,7 @@ target "uma-cgra-base";
 build { expansion_mode jump-reuse; }
 
 function stage(src) {
-  cycle { @0,1: SADD R2, src, ZERO; }
+  bundle { @0,1: SADD R2, src, ZERO; }
 }
 
 kernel "feat18_default_unroll" {
@@ -111,7 +111,7 @@ target "uma-cgra-base";
 build { expansion_mode jump-reuse; }
 
 function leaf(src) {
-  cycle { @0,0: SADD R3, src, ZERO; }
+  bundle { @0,0: SADD R3, src, ZERO; }
 }
 
 function mid(src) {
@@ -145,7 +145,7 @@ target "uma-cgra-base";
 build { expansion_mode full-unroll; }
 
 function leaf(src) {
-  cycle { @0,0: SADD R3, src, ZERO; }
+  bundle { @0,0: SADD R3, src, ZERO; }
 }
 
 function wrapper(src) {

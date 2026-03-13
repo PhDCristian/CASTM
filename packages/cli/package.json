@@ -1,11 +1,11 @@
 {
-  "name": "@openedge/cli",
+  "name": "@castm/cli",
   "version": "2.0.0-alpha.1",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "openedge": "./dist/index.js"
+    "castm": "./dist/index.js"
   },
   "exports": {
     ".": {
@@ -17,6 +17,6 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@openedge/compiler-api": "2.0.0-alpha.1"
+    "@castm/compiler-api": "2.0.0-alpha.1"
   }
 }

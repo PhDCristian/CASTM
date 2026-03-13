@@ -1,14 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 describe('issues/BUG-8 route ordering', () => {
   it('keeps route lowering at its lexical position (no hoisting)', () => {
     const source = `
 target "uma-cgra-base";
 kernel "bug8_route_order" {
-  cycle { @0,0: SADD R0, ZERO, 7; }
+  bundle { @0,0: SADD R0, ZERO, 7; }
   route(@0,0 -> @0,1, payload=R0, accum=R1);
-  cycle { @0,1: SADD R2, R1, ZERO; }
+  bundle { @0,1: SADD R2, R1, ZERO; }
 }
 `;
 

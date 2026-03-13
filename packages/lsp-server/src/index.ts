@@ -1,6 +1,6 @@
-import { compile } from '@openedge/compiler-api';
-import { CompileOptions, Diagnostic } from '@openedge/compiler-ir';
-import { getInstructionSet, getPragmas, getTargetProfile } from '@openedge/lang-spec';
+import { compile } from '@castm/compiler-api';
+import { CompileOptions, Diagnostic } from '@castm/compiler-ir';
+import { getInstructionSet, getPragmas, getTargetProfile } from '@castm/lang-spec';
 
 export interface CompletionItem {
   label: string;

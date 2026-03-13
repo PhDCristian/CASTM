@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { spanAt } from '@openedge/compiler-ir';
+import { spanAt } from '@castm/compiler-ir';
 import { parseLatencyHidePragmaArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/optimizer.js';
 import { applyLatencyHide } from '../packages/compiler-api/src/passes-shared/expand-pragmas/latency-hide.js';
 

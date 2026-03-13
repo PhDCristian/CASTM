@@ -1,0 +1,7 @@
+target base;
+kernel "mem_raw" {
+  bundle {
+    @0,0: [360 + 4] = R1;
+    @0,1: R2 = [360 + 4];
+  }
+}

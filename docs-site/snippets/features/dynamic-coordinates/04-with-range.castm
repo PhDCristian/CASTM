@@ -1,0 +1,6 @@
+target base;
+kernel "dyn_coords_range" {
+  for r in range(0, 2) {
+    bundle { @r,0..3: SADD R0, R0, 1; }
+  }
+}

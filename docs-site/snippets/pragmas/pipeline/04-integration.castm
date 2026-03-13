@@ -1,0 +1,10 @@
+target base;
+function load(src) {
+  bundle { at @0,0: SADD R2, src, ZERO; }
+}
+function mix(dst) {
+  bundle { at @0,1: SADD dst, R2, ZERO; }
+}
+kernel "pipeline_min" {
+  pipeline(load(R0), mix(R3));
+}

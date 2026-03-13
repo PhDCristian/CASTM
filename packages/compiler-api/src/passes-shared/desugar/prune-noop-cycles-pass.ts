@@ -4,7 +4,7 @@ import {
   CycleAst,
   CycleStatementAst,
   InstructionAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { cloneAst } from '../ast-utils.js';
 
 const BRANCH_OPCODES = new Set([

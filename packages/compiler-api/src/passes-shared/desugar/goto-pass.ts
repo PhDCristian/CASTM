@@ -1,7 +1,7 @@
 import {
   AstProgram,
   CompilerPass
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { transformInstructions } from '../desugar-utils.js';
 
 /**

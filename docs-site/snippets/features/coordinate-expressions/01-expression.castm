@@ -1,0 +1,6 @@
+target base;
+kernel "coords_expr" {
+  for i in range(0, 4) {
+    bundle { @0,i: SADD R0, R0, 1; }
+  }
+}

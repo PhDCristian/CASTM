@@ -1,6 +1,6 @@
-# OpenEdgeDSL Canonical Language Spec (Private)
+# CASTM Canonical Language Spec (Private)
 
-OpenEdgeDSL canonical syntax is the only supported public language surface.  
+CASTM canonical syntax is the only supported public language surface.  
 Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas (`#pragma ...`) are not valid source syntax.
 
 - Grammar: `docs/language/grammar.md`
@@ -40,11 +40,11 @@ let output @100 = { 0, 0, 0, 0 };
 let matrix[2][2] = { 1, 2, 3, 4 };
 
 function helper_stage_a() {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 
 function helper_stage_b(src) {
-  cycle { @0,1: SADD R2, src, ZERO; }
+  bundle { @0,1: SADD R2, src, ZERO; }
 }
 
 kernel "canonical_example" {
@@ -69,14 +69,14 @@ kernel "canonical_example" {
 
   for i in range(0, 2) unroll(2) collapse(2) {
     for j in range(0, 2) {
-      cycle {
+      bundle {
         at @i,j: NOP;
       }
     }
   }
 
   for R0 in range(0, 2) at @0,0 runtime {
-    cycle {
+    bundle {
       at @0,0: R2 = input[R0];
       at @0,1: output[R0] = R2;
       at col 2: NOP;
@@ -87,7 +87,7 @@ kernel "canonical_example" {
 
 ## Notes
 
-- Memory sugar in `cycle {}` lowers to existing ISA (`LWI/SWI`) without changing CSV format.
+- Memory sugar in `bundle {}` lowers to existing ISA (`LWI/SWI`) without changing CSV format.
 - `std::` advanced statements lower to existing codegen passes. Unqualified forms are temporary compatibility syntax and emit migration warnings.
 - `std::accumulate(...)` provides deterministic NxM accumulation patterns (`row`, `col`, `anti_diagonal`) with optional `steps=N` propagation depth and optional `scope=all|row(i)|col(j)` sub-grid targeting, removing manual ROUT-graph boilerplate from kernels.
 - `std::mulacc_chain(...)` provides deterministic lane-local multiply-accumulate propagation (`row(i)`/`col(j)`) with explicit `width`, `mask`, `lanes`, and direction (`dir`).
@@ -110,8 +110,8 @@ kernel "canonical_example" {
   - optional overrides in `build {}`: `scheduler`, `scheduler_window`, `memory_reorder`, `prune_noop_cycles`, `grid`.
   - explicit `build` keys override `optimize` defaults.
 - `std::stash(...)` provides deterministic explicit spill/restore lowering to `SWI/LWI` for selected spatial targets (`all`, `row`, `col`, `point`).
-- Inside `cycle { ... }`, semicolon-separated placements on the same line are supported.
-- Inside `cycle { ... }`, short point form `@r,c:` is canonical and equivalent to `at @r,c:`.
+- Inside `bundle { ... }`, semicolon-separated placements on the same line are supported.
+- Inside `bundle { ... }`, short point form `@r,c:` is canonical and equivalent to `at @r,c:`.
 - Computed spatial coordinates in loops (for example `@k/4,k%4`) are valid canonical syntax.
 - Coordinate ranges are valid in canonical placements: `@r,c0..c1`, `@r0..r1,c`, and `@r0..r1,c0..c1` (inclusive expansion).
 - Row placements auto-broadcast when a single instruction is provided: `at row 1: INSTR;` expands to every column in row `1`.

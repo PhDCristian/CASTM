@@ -1,6 +1,6 @@
 # Runtime Statements
 
-OpenEdgeDSL supports typed runtime statements inside kernels for IO pointers, limits, and assertions.
+CASTM supports typed runtime statements inside kernels for IO pointers, limits, and assertions.
 
 ## Supported Statements
 
@@ -11,7 +11,7 @@ OpenEdgeDSL supports typed runtime statements inside kernels for IO pointers, li
 
 ## Executable Snippet
 
-```openedge
+```castm
 target base;
 kernel "runtime_directives" {
   io.load(0, 4, 8);
@@ -19,17 +19,17 @@ kernel "runtime_directives" {
   limit(64);
   assert(at=@0,0, reg=R0, equals=0, cycle=0);
 
-  cycle { at @0,0: SADD R0, R0, 1; }
+  bundle { at @0,0: SADD R0, R0, 1; }
 }
 ```
 
 Runtime directives are collected as compile artifacts and consumed by execution wrappers.
 
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/features/assertions/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/assertions/01-main.castm{castm} [CASTM]
 <<< ../snippets/features/assertions/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

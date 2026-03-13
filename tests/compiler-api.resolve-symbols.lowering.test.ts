@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ErrorCodes, spanAt } from '@openedge/compiler-ir';
+import { ErrorCodes, spanAt } from '@castm/compiler-ir';
 import { addOperation } from '../packages/compiler-api/src/passes-shared/lowering/resolve-symbols/operations.js';
 import { lowerCycleStatements } from '../packages/compiler-api/src/passes-shared/lowering/resolve-symbols/cycle-lowering.js';
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { ErrorCodes } from '@castm/compiler-ir';
 import {
   collectBlockAfterOpenFromEntries,
   collectBlockAfterOpenFromSource,
@@ -21,9 +21,9 @@ describe('compiler-front parser utils and for header parsing', () => {
   it('collects source/entry blocks with trailing close payload and unterminated blocks', () => {
     const sourceLines = [
       'if (x) {',
-      'cycle { @0,0: NOP; }',
+      'bundle { @0,0: NOP; }',
       '} else {',
-      'cycle { @0,1: NOP; }',
+      'bundle { @0,1: NOP; }',
       '}'
     ];
     const fromSource = collectBlockFromSource(sourceLines, 0);

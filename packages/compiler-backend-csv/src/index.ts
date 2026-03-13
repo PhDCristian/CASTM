@@ -1,4 +1,4 @@
-import { Diagnostic, EmitOptions, EmitResult, LirProgram, MirProgram } from '@openedge/compiler-ir';
+import { Diagnostic, EmitOptions, EmitResult, LirProgram, MirProgram } from '@castm/compiler-ir';
 
 type CsvProgram = MirProgram | LirProgram;
 

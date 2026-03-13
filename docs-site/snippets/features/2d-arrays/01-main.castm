@@ -1,0 +1,9 @@
+target base;
+let M[2][2] = { 10, 20, 30, 40 };
+
+kernel "array2d" {
+  bundle {
+    at @0,0: R0 = M[1][1];
+    at @0,1: M[0][1] = R0;
+  }
+}

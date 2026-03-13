@@ -1,4 +1,4 @@
-import { Diagnostic, ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
+import { Diagnostic, ErrorCodes, makeDiagnostic, spanAt } from '@castm/compiler-ir';
 import type { ForHeader } from '../control-flow.js';
 
 export function enumerateForValues(

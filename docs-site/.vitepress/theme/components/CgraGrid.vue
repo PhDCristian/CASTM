@@ -9,7 +9,7 @@ interface MemState {
   writeIdx?: number[]         // indices being written this cycle
 }
 
-interface Cycle {
+interface bundle {
   label: string
   codeLine: number
   codeEnd?: number
@@ -127,7 +127,7 @@ const codeLines: Token[][] = [
   [{ text: '  ', type: 'plain' }, { text: 'for', type: 'kw' }, { text: ' j ', type: 'plain' }, { text: 'in', type: 'kw' }, { text: ' range(', type: 'plain' }, { text: '4', type: 'num' }, { text: ') {', type: 'op' }],
   // 8: (empty)
   [],
-  // 9:     cycle {  // Load
+  // 9:     bundle {  // Load
   [{ text: '    ', type: 'plain' }, { text: 'cycle', type: 'kw' }, { text: ' {', type: 'op' }, { text: '  ', type: 'plain' }, { text: '// Load values', type: 'cmt' }],
   // 10:       @0,j: R0 = LWI input[j];
   [{ text: '      @', type: 'plain' }, { text: '0', type: 'num' }, { text: ',j: ', type: 'op' }, { text: 'R0', type: 'reg' }, { text: ' = ', type: 'op' }, { text: 'LWI', type: 'instr' }, { text: ' input[j];', type: 'plain' }],
@@ -141,7 +141,7 @@ const codeLines: Token[][] = [
   [{ text: '  ', type: 'plain' }, { text: '#pragma reduce', type: 'pragma' }, { text: '(sum, ', type: 'plain' }, { text: 'R0', type: 'reg' }, { text: ')', type: 'op' }],
   // 15: (empty)
   [],
-  // 16:   cycle {  // Store result
+  // 16:   bundle {  // Store result
   [{ text: '  ', type: 'plain' }, { text: 'cycle', type: 'kw' }, { text: ' {', type: 'op' }, { text: '  ', type: 'plain' }, { text: '// Store result', type: 'cmt' }],
   // 17:     @0,0: SWD output[0] = R0;
   [{ text: '    @', type: 'plain' }, { text: '0', type: 'num' }, { text: ',', type: 'op' }, { text: '0', type: 'num' }, { text: ': ', type: 'op' }, { text: 'SWD', type: 'instr' }, { text: ' output[', type: 'plain' }, { text: '0', type: 'num' }, { text: '] = ', type: 'op' }, { text: 'R0', type: 'reg' }, { text: ';', type: 'op' }],

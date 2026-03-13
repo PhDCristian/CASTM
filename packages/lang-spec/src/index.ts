@@ -89,7 +89,7 @@ export function isRegister(register: string, profileId: string): boolean {
 
 export function generateInstructionReferenceMarkdown(): string {
   const lines: string[] = [];
-  lines.push('# OpenEdge Instruction Reference');
+  lines.push('# CASTM Instruction Reference');
   lines.push('');
   lines.push('| Opcode | Category | Operands | Description |');
   lines.push('|---|---|---|---|');

@@ -2,7 +2,7 @@ import {
   AstProgram,
   Diagnostic,
   MemoryRegionInfo
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { collectDirectiveArtifacts } from './directives.js';
 import {
   collectArrayAndLabelSymbols,

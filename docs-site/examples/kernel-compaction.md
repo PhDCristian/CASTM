@@ -18,12 +18,12 @@ Use this page when your kernel is functionally correct but too verbose and you w
 - CSV is generated automatically from the exact snippet shown.
 - Default interpretation is `4x4` torus.
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ## Case A — Compact extraction via `std::extract_bytes`
 
 ::: code-group
-<<< ../snippets/examples/kernel-compaction/01-std-extract.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/kernel-compaction/01-std-extract.castm{castm} [CASTM]
 <<< ../snippets/examples/kernel-compaction/01-std-extract.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -32,7 +32,7 @@ Full CSV: `docs-site/snippets/examples/kernel-compaction/01-std-extract.csv`.
 ## Case B — Equivalent explicit form with `for` inside `cycle`
 
 ::: code-group
-<<< ../snippets/examples/kernel-compaction/02-explicit-for.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/kernel-compaction/02-explicit-for.castm{castm} [CASTM]
 <<< ../snippets/examples/kernel-compaction/02-explicit-for.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -41,7 +41,7 @@ Full CSV: `docs-site/snippets/examples/kernel-compaction/02-explicit-for.csv`.
 ## Case C — One-line full-grid load pattern
 
 ::: code-group
-<<< ../snippets/examples/kernel-compaction/03-load-all.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/kernel-compaction/03-load-all.castm{castm} [CASTM]
 <<< ../snippets/examples/kernel-compaction/03-load-all.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -50,7 +50,7 @@ Full CSV: `docs-site/snippets/examples/kernel-compaction/03-load-all.csv`.
 ## Case D — Compact preload with row ranges
 
 ::: code-group
-<<< ../snippets/examples/kernel-compaction/04-qhat-compact.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/kernel-compaction/04-qhat-compact.castm{castm} [CASTM]
 <<< ../snippets/examples/kernel-compaction/04-qhat-compact.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -72,8 +72,8 @@ Full CSV: `docs-site/snippets/examples/kernel-compaction/04-qhat-compact.csv`.
 
 Current optimized kernels in `UMA-CGRA-Simulator`:
 
-- `examples/dsl_port/sbox_k7_v10_compact.edsl`
-- `examples/dsl_port/sbox_k7_v10_nocompact.edsl`
+- `examples/dsl_port/sbox_k7_v10_compact.castm`
+- `examples/dsl_port/sbox_k7_v10_nocompact.castm`
 
 Measured cycle budget (2026-02-13):
 
@@ -84,8 +84,8 @@ Measured cycle budget (2026-02-13):
 Reproduce:
 
 ```bash
-npx tsx scripts/sbox/stats.ts --file ./examples/dsl_port/sbox_k7_v10_compact.edsl --scheduler safe
-npx tsx scripts/sbox/stats.ts --file ./examples/dsl_port/sbox_k7_v10_nocompact.edsl --scheduler safe
+npx tsx scripts/sbox/stats.ts --file ./examples/dsl_port/sbox_k7_v10_compact.castm --scheduler safe
+npx tsx scripts/sbox/stats.ts --file ./examples/dsl_port/sbox_k7_v10_nocompact.castm --scheduler safe
 ```
 
 ## Related features

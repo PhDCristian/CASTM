@@ -5,7 +5,7 @@ import {
   ErrorCodes,
   KernelAst,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { resolveOptionalElseBlockInFunction } from '../packages/compiler-front/src/structured-core/lowering/function-expand-if/else-resolution.js';
 import { tryExpandFunctionCall } from '../packages/compiler-front/src/structured-core/lowering/function-expand-call.js';
 import { buildConstantMap } from '../packages/compiler-front/src/structured-core/lowering/top-level-scope/constants.js';
@@ -84,7 +84,7 @@ describe('compiler-front branch holes', () => {
     const fn = {
       name: 'mix',
       params: ['dst', 'src'],
-      body: [entry(10, 'cycle { @0,0: dst = src + IMM(1); }')],
+      body: [entry(10, 'bundle { @0,0: dst = src + IMM(1); }')],
       span
     };
     const functions = new Map([[fn.name, fn]]);
@@ -227,7 +227,7 @@ describe('compiler-front branch holes', () => {
   it('buildRuntimeLoopPlan defaults control position when header has no explicit control', () => {
     const plan = buildRuntimeLoopPlan({
       header: { variable: 'R0', start: 0, end: 2, step: 1, runtime: true },
-      loopBody: [entry(10, 'cycle { @0,1: SADD R1, R0, IMM(1); }')],
+      loopBody: [entry(10, 'bundle { @0,1: SADD R1, R0, IMM(1); }')],
       lineNo: 10,
       lineLength: 40,
       kernel: makeKernel(),
@@ -299,15 +299,15 @@ describe('compiler-front branch holes', () => {
     const diagnostics: Diagnostic[] = [];
     const entries = [
       entry(1, 'for i in range(0, 2) {'),
-      entry(2, 'cycle { @0,0: NOP; }'),
+      entry(2, 'bundle { @0,0: NOP; }'),
       entry(3, '}'),
       entry(4, 'if (R0 == IMM(0)) at @0,0 {'),
-      entry(5, 'cycle { @0,0: NOP; }'),
+      entry(5, 'bundle { @0,0: NOP; }'),
       entry(6, '} else {'),
-      entry(7, 'cycle { @0,1: NOP; }'),
+      entry(7, 'bundle { @0,1: NOP; }'),
       entry(8, '}'),
       entry(9, 'while (R0 < IMM(4)) at @0,0 {'),
-      entry(10, 'cycle { @0,0: NOP; }'),
+      entry(10, 'bundle { @0,0: NOP; }'),
       entry(11, '}')
     ];
 
@@ -358,13 +358,13 @@ describe('compiler-front branch holes', () => {
     const parseNested = () => [];
     const entries = [
       entry(1, 'for i in range(0, 2) chunk(2) {'),
-      entry(2, 'cycle { @0,0: NOP; }'),
+      entry(2, 'bundle { @0,0: NOP; }'),
       entry(3, '}'),
       entry(4, 'if (R0 == IMM(0)) {'),
-      entry(5, 'cycle { @0,0: NOP; }'),
+      entry(5, 'bundle { @0,0: NOP; }'),
       entry(6, '}'),
       entry(7, 'while (R0 < IMM(4)) at @x,0 {'),
-      entry(8, 'cycle { @0,0: NOP; }'),
+      entry(8, 'bundle { @0,0: NOP; }'),
       entry(9, '}'),
       entry(10, 'while (R0 < IMM(4)) at @0,0')
     ];
@@ -387,7 +387,7 @@ describe('compiler-front branch holes', () => {
     expect(malformedWhileNoBrace.stop).toBe(false);
 
     const unterminatedMalformedIf = tryParseControlStatement(
-      [entry(1, 'if (R0 == IMM(0)) {'), entry(2, 'cycle { @0,0: NOP; }')],
+      [entry(1, 'if (R0 == IMM(0)) {'), entry(2, 'bundle { @0,0: NOP; }')],
       0,
       'if (R0 == IMM(0)) {',
       1,
@@ -440,7 +440,7 @@ describe('compiler-front branch holes', () => {
     const noKernel = parseStructuredProgramFromSource(`
 target "uma-cgra-base";
 function f(a) {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `);
     expect(noKernel.program.kernel).toBeNull();
@@ -449,22 +449,22 @@ function f(a) {
     const invalidTopLevel = parseStructuredProgramFromSource(`
 target "uma-cgra-base";
 oops;
-kernel "k" { cycle { @0,0: NOP; } }
+kernel "k" { bundle { @0,0: NOP; } }
 `);
     expect(invalidTopLevel.diagnostics.some((d) => d.message.includes('Unexpected top-level statement'))).toBe(true);
 
     const unterminatedFunction = parseStructuredProgramFromSource(`
 target "uma-cgra-base";
 function f(a) {
-  cycle { @0,0: NOP; }
-kernel "k" { cycle { @0,0: NOP; } }
+  bundle { @0,0: NOP; }
+kernel "k" { bundle { @0,0: NOP; } }
 `);
     expect(unterminatedFunction.diagnostics.some((d) => d.message.includes('Unterminated function'))).toBe(true);
 
     const unterminatedKernel = parseStructuredProgramFromSource(`
 target "uma-cgra-base";
 kernel "k" {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 `);
     expect(unterminatedKernel.diagnostics.some((d) => d.message.includes('Unterminated kernel'))).toBe(true);
   });

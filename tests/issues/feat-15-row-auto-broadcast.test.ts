@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 function csvRows(csv: string): string[] {
   return csv.trim().split('\n').slice(1);
@@ -11,7 +11,7 @@ describe('issues/FEAT-15 row auto-broadcast', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat15_row" {
-  cycle {
+  bundle {
     at row 1: SADD R3, ZERO, ZERO;
   }
 }
@@ -37,7 +37,7 @@ build {
   grid 3x6 mesh;
 }
 kernel "feat15_row_nxm" {
-  cycle {
+  bundle {
     at row 0: NOP;
   }
 }
@@ -56,7 +56,7 @@ kernel "feat15_row_nxm" {
     const source = `
 target "uma-cgra-base";
 kernel "feat15_row_segments" {
-  cycle {
+  bundle {
     at row 0: SADD R1, ZERO, ZERO | SMUL R2, R0, R1;
   }
 }
@@ -76,7 +76,7 @@ kernel "feat15_row_segments" {
     const source = `
 target "uma-cgra-base";
 kernel "feat15_legacy_row" {
-  cycle {
+  bundle {
     row 0: NOP;
   }
 }

@@ -5,7 +5,7 @@ import {
   KernelAst,
   makeDiagnostic,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import type { ForHeader } from './control-flow.js';
 import {
   collectBlockFromEntries,

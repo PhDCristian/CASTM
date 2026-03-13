@@ -6,7 +6,7 @@ import {
   InstructionAst,
   SourceSpan,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   createInstruction,
   createMultiAtCycle

@@ -4,7 +4,7 @@ import {
   ErrorCodes,
   makeDiagnostic,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { parseBroadcastPragmaArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/broadcast.js';
 import { buildReduceCycles } from '../packages/compiler-api/src/passes-shared/collective-reduce.js';
 import { buildRouteTransferCycles } from '../packages/compiler-api/src/passes-shared/route-transfer.js';
@@ -149,10 +149,10 @@ describe('branch coverage round 3', () => {
 
     const ifEntries = [
       entry(1, 'if (R0 == IMM(0)) at @x,y {'),
-      entry(2, 'cycle { @0,0: NOP; }'),
+      entry(2, 'bundle { @0,0: NOP; }'),
       entry(3, '}'),
       entry(4, 'else {'),
-      entry(5, 'cycle { @0,1: NOP; }'),
+      entry(5, 'bundle { @0,1: NOP; }'),
       entry(6, '}')
     ];
     const ifResult = tryParseControlStatement(ifEntries, 0, ifEntries[0].cleanLine, 1, { value: 0 }, diagnostics, parseNested);
@@ -196,9 +196,9 @@ describe('branch coverage round 3', () => {
     const ifElseBroken = tryExpandIfStatement({
       body: [
         entry(1, 'if (R0 == IMM(0)) at @0,0 {'),
-        entry(2, 'cycle { @0,0: NOP; }'),
+        entry(2, 'bundle { @0,0: NOP; }'),
         entry(3, '} else {'),
-        entry(4, 'cycle { @0,1: NOP; }')
+        entry(4, 'bundle { @0,1: NOP; }')
       ],
       index: 0,
       entry: entry(1, 'if (R0 == IMM(0)) at @0,0 {'),

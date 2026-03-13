@@ -1,5 +1,5 @@
 {
-  "name": "@openedge/compiler-backend-csv",
+  "name": "@castm/compiler-backend-csv",
   "version": "2.0.0-alpha.1",
   "type": "module",
   "main": "src/index.ts",
@@ -14,6 +14,6 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@openedge/compiler-ir": "2.0.0-alpha.1"
+    "@castm/compiler-ir": "2.0.0-alpha.1"
   }
 }

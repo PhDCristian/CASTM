@@ -1,6 +1,6 @@
 # Labeled Compound Statements — Implementation Plan
 
-Enable `label: std::extract_bytes(...)`, `label: std::route(...)`, and `label: myFn(...)` syntax in OpenEdgeDSL, so that compound statements — not just `cycle` blocks — can be jump targets.
+Enable `label: std::extract_bytes(...)`, `label: std::route(...)`, and `label: myFn(...)` syntax in CASTM, so that compound statements — not just `cycle` blocks — can be jump targets.
 
 ## Current State
 
@@ -13,7 +13,7 @@ Enable `label: std::extract_bytes(...)`, `label: std::route(...)`, and `label: m
 
 ### Root Cause
 
-- `parseLabeledCycleLine()` in `cycle-inline.ts` only matches `label: cycle {`
+- `parseLabeledCycleLine()` in `cycle-inline.ts` only matches `label: bundle {`
 - `parseStandardAdvancedCall()` in `advanced.ts` requires line to start with `std::` or a known name
 - `consumeFunctionPreludeStatement()` in `function-expand-prelude.ts` pushes pragmas directly and fails on labeled lines
 
@@ -97,7 +97,7 @@ Teach `parseStructuredStatements()` to strip a label prefix before matching adva
 | T2-V1 | Parse `subrC: std::extract_bytes(src=R0, dest=R1, axis=col, byteWidth=8, mask=255);` | `{ kind: 'advanced', name: 'extract_bytes', label: 'subrC' }` |
 | T2-V2 | Parse `myLabel: myFn(R0, R1);` | `{ kind: 'fn-call', name: 'myFn', label: 'myLabel' }` |
 | T2-V3 | Unlabeled `std::route(...)` still works | `{ kind: 'advanced', label: undefined }` |
-| T2-V4 | `mainEntry: cycle { ... }` still parsed as labeled cycle | No regression |
+| T2-V4 | `mainEntry: bundle { ... }` still parsed as labeled cycle | No regression |
 
 ```bash
 npx vitest run tests/compiler-front.structured.test.ts
@@ -203,7 +203,7 @@ npx vitest run tests/compiler-front.structured.test.ts
   - Examples:
     ```dsl
     subrC: std::extract_bytes(src=R0, dest=R1, axis=col, byteWidth=8, mask=255);
-    mainEntry: cycle { at all: LWI R0, 0; }
+    mainEntry: bundle { at all: LWI R0, 0; }
     loadPhase: loadValues(R0, 720);
     ```
   - Semantics: label attaches to the first cycle emitted by the compound statement
@@ -227,13 +227,13 @@ End-to-end validation with a real kernel using labeled compound statements.
 ### Sub-tasks
 
 - [x] **5.1** Create integration test using labeled compound statements:
-  - Created `examples/integration/labeled-compound-test.dsl` with all 3 labeled forms: labeled cycle, labeled `std::route(...)`, labeled function call.
+  - Created `examples/integration/labeled-compound-test.castm` with all 3 labeled forms: labeled cycle, labeled `std::route(...)`, labeled function call.
   - Added E2E vitest test (T5-V1) in `compiler-front.structured.test.ts` using `compile()` from `compiler-api` — verifies `mainEntry`, `routePhase`, and `loadPhase` labels appear on output cycles.
 
   > **Note**: The original v15 file uses labeled **cycles** only. Rather than rewriting the complex v15 kernel, a purpose-built test kernel exercises the new labeled-advanced-stmt and labeled-fn-call features.
 
 - [x] **5.2** Compile: `npx tsx scripts/sbox/stats.ts --file ./examples/dsl_port/sbox_k7_v15_jump.edsl`
-  - Ran in `UMA-CGRA-Simulator/` (not `OpenEdgeDSL/`). Result: 69 CompCyc / 210 ExecCyc / 364 LatCC / OK=YES (3 schedulers).
+  - Ran in `UMA-CGRA-Simulator/` (not `CASTM/`). Result: 69 CompCyc / 210 ExecCyc / 364 LatCC / OK=YES (3 schedulers).
   - Validates no regression on existing labeled-cycle code.
 
 - [x] **5.3** Run parity: `npx tsx scripts/sbox/parity.ts`
@@ -271,7 +271,7 @@ graph TD
 | `packages/compiler-front/src/structured-core/lowering/function-expand-call.ts` | compiler-front | Strip label before fn-call parse + propagate to first cycle |
 | `packages/compiler-api/src/passes-shared/expand-pragmas-pass.ts` | compiler-api | Propagate label to first generated cycle |
 | `tests/compiler-front.structured.test.ts` | tests | 7 new test cases (T2-V1..V4, T3-V1..V2, T5-V1 E2E) |
-| `examples/integration/labeled-compound-test.dsl` | examples | **[NEW]** Integration test EDSL file |
+| `examples/integration/labeled-compound-test.castm` | examples | **[NEW]** Integration test EDSL file |
 | `docs/language/grammar.md` | docs | Grammar update (`labeled_stmt`, `label`) |
 | `docs-site/language/grammar.md` | docs-site | Grammar update (`labeled_stmt`, `label`) |
 | `docs-site/features/labels.md` | docs-site | **[NEW]** Feature page |

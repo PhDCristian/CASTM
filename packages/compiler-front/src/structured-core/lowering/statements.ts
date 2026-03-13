@@ -1,4 +1,4 @@
-import { CycleStatementAst, InstructionAst, spanAt } from '@openedge/compiler-ir';
+import { CycleStatementAst, InstructionAst, spanAt } from '@castm/compiler-ir';
 import { parseInstruction } from './instructions.js';
 import { evaluateCoordinateExpression, evaluateNumericExpression } from '../parser-utils/numbers.js';
 import { splitTopLevel } from '../parser-utils/strings.js';

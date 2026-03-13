@@ -38,8 +38,8 @@ When compacted:
 
 ```text
 std::latency_hide(window=1, mode=conservative);
-cycle { at row 1: SMUL R2, R0, R1; }
-cycle { @0,3: LWI R1, 4; }
+bundle { at row 1: SMUL R2, R0, R1; }
+bundle { @0,3: LWI R1, 4; }
 ```
 
 The second cycle is compacted into the first one when hazards are absent.
@@ -50,8 +50,8 @@ The second cycle is compacted into the first one when hazards are absent.
 target base;
 kernel "latency_hide_doc" {
   std::latency_hide(window=1, mode=conservative);
-  cycle { at row 1: SMUL R2, R0, R1; }
-  cycle { @0,3: LWI R1, 4; }
+  bundle { at row 1: SMUL R2, R0, R1; }
+  bundle { @0,3: LWI R1, 4; }
 }
 ```
 

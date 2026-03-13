@@ -1,4 +1,4 @@
-import { Diagnostic, ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
+import { Diagnostic, ErrorCodes, makeDiagnostic, spanAt } from '@castm/compiler-ir';
 import { evaluateNumericExpression } from '../parser-utils/numbers.js';
 import { ParsedCondition, ParsedControlHeader } from './control-flow-types.js';
 

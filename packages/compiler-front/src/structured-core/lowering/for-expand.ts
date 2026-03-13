@@ -1,7 +1,7 @@
 import {
   Diagnostic,
   KernelAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import type { ForHeader } from './control-flow.js';
 import type { SourceLineEntry } from '../parser-utils/blocks.js';
 import {

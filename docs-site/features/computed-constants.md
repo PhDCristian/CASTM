@@ -11,13 +11,13 @@ Integer expressions are supported in canonical source where numeric expressions 
 
 ## Executable Snippet
 
-```openedge
+```castm
 target base;
 let BASE = 360;
 
 kernel "computed" {
   for i in range(0, 4) {
-    cycle {
+    bundle {
       at @0,i: [BASE + i*4] = R1;
       at @1,i: R2 = [BASE + i*4];
     }
@@ -28,10 +28,10 @@ kernel "computed" {
 Unresolved expressions that cannot be legally lowered produce diagnostics.
 
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/features/computed-constants/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/computed-constants/01-main.castm{castm} [CASTM]
 <<< ../snippets/features/computed-constants/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

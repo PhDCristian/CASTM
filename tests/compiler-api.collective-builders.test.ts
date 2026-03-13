@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ErrorCodes, spanAt } from '@openedge/compiler-ir';
+import { ErrorCodes, spanAt } from '@castm/compiler-ir';
 import {
   buildAccumulateCycles,
   buildAllreduceCycles,

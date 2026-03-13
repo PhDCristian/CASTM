@@ -4,7 +4,7 @@ import {
   CompileResult,
   Diagnostic,
   MirProgram
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   collectRuntimeArtifacts,
   createEmptyRuntimeArtifacts

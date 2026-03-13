@@ -3,7 +3,7 @@ import {
   AstProgram,
   ErrorCodes,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { parseNumericLiteral, parseNumericList } from '../packages/compiler-api/src/compiler-driver/numbers.js';
 import { collectDataRegions } from '../packages/compiler-api/src/compiler-driver/data-regions/collect.js';
 import {
@@ -485,7 +485,7 @@ describe('branch coverage round 9 - compiler front helpers', () => {
 
   it('covers statement parser stop branches and matcher guards', () => {
     const diagnostics: any[] = [];
-    const entries = [{ lineNo: 1, rawLine: 'cycle {', cleanLine: 'cycle {' }];
+    const entries = [{ lineNo: 1, rawLine: 'bundle {', cleanLine: 'bundle {' }];
     const out = parseStructuredStatements(entries as any, { value: 0 }, diagnostics);
     expect(out.length).toBe(1);
 
@@ -552,7 +552,7 @@ describe('branch coverage round 9 - compiler front helpers', () => {
     expect(evaluateCoordinateExpression('1/4', new Map(), new Map())).toBe(0);
     expect(evaluateCoordinateExpression('1/0', new Map(), new Map())).toBeNull();
 
-    const cycleResult = tryParseCycleStatement([{ lineNo: 1, rawLine: 'cycle {', cleanLine: 'cycle {' }] as any, 0, 'cycle {', 1, { value: 0 }, []);
+    const cycleResult = tryParseCycleStatement([{ lineNo: 1, rawLine: 'bundle {', cleanLine: 'bundle {' }] as any, 0, 'bundle {', 1, { value: 0 }, []);
     expect(cycleResult.stop).toBe(true);
   });
 

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 describe('FEAT-19 scheduler modes', () => {
   const baseKernel = `
 target "uma-cgra-base";
 kernel "scheduler_modes" {
-  cycle { at @0,0: SADD R1, R0, 1; }
-  cycle { at @0,1: SADD R2, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
 }
 `;
 
@@ -15,8 +15,8 @@ kernel "scheduler_modes" {
 target "uma-cgra-base";
 build { scheduler aggressive; }
 kernel "scheduler_modes" {
-  cycle { at @0,0: SADD R1, R0, 1; }
-  cycle { at @0,1: SADD R2, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
 }
 `;
     const first = compile(source);
@@ -35,8 +35,8 @@ kernel "scheduler_modes" {
 target "uma-cgra-base";
 build { scheduler balanced; }
 kernel "scheduler_modes" {
-  cycle { at @0,0: SADD R1, R0, 1; }
-  cycle { at @0,1: SADD R2, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
 }
 `);
 
@@ -54,24 +54,24 @@ kernel "scheduler_modes" {
 target "uma-cgra-base";
 build { scheduler safe; }
 kernel "scheduler_modes" {
-  cycle { at @0,0: SADD R1, R0, 1; }
-  cycle { at @0,1: SADD R2, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
 }
 `);
     const balanced = compile(`
 target "uma-cgra-base";
 build { scheduler balanced; }
 kernel "scheduler_modes" {
-  cycle { at @0,0: SADD R1, R0, 1; }
-  cycle { at @0,1: SADD R2, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
 }
 `);
     const aggressive = compile(`
 target "uma-cgra-base";
 build { scheduler aggressive; }
 kernel "scheduler_modes" {
-  cycle { at @0,0: SADD R1, R0, 1; }
-  cycle { at @0,1: SADD R2, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
 }
 `);
 

@@ -3,7 +3,7 @@ import {
   ErrorCodes,
   SourceSpan,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { isNumericLiteralToken } from '../../pragma-args-utils.js';
 
 /**
@@ -50,7 +50,7 @@ export function resolveLabelOperand(
         'error',
         span,
         `Unknown branch label '${token}'.`,
-        'Declare the label with syntax: labelName: cycle { ... }'
+        'Declare the label with syntax: labelName: bundle { ... }'
       ));
       return [...operands];
     }

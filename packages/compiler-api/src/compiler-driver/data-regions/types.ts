@@ -1,4 +1,4 @@
-import { MemoryRegionInfo } from '@openedge/compiler-ir';
+import { MemoryRegionInfo } from '@castm/compiler-ir';
 
 export interface DataSymbolInfo {
   start: number;

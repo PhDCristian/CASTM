@@ -5,7 +5,7 @@ outline: deep
 
 # Getting Started
 
-OpenEdgeDSL uses canonical syntax and compiles deterministically to CSV for OpenEdge CGRA flows.
+CASTM uses canonical syntax and compiles deterministically to CSV for CGRA flows.
 
 ## Prerequisites
 
@@ -15,47 +15,47 @@ OpenEdgeDSL uses canonical syntax and compiles deterministically to CSV for Open
 ## Install and Build
 
 ```bash
-git clone https://github.com/PhDCristian/OpenEdgeDSL.git
-cd OpenEdgeDSL
+git clone https://github.com/PhDCristian/CASTM.git
+cd CASTM
 pnpm install
 pnpm -r build
 ```
 
 ## First Kernel
 
-Create `hello.dsl`:
+Create `hello.castm`:
 
-```openedge
+```castm
 target base;
 let input = { 10, 20 };
 let output @100 = { 0 };
 
 kernel "hello" {
-  cycle {
+  bundle {
     at @0,0: R0 = input[0];
     at @0,1: R1 = input[1];
   }
-  cycle {
+  bundle {
     at @0,0: R2 = R0 + R1;
     at @0,1: output[0] = R2;
   }
 }
 ```
 
-`target base;` is the canonical user-facing alias for the default OpenEdge CGRA profile.
+`target base;` is the canonical user-facing alias for the default CGRA profile.
 You do not need to remember internal profile IDs.
 
 ## Compile
 
 ```bash
-openedge emit hello.dsl -o hello.csv
+castm emit hello.castm -o hello.csv
 ```
 
 ## Validate and Analyze
 
 ```bash
-openedge check hello.dsl
-openedge analyze hello.dsl
+castm check hello.castm
+castm analyze hello.castm
 ```
 
 ## Authoring Rules
@@ -72,10 +72,10 @@ openedge analyze hello.dsl
 - [Examples](/examples/basic)
 
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/guide/getting-started/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/guide/getting-started/01-main.castm{castm} [CASTM]
 <<< ../snippets/guide/getting-started/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

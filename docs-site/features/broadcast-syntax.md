@@ -17,7 +17,7 @@ Canonical spatial scopes support concise full-row, full-column, and full-grid pl
 ## Case A — Row auto-broadcast
 
 ::: code-group
-<<< ../snippets/features/broadcast-syntax/01-row-single.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/broadcast-syntax/01-row-single.castm{castm} [CASTM]
 <<< ../snippets/features/broadcast-syntax/01-row-single.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -26,7 +26,7 @@ Full CSV: `docs-site/snippets/features/broadcast-syntax/01-row-single.csv`.
 ## Case B — Row segmented payload with `|`
 
 ::: code-group
-<<< ../snippets/features/broadcast-syntax/02-row-segment.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/broadcast-syntax/02-row-segment.castm{castm} [CASTM]
 <<< ../snippets/features/broadcast-syntax/02-row-segment.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -35,7 +35,7 @@ Full CSV: `docs-site/snippets/features/broadcast-syntax/02-row-segment.csv`.
 ## Case C — Column expansion
 
 ::: code-group
-<<< ../snippets/features/broadcast-syntax/03-col-single.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/broadcast-syntax/03-col-single.castm{castm} [CASTM]
 <<< ../snippets/features/broadcast-syntax/03-col-single.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -44,7 +44,7 @@ Full CSV: `docs-site/snippets/features/broadcast-syntax/03-col-single.csv`.
 ## Case D — Full-grid expansion
 
 ::: code-group
-<<< ../snippets/features/broadcast-syntax/04-all-single.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/broadcast-syntax/04-all-single.castm{castm} [CASTM]
 <<< ../snippets/features/broadcast-syntax/04-all-single.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -53,7 +53,7 @@ Full CSV: `docs-site/snippets/features/broadcast-syntax/04-all-single.csv`.
 ## Case E — Short-point multi-placement in one line
 
 ::: code-group
-<<< ../snippets/features/broadcast-syntax/05-short-point-multi.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/broadcast-syntax/05-short-point-multi.castm{castm} [CASTM]
 <<< ../snippets/features/broadcast-syntax/05-short-point-multi.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -61,7 +61,7 @@ Full CSV: `docs-site/snippets/features/broadcast-syntax/05-short-point-multi.csv
 
 ## Case F — Invalid row namespace without `at`
 
-<<< ../snippets/features/broadcast-syntax/06-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+<<< ../snippets/features/broadcast-syntax/06-invalid.castm{castm-fail} [CASTM fail]
 
 Expected diagnostic: `E2002`.
 

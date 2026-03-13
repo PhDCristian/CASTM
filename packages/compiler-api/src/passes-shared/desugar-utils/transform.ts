@@ -5,7 +5,7 @@ import {
   InstructionAst,
   SourceSpan,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { cloneAst } from '../ast-utils.js';
 import { isIdentifier } from '../pragma-args-utils.js';
 

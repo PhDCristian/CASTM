@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 function csvRows(csv: string): string[] {
   return csv.trim().split('\n').slice(1);

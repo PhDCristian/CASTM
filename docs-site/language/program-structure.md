@@ -1,6 +1,6 @@
 # Program Structure
 
-A canonical OpenEdgeDSL source has five top-level zones.
+A canonical CASTM source has five top-level zones.
 
 1. `target` declaration (required)
 2. `build` block (optional)
@@ -12,7 +12,7 @@ A canonical OpenEdgeDSL source has five top-level zones.
 
 ## Canonical Skeleton
 
-```openedge
+```castm
 target base;
 
 build {
@@ -26,12 +26,12 @@ let input = { 10, 20, 30, 40 };
 let matrix[2][2] = { 1, 2, 3, 4 };
 
 function stage(src) {
-  cycle { at @0,0: SADD R2, src, ZERO; }
+  bundle { at @0,0: SADD R2, src, ZERO; }
 }
 
 kernel "structure" {
   stage(R0);
-  cycle { at @0,1: NOP; }
+  bundle { at @0,1: NOP; }
 }
 ```
 
@@ -41,7 +41,7 @@ Inside `kernel { ... }`, canonical items are:
 
 - `config(...)`
 - runtime statements (`io.load(...)`, `io.store(...)`, `limit(...)`, `assert(...)`)
-- `cycle { ... }`
+- `bundle { ... }`
 - `if/else`, `while`, `for`
 - advanced statements (`std::route(...)`, `std::scan(...)`, `std::latency_hide(...)`, etc.)
 - function calls and `pipeline(...)`
@@ -52,10 +52,10 @@ Inside `kernel { ... }`, canonical items are:
 - compilation stages expose structured artifacts for debugging and tooling.
 
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/language/program-structure/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/program-structure/01-main.castm{castm} [CASTM]
 <<< ../snippets/language/program-structure/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

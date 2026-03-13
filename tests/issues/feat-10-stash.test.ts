@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 function csvRows(csv: string): string[] {
   return csv.trim().split('\n').slice(1);

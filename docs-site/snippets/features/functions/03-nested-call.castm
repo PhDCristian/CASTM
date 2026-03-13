@@ -1,0 +1,11 @@
+target base;
+function stage1(src) {
+  bundle { @0,0: R2 = src + 1; }
+}
+function stage2(dst) {
+  bundle { @0,1: dst = R2 * 2; }
+}
+kernel "fn_nested" {
+  stage1(R0);
+  stage2(R3);
+}

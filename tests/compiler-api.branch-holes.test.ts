@@ -6,7 +6,7 @@ import {
   HirProgram,
   makeDiagnostic,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { analyze } from '../packages/compiler-api/src/compiler-driver/analyze-driver.js';
 import { createValidateGridPass } from '../packages/compiler-api/src/passes-shared/lowering/validate-grid.js';
 import { createResolveSymbolsPass } from '../packages/compiler-api/src/passes-shared/lowering/resolve-symbols/pass.js';

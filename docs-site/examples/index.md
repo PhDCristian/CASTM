@@ -15,14 +15,14 @@ Use this as your starting point before opening individual examples.
 ## Target and assumptions
 
 - Every runnable snippet in examples uses `target base;`.
-- CSV is generated from the same OpenEdgeDSL snippet shown in each page.
+- CSV is generated from the same CASTM snippet shown in each page.
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ## Quick preview
 
 ::: code-group
-<<< ../snippets/examples/index/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/index/01-main.castm{castm} [CASTM]
 <<< ../snippets/examples/index/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

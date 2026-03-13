@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { spanAt } from '@openedge/compiler-ir';
+import { spanAt } from '@castm/compiler-ir';
 import { expandStaticForLoop } from '../packages/compiler-front/src/structured-core/lowering/for-expand-static.js';
 
 function entry(lineNo: number, cleanLine: string) {
@@ -42,7 +42,7 @@ describe('compiler-front for-expand-static branch coverage', () => {
         control: { row: 0, col: 0 },
         collapseLevels: 2
       },
-      loopBody: [entry(2, 'cycle { @0,0: NOP; }')],
+      loopBody: [entry(2, 'bundle { @0,0: NOP; }')],
       lineNo: 1,
       lineLength: 40,
       kernel,
@@ -104,7 +104,7 @@ describe('compiler-front for-expand-static branch coverage', () => {
       },
       loopBody: [
         entry(10, 'for R0 in range(0, 2) at @0,0 runtime {'),
-        entry(11, 'cycle { @0,0: NOP; }'),
+        entry(11, 'bundle { @0,0: NOP; }'),
         entry(12, '}')
       ],
       lineNo: 9,
@@ -138,7 +138,7 @@ describe('compiler-front for-expand-static branch coverage', () => {
       },
       loopBody: [
         entry(20, 'for j in range(0, 2) {'),
-        entry(21, 'cycle { @0,0: NOP; }')
+        entry(21, 'bundle { @0,0: NOP; }')
       ],
       lineNo: 19,
       lineLength: 32,
@@ -171,10 +171,10 @@ describe('compiler-front for-expand-static branch coverage', () => {
       },
       loopBody: [
         entry(30, 'for j in range(0, 2) {'),
-        entry(31, 'cycle { @0,0: NOP; }'),
+        entry(31, 'bundle { @0,0: NOP; }'),
         entry(32, '}'),
         entry(33, ''),
-        entry(34, 'cycle { @0,1: NOP; }')
+        entry(34, 'bundle { @0,1: NOP; }')
       ],
       lineNo: 29,
       lineLength: 36,
@@ -207,7 +207,7 @@ describe('compiler-front for-expand-static branch coverage', () => {
       },
       loopBody: [
         entry(40, 'for j in range(0, 1) {'),
-        entry(41, 'cycle { @0,0: NOP; }'),
+        entry(41, 'bundle { @0,0: NOP; }'),
         entry(42, '}')
       ],
       lineNo: 39,

@@ -16,34 +16,34 @@ Use this when a loop is compile-time resolvable and you want predictable expansi
 - `unroll(k)` and `collapse(n)` apply to static loops.
 - CSV is generated from the executable snippet.
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ## 1) Static baseline loop
 
 ::: code-group
-<<< ../snippets/examples/loop-strategies/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/loop-strategies/01-main.castm{castm} [CASTM]
 <<< ../snippets/examples/loop-strategies/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
 ## 2) Static `unroll(2)`
 
-```openedge
+```castm
 target base;
 kernel "ex_loop_unroll" {
   for i in range(0, 4) unroll(2) {
-    cycle { at @0,i: R2 = R0 + 1; }
+    bundle { at @0,i: R2 = R0 + 1; }
   }
 }
 ```
 
 ## 3) Static `collapse(2)` row-major
 
-```openedge
+```castm
 target base;
 kernel "ex_loop_collapse" {
   for r in range(0, 2) collapse(2) {
     for c in range(0, 2) {
-      cycle { at @r,c: R3 = R1 + R2; }
+      bundle { at @r,c: R3 = R1 + R2; }
     }
   }
 }
@@ -51,12 +51,12 @@ kernel "ex_loop_collapse" {
 
 ## 4) Static combined `unroll + collapse`
 
-```openedge
+```castm
 target base;
 kernel "ex_loop_combo" {
   for r in range(0, 2) unroll(2) collapse(2) {
     for c in range(0, 2) {
-      cycle { at @r,c: R3 = R1 + R2; }
+      bundle { at @r,c: R3 = R1 + R2; }
     }
   }
 }
@@ -64,23 +64,23 @@ kernel "ex_loop_combo" {
 
 ## 5) Runtime loop with explicit control PE (no static modifiers)
 
-```openedge
+```castm
 target base;
 kernel "ex_loop_runtime" {
   for R0 in range(0, 3) at @0,0 runtime {
-    cycle { at @0,1: R1 = R0 + 1; }
+    bundle { at @0,1: R1 = R0 + 1; }
   }
 }
 ```
 
 ## 6) Runtime invalid with static modifiers
 
-```openedge-fail
+```castm-fail
 // expect-error: E2002
 target base;
 kernel "ex_loop_runtime_invalid" {
   for R0 in range(0, 3) at @0,0 runtime unroll(2) {
-    cycle { at @0,1: R1 = R0 + 1; }
+    bundle { at @0,1: R1 = R0 + 1; }
   }
 }
 ```

@@ -17,7 +17,7 @@ Canonical spatial syntax supports concise point placements and row-segment paylo
 ## Case A — Short point placement
 
 ::: code-group
-<<< ../snippets/features/spatial-short-forms/01-short-point.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/spatial-short-forms/01-short-point.castm{castm} [CASTM]
 <<< ../snippets/features/spatial-short-forms/01-short-point.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -26,7 +26,7 @@ Full CSV: `docs-site/snippets/features/spatial-short-forms/01-short-point.csv`.
 ## Case B — Multiple short placements in one cycle line
 
 ::: code-group
-<<< ../snippets/features/spatial-short-forms/02-multi-short.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/spatial-short-forms/02-multi-short.castm{castm} [CASTM]
 <<< ../snippets/features/spatial-short-forms/02-multi-short.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -35,7 +35,7 @@ Full CSV: `docs-site/snippets/features/spatial-short-forms/02-multi-short.csv`.
 ## Case C — Row segmented payload with pipes
 
 ::: code-group
-<<< ../snippets/features/spatial-short-forms/03-row-segment.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/spatial-short-forms/03-row-segment.castm{castm} [CASTM]
 <<< ../snippets/features/spatial-short-forms/03-row-segment.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -44,7 +44,7 @@ Full CSV: `docs-site/snippets/features/spatial-short-forms/03-row-segment.csv`.
 ## Case D — Row auto-broadcast
 
 ::: code-group
-<<< ../snippets/features/spatial-short-forms/04-row-broadcast.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/spatial-short-forms/04-row-broadcast.castm{castm} [CASTM]
 <<< ../snippets/features/spatial-short-forms/04-row-broadcast.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -53,7 +53,7 @@ Full CSV: `docs-site/snippets/features/spatial-short-forms/04-row-broadcast.csv`
 ## Case E — Mixed canonical forms
 
 ::: code-group
-<<< ../snippets/features/spatial-short-forms/05-mixed.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/spatial-short-forms/05-mixed.castm{castm} [CASTM]
 <<< ../snippets/features/spatial-short-forms/05-mixed.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -61,7 +61,7 @@ Full CSV: `docs-site/snippets/features/spatial-short-forms/05-mixed.csv`.
 
 ## Case F — Invalid legacy-style row namespace
 
-<<< ../snippets/features/spatial-short-forms/06-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+<<< ../snippets/features/spatial-short-forms/06-invalid.castm{castm-fail} [CASTM fail]
 
 Expected diagnostic: `E2002`.
 

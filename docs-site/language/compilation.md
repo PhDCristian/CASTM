@@ -1,6 +1,6 @@
 # Compilation Pipeline
 
-OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifacts.
+CASTM uses a staged compiler pipeline with explicit contracts and artifacts.
 
 ## Target and assumptions
 
@@ -25,10 +25,10 @@ OpenEdgeDSL uses a staged compiler pipeline with explicit contracts and artifact
 - `compile(source, options)`
 - `emit(program, backendOptions)`
 
-## Phase walkthrough (OpenEdgeDSL ↔ CSV)
+## Phase walkthrough (CASTM ↔ CSV)
 
 ::: code-group
-<<< ../snippets/language/compilation/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/compilation/01-main.castm{castm} [CASTM]
 <<< ../snippets/language/compilation/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -72,7 +72,7 @@ Build/runtime behavior (target, grid, scheduler, memory policy, noop pruning, io
 
 Scheduler policy comes from source:
 
-```openedge
+```castm
 target base;
 build {
   optimize O2;
@@ -82,7 +82,7 @@ build {
   prune_noop_cycles on;
 }
 kernel "build_config_example" {
-  cycle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
 }
 ```
 
@@ -92,8 +92,8 @@ See full configuration recipes (O0/O1/O2/O3 and explicit overrides):
 ## Reproduce with artifacts
 
 ```bash
-openedge analyze kernel.dsl
-openedge emit kernel.dsl --format sim-matrix-csv -o kernel.csv
+castm analyze kernel.castm
+castm emit kernel.castm --format sim-matrix-csv -o kernel.csv
 ```
 
 ## Diagnostics Contract

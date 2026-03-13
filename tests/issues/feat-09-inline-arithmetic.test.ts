@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 describe('issues/FEAT-9 inline operand arithmetic', () => {
   const hasInstructionAt = (csv: string, row: number, col: number, text: string): boolean => {
@@ -11,7 +11,7 @@ describe('issues/FEAT-9 inline operand arithmetic', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat9_inline" {
-  cycle {
+  bundle {
     @0,0: SADD R1, ZERO, (2 + 3) * 4;
   }
 }
@@ -26,7 +26,7 @@ kernel "feat9_inline" {
     const source = `
 target "uma-cgra-base";
 kernel "feat9_lwi_swi" {
-  cycle {
+  bundle {
     @0,0: LWI R0, 360 + 2*4;
     @0,1: SWI R0, (400 + 8) - 4;
   }
@@ -44,7 +44,7 @@ kernel "feat9_lwi_swi" {
     const source = `
 target "uma-cgra-base";
 kernel "feat9_memory_sugar" {
-  cycle {
+  bundle {
     @0,0: R1 = [360 + (2 + 1) * 4];
     @0,1: [400 + (3 * 4)] = R1;
   }
@@ -63,7 +63,7 @@ kernel "feat9_memory_sugar" {
 target "uma-cgra-base";
 kernel "feat9_loop_bound" {
   for i in range(4) {
-    cycle {
+    bundle {
       @0,i: SRT R1, R0, i*8;
     }
   }
@@ -83,7 +83,7 @@ kernel "feat9_loop_bound" {
     const source = `
 target "uma-cgra-base";
 kernel "feat9_symbolic" {
-  cycle {
+  bundle {
     @0,0: LWI R0, BASE + i*4;
   }
 }
@@ -98,7 +98,7 @@ kernel "feat9_symbolic" {
     const source = `
 target "uma-cgra-base";
 kernel "feat9_invalid_inline" {
-  cycle {
+  bundle {
     @0,0: SADD R1, ZERO, 1 < 2;
     @0,1: SADD R2, ZERO, 1 +;
   }
@@ -116,7 +116,7 @@ kernel "feat9_invalid_inline" {
     const source = `
 target "uma-cgra-base";
 kernel "feat9_invalid_imm_inline" {
-  cycle {
+  bundle {
     @0,0: SADD R1, ZERO, IMM(1 +);
   }
 }

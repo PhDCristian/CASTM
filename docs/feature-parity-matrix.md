@@ -1,4 +1,4 @@
-# OpenEdgeDSL Feature Parity Matrix
+# CASTM Feature Parity Matrix
 
 This matrix is the closure baseline for the canonical compiler. Source of truth is behavior validated by tests and stable docs (excluding `docs/future/*`).
 
@@ -20,7 +20,7 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 | C-like assignment desugar | done | `tests/compiler-api.contract.test.ts` | Supports copy form and full stable operator map (`+ - * ** << >> >>> & ~& \| ~\| ^ ~^`) with deterministic single-binary-expression lowering. |
 | Specialization pass (`FEAT-3`) | done | `tests/issues/feat-03-specialize.test.ts` | Applies safe algebraic identities (`*1`, `*0`, `+0`, `-0`, logical/shift identities) without changing ISA/output format. |
 | `function` (definition + call expansion) | done | `tests/compiler-api.contract.test.ts` | Supports pre-kernel definitions, named/positional argument binding, nested non-recursive calls, label-safe expansion, and `all:` cycle statements inside expanded bodies. |
-| Labeled cycles + branch label resolution | done | `tests/compiler-api.contract.test.ts` | Supports `label: cycle { ... }`, branch/jump label resolution, duplicate/unknown label diagnostics, and expansion-safe function label prefixing. |
+| Labeled cycles + branch label resolution | done | `tests/compiler-api.contract.test.ts` | Supports `label: bundle { ... }`, branch/jump label resolution, duplicate/unknown label diagnostics, and expansion-safe function label prefixing. |
 | `while` / `if` | done | `tests/compiler-api.contract.test.ts` | Kernel/function lowering to branch+jump labeled cycles is in place, including fused-while neighbor-operand rewriting for control conditions. |
 | `for ... in range(...)` (kernel + `cycle`) | done | `tests/compiler-api.contract.test.ts`, `tests/issues/bug-07-computed-loop-coords.test.ts` | Supports compile-time unroll (including descending ranges) in kernel/cycle scopes, explicit runtime loop form (`at @r,c runtime`), and computed spatial coordinates like `@k/4,k%4`. |
 | Loop modifiers (`FEAT-18`): `unroll(k)` / `collapse(n)` contracts | done | `tests/issues/feat-18-loop-modifiers.test.ts`, `tests/issues/feat-20-collapse-edge-cases.test.ts` | Deterministic static expansion with duplicate/invalid modifier diagnostics and explicit runtime-loop rejection for static-only modifiers. |
@@ -28,7 +28,7 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 | Scheduler modes (`FEAT-19`) | done | `tests/issues/feat-19-scheduler-modes.test.ts` | `safe`, `balanced`, `aggressive` modes preserve deterministic output and non-regressive instruction workload invariants. |
 | For/control-flow contract hardening (`FEAT-21`) | done | `tests/issues/feat-21-for-control-flow-contract.test.ts` | Explicit parser diagnostics for malformed for/if/while headers and valid nested composition behavior. |
 | Spatial compaction idioms (`FEAT-22`) | done | `tests/issues/feat-22-spatial-compaction-idioms.test.ts` | Canonical compact idioms (`at all`, range + loop index addressing) compile deterministically to expected full-grid placements. |
-| Multi-statement cycle-line parsing | done | `tests/issues/issue-03-multi-statement-cycle-line.test.ts` | `cycle { ... }` bodies support semicolon-separated placements on the same line without instruction-text corruption. |
+| Multi-statement cycle-line parsing | done | `tests/issues/issue-03-multi-statement-cycle-line.test.ts` | `bundle { ... }` bodies support semicolon-separated placements on the same line without instruction-text corruption. |
 
 ## Declarations & Runtime Statements
 
@@ -86,16 +86,16 @@ This matrix is the closure baseline for the canonical compiler. Source of truth 
 
 | Item | Status | Owner | Exit Condition |
 |---|---|---|---|
-| Replace path alias imports to package internals | done | Simulator | `UMA-CGRA-Simulator/package.json` now consumes `@openedge/*` via fixed semver (`2.0.0-alpha.1`) rather than `file:` paths. |
+| Replace path alias imports to package internals | done | Simulator | `UMA-CGRA-Simulator/package.json` now consumes `@castm/*` via fixed semver (`2.0.0-alpha.1`) rather than `file:` paths. |
 | Remove legacy fallback for stable feature set | done | Simulator | Wrapper default and `auto` mode use the package-based compiler (no legacy compiler path). |
-| Cross-repo parity workflow | done | OpenEdgeDSL + Simulator | Automated in `.github/workflows/cross-repo-parity.yml` via `scripts/run-simulator-parity.mjs` against simulator parity fixtures (`dsl-compiler-parity` + adapter suite). |
+| Cross-repo parity workflow | done | CASTM + Simulator | Automated in `.github/workflows/cross-repo-parity.yml` via `scripts/run-simulator-parity.mjs` against simulator parity fixtures (`dsl-compiler-parity` + adapter suite). |
 
 ## Executable Snippet
 
-```openedge
+```castm
 target base;
 kernel "snippet_ok" {
-  cycle {
+  bundle {
     @0,0: EXIT;
   }
 }

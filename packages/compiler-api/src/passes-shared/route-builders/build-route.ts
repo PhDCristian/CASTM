@@ -5,7 +5,7 @@ import {
   GridSpec,
   SourceSpan,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   createAtCycle,
   createInstruction,

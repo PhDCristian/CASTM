@@ -3,7 +3,7 @@ import {
   CompilerPass,
   ErrorCodes,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { isIdentifier } from '../pragma-args-utils.js';
 import {
   DataSymbolInfo,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 function normalizeCsv(csv: string): string {
   return csv
@@ -38,14 +38,14 @@ describe('issues/FEAT-11 compact kernel patterns', () => {
     const manualSource = `
 target "uma-cgra-base";
 kernel "manual_extract_row" {
-  cycle {
+  bundle {
     for r in range(0, 4) {
       for c in range(0, 4) {
         at @r,c: SRT R1, R0, r*8;
       }
     }
   }
-  cycle {
+  bundle {
     for r in range(0, 4) {
       for c in range(0, 4) {
         at @r,c: LAND R1, R1, 255;

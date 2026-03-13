@@ -1,6 +1,6 @@
 # Canonical Style Guide
 
-This page defines the recommended writing style for production OpenEdgeDSL sources.
+This page defines the recommended writing style for production CASTM sources.
 
 ## Target and assumptions
 
@@ -37,13 +37,13 @@ This page defines the recommended writing style for production OpenEdgeDSL sourc
 
 ## Tooling
 
-- validate with `openedge check` before emit.
-- use `openedge analyze` to inspect diagnostics and phase stats.
+- validate with `castm check` before emit.
+- use `castm analyze` to inspect diagnostics and phase stats.
 
-## Canonical style sample (OpenEdgeDSL ↔ CSV)
+## Canonical style sample (CASTM ↔ CSV)
 
 ::: code-group
-<<< ../snippets/reference/porting-guide/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/reference/porting-guide/01-main.castm{castm} [CASTM]
 <<< ../snippets/reference/porting-guide/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

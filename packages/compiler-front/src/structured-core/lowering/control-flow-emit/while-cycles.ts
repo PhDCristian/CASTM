@@ -1,4 +1,4 @@
-import { CycleAst, KernelAst, spanAt } from '@openedge/compiler-ir';
+import { CycleAst, KernelAst, spanAt } from '@castm/compiler-ir';
 import type { ParsedCondition } from '../control-flow.js';
 import {
   cloneCycle,

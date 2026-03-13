@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 describe('issues/raw-memory-address-folding', () => {
   it('folds raw address arithmetic inside memory sugar load/store to integer addresses', () => {
@@ -9,7 +9,7 @@ let A = { 10, 20, 30, 40 };
 let B @100 = { 0, 0, 0, 0 };
 
 kernel "mem_sugar" {
-  cycle {
+  bundle {
     at @0,0: R0 = A[1];
     at @0,1: B[2] = R0;
     at @0,2: [360 + 2*4] = R1;

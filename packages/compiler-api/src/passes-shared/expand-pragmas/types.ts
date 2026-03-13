@@ -3,7 +3,7 @@ import {
   Diagnostic,
   GridSpec,
   PragmaAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 
 export interface ExpandPragmaContext {
   grid: GridSpec;

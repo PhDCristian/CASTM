@@ -29,7 +29,7 @@ function resolveSimulatorPath(raw) {
 
 function parseArgs(argv) {
   const options = {
-    simulatorPath: resolveSimulatorPath(process.env.OPENEDGE_SIMULATOR_PATH),
+    simulatorPath: resolveSimulatorPath(process.env.CASTM_SIMULATOR_PATH),
     install: true,
     tests: []
   };
@@ -90,13 +90,13 @@ function discoverDefaultTests(simulatorPath) {
   return tests;
 }
 
-function linkLocalOpenEdgePackages(simulatorPath) {
+function linkLocalCastmPackages(simulatorPath) {
   const localPackages = [
-    `@openedge/lang-spec@file:${path.join(projectRoot, 'packages/lang-spec')}`,
-    `@openedge/compiler-ir@file:${path.join(projectRoot, 'packages/compiler-ir')}`,
-    `@openedge/compiler-front@file:${path.join(projectRoot, 'packages/compiler-front')}`,
-    `@openedge/compiler-backend-csv@file:${path.join(projectRoot, 'packages/compiler-backend-csv')}`,
-    `@openedge/compiler-api@file:${path.join(projectRoot, 'packages/compiler-api')}`
+    `@castm/lang-spec@file:${path.join(projectRoot, 'packages/lang-spec')}`,
+    `@castm/compiler-ir@file:${path.join(projectRoot, 'packages/compiler-ir')}`,
+    `@castm/compiler-front@file:${path.join(projectRoot, 'packages/compiler-front')}`,
+    `@castm/compiler-backend-csv@file:${path.join(projectRoot, 'packages/compiler-backend-csv')}`,
+    `@castm/compiler-api@file:${path.join(projectRoot, 'packages/compiler-api')}`
   ];
   run('npm', ['install', '--no-save', ...localPackages], simulatorPath);
 }
@@ -107,23 +107,23 @@ function main() {
 
   if (!existsSync(simulatorPkg)) {
     console.error(
-      `[openedge] Simulator repository not found at ${options.simulatorPath}. ` +
-        'Pass --simulator <path> or set OPENEDGE_SIMULATOR_PATH.'
+      `[castm] Simulator repository not found at ${options.simulatorPath}. ` +
+        'Pass --simulator <path> or set CASTM_SIMULATOR_PATH.'
     );
     process.exit(1);
   }
 
-  console.log(`[openedge] Using simulator at ${options.simulatorPath}`);
+  console.log(`[castm] Using simulator at ${options.simulatorPath}`);
   if (options.install) {
-    console.log('[openedge] Installing simulator dependencies (npm ci)...');
+    console.log('[castm] Installing simulator dependencies (npm ci)...');
     run('npm', ['ci'], options.simulatorPath);
   }
 
-  console.log('[openedge] Linking local @openedge/* packages into simulator...');
-  linkLocalOpenEdgePackages(options.simulatorPath);
+  console.log('[castm] Linking local @castm/* packages into simulator...');
+  linkLocalCastmPackages(options.simulatorPath);
 
   const tests = options.tests.length > 0 ? options.tests : discoverDefaultTests(options.simulatorPath);
-  console.log(`[openedge] Running parity tests: ${tests.join(', ')}`);
+  console.log(`[castm] Running parity tests: ${tests.join(', ')}`);
   run('npm', ['test', '--', '--run', ...tests], options.simulatorPath);
 }
 

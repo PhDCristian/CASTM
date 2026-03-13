@@ -1,7 +1,7 @@
 import {
   AstProgram,
   CompilerPass
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { cloneAst } from '../ast-utils.js';
 
 export const desugarAutoCyclePass: CompilerPass<AstProgram, AstProgram> = {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { spanAt } from '@openedge/compiler-ir';
+import { spanAt } from '@castm/compiler-ir';
 import { parseIntegerLiteral } from '../packages/compiler-api/src/passes-shared/pragma-args-utils.js';
 import { parseRoutePragmaArgs } from '../packages/compiler-api/src/passes-shared/route-args.js';
 import {

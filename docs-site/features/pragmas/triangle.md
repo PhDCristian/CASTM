@@ -31,7 +31,7 @@ std::triangle(shape=upper|lower, inclusive=true|false, op=OPCODE, dest=Rd, srcA=
 ## Case A — Minimal
 
 ::: code-group
-<<< ../../snippets/pragmas/triangle/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/triangle/01-minimal.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/triangle/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -40,7 +40,7 @@ Full CSV: `docs-site/snippets/pragmas/triangle/01-minimal.csv`.
 ## Case B — Advanced options
 
 ::: code-group
-<<< ../../snippets/pragmas/triangle/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/triangle/02-advanced.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/triangle/02-advanced.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -49,7 +49,7 @@ Full CSV: `docs-site/snippets/pragmas/triangle/02-advanced.csv`.
 ## Case C — Integration in kernel
 
 ::: code-group
-<<< ../../snippets/pragmas/triangle/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/triangle/04-integration.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/triangle/04-integration.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -58,7 +58,7 @@ Full CSV: `docs-site/snippets/pragmas/triangle/04-integration.csv`.
 ## Case D — Edge / boundary
 
 ::: code-group
-<<< ../../snippets/pragmas/triangle/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/triangle/05-edge.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/triangle/05-edge.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -66,7 +66,7 @@ Full CSV: `docs-site/snippets/pragmas/triangle/05-edge.csv`.
 
 ## Case E — Invalid usage
 
-<<< ../../snippets/pragmas/triangle/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+<<< ../../snippets/pragmas/triangle/03-invalid.castm{castm-fail} [CASTM fail]
 
 Expected: explicit diagnostic with source span and actionable hint.
 

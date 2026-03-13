@@ -10,7 +10,7 @@ const instructionSet = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/i
 const targets = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/target-profiles.json'), 'utf8'));
 
 const lines = [];
-lines.push('# OpenEdge Instruction Reference');
+lines.push('# CASTM Instruction Reference');
 lines.push('');
 lines.push('| Opcode | Category | Operands | Description |');
 lines.push('|---|---|---|---|');

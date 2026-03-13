@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
-import { ErrorCodes, WarningCodes } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { ErrorCodes, WarningCodes } from '@castm/compiler-ir';
 
 describe('issues/std-advanced-namespace', () => {
   it('accepts std:: qualified advanced statements as canonical form', () => {

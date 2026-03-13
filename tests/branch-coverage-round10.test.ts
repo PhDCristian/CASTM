@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { AstProgram, spanAt } from '@openedge/compiler-ir';
+import { AstProgram, spanAt } from '@castm/compiler-ir';
 import { parseAssertionDirectiveValue } from '../packages/compiler-api/src/compiler-driver/assertions.js';
 import { collectDirectiveArtifacts } from '../packages/compiler-api/src/compiler-driver/runtime-artifacts/directives.js';
 import { collectArrayAndLabelSymbols, createEmptySymbolCollections } from '../packages/compiler-api/src/compiler-driver/runtime-artifacts/symbols.js';

@@ -18,7 +18,7 @@ const requiredExampleSections = [
   '## What this demonstrates',
   '## When to use',
   '## Target and assumptions',
-  '## OpenEdgeDSL ↔ CSV',
+  '## CASTM ↔ CSV',
   '## Why this CSV looks like this',
   '## Related features',
   '## Continue',
@@ -46,8 +46,8 @@ describe('docs features/examples contracts', () => {
       const csvIncludes = (content.match(/^\s*<<<\s+.+\{csv\}.+$/gim) ?? []).length;
       expect(csvIncludes, `insufficient CSV includes in ${relative}`).toBeGreaterThanOrEqual(5);
 
-      const hasFailFence = /```openedge-fail\b[\s\S]*?```/im.test(content);
-      const hasFailInclude = /^\s*<<<\s+.+\{openedge-fail\}.+$/gim.test(content);
+      const hasFailFence = /```castm-fail\b[\s\S]*?```/im.test(content);
+      const hasFailInclude = /^\s*<<<\s+.+\{castm-fail\}.+$/gim.test(content);
       expect(hasFailFence || hasFailInclude, `missing invalid case in ${relative}`).toBe(true);
 
       const examplesLinks = (content.match(/\]\(\/examples\//g) ?? []).length;

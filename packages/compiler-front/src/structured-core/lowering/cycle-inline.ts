@@ -1,9 +1,9 @@
-import { CycleStatementAst, Diagnostic, ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
+import { CycleStatementAst, Diagnostic, ErrorCodes, makeDiagnostic, spanAt } from '@castm/compiler-ir';
 import { parseCycleStatement } from './statements.js';
 import { splitTopLevel } from '../parser-utils/strings.js';
 import { INTERPOLATED_IDENT } from '../constants.js';
 
-export interface ParsedLabeledCycle {
+export interface ParsedLabeledbundle {
   label: string;
   inlinePayload?: string;
 }

@@ -1,7 +1,7 @@
 import {
   ErrorCodes,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   parseTrianglePragmaArgs
 } from '../../advanced-args.js';

@@ -1,4 +1,4 @@
-import { Diagnostic } from '@openedge/compiler-ir';
+import { Diagnostic } from '@castm/compiler-ir';
 
 export function hasErrors(diagnostics: Diagnostic[]): boolean {
   return diagnostics.some((d) => d.severity === 'error');

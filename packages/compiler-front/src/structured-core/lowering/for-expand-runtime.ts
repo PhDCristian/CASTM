@@ -2,7 +2,7 @@ import {
   ErrorCodes,
   makeDiagnostic,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { buildRuntimeLoopPlan } from './for-expand-runtime/build-plan.js';
 import { emitRuntimeLoopCycles } from './for-expand-runtime/emit.js';
 import type { ExpandRuntimeForInput } from './for-expand-runtime/types.js';

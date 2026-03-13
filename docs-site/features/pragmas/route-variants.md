@@ -31,7 +31,7 @@ std::route(@r1,c1 -> @r2,c2, payload=Rx, dest=Rd, op=OP(Rd, Ra, INCOMING));
 ## Case A — Minimal
 
 ::: code-group
-<<< ../../snippets/pragmas/route-variants/02-long-path.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route-variants/02-long-path.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/route-variants/02-long-path.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -40,7 +40,7 @@ Full CSV: `docs-site/snippets/pragmas/route-variants/02-long-path.csv`.
 ## Case B — Advanced options
 
 ::: code-group
-<<< ../../snippets/pragmas/route-variants/01-custom-op.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route-variants/01-custom-op.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/route-variants/01-custom-op.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -49,7 +49,7 @@ Full CSV: `docs-site/snippets/pragmas/route-variants/01-custom-op.csv`.
 ## Case C — Integration in kernel
 
 ::: code-group
-<<< ../../snippets/pragmas/route-variants/03-compare.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route-variants/03-compare.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/route-variants/03-compare.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -58,7 +58,7 @@ Full CSV: `docs-site/snippets/pragmas/route-variants/03-compare.csv`.
 ## Case D — Edge / boundary
 
 ::: code-group
-<<< ../../snippets/pragmas/route-variants/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/route-variants/05-edge.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/route-variants/05-edge.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -66,7 +66,7 @@ Full CSV: `docs-site/snippets/pragmas/route-variants/05-edge.csv`.
 
 ## Case E — Invalid usage
 
-<<< ../../snippets/pragmas/route-variants/06-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+<<< ../../snippets/pragmas/route-variants/06-invalid.castm{castm-fail} [CASTM fail]
 
 Expected: explicit diagnostic with source span and actionable hint.
 

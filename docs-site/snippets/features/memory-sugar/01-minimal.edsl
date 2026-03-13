@@ -1,7 +1,0 @@
-target base;
-let A = { 10, 20, 30, 40 };
-kernel "mem_minimal" {
-  cycle {
-    @0,0: R0 = A[1];
-  }
-}

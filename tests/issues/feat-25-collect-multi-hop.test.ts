@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 describe('FEAT-25 collect multi-hop path', () => {
   it('keeps single_hop default and rejects distance > 1 without path=multi_hop', () => {

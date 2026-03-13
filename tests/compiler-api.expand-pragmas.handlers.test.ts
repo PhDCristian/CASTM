@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ErrorCodes,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   handleBroadcast,
   handleRoute

@@ -1,7 +1,0 @@
-target base;
-function mix(dst, src) {
-  cycle { @0,0: dst = src >> 16; }
-}
-kernel "fn_params" {
-  mix(R1, R0);
-}

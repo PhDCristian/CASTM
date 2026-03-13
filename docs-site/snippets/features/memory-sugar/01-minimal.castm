@@ -1,0 +1,7 @@
+target base;
+let A = { 10, 20, 30, 40 };
+kernel "mem_minimal" {
+  bundle {
+    @0,0: R0 = A[1];
+  }
+}

@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   lowerStructuredProgramToAst,
   parseStructuredSource
-} from '@openedge/compiler-front';
-import { ErrorCodes } from '@openedge/compiler-ir';
+} from '@castm/compiler-front';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 describe('compiler-front structured contracts', () => {
   it('parses canonical structured statements from source', () => {
@@ -11,17 +11,17 @@ describe('compiler-front structured contracts', () => {
 target "uma-cgra-base";
 kernel "structured" {
   route(@0,1 -> @0,0, payload=R3, accum=R1);
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
   for i in range(0, 2) {
-    cycle { @0,1: NOP; }
+    bundle { @0,1: NOP; }
   }
   if (R0 == IMM(0)) at @0,0 {
-    cycle { @0,2: NOP; }
+    bundle { @0,2: NOP; }
   } else {
-    cycle { @0,3: NOP; }
+    bundle { @0,3: NOP; }
   }
   while (R1 < IMM(4)) at @0,0 {
-    cycle { @0,1: NOP; }
+    bundle { @0,1: NOP; }
   }
 }
 `;
@@ -48,9 +48,9 @@ kernel "structured" {
 target "uma-cgra-base";
 kernel "structured_lower" {
   route(@0,1 -> @0,0, payload=R3, accum=R1);
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
   for i in range(0, 2) {
-    cycle { @0,1: NOP; }
+    bundle { @0,1: NOP; }
   }
 }
 `;
@@ -69,7 +69,7 @@ kernel "structured_lower" {
     const source = `
 target "uma-cgra-base";
 function add_one(dst, src) {
-  cycle { @0,0: dst = src + IMM(1); }
+  bundle { @0,0: dst = src + IMM(1); }
 }
 kernel "fn_structured" {
   add_one(R1, R0);
@@ -145,7 +145,7 @@ kernel "labeled_adv" {
     const source = `
 target "uma-cgra-base";
 function myFn(a, b) {
-  cycle { @0,0: a = b + IMM(1); }
+  bundle { @0,0: a = b + IMM(1); }
 }
 kernel "labeled_fn" {
   myLabel: myFn(R0, R1);
@@ -181,11 +181,11 @@ kernel "unlabeled_adv" {
   });
 
   // ── T2-V4: Labeled cycle still works (no regression) ──
-  it('parses labeled cycle (mainEntry: cycle { ... })', () => {
+  it('parses labeled cycle (mainEntry: bundle { ... })', () => {
     const source = `
 target "uma-cgra-base";
 kernel "labeled_cycle" {
-  mainEntry: cycle { @0,0: NOP; }
+  mainEntry: bundle { @0,0: NOP; }
 }
 `;
     const result = parseStructuredSource(source);
@@ -204,7 +204,7 @@ kernel "labeled_cycle" {
 target "uma-cgra-base";
 kernel "label_pragma" {
   subrC: std::route(@0,1 -> @0,0, payload=R3, accum=R1);
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `;
     const parsed = parseStructuredSource(source);
@@ -220,7 +220,7 @@ kernel "label_pragma" {
     const source = `
 target "uma-cgra-base";
 function doWork(dst, src) {
-  cycle { @0,0: dst = src + IMM(1); }
+  bundle { @0,0: dst = src + IMM(1); }
 }
 kernel "label_fn_call" {
   entry: doWork(R1, R0);
@@ -275,7 +275,7 @@ kernel "t" {
     const r4 = parseStructuredSource(`
 target "uma-cgra-base";
 kernel "t" {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `);
     expect(r4.success).toBe(true);
@@ -288,20 +288,20 @@ kernel "t" {
   });
 
   it('E2E: labeled advanced stmt + labeled fn-call compile through full pipeline (T5-V1)', async () => {
-    const { compile } = await import('@openedge/compiler-api');
+    const { compile } = await import('@castm/compiler-api');
     const source = `
 target base;
 build { optimize O0; scheduler safe; }
 
 function loadAll(val) {
-  cycle { at all: LWI R0, val; }
+  bundle { at all: LWI R0, val; }
 }
 
 kernel "Labeled_Compound_E2E" {
-  mainEntry: cycle { at all: LWI R0, 42; }
+  mainEntry: bundle { at all: LWI R0, 42; }
   routePhase: std::route(@0,0 -> @0,2, payload=R0, accum=R1);
   loadPhase: loadAll(720);
-  cycle { @0,0: EXIT; }
+  bundle { @0,0: EXIT; }
 }
 `;
     const result = compile(source);

@@ -22,7 +22,7 @@ const requiredExampleSections = [
   '## What this demonstrates',
   '## When to use',
   '## Target and assumptions',
-  '## OpenEdgeDSL ↔ CSV',
+  '## CASTM ↔ CSV',
   '## Why this CSV looks like this',
   '## Related features',
   '## Continue',
@@ -90,10 +90,10 @@ function checkPragmaPage(file: string): Violation[] {
     violations.push({ file, message: `expected at least 4 CSV includes, found ${csvIncludes}` });
   }
 
-  const hasFailFence = /```openedge-fail\b[\s\S]*?```/im.test(content);
-  const hasFailInclude = /^\s*<<<\s+.+\{openedge-fail\}.+$/gim.test(content);
+  const hasFailFence = /```castm-fail\b[\s\S]*?```/im.test(content);
+  const hasFailInclude = /^\s*<<<\s+.+\{castm-fail\}.+$/gim.test(content);
   if (!hasFailFence && !hasFailInclude) {
-    violations.push({ file, message: 'expected at least one openedge-fail block' });
+    violations.push({ file, message: 'expected at least one castm-fail block' });
   }
 
   if (!hasCanonicalTargetMention(content)) {
@@ -137,10 +137,10 @@ function checkCoreFeaturePage(file: string): Violation[] {
     violations.push({ file, message: `expected at least 5 CSV includes, found ${csvIncludes}` });
   }
 
-  const hasFailFence = /```openedge-fail\b[\s\S]*?```/im.test(content);
-  const hasFailInclude = /^\s*<<<\s+.+\{openedge-fail\}.+$/gim.test(content);
+  const hasFailFence = /```castm-fail\b[\s\S]*?```/im.test(content);
+  const hasFailInclude = /^\s*<<<\s+.+\{castm-fail\}.+$/gim.test(content);
   if (!hasFailFence && !hasFailInclude) {
-    violations.push({ file, message: 'expected at least one openedge-fail block/include' });
+    violations.push({ file, message: 'expected at least one castm-fail block/include' });
   }
 
   const exampleLinks = count(content, /\]\(\/examples\//g);

@@ -1,0 +1,6 @@
+target base;
+kernel "eq_runtime_for" {
+  for R0 in range(0, 3) at @0,0 runtime {
+    bundle { at @0,1: R1 = R0 + 1; }
+  }
+}

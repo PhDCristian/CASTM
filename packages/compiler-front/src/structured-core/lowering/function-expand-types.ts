@@ -1,7 +1,7 @@
 import {
   Diagnostic,
   KernelAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { SourceLineEntry } from '../parser-utils/blocks.js';
 import { FunctionDefinitionLike } from './for-expand.js';
 import type { FunctionExpansionContext } from './function-expand-context.js';

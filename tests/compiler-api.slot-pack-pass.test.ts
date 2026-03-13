@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { spanAt } from '@openedge/compiler-ir';
+import { spanAt } from '@castm/compiler-ir';
 import { createSlotPackPass } from '../packages/compiler-api/src/passes-shared/desugar/slot-pack-pass.js';
 
 const span = spanAt(1, 1, 1);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { spanAt } from '@openedge/compiler-ir';
+import { spanAt } from '@castm/compiler-ir';
 import { desugarInlineArithmeticPass } from '../packages/compiler-api/src/passes-shared/desugar/inline-arithmetic-pass.js';
 import { specializePass } from '../packages/compiler-api/src/passes-shared/desugar/specialize-pass.js';
 

@@ -1,7 +1,0 @@
-target base;
-kernel "diag_invalid" {
-  cycle {
-    at @0,0: R0 = R0 + 1;
-    at @0,0: R1 = R1 + 1;
-  }
-}

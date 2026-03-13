@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { tokenizeSource } from '@openedge/compiler-front';
+import { tokenizeSource } from '@castm/compiler-front';
 
 describe('compiler-front tokenizer canonical contracts', () => {
   it('classifies canonical declarations and control-flow as keywords', () => {
@@ -8,7 +8,7 @@ target "uma-cgra-base";
 let A = { 1, 2, 3 };
 kernel "k" {
   for R0 in range(0, 4) at @0,0 runtime {
-    cycle { at row 0: NOP; }
+    bundle { at row 0: NOP; }
   }
 }
 `;

@@ -16,10 +16,10 @@ Use this pattern when data enters/exits via stream endpoints and needs determini
 - default profile assumes `4x4` toroidal grid.
 - CSV shown is generated from the exact snippet (no manual transcription).
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/examples/fft/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/fft/01-main.castm{castm} [CASTM]
 <<< ../snippets/examples/fft/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 

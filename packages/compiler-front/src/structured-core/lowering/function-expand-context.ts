@@ -2,7 +2,7 @@ import {
   Diagnostic,
   ExpansionMode,
   KernelAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   FunctionDefinitionLike
 } from './for-expand.js';

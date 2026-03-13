@@ -15,17 +15,17 @@ The compiler needs a target profile to resolve:
 
 `target` accepts either an alias or a concrete profile ID.
 
-```openedge
+```castm
 target base;
 kernel "alias_target" {
-  cycle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
 }
 ```
 
-```openedge
+```castm
 target "uma-cgra-base";
 kernel "id_target" {
-  cycle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
 }
 ```
 
@@ -57,14 +57,14 @@ Current catalog entry (`packages/lang-spec/src/target-profiles.json`):
 `target` sets defaults.  
 `build { ... }` can override selected defaults (for example grid dimensions/topology).
 
-```openedge
+```castm
 target base;
 build {
   optimize O2;
   grid 8x8 mesh;
 }
 kernel "override_grid" {
-  cycle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
 }
 ```
 

@@ -16,10 +16,10 @@ Use this when neighborhood access, masking, and region predicates must be expres
 - default profile assumes `4x4` toroidal grid.
 - CSV shown is generated from the exact snippet (no manual transcription).
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/examples/stencil/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/stencil/01-main.castm{castm} [CASTM]
 <<< ../snippets/examples/stencil/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 

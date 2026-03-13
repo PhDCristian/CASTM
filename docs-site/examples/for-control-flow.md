@@ -18,32 +18,32 @@ Use this page when you need explicit control placement while mixing looping and 
 - control-flow placement stays explicit (`at @r,c`).
 - CSV shown is generated from source artifacts.
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/examples/for-control-flow/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/for-control-flow/01-main.castm{castm} [CASTM]
 <<< ../snippets/examples/for-control-flow/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
 ## 1) Static `for` with spatial coordinates
 
-```openedge
+```castm
 target base;
 kernel "ex_for_spatial" {
   for i in range(0, 4) {
-    cycle { at @0,i: R2 = R0 + 1; }
+    bundle { at @0,i: R2 = R0 + 1; }
   }
 }
 ```
 
 ## 2) Static `for` with `unroll + collapse`
 
-```openedge
+```castm
 target base;
 kernel "ex_for_unroll_collapse" {
   for r in range(0, 2) unroll(2) collapse(2) {
     for c in range(0, 2) {
-      cycle { at @r,c: R3 = R1 + R2; }
+      bundle { at @r,c: R3 = R1 + R2; }
     }
   }
 }
@@ -51,14 +51,14 @@ kernel "ex_for_unroll_collapse" {
 
 ## 3) Static `for` with nested `if/else`
 
-```openedge
+```castm
 target base;
 kernel "ex_for_if_else" {
   for i in range(0, 2) {
     if (R0 == 0) at @0,0 {
-      cycle { at @0,i: R1 = R1 + 1; }
+      bundle { at @0,i: R1 = R1 + 1; }
     } else {
-      cycle { at @1,i: R1 = R1 + 2; }
+      bundle { at @1,i: R1 = R1 + 2; }
     }
   }
 }
@@ -66,34 +66,34 @@ kernel "ex_for_if_else" {
 
 ## 4) Runtime `for` with explicit control PE
 
-```openedge
+```castm
 target base;
 kernel "ex_for_runtime" {
   for R0 in range(0, 3) at @0,0 runtime {
-    cycle { at @0,1: R1 = R0 + 1; }
+    bundle { at @0,1: R1 = R0 + 1; }
   }
 }
 ```
 
 ## 5) `while` with explicit control PE
 
-```openedge
+```castm
 target base;
 kernel "ex_while" {
   while (R1 < 3) at @0,0 {
-    cycle { at @0,1: R1 = R1 + 1; }
+    bundle { at @0,1: R1 = R1 + 1; }
   }
 }
 ```
 
 ## 6) Invalid control header (diagnostic)
 
-```openedge-fail
+```castm-fail
 // expect-error: E2002
 target base;
 kernel "ex_bad_if_header" {
   if (R0 == 0) {
-    cycle { at @0,1: R1 = R1 + 1; }
+    bundle { at @0,1: R1 = R1 + 1; }
   }
 }
 ```

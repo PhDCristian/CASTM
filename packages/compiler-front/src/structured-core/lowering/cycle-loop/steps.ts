@@ -4,7 +4,7 @@ import {
   ErrorCodes,
   makeDiagnostic,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { parseForHeader } from '../control-flow.js';
 import { parseCycleStatement } from '../statements.js';
 import { collectBlockFromEntries, SourceLineEntry } from '../../parser-utils/blocks.js';

@@ -11,7 +11,7 @@ Scheduler behavior is configured in-source via `build { ... }`.
 
 ## When to use
 
-Use this page when you want to tune scheduler behavior without leaving the `.edsl` source.
+Use this page when you want to tune scheduler behavior without leaving the `.castm` source.
 
 ## Target and assumptions
 
@@ -20,7 +20,7 @@ Use this page when you want to tune scheduler behavior without leaving the `.eds
 
 ## In-source configuration
 
-```openedge
+```castm
 target base;
 build {
   optimize O2;
@@ -30,8 +30,8 @@ build {
   prune_noop_cycles on;
 }
 kernel "sched_demo" {
-  cycle { at @0,0: SADD R1, R0, 1; }
-  cycle { at @0,1: SADD R2, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
 }
 ```
 
@@ -44,10 +44,10 @@ kernel "sched_demo" {
 
 Explicit keys in `build` override preset values.
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/examples/scheduler-modes/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/scheduler-modes/01-main.castm{castm} [CASTM]
 <<< ../snippets/examples/scheduler-modes/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 

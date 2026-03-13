@@ -3,7 +3,7 @@ import {
   Diagnostic,
   GridSpec,
   SourceSpan
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { isSamePoint } from '../grid-utils.js';
 import { RoutePoint } from '../route-args.js';
 import { BroadcastPragmaArgs } from '../advanced-args.js';

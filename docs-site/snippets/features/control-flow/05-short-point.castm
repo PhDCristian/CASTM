@@ -1,0 +1,6 @@
+target base;
+kernel "ctrl_short" {
+  if (R0 != 0) at @0,0 {
+    bundle { @0,0: R2 = R2 + 1; @0,1: R3 = R3 + 1; }
+  }
+}

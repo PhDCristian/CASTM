@@ -10,13 +10,13 @@ const MAX_SOURCE_FILE_LINES = 600;
 
 const rules = {
   'lang-spec': [],
-  'compiler-ir': ['@openedge/lang-spec'],
-  'compiler-front': ['@openedge/lang-spec', '@openedge/compiler-ir'],
-  'compiler-backend-csv': ['@openedge/compiler-ir'],
-  'compiler-api': ['@openedge/lang-spec', '@openedge/compiler-ir', '@openedge/compiler-front', '@openedge/compiler-backend-csv'],
-  'lsp-server': ['@openedge/lang-spec', '@openedge/compiler-ir', '@openedge/compiler-api'],
-  'cli': ['@openedge/compiler-api'],
-  'testkit': ['@openedge/compiler-ir', '@openedge/compiler-api']
+  'compiler-ir': ['@castm/lang-spec'],
+  'compiler-front': ['@castm/lang-spec', '@castm/compiler-ir'],
+  'compiler-backend-csv': ['@castm/compiler-ir'],
+  'compiler-api': ['@castm/lang-spec', '@castm/compiler-ir', '@castm/compiler-front', '@castm/compiler-backend-csv'],
+  'lsp-server': ['@castm/lang-spec', '@castm/compiler-ir', '@castm/compiler-api'],
+  'cli': ['@castm/compiler-api'],
+  'testkit': ['@castm/compiler-ir', '@castm/compiler-api']
 };
 
 function walkTsFiles(dir) {
@@ -54,7 +54,7 @@ for (const pkg of Object.keys(rules)) {
       );
     }
 
-    const importRe = /from\s+['"](@openedge\/[a-z-]+)['"]/g;
+    const importRe = /from\s+['"](@castm\/[a-z-]+)['"]/g;
     let m;
     while ((m = importRe.exec(text)) !== null) {
       const dep = m[1];

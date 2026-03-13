@@ -3,7 +3,7 @@ import {
   Diagnostic,
   ErrorCodes,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { SemanticPassResult } from './types.js';
 
 function validateUniqueDirectiveNames(ast: AstProgram, diagnostics: Diagnostic[]): void {

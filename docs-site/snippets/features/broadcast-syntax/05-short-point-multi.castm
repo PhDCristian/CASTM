@@ -1,0 +1,6 @@
+target base;
+kernel "short_multi" {
+  bundle {
+    @0,0: SADD R0, R0, 1; @0,1: SMUL R1, R1, 2; @0,2: LAND R2, R2, 255; @0,3: SRT R3, R3, 1;
+  }
+}

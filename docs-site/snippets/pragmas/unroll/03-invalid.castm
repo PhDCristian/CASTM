@@ -1,0 +1,7 @@
+// expect-error: E3006
+target base;
+kernel "unroll_invalid" {
+  for r in range(0, 2) collapse(2) {
+    bundle { at @0,0: NOP; }
+  }
+}

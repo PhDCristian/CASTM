@@ -7,7 +7,7 @@ import {
   ParseResult,
   spanAt,
   StructuredProgramAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   lowerStructuredProgramToAst,
   lowerStructuredProgramToAstDetailed,

@@ -1,0 +1,9 @@
+target base;
+let MASK = 0xFFFF;
+kernel "expr_advanced" {
+  bundle {
+    @0,0: R2 = R0 << 2;
+    @0,1: R3 = R2 >> 1;
+    @0,2: R1 = R3 & MASK;
+  }
+}

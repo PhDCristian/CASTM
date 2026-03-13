@@ -1,6 +1,6 @@
 # Unified Declarations (`let`)
 
-Canonical OpenEdgeDSL uses `let` for constants, aliases, and arrays.
+Canonical CASTM uses `let` for constants, aliases, and arrays.
 
 ## Forms
 
@@ -13,7 +13,7 @@ Canonical OpenEdgeDSL uses `let` for constants, aliases, and arrays.
 
 ## Executable Snippet
 
-```openedge
+```castm
 target base;
 let MASK = 0xFFFF;
 let acc = R1;
@@ -21,7 +21,7 @@ let A = { 1, 2, 3, 4 };
 let M[2][2] = { 10, 20, 30, 40 };
 
 kernel "decls" {
-  cycle {
+  bundle {
     at @0,0: R0 = A[2];
     at @0,1: R2 = M[1][0];
     at @0,2: LAND R3, R0, MASK;
@@ -30,10 +30,10 @@ kernel "decls" {
 ```
 
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/features/named-arrays/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/named-arrays/01-main.castm{castm} [CASTM]
 <<< ../snippets/features/named-arrays/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

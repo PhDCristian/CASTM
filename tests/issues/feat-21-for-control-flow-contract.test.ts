@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 describe('FEAT-21 for/control-flow contracts', () => {
   it('supports static for-loop expansion with nested if/else control blocks', () => {
@@ -9,9 +9,9 @@ target "uma-cgra-base";
 kernel "for_if_else_compose" {
   for i in range(0, 2) {
     if (R0 == 0) at @0,0 {
-      cycle { at @0,i: R1 = R1 + 1; }
+      bundle { at @0,i: R1 = R1 + 1; }
     } else {
-      cycle { at @1,i: R1 = R1 + 2; }
+      bundle { at @1,i: R1 = R1 + 2; }
     }
   }
 }
@@ -26,7 +26,7 @@ kernel "for_if_else_compose" {
 target "uma-cgra-base";
 kernel "bad_if_header" {
   if (R0 == 0) {
-    cycle { at @0,1: R1 = R1 + 1; }
+    bundle { at @0,1: R1 = R1 + 1; }
   }
 }
 `);
@@ -41,7 +41,7 @@ kernel "bad_if_header" {
 target "uma-cgra-base";
 kernel "bad_for_header" {
   for i in range(0, 4) chunk(2) {
-    cycle { at @0,i: NOP; }
+    bundle { at @0,i: NOP; }
   }
 }
 `);
@@ -55,7 +55,7 @@ kernel "bad_for_header" {
 target "uma-cgra-base";
 kernel "bad_while_control" {
   while (R0 < 3) at @x,0 {
-    cycle { at @0,1: R0 = R0 + 1; }
+    bundle { at @0,1: R0 = R0 + 1; }
   }
 }
 `);

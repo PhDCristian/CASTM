@@ -16,10 +16,10 @@ Use this as the first reference for validating end-to-end toolchain setup and DS
 - default profile assumes `4x4` toroidal grid.
 - CSV shown is generated from the exact snippet (no manual transcription).
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/examples/basic/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/basic/01-main.castm{castm} [CASTM]
 <<< ../snippets/examples/basic/01-main.excerpt.csv{csv} [CSV (sim-matrix excerpt)]
 :::
 
@@ -32,7 +32,7 @@ Use this as the first reference for validating end-to-end toolchain setup and DS
 ## API check
 
 ```ts
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 const result = compile(source);
 console.log(result.success, result.stats.cycles);

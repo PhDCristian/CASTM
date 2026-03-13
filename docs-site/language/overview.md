@@ -1,6 +1,6 @@
 # Language Overview
 
-OpenEdgeDSL uses a single canonical syntax profile.
+CASTM uses a single canonical syntax profile.
 
 ## Design Goals
 
@@ -28,7 +28,7 @@ OpenEdgeDSL uses a single canonical syntax profile.
 
 ## Minimal Program (Executable)
 
-```openedge
+```castm
 target base;
 build {
   optimize O2;
@@ -37,7 +37,7 @@ let A = { 1, 2, 3, 4 };
 
 kernel "overview" {
   std::route(@0,1 -> @0,0, payload=R3, accum=R1);
-  cycle {
+  bundle {
     at @0,0: R0 = A[0];
     at row 1: NOP;
   }
@@ -60,10 +60,10 @@ kernel "overview" {
 - [Formal Grammar](/language/grammar)
 
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/language/overview/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/overview/01-main.castm{castm} [CASTM]
 <<< ../snippets/language/overview/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

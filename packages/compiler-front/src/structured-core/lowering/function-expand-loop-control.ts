@@ -2,7 +2,7 @@ import {
   ErrorCodes,
   makeDiagnostic,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { makeControlCycle } from './function-expand-helpers.js';
 import {
   FunctionExpandStepInput,

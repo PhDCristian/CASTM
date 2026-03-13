@@ -1,4 +1,4 @@
-import { Diagnostic, DirectiveAst, ErrorCodes, makeDiagnostic } from '@openedge/compiler-ir';
+import { Diagnostic, DirectiveAst, ErrorCodes, makeDiagnostic } from '@castm/compiler-ir';
 import { evaluateNumericExpression } from '../../parser-utils/numbers.js';
 
 export function buildConstantMap(directives: DirectiveAst[], diagnostics: Diagnostic[]): Map<string, number> {

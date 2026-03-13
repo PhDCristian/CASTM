@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 function csvRows(csv: string): string[] {
   return csv.trim().split('\n').slice(1);
@@ -11,7 +11,7 @@ describe('issues/FEAT-22 spatial compaction idioms', () => {
 target "uma-cgra-base";
 
 function load_all(reg, addr) {
-  cycle {
+  bundle {
     at all: LWI reg, addr;
   }
 }
@@ -36,7 +36,7 @@ target "uma-cgra-base";
 let L = { 10, 20, 30, 40, 50, 60 };
 
 function compute_qhat_inregs() {
-  cycle {
+  bundle {
     for c in range(0, 4) {
       at @0..2,c: R0 = L[c+1];
     }

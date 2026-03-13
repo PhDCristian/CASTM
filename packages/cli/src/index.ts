@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
-import { compile, emit } from '@openedge/compiler-api';
+import { compile, emit } from '@castm/compiler-api';
 
 interface BaseArgs {
   input?: string;
@@ -52,9 +52,9 @@ function parseArgs(argv: string[]): ParsedCli {
 function printUsage(): void {
   process.stderr.write(
     'Usage:\n' +
-      '  openedge emit <input.dsl> [-o out.csv] [--format flat-csv|sim-matrix-csv]\n' +
-      '  openedge check <input.dsl>\n' +
-      '  openedge analyze <input.dsl>\n'
+      '  castm emit <input.castm> [-o out.csv] [--format flat-csv|sim-matrix-csv]\n' +
+      '  castm check <input.castm>\n' +
+      '  castm analyze <input.castm>\n'
   );
 }
 
@@ -152,7 +152,7 @@ if (directRun) {
   runCli().then((code) => {
     process.exitCode = code;
   }).catch((err) => {
-    process.stderr.write(`openedge failed: ${String(err)}\n`);
+    process.stderr.write(`castm failed: ${String(err)}\n`);
     process.exitCode = 1;
   });
 }

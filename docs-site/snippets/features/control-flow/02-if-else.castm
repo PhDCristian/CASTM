@@ -1,0 +1,8 @@
+target base;
+kernel "ctrl_if_else" {
+  if (R0 == 0) at @0,0 {
+    bundle { @0,1: R1 = R1 + 1; }
+  } else {
+    bundle { @0,1: R1 = R1 + 2; }
+  }
+}

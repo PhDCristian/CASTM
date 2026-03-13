@@ -1,6 +1,6 @@
 # Error Codes
 
-Canonical diagnostics currently exposed by `@openedge/compiler-ir`.
+Canonical diagnostics currently exposed by `@castm/compiler-ir`.
 
 ## Target and assumptions
 
@@ -34,10 +34,10 @@ Canonical diagnostics currently exposed by `@openedge/compiler-ir`.
 
 - `E9001` Unexpected internal state
 
-## Valid compile reference (OpenEdgeDSL ↔ CSV)
+## Valid compile reference (CASTM ↔ CSV)
 
 ::: code-group
-<<< ../snippets/reference/error-codes/01-valid.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/reference/error-codes/01-valid.castm{castm} [CASTM]
 <<< ../snippets/reference/error-codes/01-valid.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -45,7 +45,7 @@ Full CSV: `docs-site/snippets/reference/error-codes/01-valid.csv`.
 
 ## Invalid usage reference
 
-<<< ../snippets/reference/error-codes/02-invalid.edsl{openedge-fail} [OpenEdgeDSL (invalid)]
+<<< ../snippets/reference/error-codes/02-invalid.castm{castm-fail} [CASTM (invalid)]
 
 Expected diagnostic:
 

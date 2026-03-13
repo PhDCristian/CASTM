@@ -1,0 +1,13 @@
+target base;
+let MASK = 0xFFFF;
+let acc = R1;
+let A = { 1, 2, 3, 4 };
+let M[2][2] = { 10, 20, 30, 40 };
+
+kernel "decls" {
+  bundle {
+    at @0,0: R0 = A[2];
+    at @0,1: R2 = M[1][0];
+    at @0,2: LAND R3, R0, MASK;
+  }
+}

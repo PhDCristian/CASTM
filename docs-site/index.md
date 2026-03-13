@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: OpenEdge DSL
+  name: CASTM
   text: Canonical CGRA Compiler Language
-  tagline: Canon-only DSL for OpenEdge CGRA kernels. Deterministic lowering to ISA-compatible CSV with structured compilation artifacts.
+  tagline: Canon-only DSL for CGRA kernels. Deterministic lowering to ISA-compatible CSV with structured compilation artifacts.
   image:
     src: /logo.svg
-    alt: OpenEdge DSL
+    alt: CASTM
   actions:
     - theme: brand
       text: Get Started →
@@ -54,7 +54,7 @@ features:
       width: 32
       height: 32
     title: CLI + API Workflow
-    details: Use openedge emit/check/analyze from CLI or compile/parse/analyze/emit from @openedge/compiler-api with typed artifacts.
+    details: Use castm emit/check/analyze from CLI or compile/parse/analyze/emit from @castm/compiler-api with typed artifacts.
     link: /guide/cli-reference
     linkText: CLI reference
   - icon:
@@ -75,7 +75,7 @@ Use this minimal canonical snippet as a fast sanity check of the toolchain.
 Snippet target: `target base;`.
 
 ::: code-group
-<<< ./snippets/home/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ./snippets/home/01-main.castm{castm} [CASTM]
 <<< ./snippets/home/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

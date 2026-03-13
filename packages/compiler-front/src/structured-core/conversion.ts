@@ -8,7 +8,7 @@ import {
   PragmaAst,
   StructuredKernelStmtAst,
   StructuredProgramAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { cloneAstProgram } from './utils.js';
 import { SourceLineEntry } from './parser-utils/blocks.js';
 import { buildConstantMap } from './lowering/top-level-scope/constants.js';

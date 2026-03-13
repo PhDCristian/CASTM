@@ -37,8 +37,8 @@ describe('docs pragmas contract', () => {
       const csvIncludes = (content.match(/^\s*<<<\s+.+\{csv\}.+$/gim) ?? []).length;
       expect(csvIncludes, `missing CSV includes in ${page}`).toBeGreaterThanOrEqual(4);
 
-      const hasFailFence = /```openedge-fail\b[\s\S]*?```/im.test(content);
-      const hasFailInclude = /^\s*<<<\s+.+\{openedge-fail\}.+$/gim.test(content);
+      const hasFailFence = /```castm-fail\b[\s\S]*?```/im.test(content);
+      const hasFailInclude = /^\s*<<<\s+.+\{castm-fail\}.+$/gim.test(content);
       expect(hasFailFence || hasFailInclude, `missing invalid snippet in ${page}`).toBe(true);
       expect(content, `missing target mention in ${page}`).toMatch(/target\s+base|target\s+"uma-cgra-base"/i);
       expect(content, `missing related examples link in ${page}`).toMatch(/\]\(\/examples\//);

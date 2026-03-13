@@ -2,7 +2,7 @@ import {
   CompilerPass,
   Diagnostic,
   runPassPipeline
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 
 export interface PipelineStage {
   name: string;

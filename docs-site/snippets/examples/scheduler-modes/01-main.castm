@@ -1,0 +1,12 @@
+target base;
+build {
+  optimize O2;
+  scheduler balanced;
+  scheduler_window auto;
+  memory_reorder same_address_fence;
+  prune_noop_cycles on;
+}
+kernel "sched_demo" {
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
+}

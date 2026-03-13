@@ -1,4 +1,4 @@
-import { spanAt } from '@openedge/compiler-ir';
+import { spanAt } from '@castm/compiler-ir';
 import {
   buildRuntimeNoUnrollExitBranch,
   chooseJumpColumn

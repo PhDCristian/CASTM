@@ -3,7 +3,7 @@ import {
   CycleStatementAst,
   GridSpec,
   InstructionAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 
 const CONTROL_OPCODES = new Set([
   'BEQ',

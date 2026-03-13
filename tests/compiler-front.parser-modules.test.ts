@@ -136,9 +136,9 @@ describe('compiler-front lowering module contracts', () => {
   it('collects block bodies and trailing else markers from entries', () => {
     const entries = [
       { lineNo: 1, rawLine: 'if (R0 == IMM(0)) at @0,0 {', cleanLine: 'if (R0 == IMM(0)) at @0,0 {' },
-      { lineNo: 2, rawLine: 'cycle { @0,0: NOP; }', cleanLine: 'cycle { @0,0: NOP; }' },
+      { lineNo: 2, rawLine: 'bundle { @0,0: NOP; }', cleanLine: 'bundle { @0,0: NOP; }' },
       { lineNo: 3, rawLine: '} else {', cleanLine: '} else {' },
-      { lineNo: 4, rawLine: 'cycle { @0,0: NOP; }', cleanLine: 'cycle { @0,0: NOP; }' },
+      { lineNo: 4, rawLine: 'bundle { @0,0: NOP; }', cleanLine: 'bundle { @0,0: NOP; }' },
       { lineNo: 5, rawLine: '}', cleanLine: '}' }
     ];
 
@@ -187,7 +187,7 @@ describe('compiler-front lowering module contracts', () => {
     const inline = parseInlineCycleStatements('@0,0: NOP; at row 1: NOP | NOP;', 20, new Map(), diagnostics);
     expect(inline).toHaveLength(2);
     expect(inline[0]).toMatchObject({ kind: 'at', row: 0, col: 0 });
-    expect(parseLabeledCycleLine('L0: cycle { @0,0: NOP; }')).toMatchObject({ label: 'L0' });
+    expect(parseLabeledCycleLine('L0: bundle { @0,0: NOP; }')).toMatchObject({ label: 'L0' });
     expect(diagnostics).toHaveLength(0);
   });
 
@@ -211,7 +211,7 @@ describe('compiler-front lowering module contracts', () => {
       name: 'mix',
       params: ['dst', 'src'],
       body: [
-        { lineNo: 1, rawLine: 'L0: cycle { @0,0: dst = src + IMM(1); }', cleanLine: 'L0: cycle { @0,0: dst = src + IMM(1); }' }
+        { lineNo: 1, rawLine: 'L0: bundle { @0,0: dst = src + IMM(1); }', cleanLine: 'L0: bundle { @0,0: dst = src + IMM(1); }' }
       ],
       span: { startLine: 1, startColumn: 1, endLine: 1, endColumn: 10 }
     };
@@ -252,7 +252,7 @@ describe('compiler-front lowering module contracts', () => {
     expect(parseLabeledCycleLine('L1: bundle {')).toMatchObject({ label: 'L1' });
 
     // Labeled cycle still works
-    expect(parseLabeledCycleLine('L2: cycle { @0,0: NOP; }')).toMatchObject({ label: 'L2' });
+    expect(parseLabeledCycleLine('L2: bundle { @0,0: NOP; }')).toMatchObject({ label: 'L2' });
 
     expect(diagnostics).toHaveLength(0);
   });

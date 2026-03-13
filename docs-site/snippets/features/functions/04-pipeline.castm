@@ -1,0 +1,10 @@
+target base;
+function stage_load(src) {
+  bundle { @0,0: SADD R2, src, ZERO; }
+}
+function stage_mix(dst) {
+  bundle { @0,1: SADD dst, R2, ZERO; }
+}
+kernel "fn_pipeline" {
+  pipeline(stage_load(R0), stage_mix(R3));
+}

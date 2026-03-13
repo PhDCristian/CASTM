@@ -1,6 +1,6 @@
 import {
   StructuredFnCallStmtAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { splitTopLevel } from '../parser-utils/strings.js';
 import { ADVANCED_NAMES, RESERVED_KEYWORDS } from '../constants.js';
 import { spanAt } from '../utils.js';

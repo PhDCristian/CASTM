@@ -1,6 +1,6 @@
 # Spatial-Temporal Model
 
-OpenEdgeDSL maps source operations to space (`row,col`) and time (`cycle index`).
+CASTM maps source operations to space (`row,col`) and time (`cycle index`).
 
 ## Spatial Placement
 
@@ -19,27 +19,27 @@ Coordinate expressions and ranges are supported:
 
 ## Temporal Ordering
 
-- Each `cycle { ... }` contributes one or more placements at a cycle index.
+- Each `bundle { ... }` contributes one or more placements at a cycle index.
 - Advanced statements can emit multiple generated cycles.
 - `std::latency_hide(...)` may compact adjacent cycles conservatively when hazards are absent.
 
 ## Executable Snippet
 
-```openedge
+```castm
 target base;
 kernel "space_time" {
   for k in range(0, 16) {
-    cycle { @k/4,k%4: NOP; }
+    bundle { @k/4,k%4: NOP; }
   }
-  cycle { @0,0: R0 = R0 + 1; @0,1: R1 = R1 + 1; }
+  bundle { @0,0: R0 = R0 + 1; @0,1: R1 = R1 + 1; }
 }
 ```
 
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/language/spatial-temporal/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/spatial-temporal/01-main.castm{castm} [CASTM]
 <<< ../snippets/language/spatial-temporal/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

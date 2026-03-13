@@ -5,7 +5,7 @@ import {
   GridSpec,
   HirOperation,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { addOperation } from './operations.js';
 
 export function lowerCycleStatements(

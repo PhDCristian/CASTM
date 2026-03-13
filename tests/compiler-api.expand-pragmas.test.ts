@@ -3,7 +3,7 @@ import {
   AstProgram,
   ErrorCodes,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { createExpandPragmasPass } from '../packages/compiler-api/src/passes-shared/expand-pragmas-pass.js';
 
 function makeBaseAst(pragmas: string[]): AstProgram {

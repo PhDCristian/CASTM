@@ -1,0 +1,10 @@
+target base;
+kernel "ctrl_for_if" {
+  for i in range(0, 2) {
+    if (R0 == 0) at @0,0 {
+      bundle { @0,i: R1 = R1 + 1; }
+    } else {
+      bundle { @1,i: R1 = R1 + 2; }
+    }
+  }
+}

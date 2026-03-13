@@ -29,7 +29,7 @@ std::rotate(reg=R0, direction=left|right, distance=1);
 ## Case A — Minimal
 
 ::: code-group
-<<< ../../snippets/pragmas/rotate/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/rotate/01-minimal.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/rotate/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -38,7 +38,7 @@ Full CSV: `docs-site/snippets/pragmas/rotate/01-minimal.csv`.
 ## Case B — Advanced options
 
 ::: code-group
-<<< ../../snippets/pragmas/rotate/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/rotate/02-advanced.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/rotate/02-advanced.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -47,7 +47,7 @@ Full CSV: `docs-site/snippets/pragmas/rotate/02-advanced.csv`.
 ## Case C — Integration in kernel
 
 ::: code-group
-<<< ../../snippets/pragmas/rotate/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/rotate/04-integration.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/rotate/04-integration.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -56,7 +56,7 @@ Full CSV: `docs-site/snippets/pragmas/rotate/04-integration.csv`.
 ## Case D — Edge / boundary
 
 ::: code-group
-<<< ../../snippets/pragmas/rotate/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/rotate/05-edge.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/rotate/05-edge.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -64,7 +64,7 @@ Full CSV: `docs-site/snippets/pragmas/rotate/05-edge.csv`.
 
 ## Case E — Invalid usage
 
-<<< ../../snippets/pragmas/rotate/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+<<< ../../snippets/pragmas/rotate/03-invalid.castm{castm-fail} [CASTM fail]
 
 Expected: explicit diagnostic with source span and actionable hint.
 

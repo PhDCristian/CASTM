@@ -4,7 +4,7 @@ import {
   ErrorCodes,
   MemoryRegionInfo,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { DataRegionCollection, DataSymbolInfo } from './types.js';
 import {
   parseData2dDirectiveValue,

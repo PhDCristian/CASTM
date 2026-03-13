@@ -1,4 +1,4 @@
-# OpenEdge Instruction Reference
+# CASTM Instruction Reference
 
 | Opcode | Category | Operands | Description |
 |---|---|---|---|

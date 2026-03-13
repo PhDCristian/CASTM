@@ -4,7 +4,7 @@ import {
   InstructionAst,
   KernelAst,
   SourceSpan
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import type { SourceLineEntry } from '../parser-utils/blocks.js';
 import type { FunctionExpansionContext } from './function-expand-context.js';
 import type { LoopControlScope } from './loop-control-scope.js';

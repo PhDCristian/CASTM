@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Diagnostic, ErrorCodes, spanAt } from '@openedge/compiler-ir';
+import { Diagnostic, ErrorCodes, spanAt } from '@castm/compiler-ir';
 import { parseAssertionDirectiveValue } from '../packages/compiler-api/src/compiler-driver/assertions.js';
 import { collectDirectiveArtifacts } from '../packages/compiler-api/src/compiler-driver/runtime-artifacts/directives.js';
 import { parseRotateShiftPragmaArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/rotate-shift.js';
@@ -171,7 +171,7 @@ describe('branch coverage round 4', () => {
     const result = tryExpandWhileStatement({
       body: [
         entry(1, 'while (R0 < IMM(3)) at @0,0 {'),
-        entry(2, 'cycle { @0,0: NOP; }'),
+        entry(2, 'bundle { @0,0: NOP; }'),
         entry(3, '}')
       ],
       index: 0,

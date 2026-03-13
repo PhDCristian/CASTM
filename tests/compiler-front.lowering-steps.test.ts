@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ErrorCodes, spanAt } from '@openedge/compiler-ir';
+import { ErrorCodes, spanAt } from '@castm/compiler-ir';
 import {
   tryExpandNestedForLoopStep,
   tryExpandSingleCycleStatementStep,
@@ -278,19 +278,19 @@ describe('compiler-front lowering cycle/function step handlers', () => {
       };
     };
 
-    const inlineLabeled = makeInput([{ lineNo: 1, cleanLine: 'L0: cycle { @0,0: NOP; }' }]);
+    const inlineLabeled = makeInput([{ lineNo: 1, cleanLine: 'L0: bundle { @0,0: NOP; }' }]);
     const inlineLabeledResult = tryExpandCycleStatement(inlineLabeled.input as any);
     expect(inlineLabeledResult.handled).toBe(true);
     expect(inlineLabeled.kernel.cycles).toHaveLength(1);
     expect(inlineLabeled.kernel.cycles[0].label).toBe('L0');
 
-    const labeledUnterminated = makeInput([{ lineNo: 2, cleanLine: 'L1: cycle {' }]);
+    const labeledUnterminated = makeInput([{ lineNo: 2, cleanLine: 'L1: bundle {' }]);
     const labeledUnterminatedResult = tryExpandCycleStatement(labeledUnterminated.input as any);
     expect(labeledUnterminatedResult.shouldBreak).toBe(true);
     expect(labeledUnterminated.input.diagnostics[0].message).toContain('Unterminated labeled bundle');
 
     const labeledBlock = makeInput([
-      { lineNo: 3, cleanLine: 'L2: cycle {' },
+      { lineNo: 3, cleanLine: 'L2: bundle {' },
       { lineNo: 4, cleanLine: '@0,0: NOP;' },
       { lineNo: 5, cleanLine: '}' }
     ]);
@@ -300,7 +300,7 @@ describe('compiler-front lowering cycle/function step handlers', () => {
     expect(labeledBlock.kernel.cycles).toHaveLength(1);
     expect(labeledBlock.kernel.cycles[0].label).toBe('L2');
 
-    const inlineCycle = makeInput([{ lineNo: 6, cleanLine: 'cycle { @0,0: NOP; }' }]);
+    const inlineCycle = makeInput([{ lineNo: 6, cleanLine: 'bundle { @0,0: NOP; }' }]);
     const inlineCycleResult = tryExpandCycleStatement(inlineCycle.input as any);
     expect(inlineCycleResult.handled).toBe(true);
     expect(inlineCycle.kernel.cycles).toHaveLength(1);
@@ -310,7 +310,7 @@ describe('compiler-front lowering cycle/function step handlers', () => {
     const nonCycleResult = tryExpandCycleStatement(nonCycle.input as any);
     expect(nonCycleResult).toMatchObject({ handled: false, shouldBreak: false });
 
-    const cycleUnterminated = makeInput([{ lineNo: 8, cleanLine: 'cycle {' }]);
+    const cycleUnterminated = makeInput([{ lineNo: 8, cleanLine: 'bundle {' }]);
     const cycleUnterminatedResult = tryExpandCycleStatement(cycleUnterminated.input as any);
     expect(cycleUnterminatedResult.handled).toBe(true);
     expect(cycleUnterminatedResult.shouldBreak).toBe(true);

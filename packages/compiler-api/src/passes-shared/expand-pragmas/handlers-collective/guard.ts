@@ -1,7 +1,7 @@
 import {
   ErrorCodes,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   parseGuardPragmaArgs
 } from '../../advanced-args.js';

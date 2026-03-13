@@ -1,0 +1,6 @@
+target base;
+kernel "col_single" {
+  bundle {
+    at col 2: SADD R0, R0, 1;
+  }
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 function csvRows(csv: string): string[] {
   return csv.trim().split('\n').slice(1);
@@ -23,11 +23,11 @@ target "uma-cgra-base";
 build { expansion_mode full-unroll; }
 
 function stage_load(src) {
-  cycle { @0,0: SADD R2, src, ZERO; }
+  bundle { @0,0: SADD R2, src, ZERO; }
 }
 
 function stage_mix(dst) {
-  cycle { @0,1: SADD dst, R2, ZERO; }
+  bundle { @0,1: SADD dst, R2, ZERO; }
 }
 
 kernel "feat16_pipeline" {
@@ -57,11 +57,11 @@ target "uma-cgra-base";
 build { expansion_mode full-unroll; }
 
 function step0() {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 
 function step1(a, b) {
-  cycle { @0,1: SADD R1, a, b; }
+  bundle { @0,1: SADD R1, a, b; }
 }
 
 kernel "feat16_arity" {
@@ -82,15 +82,15 @@ target "uma-cgra-base";
 build { expansion_mode full-unroll; }
 
 function s0(v) {
-  cycle { @0,0: SADD R1, v, ZERO; }
+  bundle { @0,0: SADD R1, v, ZERO; }
 }
 
 function s1(v) {
-  cycle { @0,1: SADD R2, v, R1; }
+  bundle { @0,1: SADD R2, v, R1; }
 }
 
 function s2(v) {
-  cycle { @0,2: SADD R3, v, R2; }
+  bundle { @0,2: SADD R3, v, R2; }
 }
 
 kernel "feat16_cross_pe_local_regs" {

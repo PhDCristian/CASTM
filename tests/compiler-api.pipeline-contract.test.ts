@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 type SerializedCycle = {
   index: number;
@@ -47,7 +47,7 @@ target "uma-cgra-base";
 let A = { 10, 20, 30, 40 };
 kernel "pipeline_contract" {
   route(@0,1 -> @0,0, payload=R3, accum=R1);
-  cycle {
+  bundle {
     @0,0: R0 = A[1];
     @0,1: R2 = R0 + IMM(1);
   }

@@ -1,6 +1,6 @@
 # Expressions
 
-Canonical OpenEdgeDSL supports C-like assignment expressions that lower deterministically to ISA operations.
+Canonical CASTM supports C-like assignment expressions that lower deterministically to ISA operations.
 
 ## When to use
 
@@ -16,7 +16,7 @@ Canonical OpenEdgeDSL supports C-like assignment expressions that lower determin
 ## Case A — Minimal arithmetic assignment
 
 ::: code-group
-<<< ../snippets/features/expressions/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/expressions/01-minimal.castm{castm} [CASTM]
 <<< ../snippets/features/expressions/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -25,7 +25,7 @@ Full CSV: `docs-site/snippets/features/expressions/01-minimal.csv`.
 ## Case B — Bit and mask operations
 
 ::: code-group
-<<< ../snippets/features/expressions/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/expressions/02-advanced.castm{castm} [CASTM]
 <<< ../snippets/features/expressions/02-advanced.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -34,7 +34,7 @@ Full CSV: `docs-site/snippets/features/expressions/02-advanced.csv`.
 ## Case C — Inline arithmetic folding in operands
 
 ::: code-group
-<<< ../snippets/features/expressions/03-inline-arith.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/expressions/03-inline-arith.castm{castm} [CASTM]
 <<< ../snippets/features/expressions/03-inline-arith.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -43,7 +43,7 @@ Full CSV: `docs-site/snippets/features/expressions/03-inline-arith.csv`.
 ## Case D — Function integration with expressions
 
 ::: code-group
-<<< ../snippets/features/expressions/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/expressions/04-integration.castm{castm} [CASTM]
 <<< ../snippets/features/expressions/04-integration.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -52,7 +52,7 @@ Full CSV: `docs-site/snippets/features/expressions/04-integration.csv`.
 ## Case E — Edge operators and constants
 
 ::: code-group
-<<< ../snippets/features/expressions/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/expressions/05-edge.castm{castm} [CASTM]
 <<< ../snippets/features/expressions/05-edge.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -60,7 +60,7 @@ Full CSV: `docs-site/snippets/features/expressions/05-edge.csv`.
 
 ## Case F — Invalid memory-to-memory assignment
 
-<<< ../snippets/features/expressions/06-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+<<< ../snippets/features/expressions/06-invalid.castm{castm-fail} [CASTM fail]
 
 Expected diagnostic: `E3001`.
 

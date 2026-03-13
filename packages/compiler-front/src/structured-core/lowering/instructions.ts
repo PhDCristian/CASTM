@@ -1,4 +1,4 @@
-import { InstructionAst, spanAt } from '@openedge/compiler-ir';
+import { InstructionAst, spanAt } from '@castm/compiler-ir';
 import { splitTopLevel } from '../parser-utils/strings.js';
 
 export function parseInstruction(text: string, line: number, column: number): InstructionAst {

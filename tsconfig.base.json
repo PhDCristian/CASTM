@@ -15,13 +15,13 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "@openedge/lang-spec": ["./packages/lang-spec/src/index.ts"],
-      "@openedge/compiler-ir": ["./packages/compiler-ir/src/index.ts"],
-      "@openedge/compiler-front": ["./packages/compiler-front/src/index.ts"],
-      "@openedge/compiler-backend-csv": ["./packages/compiler-backend-csv/src/index.ts"],
-      "@openedge/compiler-api": ["./packages/compiler-api/src/index.ts"],
-      "@openedge/lsp-server": ["./packages/lsp-server/src/index.ts"],
-      "@openedge/testkit": ["./packages/testkit/src/index.ts"]
+      "@castm/lang-spec": ["./packages/lang-spec/src/index.ts"],
+      "@castm/compiler-ir": ["./packages/compiler-ir/src/index.ts"],
+      "@castm/compiler-front": ["./packages/compiler-front/src/index.ts"],
+      "@castm/compiler-backend-csv": ["./packages/compiler-backend-csv/src/index.ts"],
+      "@castm/compiler-api": ["./packages/compiler-api/src/index.ts"],
+      "@castm/lsp-server": ["./packages/lsp-server/src/index.ts"],
+      "@castm/testkit": ["./packages/testkit/src/index.ts"]
     }
   }
 }

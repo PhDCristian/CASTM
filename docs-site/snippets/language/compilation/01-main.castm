@@ -1,0 +1,15 @@
+target base;
+let A = { 2, 4, 6, 8 };
+let B @120 = { 0, 0 };
+
+kernel "pipeline_glance" {
+  bundle {
+    at @0,0: R0 = A[0];
+    at @0,1: R1 = A[1];
+  }
+  std::route(@0,1 -> @0,0, payload=R1, accum=R2);
+  bundle {
+    at @0,0: R3 = R0 + R2;
+    at @0,1: B[0] = R3;
+  }
+}

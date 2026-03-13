@@ -1,7 +1,0 @@
-target base;
-function load(src) {
-  cycle { @0,0: SADD R2, src, ZERO; }
-}
-kernel "fn_basic" {
-  load(R0);
-}

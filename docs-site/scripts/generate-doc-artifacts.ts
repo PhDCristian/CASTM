@@ -22,7 +22,7 @@ function collectEdslFiles(dir: string): string[] {
       out.push(...collectEdslFiles(full));
       continue;
     }
-    if (entry.isFile() && full.endsWith('.edsl')) out.push(full);
+    if (entry.isFile() && full.endsWith('.castm')) out.push(full);
   }
   return out;
 }
@@ -41,7 +41,7 @@ function classifySnippet(sourcePath: string): SnippetEntry {
 }
 
 function assertNoLegacyCompileConfig(sourcePath: string): void {
-  const configPath = sourcePath.replace(/\.edsl$/i, '.compile.json');
+  const configPath = sourcePath.replace(/\.castm$/i, '.compile.json');
   if (fs.existsSync(configPath)) {
     throw new Error(
       `Legacy compile-config sidecar is not allowed: ${configPath}. ` +
@@ -51,8 +51,8 @@ function assertNoLegacyCompileConfig(sourcePath: string): void {
 }
 
 function removeCsvArtifacts(sourcePath: string): void {
-  const csvPath = sourcePath.replace(/\.edsl$/i, '.csv');
-  const excerptPath = sourcePath.replace(/\.edsl$/i, '.excerpt.csv');
+  const csvPath = sourcePath.replace(/\.castm$/i, '.csv');
+  const excerptPath = sourcePath.replace(/\.castm$/i, '.excerpt.csv');
   if (fs.existsSync(csvPath)) fs.unlinkSync(csvPath);
   if (fs.existsSync(excerptPath)) fs.unlinkSync(excerptPath);
 }
@@ -64,7 +64,7 @@ function main(): void {
 
   const files = collectEdslFiles(snippetsRoot).sort();
   if (files.length === 0) {
-    throw new Error(`No .edsl snippets found under ${snippetsRoot}`);
+    throw new Error(`No .castm snippets found under ${snippetsRoot}`);
   }
 
   let generated = 0;
@@ -102,8 +102,8 @@ function main(): void {
       throw new Error(`Failed emitting CSV for ${sourcePath}`);
     }
 
-    const csvPath = sourcePath.replace(/\.edsl$/i, '.csv');
-    const excerptPath = sourcePath.replace(/\.edsl$/i, '.excerpt.csv');
+    const csvPath = sourcePath.replace(/\.castm$/i, '.csv');
+    const excerptPath = sourcePath.replace(/\.castm$/i, '.excerpt.csv');
 
     fs.writeFileSync(csvPath, `${emitted.csv.trim()}\n`);
     fs.writeFileSync(excerptPath, toExcerpt(emitted.csv, excerptLineLimit));

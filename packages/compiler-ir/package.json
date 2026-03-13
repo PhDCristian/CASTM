@@ -1,5 +1,5 @@
 {
-  "name": "@openedge/compiler-ir",
+  "name": "@castm/compiler-ir",
   "version": "2.0.0-alpha.1",
   "type": "module",
   "main": "src/index.ts",
@@ -14,6 +14,6 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@openedge/lang-spec": "2.0.0-alpha.1"
+    "@castm/lang-spec": "2.0.0-alpha.1"
   }
 }

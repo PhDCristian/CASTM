@@ -1,6 +1,0 @@
-target base;
-kernel "for_static" {
-  for i in range(0, 4) {
-    cycle { @0,i: R2 = R0 + 1; }
-  }
-}

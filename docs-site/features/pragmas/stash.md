@@ -30,7 +30,7 @@ std::stash(action=save|restore, reg=Rr, addr=<expr>, target=all|row(i)|col(j)|po
 ## Case A — Minimal
 
 ::: code-group
-<<< ../../snippets/pragmas/stash/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stash/01-minimal.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/stash/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -39,7 +39,7 @@ Full CSV: `docs-site/snippets/pragmas/stash/01-minimal.csv`.
 ## Case B — Advanced options
 
 ::: code-group
-<<< ../../snippets/pragmas/stash/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stash/02-advanced.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/stash/02-advanced.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -48,7 +48,7 @@ Full CSV: `docs-site/snippets/pragmas/stash/02-advanced.csv`.
 ## Case C — Integration in kernel
 
 ::: code-group
-<<< ../../snippets/pragmas/stash/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stash/04-integration.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/stash/04-integration.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -57,7 +57,7 @@ Full CSV: `docs-site/snippets/pragmas/stash/04-integration.csv`.
 ## Case D — Edge / boundary
 
 ::: code-group
-<<< ../../snippets/pragmas/stash/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/stash/05-edge.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/stash/05-edge.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -65,7 +65,7 @@ Full CSV: `docs-site/snippets/pragmas/stash/05-edge.csv`.
 
 ## Case E — Invalid usage
 
-<<< ../../snippets/pragmas/stash/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+<<< ../../snippets/pragmas/stash/03-invalid.castm{castm-fail} [CASTM fail]
 
 Expected: explicit diagnostic with source span and actionable hint.
 
@@ -78,4 +78,4 @@ Lowers to deterministic SWI/LWI placements according to selected target subset.
 - Practical examples: [/examples/kernel-compaction](/examples/kernel-compaction)
 
 - `std::stream_load/store(...)` for IO streams
-- memory sugar inside `cycle {}` for explicit loads/stores
+- memory sugar inside `bundle {}` for explicit loads/stores

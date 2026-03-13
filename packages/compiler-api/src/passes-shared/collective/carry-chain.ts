@@ -5,7 +5,7 @@ import {
   GridSpec,
   SourceSpan,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { CarryChainPragmaArgs } from '../advanced-args.js';
 import { createInstruction, createMultiAtCycle } from '../ast-utils.js';
 

@@ -1,4 +1,4 @@
-import { CycleStatementAst, Diagnostic, ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
+import { CycleStatementAst, Diagnostic, ErrorCodes, makeDiagnostic, spanAt } from '@castm/compiler-ir';
 import { parseInstruction } from './instructions.js';
 import { SourceLineEntry } from '../parser-utils/blocks.js';
 import { applyBindings } from '../parser-utils/numbers.js';

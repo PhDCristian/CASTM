@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   parseStructuredSource,
   preprocessIncludes
-} from '@openedge/compiler-front';
-import type { Diagnostic } from '@openedge/compiler-ir';
+} from '@castm/compiler-front';
+import type { Diagnostic } from '@castm/compiler-ir';
 
 // ═══════════════════════════════════════════════════════════════════════
 // Feature 1: Label interpolation in for loops
@@ -14,9 +14,9 @@ describe('label interpolation in for loops', () => {
 target "uma-cgra-base";
 kernel "label_interp" {
   for i in range(3) {
-    label_{i}: cycle { @0,0: LWI R0, i; }
+    label_{i}: bundle { @0,0: LWI R0, i; }
   }
-  cycle { @0,1: JUMP label_0, ZERO; }
+  bundle { @0,1: JUMP label_0, ZERO; }
 }
 `;
     const result = parseStructuredSource(source);
@@ -30,8 +30,8 @@ kernel "label_interp" {
 target "uma-cgra-base";
 kernel "label_goto" {
   for i in range(2) {
-    ret_{i}: cycle { @0,0: LWI R0, i; }
-    cycle { @0,1: JUMP ret_{i}, ZERO; }
+    ret_{i}: bundle { @0,0: LWI R0, i; }
+    bundle { @0,1: JUMP ret_{i}, ZERO; }
   }
 }
 `;
@@ -53,8 +53,8 @@ kernel "label_goto" {
 target "uma-cgra-base";
 kernel "label_imm" {
   for i in range(2) {
-    target_{i}: cycle { @0,0: LWI R0, 42; }
-    cycle { @0,0: SADD R3, ZERO, target_{i}; }
+    target_{i}: bundle { @0,0: LWI R0, 42; }
+    bundle { @0,0: SADD R3, ZERO, target_{i}; }
   }
 }
 `;
@@ -74,7 +74,7 @@ target "uma-cgra-base";
 kernel "nested_label" {
   for i in range(2) {
     for j in range(2) {
-      lbl_{i}_{j}: cycle { @0,0: NOP; }
+      lbl_{i}_{j}: bundle { @0,0: NOP; }
     }
   }
 }
@@ -90,7 +90,7 @@ kernel "nested_label" {
 target "uma-cgra-base";
 kernel "no_false_interp" {
   for i in range(2) {
-    lbl_{i}_{notavar}: cycle { @0,0: NOP; }
+    lbl_{i}_{notavar}: bundle { @0,0: NOP; }
   }
 }
 `;
@@ -113,7 +113,7 @@ describe('macros', () => {
 target "uma-cgra-base";
 
 macro nop_at(r, c) {
-  cycle { @r,c: NOP; }
+  bundle { @r,c: NOP; }
 }
 
 kernel "macro_basic" {
@@ -141,13 +141,13 @@ kernel "macro_basic" {
 target "uma-cgra-base";
 
 macro call_subr(target_label, ret_label) {
-  cycle { @0,0: SADD R3, ZERO, ret_label; }
-  cycle { @0,1: JUMP target_label, ZERO; }
+  bundle { @0,0: SADD R3, ZERO, ret_label; }
+  bundle { @0,1: JUMP target_label, ZERO; }
 }
 
 kernel "macro_labels" {
   call_subr(my_func, after_call);
-  after_call: cycle { @0,0: NOP; }
+  after_call: bundle { @0,0: NOP; }
 }
 `;
     const result = parseStructuredSource(source);
@@ -164,7 +164,7 @@ kernel "macro_labels" {
 target "uma-cgra-base";
 
 macro with_label(val) {
-  internal: cycle { @0,0: LWI R0, val; }
+  internal: bundle { @0,0: LWI R0, val; }
 }
 
 kernel "macro_no_rename" {
@@ -183,15 +183,15 @@ kernel "macro_no_rename" {
 target "uma-cgra-base";
 
 macro do_call(ret_label) {
-  cycle { @0,0: SADD R3, ZERO, ret_label; }
-  cycle { @0,1: JUMP entry, ZERO; }
+  bundle { @0,0: SADD R3, ZERO, ret_label; }
+  bundle { @0,1: JUMP entry, ZERO; }
 }
 
 kernel "macro_for_labels" {
-  entry: cycle { @0,0: NOP; }
+  entry: bundle { @0,0: NOP; }
   for i in range(3) {
     do_call(ret_{i});
-    ret_{i}: cycle { @0,0: NOP; }
+    ret_{i}: bundle { @0,0: NOP; }
   }
 }
 `;
@@ -213,18 +213,18 @@ describe('include directive', () => {
   it('preprocesses include directives by replacing with file content', () => {
     const mainSource = `
 target "uma-cgra-base";
-include "helper.edsl";
+include "helper.castm";
 kernel "with_include" {
   helper_func(0, 0);
 }
 `;
     const helperContent = `
 function helper_func(r, c) {
-  cycle { @r,c: NOP; }
+  bundle { @r,c: NOP; }
 }
 `;
     const resolveInclude = (path: string): string | null => {
-      if (path === 'helper.edsl') return helperContent;
+      if (path === 'helper.castm') return helperContent;
       return null;
     };
 
@@ -236,9 +236,9 @@ function helper_func(r, c) {
   it('reports error for unresolvable includes', () => {
     const source = `
 target "uma-cgra-base";
-include "nonexistent.edsl";
+include "nonexistent.castm";
 kernel "broken_include" {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `;
     const resolveInclude = (): string | null => null;
@@ -247,10 +247,10 @@ kernel "broken_include" {
   });
 
   it('reports error for circular includes', () => {
-    const source = `include "a.edsl";`;
+    const source = `include "a.castm";`;
     const resolveInclude = (path: string): string | null => {
-      if (path === 'a.edsl') return `include "b.edsl";`;
-      if (path === 'b.edsl') return `include "a.edsl";`;
+      if (path === 'a.castm') return `include "b.castm";`;
+      if (path === 'b.castm') return `include "a.castm";`;
       return null;
     };
     const diagnostics: Diagnostic[] = [];
@@ -261,16 +261,16 @@ kernel "broken_include" {
   it('supports nested includes', () => {
     const mainSource = `
 target "uma-cgra-base";
-include "a.edsl";
+include "a.castm";
 kernel "nested_includes" {
   from_b(1);
 }
 `;
     const resolveInclude = (path: string): string | null => {
-      if (path === 'a.edsl') return `include "b.edsl";`;
-      if (path === 'b.edsl') return `
+      if (path === 'a.castm') return `include "b.castm";`;
+      if (path === 'b.castm') return `
 function from_b(x) {
-  cycle { @0,0: LWI R0, x; }
+  bundle { @0,0: LWI R0, x; }
 }
 `;
       return null;
@@ -285,9 +285,9 @@ function from_b(x) {
   it('reports unresolved include when no resolveInclude option provided', () => {
     const source = `
 target "uma-cgra-base";
-include "something.edsl";
+include "something.castm";
 kernel "no_resolver" {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `;
     const result = parseStructuredSource(source);
@@ -304,8 +304,8 @@ describe('let constants', () => {
 target "uma-cgra-base";
 kernel "let_immediates" {
   let ADDR = 128;
-  cycle { @0,0: LWI R0, ADDR; }
-  cycle { @0,0: SWI R0, ADDR; }
+  bundle { @0,0: LWI R0, ADDR; }
+  bundle { @0,0: SWI R0, ADDR; }
 }
 `;
     const result = parseStructuredSource(source);
@@ -330,7 +330,7 @@ target "uma-cgra-base";
 kernel "let_for_range" {
   let N = 3;
   for k in range(N) {
-    cycle { @0,0: LWI R0, k; }
+    bundle { @0,0: LWI R0, k; }
   }
 }
 `;
@@ -348,7 +348,7 @@ kernel "let_chain" {
   let A = 2;
   let B = A + 1;
   for k in range(B) {
-    cycle { @0,0: LWI R0, k; }
+    bundle { @0,0: LWI R0, k; }
   }
 }
 `;

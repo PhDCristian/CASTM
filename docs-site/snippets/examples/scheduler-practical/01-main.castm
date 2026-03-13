@@ -1,0 +1,13 @@
+target base;
+build {
+  optimize O2;
+  scheduler safe;
+  scheduler_window 1;
+  memory_reorder strict;
+  prune_noop_cycles on;
+}
+kernel "window_demo" {
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
+  bundle { at @0,2: SADD R3, R0, 1; }
+}

@@ -5,4 +5,4 @@ export {
   parse
 } from './compiler-driver/index.js';
 export * from './passes.js';
-export * from '@openedge/compiler-ir';
+export * from '@castm/compiler-ir';

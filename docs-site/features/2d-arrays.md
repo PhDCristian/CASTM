@@ -18,12 +18,12 @@ These lower to `LWI/SWI` with resolved linear addresses.
 
 ## Executable Snippet
 
-```openedge
+```castm
 target base;
 let M[2][2] = { 10, 20, 30, 40 };
 
 kernel "array2d" {
-  cycle {
+  bundle {
     at @0,0: R0 = M[1][1];
     at @0,1: M[0][1] = R0;
   }
@@ -31,10 +31,10 @@ kernel "array2d" {
 ```
 
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ::: code-group
-<<< ../snippets/features/2d-arrays/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/2d-arrays/01-main.castm{castm} [CASTM]
 <<< ../snippets/features/2d-arrays/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 describe('issues/FEAT-3 specialize pass', () => {
   it('specializes SMUL identities with 1 and 0', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat3_smul" {
-  cycle {
+  bundle {
     @0,0: SMUL R2, R0, 1;
     @0,1: SMUL R3, 1, R1;
     @0,2: SMUL R4, R1, 0;
@@ -26,7 +26,7 @@ kernel "feat3_smul" {
     const source = `
 target "uma-cgra-base";
 kernel "feat3_add_shift" {
-  cycle {
+  bundle {
     @0,0: SADD R1, R0, 0;
     @0,1: SADD R2, 0, R0;
     @0,2: SSUB R3, R2, 0;
@@ -50,7 +50,7 @@ kernel "feat3_add_shift" {
     const source = `
 target "uma-cgra-base";
 kernel "feat3_logic" {
-  cycle {
+  bundle {
     @0,0: LAND R1, R0, 0;
     @0,1: LOR R2, R0, 0;
     @0,2: LXOR R3, R0, 0;
@@ -76,7 +76,7 @@ kernel "feat3_logic" {
     const source = `
 target "uma-cgra-base";
 kernel "feat3_keep" {
-  cycle {
+  bundle {
     @0,0: SMUL R1, R0, FACTOR;
     @0,1: FXPMUL R2, R0, 1;
     @0,2: SSUB R3, R2, 2;
@@ -100,7 +100,7 @@ kernel "feat3_keep" {
     const source = `
 target "uma-cgra-base";
 kernel "feat3_imm_wrapped" {
-  cycle {
+  bundle {
     @0,0: SADD R1, R0, IMM(0);
     @0,1: SMUL R2, R0, IMM(1);
     @0,2: LAND R3, R0, IMM(0);

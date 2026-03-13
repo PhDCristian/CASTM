@@ -5,8 +5,8 @@ import {
   GridSpec,
   makeDiagnostic,
   spanAt
-} from '@openedge/compiler-ir';
-import { getTargetProfile, resolveTargetProfileId } from '@openedge/lang-spec';
+} from '@castm/compiler-ir';
+import { getTargetProfile, resolveTargetProfileId } from '@castm/lang-spec';
 
 export interface ResolvedGridTarget {
   targetProfileId: string;
@@ -48,7 +48,7 @@ export function resolveGrid(
       'error',
       spanAt(1, 1, 1),
       `Unknown target profile '${targetProfileId}'.`,
-      'Check @openedge/lang-spec target-profiles catalog.'
+      'Check @castm/lang-spec target-profiles catalog.'
     ));
     return null;
   }

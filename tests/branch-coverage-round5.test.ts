@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Diagnostic, ErrorCodes, spanAt } from '@openedge/compiler-ir';
+import { Diagnostic, ErrorCodes, spanAt } from '@castm/compiler-ir';
 import { buildStencilCycles } from '../packages/compiler-api/src/passes-shared/collective/stencil.js';
 import { parseBroadcastPragmaArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/broadcast.js';
 import { parseProgramHeadersFromTokens } from '../packages/compiler-front/src/structured-core/token-stream.js';

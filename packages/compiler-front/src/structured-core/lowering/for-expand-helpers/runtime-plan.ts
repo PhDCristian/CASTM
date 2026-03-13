@@ -1,7 +1,7 @@
 import {
   CycleAst,
   InstructionAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { escapeRegExp } from '../../parser-utils/strings.js';
 
 export interface RuntimeNoUnrollAggressivePlan {

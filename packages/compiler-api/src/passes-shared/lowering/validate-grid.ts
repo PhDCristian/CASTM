@@ -5,7 +5,7 @@ import {
   GridSpec,
   HirProgram,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 
 export function createValidateGridPass(grid: GridSpec): CompilerPass<HirProgram, HirProgram> {
   return {

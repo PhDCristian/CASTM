@@ -1,7 +1,7 @@
 import {
   KernelAst,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { buildRuntimeNoUnrollAggressivePlan } from '../for-expand-helpers.js';
 import {
   ExpandRuntimeForInput,

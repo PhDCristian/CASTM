@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 describe('compiler-api canonical contracts', () => {
   it('requires target declaration in canonical syntax', () => {
     const source = `
 kernel "missing_target" {
-  cycle {
+  bundle {
     @0,0: NOP;
   }
 }
@@ -25,7 +25,7 @@ let A = { 10, 20, 30, 40 };
 let B @100 = { 0, 0, 0 };
 let M[2][2] = { 1, 2, 3, 4 };
 kernel "decls" {
-  cycle {
+  bundle {
     @0,0: R0 = A[1];
     @0,1: B[2] = R0;
     @0,2: R2 = M[1][1];
@@ -45,7 +45,7 @@ kernel "decls" {
     const source = `
 target "uma-cgra-base";
 kernel "raw_mem" {
-  cycle {
+  bundle {
     @0,0: [360 + i*4] = R1;
     @0,1: R1 = [360 + i*4];
   }
@@ -63,7 +63,7 @@ target "uma-cgra-base";
 let A = { 1, 2, 3 };
 let B = { 4, 5, 6 };
 kernel "mem2mem" {
-  cycle {
+  bundle {
     @0,0: A[0] = B[1];
   }
 }
@@ -81,13 +81,13 @@ build {
   prune_noop_cycles off;
 }
 kernel "spatial" {
-  cycle {
+  bundle {
     at row 0: NOP;
   }
-  cycle {
+  bundle {
     at col 1: NOP;
   }
-  cycle {
+  bundle {
     at all: NOP;
   }
 }
@@ -104,12 +104,12 @@ kernel "spatial" {
 target "uma-cgra-base";
 kernel "ctrl" {
   if (R0 == 0) at @0,0 {
-    cycle { @0,1: R1 = R1 + 1; }
+    bundle { @0,1: R1 = R1 + 1; }
   } else {
-    cycle { @0,1: R1 = R1 + 2; }
+    bundle { @0,1: R1 = R1 + 2; }
   }
   while (R1 < 3) at @0,0 {
-    cycle { @0,1: R1 = R1 + 1; }
+    bundle { @0,1: R1 = R1 + 1; }
   }
 }
 `;
@@ -124,7 +124,7 @@ kernel "ctrl" {
 target "uma-cgra-base";
 kernel "runtime_for" {
   for R0 in range(0, 3) at @0,0 runtime {
-    cycle { @0,1: R1 = R0 + 1; }
+    bundle { @0,1: R1 = R0 + 1; }
   }
 }
 `;
@@ -144,7 +144,7 @@ build {
 kernel "loop_modifiers" {
   for i in range(0, 2) unroll(2) collapse(2) {
     for j in range(0, 2) {
-      cycle { @i,j: NOP; }
+      bundle { @i,j: NOP; }
     }
   }
 }
@@ -165,7 +165,7 @@ kernel "loop_modifiers" {
 target "uma-cgra-base";
 kernel "bad_collapse" {
   for i in range(0, 2) collapse(2) {
-    cycle { @0,i: NOP; }
+    bundle { @0,i: NOP; }
   }
 }
 `;
@@ -230,7 +230,7 @@ kernel "advanced" {
 target "uma-cgra-base";
 kernel "structured_boundary" {
   route(@0,1 -> @0,0, payload=R3, accum=R1);
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `;
     const result = compile(source, { emitArtifacts: ['structured', 'ast'] });
@@ -247,7 +247,7 @@ build {
   scheduler safe;
 }
 kernel "phase_trace" {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `;
     const result = compile(source, { emitArtifacts: ['ast', 'hir', 'mir', 'lir'] });
@@ -264,8 +264,8 @@ kernel "phase_trace" {
     const source = `
 target "uma-cgra-base";
 kernel "scheduler_mode_trace" {
-  cycle { @0,0: SADD R1, R0, 1; }
-  cycle { @0,1: SADD R2, R0, 1; }
+  bundle { @0,0: SADD R1, R0, 1; }
+  bundle { @0,1: SADD R2, R0, 1; }
 }
 `;
     const balancedSource = source.replace(
@@ -294,7 +294,7 @@ kernel "scheduler_mode_trace" {
 target "uma-cgra-base";
 .const X 10
 kernel "legacy_decl" {
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `;
     const result = compile(source);
@@ -320,7 +320,7 @@ target "uma-cgra-base";
 kernel "legacy_control_pragma" {
   #pragma unroll(4)
   for i in range(0, 4) {
-    cycle { @0,0: NOP; }
+    bundle { @0,0: NOP; }
   }
 }
 `;
@@ -347,7 +347,7 @@ kernel "legacy_auto_cycle" {
     const source = `
 target "uma-cgra-base";
 kernel "legacy_spatial" {
-  cycle { row 0: NOP; }
+  bundle { row 0: NOP; }
 }
 `;
     const result = compile(source);
@@ -360,7 +360,7 @@ kernel "legacy_spatial" {
 target "uma-cgra-base";
 kernel "legacy_ctrl" {
   if (R0 == IMM(0)) @0,0 {
-    cycle { @0,1: NOP; }
+    bundle { @0,1: NOP; }
   }
 }
 `;
@@ -374,7 +374,7 @@ kernel "legacy_ctrl" {
 target "uma-cgra-base";
 kernel "legacy_for" {
   for R0 in range(0, 2) @0,0 runtime {
-    cycle { @0,1: NOP; }
+    bundle { @0,1: NOP; }
   }
 }
 `;
@@ -387,8 +387,8 @@ kernel "legacy_for" {
     const source = `
 target "uma-cgra-base";
 kernel "noop_prune" {
-  cycle { at @0,0: NOP; }
-  cycle { at @0,0: R1 = R0 + 1; }
+  bundle { at @0,0: NOP; }
+  bundle { at @0,0: R1 = R0 + 1; }
 }
 `;
     const result = compile(source, { emitArtifacts: ['mir', 'csv'], pruneNoopCycles: true });
@@ -401,8 +401,8 @@ kernel "noop_prune" {
     const source = `
 target "uma-cgra-base";
 kernel "noop_prune_guarded" {
-  cycle { at @0,0: BEQ R0, 0, 1; }
-  cycle { at @0,0: NOP; }
+  bundle { at @0,0: BEQ R0, 0, 1; }
+  bundle { at @0,0: NOP; }
 }
 `;
     const result = compile(source, { emitArtifacts: ['mir', 'csv'], pruneNoopCycles: true });

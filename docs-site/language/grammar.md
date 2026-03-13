@@ -12,10 +12,10 @@ This page mirrors the public-facing subset used by the current compiler.
 - Executable snippets include `target base;`.
 - CSV excerpts are generated from snippet artifacts.
 
-## Grammar sample (OpenEdgeDSL ↔ CSV)
+## Grammar sample (CASTM ↔ CSV)
 
 ::: code-group
-<<< ../snippets/language/grammar/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/language/grammar/01-main.castm{castm} [CASTM]
 <<< ../snippets/language/grammar/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

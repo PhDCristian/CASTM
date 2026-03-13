@@ -10,7 +10,7 @@ import {
   MirProgram,
   StructuredProgramAst,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   createResolveSymbolsPass,
   createValidateGridPass,

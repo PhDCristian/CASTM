@@ -1,0 +1,7 @@
+// expect-error: E2002
+target base;
+kernel "loops_invalid" {
+  for R0 in range(0, 4) at @0,0 runtime unroll(2) {
+    bundle { at @0,1: R1 = R0 + 1; }
+  }
+}

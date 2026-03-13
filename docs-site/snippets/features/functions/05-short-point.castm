@@ -1,0 +1,7 @@
+target base;
+function bump(dst) {
+  bundle { @0,0: dst = dst + 1; @0,1: dst = dst + 1; }
+}
+kernel "fn_short" {
+  bump(R1);
+}

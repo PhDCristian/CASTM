@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 describe('FEAT-23 labeled control-flow statements', () => {
   it('attaches label to first emitted cycle of labeled for/if/while', () => {
@@ -7,17 +7,17 @@ describe('FEAT-23 labeled control-flow statements', () => {
 target "uma-cgra-base";
 kernel "labeled_control_flow" {
   loopLabel: for i in range(0, 1) {
-    cycle { @0,0: NOP; }
+    bundle { @0,0: NOP; }
   }
 
   ifLabel: if (R0 == 0) at @0,0 {
-    cycle { @0,1: NOP; }
+    bundle { @0,1: NOP; }
   } else {
-    cycle { @0,2: NOP; }
+    bundle { @0,2: NOP; }
   }
 
   whileLabel: while (R1 < 1) at @0,0 {
-    cycle { @0,3: NOP; }
+    bundle { @0,3: NOP; }
   }
 }
 `;
@@ -55,7 +55,7 @@ kernel "nested_labeled_control" {
 target "uma-cgra-base";
 kernel "labeled_empty_for" {
   emptyLoop: for i in range(0, 0) {
-    cycle { @0,0: NOP; }
+    bundle { @0,0: NOP; }
   }
 }
 `;

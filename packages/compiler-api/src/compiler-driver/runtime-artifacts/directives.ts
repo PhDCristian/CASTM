@@ -6,7 +6,7 @@ import {
   IoConfigInfo,
   SourceSpan,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { parseNumericLiteral } from '../numbers.js';
 import { SymbolCollections } from './symbols.js';
 

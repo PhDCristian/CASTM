@@ -1,4 +1,4 @@
-import { getInstructionSet } from '@openedge/lang-spec';
+import { getInstructionSet } from '@castm/lang-spec';
 import {
   Diagnostic,
   ErrorCodes,
@@ -6,7 +6,7 @@ import {
   HirOperation,
   InstructionAst,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { resolveLabelOperand } from './labels.js';
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
@@ -63,7 +63,7 @@ export function addOperation(
       'error',
       instruction.span,
       `Unknown opcode '${instruction.opcode}'.`,
-      'Check the instruction set catalog in @openedge/lang-spec.'
+      'Check the instruction set catalog in @castm/lang-spec.'
     ));
     return;
   }

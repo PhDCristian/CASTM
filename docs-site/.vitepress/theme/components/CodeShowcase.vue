@@ -6,14 +6,14 @@ let input = { 10, 20, 30, 40 };
 let output @100 = { 0 };
 
 function stage_load(src) {
-    cycle { @0,0: SADD R2, src, ZERO; }
+    bundle { @0,0: SADD R2, src, ZERO; }
 }
 
 kernel "vector_reduce" {
     pipeline(stage_load(R0));
     reduce(op=add, dest=R1, src=R2, axis=row);
 
-    cycle {
+    bundle {
         @0,0: output[0] = R1;
     }
 }`

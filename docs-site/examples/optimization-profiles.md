@@ -17,12 +17,12 @@ Use this page when you want to compare `O0/O1/O2/O3` behavior on the same source
 - only `build { ... }` changes between cases
 - CSV shown is generated from each snippet
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ### Case A — `O0` (no compaction)
 
 ::: code-group
-<<< ../snippets/examples/optimization-profiles/01-o0.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/optimization-profiles/01-o0.castm{castm} [CASTM]
 <<< ../snippets/examples/optimization-profiles/01-o0.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -31,7 +31,7 @@ Full CSV: `docs-site/snippets/examples/optimization-profiles/01-o0.csv`.
 ### Case B — `O1` (safe + small window)
 
 ::: code-group
-<<< ../snippets/examples/optimization-profiles/02-o1.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/optimization-profiles/02-o1.castm{castm} [CASTM]
 <<< ../snippets/examples/optimization-profiles/02-o1.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -40,7 +40,7 @@ Full CSV: `docs-site/snippets/examples/optimization-profiles/02-o1.csv`.
 ### Case C — `O2` (balanced default)
 
 ::: code-group
-<<< ../snippets/examples/optimization-profiles/03-o2.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/optimization-profiles/03-o2.castm{castm} [CASTM]
 <<< ../snippets/examples/optimization-profiles/03-o2.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -49,7 +49,7 @@ Full CSV: `docs-site/snippets/examples/optimization-profiles/03-o2.csv`.
 ### Case D — `O3` (aggressive preset)
 
 ::: code-group
-<<< ../snippets/examples/optimization-profiles/04-o3.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/optimization-profiles/04-o3.castm{castm} [CASTM]
 <<< ../snippets/examples/optimization-profiles/04-o3.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -58,7 +58,7 @@ Full CSV: `docs-site/snippets/examples/optimization-profiles/04-o3.csv`.
 ### Case E — `O2` with explicit override
 
 ::: code-group
-<<< ../snippets/examples/optimization-profiles/05-o2-window0.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/optimization-profiles/05-o2-window0.castm{castm} [CASTM]
 <<< ../snippets/examples/optimization-profiles/05-o2-window0.excerpt.csv{csv} [CSV excerpt]
 :::
 

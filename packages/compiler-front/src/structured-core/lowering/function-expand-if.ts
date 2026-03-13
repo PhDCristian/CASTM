@@ -1,4 +1,4 @@
-import { ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
+import { ErrorCodes, makeDiagnostic, spanAt } from '@castm/compiler-ir';
 import {
   buildFalseBranchInstruction,
   parseControlHeader

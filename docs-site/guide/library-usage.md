@@ -5,17 +5,17 @@ outline: deep
 
 # Library Usage
 
-Use `@openedge/compiler-api` for typed compilation phases.
+Use `@castm/compiler-api` for typed compilation phases.
 
 ## Target and assumptions
 
 - Source snippets are canonical and include `target base;`.
 - Artifact examples assume deterministic lowering in the default base profile.
 
-## OpenEdgeDSL ↔ CSV quick sample
+## CASTM ↔ CSV quick sample
 
 ::: code-group
-<<< ../snippets/guide/library-usage/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/guide/library-usage/01-main.castm{castm} [CASTM]
 <<< ../snippets/guide/library-usage/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -24,13 +24,13 @@ Full CSV: `docs-site/snippets/guide/library-usage/01-main.csv`.
 ## Install
 
 ```bash
-pnpm add @openedge/compiler-api
+pnpm add @castm/compiler-api
 ```
 
 ## Compile API
 
 ```ts
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 const source = `
 target base;
@@ -42,7 +42,7 @@ build {
   prune_noop_cycles on;
 }
 kernel "lib_example" {
-  cycle { at @0,0: NOP; }
+  bundle { at @0,0: NOP; }
 }
 `;
 
@@ -61,7 +61,7 @@ if (!result.success) {
 ## Phase APIs
 
 ```ts
-import { parse, analyze, emit } from '@openedge/compiler-api';
+import { parse, analyze, emit } from '@castm/compiler-api';
 
 const parsed = parse(source);
 if (!parsed.success || !parsed.ast) throw new Error('Parse failed');

@@ -1,0 +1,14 @@
+target base;
+let A = { 3, 5, 8, 13 };
+let OUT @200 = { 0 };
+
+kernel "examples_overview" {
+  bundle {
+    at @0,0: R0 = A[0];
+    at @0,1: R1 = A[1];
+  }
+  bundle {
+    at @0,0: R2 = R0 + R1;
+    at @0,1: OUT[0] = R2;
+  }
+}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 describe('issues/BUG-7 computed loop coordinates', () => {
   it('compiles variable coordinates inside canonical for loops', () => {
@@ -12,7 +12,7 @@ build {
 }
 kernel "bug7_var_coords" {
   for i in range(4) {
-    cycle { @0,i: NOP; }
+    bundle { @0,i: NOP; }
   }
 }
 `;
@@ -34,7 +34,7 @@ build {
 }
 kernel "bug7_expr_coords" {
   for k in range(16) {
-    cycle { @k/4,k%4: NOP; }
+    bundle { @k/4,k%4: NOP; }
   }
 }
 `;
@@ -55,7 +55,7 @@ build {
   prune_noop_cycles off;
 }
 kernel "bug7_unresolved" {
-  cycle { @0,i: NOP; }
+  bundle { @0,i: NOP; }
 }
 `;
 

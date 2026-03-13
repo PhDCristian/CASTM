@@ -1,6 +1,6 @@
 # Features Overview
 
-Use this section as the canonical feature map of OpenEdgeDSL.
+Use this section as the canonical feature map of CASTM.
 
 ## How to use this section
 
@@ -14,10 +14,10 @@ Use this section as the canonical feature map of OpenEdgeDSL.
 - Snippets include `target base;`.
 - CSV shown is generated from source artifacts.
 
-## Quick OpenEdgeDSL ↔ CSV preview
+## Quick CASTM ↔ CSV preview
 
 ::: code-group
-<<< ../snippets/features/index/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/features/index/01-main.castm{castm} [CASTM]
 <<< ../snippets/features/index/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 

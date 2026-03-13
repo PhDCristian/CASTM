@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { ErrorCodes } from '@castm/compiler-ir';
 import { expandSpatialAtBlockStatements } from '../packages/compiler-front/src/structured-core/lowering/cycle-expand.js';
 import {
   bindFunctionCallArgs,

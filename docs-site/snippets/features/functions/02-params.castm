@@ -1,0 +1,7 @@
+target base;
+function mix(dst, src) {
+  bundle { @0,0: dst = src >> 16; }
+}
+kernel "fn_params" {
+  mix(R1, R0);
+}

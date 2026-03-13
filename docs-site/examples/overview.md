@@ -18,12 +18,12 @@ Use this page to choose the right example based on your current goal (learning p
 - CSV shown in examples is generated from source snippets (never handwritten).
 - Default interpretation is `4x4` torus unless a page states otherwise.
 
-## OpenEdgeDSL ↔ CSV
+## CASTM ↔ CSV
 
 ## Quick preview
 
 ::: code-group
-<<< ../snippets/examples/overview/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/examples/overview/01-main.castm{castm} [CASTM]
 <<< ../snippets/examples/overview/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -82,7 +82,7 @@ The preview snippet is intentionally small so cycle headers and slot placement c
 ## Repro commands
 
 ```bash
-# from OpenEdgeDSL
+# from CASTM
 npm test
 
 # docs contract snippets

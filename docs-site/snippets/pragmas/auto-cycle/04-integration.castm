@@ -1,0 +1,6 @@
+target base;
+kernel "lat_hide_min" {
+  std::latency_hide(window=1, mode=conservative);
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
+}

@@ -1,9 +1,0 @@
-target base;
-let INPUT = { 21 };
-
-kernel "readme_glance" {
-  cycle {
-    at @0,0: R0 = INPUT[0];
-    at @0,1: R1 = R0 + 1;
-  }
-}

@@ -1,4 +1,4 @@
-import { AstProgram, Diagnostic } from '@openedge/compiler-ir';
+import { AstProgram, Diagnostic } from '@castm/compiler-ir';
 
 export interface SemanticPassResult {
   ast: AstProgram;

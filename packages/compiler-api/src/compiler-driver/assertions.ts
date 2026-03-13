@@ -1,7 +1,7 @@
 import {
   AstProgram,
   SourceSpan
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { parseNumericLiteral } from './numbers.js';
 
 function splitTopLevel(text: string, delimiter: string): string[] {

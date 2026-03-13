@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emit, MirProgram } from '@openedge/compiler-api';
+import { emit, MirProgram } from '@castm/compiler-api';
 
 describe('compiler-api sim-matrix-csv emitter', () => {
   it('emits simulator-style matrix blocks with NOP-filled gaps', () => {

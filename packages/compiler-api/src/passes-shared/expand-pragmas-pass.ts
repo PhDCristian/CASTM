@@ -6,7 +6,7 @@ import {
   ErrorCodes,
   GridSpec,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { parseLatencyHidePragmaArgs } from './advanced-args.js';
 import { cloneAst } from './ast-utils.js';
 import { extractPragmaName } from './pragma-args-utils.js';

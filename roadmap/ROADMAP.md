@@ -1,9 +1,9 @@
-# ROADMAP OpenEdgeDSL (4 sprints) — Baseline + mejoras de lenguaje
+# ROADMAP CASTM (4 sprints) — Baseline + mejoras de lenguaje
 
 Fecha de actualización: 2026-02-19
 
 ## Resumen
-- Entregable: `OpenEdgeDSL/roadmap/ROADMAP.md`.
+- Entregable: `CASTM/roadmap/ROADMAP.md`.
 - Objetivo funcional: añadir mejoras reales del lenguaje con integración completa, tests específicos por sprint y gate de cobertura global al 100%.
 - Baseline detectado antes de arrancar features:
   - 3 tests rojos iniciales en `tests/branch-coverage-round3.test.ts:284`, `tests/issues/feat-18-expansion-mode.test.ts:60`, `tests/issues/feat-18-expansion-mode.test.ts:136`.
@@ -89,15 +89,15 @@ Dejar baseline estable, eliminar ambigüedad del contrato `JUMP`, y endurecer ga
 - `npm run test`
 - `npm run test:coverage`
 - `npm run check:boundaries`
-- `(cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/OpenEdgeDSL/docs-site && npm run docs:validate)`
+- `(cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/CASTM/docs-site && npm run docs:validate)`
 
 ### Comando de validación
 ```bash
-cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/OpenEdgeDSL
+cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/CASTM
 npm run test
 npm run test:coverage
 npm run check:boundaries
-cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/OpenEdgeDSL/docs-site && npm run docs:validate
+cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/CASTM/docs-site && npm run docs:validate
 ```
 
 ### Criterio de cierre
@@ -167,7 +167,7 @@ Extender labels estructurados a `for`, `if`, `while` y preservar resolubilidad e
 
 ### Comando de validación
 ```bash
-cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/OpenEdgeDSL
+cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/CASTM
 npm run test -- tests/issues/feat-23-labeled-control-flow.test.ts
 npm run test -- tests/compiler-front.structured.test.ts tests/compiler-api.contract.test.ts tests/lsp.contract.test.ts
 ```
@@ -237,7 +237,7 @@ Introducir control de bucle explícito con semántica clara y diagnósticos robu
 
 ### Comando de validación
 ```bash
-cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/OpenEdgeDSL
+cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/CASTM
 npm run test -- tests/issues/feat-24-loop-control.test.ts tests/issues/feat-21-for-control-flow-contract.test.ts
 ```
 
@@ -308,7 +308,7 @@ Extender `collect` con path explícito y hops acotados, manteniendo backward com
 
 ### Comando de validación
 ```bash
-cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/OpenEdgeDSL
+cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/CASTM
 npm run test -- tests/issues/feat-25-collect-multi-hop.test.ts tests/issues/feat-12-collect.test.ts tests/compiler-api.collective-builders.test.ts tests/compiler-api.expand-pragmas.handlers.test.ts
 ```
 

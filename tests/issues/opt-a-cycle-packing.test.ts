@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 function csvRows(csv: string): string[] {
   return csv.trim().split('\n').slice(1);
@@ -11,9 +11,9 @@ describe('issues/OPT-A cycle packing', () => {
 target "uma-cgra-base";
 kernel "opt_a_pack" {
   latency_hide(window=2, mode=conservative);
-  cycle { @0,0: SADD R1, R0, ZERO; }
-  cycle { @0,2: SADD R1, R0, ZERO; }
-  cycle { @0,3: SADD R1, R0, ZERO; }
+  bundle { @0,0: SADD R1, R0, ZERO; }
+  bundle { @0,2: SADD R1, R0, ZERO; }
+  bundle { @0,3: SADD R1, R0, ZERO; }
 }
 `;
 
@@ -33,8 +33,8 @@ kernel "opt_a_pack" {
 target "uma-cgra-base";
 kernel "opt_a_route_guard" {
   latency_hide(window=2, mode=conservative);
-  cycle { @0,0: SADD ROUT, R1, ZERO; }
-  cycle { @0,1: SADD R2, RCL, ZERO; }
+  bundle { @0,0: SADD ROUT, R1, ZERO; }
+  bundle { @0,1: SADD R2, RCL, ZERO; }
 }
 `;
 

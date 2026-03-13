@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 describe('issues/FEAT-8 range coordinate syntax', () => {
   it('expands horizontal ranges in a cycle statement', () => {
@@ -11,7 +11,7 @@ build {
   prune_noop_cycles off;
 }
 kernel "feat8_horizontal" {
-  cycle {
+  bundle {
     @0,0..3: NOP;
   }
 }
@@ -34,7 +34,7 @@ build {
   prune_noop_cycles off;
 }
 kernel "feat8_vertical" {
-  cycle {
+  bundle {
     @0..3,2: NOP;
   }
 }
@@ -53,7 +53,7 @@ kernel "feat8_vertical" {
     const source = `
 target "uma-cgra-base";
 kernel "feat8_rect" {
-  cycle {
+  bundle {
     @1..2,1..2: SADD R0, ZERO, ZERO;
   }
 }
@@ -76,7 +76,7 @@ build {
   prune_noop_cycles off;
 }
 kernel "feat8_descending" {
-  cycle {
+  bundle {
     @0,3..1: NOP;
   }
 }
@@ -99,7 +99,7 @@ build {
 }
 kernel "feat8_loop_bound" {
   for r in range(2) {
-    cycle {
+    bundle {
       @r,0..1: NOP;
     }
   }
@@ -123,7 +123,7 @@ build {
   prune_noop_cycles off;
 }
 kernel "feat8_invalid_unresolved" {
-  cycle {
+  bundle {
     @r,0..1: NOP;
   }
 }
@@ -142,7 +142,7 @@ build {
   prune_noop_cycles off;
 }
 kernel "feat8_unresolved_axis" {
-  cycle {
+  bundle {
     @0..1,c: NOP;
   }
 }

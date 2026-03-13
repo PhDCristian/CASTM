@@ -32,7 +32,7 @@ Important:
 ## Case A — Minimal
 
 ::: code-group
-<<< ../../snippets/pragmas/pipeline/01-minimal.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/pipeline/01-minimal.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/pipeline/01-minimal.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -43,7 +43,7 @@ Full CSV: `docs-site/snippets/pragmas/pipeline/01-minimal.csv`.
 ### B1 — Source-configured safe profile (`scheduler_window=1`)
 
 ::: code-group
-<<< ../../snippets/pragmas/pipeline/02-advanced.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/pipeline/02-advanced.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/pipeline/02-advanced.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -60,7 +60,7 @@ Interpretation:
 Expected effect for this specific source: `1` cycle.
 
 ::: code-group
-<<< ../../snippets/pragmas/pipeline/02-window2.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/pipeline/02-window2.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/pipeline/02-window2.excerpt.csv{csv} [CSV excerpt (`scheduler_window=2`)]
 :::
 
@@ -76,7 +76,7 @@ Where this is configured:
 ## Case C — Integration in kernel
 
 ::: code-group
-<<< ../../snippets/pragmas/pipeline/04-integration.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/pipeline/04-integration.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/pipeline/04-integration.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -85,7 +85,7 @@ Full CSV: `docs-site/snippets/pragmas/pipeline/04-integration.csv`.
 ## Case D — Edge / boundary
 
 ::: code-group
-<<< ../../snippets/pragmas/pipeline/05-edge.edsl{openedge} [OpenEdgeDSL]
+<<< ../../snippets/pragmas/pipeline/05-edge.castm{castm} [CASTM]
 <<< ../../snippets/pragmas/pipeline/05-edge.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -98,7 +98,7 @@ Interpretation:
 
 ## Case E — Invalid usage
 
-<<< ../../snippets/pragmas/pipeline/03-invalid.edsl{openedge-fail} [OpenEdgeDSL fail]
+<<< ../../snippets/pragmas/pipeline/03-invalid.castm{castm-fail} [CASTM fail]
 
 Expected: explicit diagnostic with source span and actionable hint.
 

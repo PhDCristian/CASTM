@@ -1,6 +1,0 @@
-target base;
-kernel "eq_arith" {
-  cycle {
-    at @0,0: R2 = R0 + R1;
-  }
-}

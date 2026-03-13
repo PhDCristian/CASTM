@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 interface ExtractedSnippet {
   source: string;
@@ -10,7 +10,7 @@ interface ExtractedSnippet {
   expectedErrorCodes: string[];
 }
 
-function extractOpenEdgeSnippets(markdown: string): ExtractedSnippet[] {
+function extractCastmSnippets(markdown: string): ExtractedSnippet[] {
   const snippets: ExtractedSnippet[] = [];
   const fenceRegex = /```([^\n]*)\n([\s\S]*?)```/g;
   let match: RegExpExecArray | null;
@@ -23,12 +23,12 @@ function extractOpenEdgeSnippets(markdown: string): ExtractedSnippet[] {
     const source = match[2].trim();
     if (!source) continue;
 
-    if (language === 'openedge' || language === 'dsl') {
+    if (language === 'castm' || language === 'dsl') {
       snippets.push({ source, mode: 'pass', expectedErrorCodes: [] });
       continue;
     }
 
-    if (language === 'openedge-fail' || language === 'dsl-fail') {
+    if (language === 'castm-fail' || language === 'dsl-fail') {
       const expectedErrorCodes = Array.from(
         source.matchAll(/^\s*\/\/\s*expect-error:\s*([A-Z]\d{4})\s*$/gim)
       ).map((m) => m[1]);
@@ -37,7 +37,7 @@ function extractOpenEdgeSnippets(markdown: string): ExtractedSnippet[] {
   }
 
   for (const line of markdown.split('\n')) {
-    const includeMatch = line.match(/^\s*<<<\s+.+\{(openedge|dsl|openedge-fail|dsl-fail)\}.*$/i);
+    const includeMatch = line.match(/^\s*<<<\s+.+\{(castm|dsl|castm-fail|dsl-fail)\}.*$/i);
     if (!includeMatch) continue;
     const language = includeMatch[1].toLowerCase();
     snippets.push({
@@ -80,7 +80,7 @@ describe('docs-site loop feature contracts', () => {
     ];
 
     const snippets: Array<{ file: string; snippet: ExtractedSnippet }> = files.flatMap((file) =>
-      extractOpenEdgeSnippets(fs.readFileSync(file, 'utf8')).map((snippet) => ({ file, snippet }))
+      extractCastmSnippets(fs.readFileSync(file, 'utf8')).map((snippet) => ({ file, snippet }))
     );
 
     const passSnippets = snippets.filter((item) => item.snippet.mode === 'pass');

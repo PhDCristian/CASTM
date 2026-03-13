@@ -1,0 +1,6 @@
+target base;
+kernel "parallel_min" {
+  for i in range(0, 4) {
+    bundle { at @0,i: R2 = R0 + 1; }
+  }
+}

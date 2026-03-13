@@ -2,7 +2,7 @@ import {
   CycleAst,
   GridSpec,
   SourceSpan
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   TrianglePragmaArgs
 } from '../advanced-args.js';

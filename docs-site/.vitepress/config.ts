@@ -1,8 +1,8 @@
 import { defineConfig } from 'vitepress'
 
 export default defineConfig({
-  title: 'OpenEdge DSL',
-  description: 'Canonical DSL and compiler toolchain for OpenEdge CGRA targets',
+  title: 'CASTM',
+  description: 'Canonical DSL and compiler toolchain for CGRA targets',
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: '/logo.svg' }],
@@ -17,7 +17,7 @@ export default defineConfig({
 
   themeConfig: {
     logo: '/logo.svg',
-    siteTitle: 'OpenEdge DSL',
+    siteTitle: 'CASTM',
 
     nav: [
       { text: 'Guide', link: '/guide/getting-started', activeMatch: '/guide/' },
@@ -153,11 +153,11 @@ export default defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/PhDCristian/OpenEdgeDSL' },
+      { icon: 'github', link: 'https://github.com/PhDCristian/CASTM' },
     ],
 
     editLink: {
-      pattern: 'https://github.com/PhDCristian/OpenEdgeDSL/edit/main/docs-site/:path',
+      pattern: 'https://github.com/PhDCristian/CASTM/edit/main/docs-site/:path',
       text: 'Edit this page on GitHub',
     },
 
@@ -181,9 +181,8 @@ export default defineConfig({
       dark: 'vitesse-dark',
     },
     languageAlias: {
-      openedge: 'ts',
-      openedgedsl: 'ts',
-      'openedge-fail': 'ts',
+      castm: 'ts',
+      'castm-fail': 'ts',
       dsl: 'ts',
       'dsl-fail': 'ts',
       edsl: 'ts',

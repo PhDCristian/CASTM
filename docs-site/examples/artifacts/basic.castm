@@ -1,0 +1,14 @@
+target base;
+let input = { 10, 20 };
+let output @100 = { 0 };
+
+kernel "basic_example" {
+  bundle {
+    at @0,0: R0 = input[0];
+    at @0,1: R1 = input[1];
+  }
+  bundle {
+    at @0,0: R2 = R0 + R1;
+    at @0,1: output[0] = R2;
+  }
+}

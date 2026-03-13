@@ -8,7 +8,7 @@ import {
   SourceSpan,
   StructuredFunctionDefAst,
   StructuredProgramAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   collectBlockFromEntries,
   SourceLineEntry

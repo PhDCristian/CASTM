@@ -1,4 +1,4 @@
-name: OpenEdgeDSL CI
+name: CASTM CI
 
 on:
   pull_request:

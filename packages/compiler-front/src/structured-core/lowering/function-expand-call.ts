@@ -2,7 +2,7 @@ import {
   ErrorCodes,
   makeDiagnostic,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { parseFunctionCallLine } from './functions.js';
 import {
   instantiateFunctionBody,

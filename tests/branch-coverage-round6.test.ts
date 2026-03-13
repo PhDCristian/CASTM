@@ -78,7 +78,7 @@ describe('branch coverage round 6', () => {
     const ifNoElse = tryParseControlStatement(
       [
         entry(1, 'if (R0 == IMM(0)) at @0,0 {'),
-        entry(2, 'cycle { @0,0: NOP; }'),
+        entry(2, 'bundle { @0,0: NOP; }'),
         entry(3, '}')
       ],
       0,
@@ -94,7 +94,7 @@ describe('branch coverage round 6', () => {
     const whileBadCoords = tryParseControlStatement(
       [
         entry(1, 'while (R0 < IMM(3)) at @x,y {'),
-        entry(2, 'cycle { @0,0: NOP; }'),
+        entry(2, 'bundle { @0,0: NOP; }'),
         entry(3, '}')
       ],
       0,
@@ -113,7 +113,7 @@ describe('branch coverage round 6', () => {
     const result = tryExpandIfStatement({
       body: [
         entry(1, 'if (R0 == IMM(0)) at @0,0 {'),
-        entry(2, 'cycle { @0,0: NOP; }'),
+        entry(2, 'bundle { @0,0: NOP; }'),
         entry(3, '}')
       ],
       index: 0,

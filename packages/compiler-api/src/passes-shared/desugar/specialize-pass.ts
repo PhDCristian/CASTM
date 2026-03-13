@@ -2,7 +2,7 @@ import {
   AstProgram,
   CompilerPass,
   InstructionAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { parseIntegerLiteral } from '../pragma-args-utils.js';
 import { transformInstructions } from '../desugar-utils.js';
 

@@ -1,0 +1,11 @@
+target base;
+let BASE = 360;
+
+kernel "computed" {
+  for i in range(0, 4) {
+    bundle {
+      at @0,i: [BASE + i*4] = R1;
+      at @1,i: R2 = [BASE + i*4];
+    }
+  }
+}

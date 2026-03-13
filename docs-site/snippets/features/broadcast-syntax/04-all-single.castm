@@ -1,0 +1,6 @@
+target base;
+kernel "all_single" {
+  bundle {
+    at all: SADD R0, R0, 1;
+  }
+}

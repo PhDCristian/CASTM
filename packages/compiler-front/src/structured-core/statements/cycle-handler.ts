@@ -2,7 +2,7 @@ import {
   CycleStatementAst,
   Diagnostic,
   StructuredCycleStmtAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   collectBlockFromEntries,
   SourceLineEntry
@@ -45,7 +45,7 @@ export function tryParseCycleStatement(
   cycleCounter: { value: number },
   diagnostics: Diagnostic[]
 ): StructuredCycleParseResult {
-  // ── Labeled inline cycle: label: cycle { ... } ──
+  // ── Labeled inline cycle: label: bundle { ... } ──
   const labeledCycle = parseLabeledCycleLine(cleanLine);
   if (labeledCycle && labeledCycle.inlinePayload !== undefined) {
     const cycleDiagnostics: Diagnostic[] = [];
@@ -64,7 +64,7 @@ export function tryParseCycleStatement(
     };
   }
 
-  // ── Labeled block cycle: label: cycle { (multi-line) ──
+  // ── Labeled block cycle: label: bundle { (multi-line) ──
   if (labeledCycle) {
     const block = collectBlockFromEntries(entries, index);
     const cycleDiagnostics: Diagnostic[] = [];
@@ -79,7 +79,7 @@ export function tryParseCycleStatement(
     };
   }
 
-  // ── Unlabeled inline cycle: cycle { ... } ──
+  // ── Unlabeled inline cycle: bundle { ... } ──
   const inlineCycle = cleanLine.match(/^(?:cycle|bundle)\s*\{\s*(.+)\s*\}\s*$/i);
   if (inlineCycle) {
     const cycleDiagnostics: Diagnostic[] = [];

@@ -5,17 +5,17 @@ outline: deep
 
 # CLI Reference
 
-The `openedge` CLI exposes three canonical commands.
+The `castm` CLI exposes three canonical commands.
 
 ## Target and assumptions
 
 - CLI examples assume canonical source with `target base;`.
 - `sim-matrix-csv` is the default documentation view format for DSL↔CSV equivalence.
 
-## OpenEdgeDSL ↔ CSV quick sample
+## CASTM ↔ CSV quick sample
 
 ::: code-group
-<<< ../snippets/guide/cli-reference/01-main.edsl{openedge} [OpenEdgeDSL]
+<<< ../snippets/guide/cli-reference/01-main.castm{castm} [CASTM]
 <<< ../snippets/guide/cli-reference/01-main.excerpt.csv{csv} [CSV excerpt]
 :::
 
@@ -24,9 +24,9 @@ Full CSV: `docs-site/snippets/guide/cli-reference/01-main.csv`.
 ## Usage
 
 ```bash
-openedge emit <input.dsl> [-o out.csv] [--format flat-csv|sim-matrix-csv]
-openedge check <input.dsl>
-openedge analyze <input.dsl>
+castm emit <input.castm> [-o out.csv] [--format flat-csv|sim-matrix-csv]
+castm check <input.castm>
+castm analyze <input.castm>
 ```
 
 ## Commands
@@ -41,8 +41,8 @@ Compiles source and emits CSV.
 Examples:
 
 ```bash
-openedge emit kernel.dsl -o kernel.csv
-openedge emit kernel.dsl --format sim-matrix-csv -o kernel-matrix.csv
+castm emit kernel.castm -o kernel.csv
+castm emit kernel.castm --format sim-matrix-csv -o kernel-matrix.csv
 ```
 
 ## `check`
@@ -50,7 +50,7 @@ openedge emit kernel.dsl --format sim-matrix-csv -o kernel-matrix.csv
 Runs parse + semantic + lowering validation and prints `ok` on success.
 
 ```bash
-openedge check kernel.dsl
+castm check kernel.castm
 ```
 
 ## `analyze`
@@ -58,7 +58,7 @@ openedge check kernel.dsl
 Returns JSON with stats and diagnostics.
 
 ```bash
-openedge analyze kernel.dsl
+castm analyze kernel.castm
 ```
 
 ## Source-owned configuration

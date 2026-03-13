@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 import { parseForHeader } from '../../packages/compiler-front/src/structured-core/lowering/control-flow.js';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 describe('FEAT-20 collapse edge cases', () => {
   it('rejects duplicate loop modifiers in parser', () => {
@@ -48,7 +48,7 @@ target "uma-cgra-base";
 kernel "collapse_depth_exceeds" {
   for i in range(0, 2) collapse(3) {
     for j in range(0, 2) {
-      cycle { @i,j: NOP; }
+      bundle { @i,j: NOP; }
     }
   }
 }
@@ -63,9 +63,9 @@ target "uma-cgra-base";
 kernel "collapse_non_perfect" {
   for i in range(0, 2) collapse(2) {
     for j in range(0, 2) {
-      cycle { @i,j: NOP; }
+      bundle { @i,j: NOP; }
     }
-    cycle { @0,3: NOP; }
+    bundle { @0,3: NOP; }
   }
 }
 `);
@@ -77,7 +77,7 @@ kernel "collapse_non_perfect" {
     const result = compile(`
 target "uma-cgra-base";
 kernel "cycle_scope_collapse" {
-  cycle {
+  bundle {
     for i in range(0, 2) collapse(2) {
       @0,i: NOP;
     }
@@ -92,7 +92,7 @@ kernel "cycle_scope_collapse" {
     const result = compile(`
 target "uma-cgra-base";
 kernel "cycle_scope_unroll" {
-  cycle {
+  bundle {
     for i in range(0, 4) unroll(2) {
       @0,i: NOP;
     }

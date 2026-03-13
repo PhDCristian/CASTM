@@ -1,4 +1,4 @@
-import { ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
+import { ErrorCodes, makeDiagnostic, spanAt } from '@castm/compiler-ir';
 import { parseForHeader } from './control-flow.js';
 import { parseInstruction } from './instructions.js';
 import { collectBlockFromEntries } from '../parser-utils/blocks.js';

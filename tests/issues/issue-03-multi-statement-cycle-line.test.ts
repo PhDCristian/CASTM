@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 describe('issues/Issue-3 multi-statement cycle lines', () => {
   it('parses and lowers two @placements in one line inside a cycle block', () => {
     const source = `
 target "uma-cgra-base";
 kernel "issue3_multi_statement" {
-  cycle {
+  bundle {
     @0,0: R1 = R0; @0,1: R2 = R0;
   }
 }
@@ -22,7 +22,7 @@ kernel "issue3_multi_statement" {
     const source = `
 target "uma-cgra-base";
 kernel "issue3_multi_statement_expr" {
-  cycle {
+  bundle {
     @0,0: R3 = R2 >> 16; @0,1: R4 = R2 & 255;
   }
 }

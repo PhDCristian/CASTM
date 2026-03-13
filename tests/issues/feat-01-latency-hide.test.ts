@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { compile } from '@castm/compiler-api';
+import { ErrorCodes } from '@castm/compiler-ir';
 
 function csvRows(csv: string): string[] {
   return csv.trim().split('\n').slice(1);
@@ -12,8 +12,8 @@ describe('issues/FEAT-1 latency_hide statement', () => {
 target "uma-cgra-base";
 kernel "feat01_latency_hide" {
   latency_hide(window=1, mode=conservative);
-  cycle { at row 1: SMUL R2, R0, R1; }
-  cycle { @0,3: LWI R1, 4; }
+  bundle { at row 1: SMUL R2, R0, R1; }
+  bundle { @0,3: LWI R1, 4; }
 }
 `;
 
@@ -30,8 +30,8 @@ kernel "feat01_latency_hide" {
 target "uma-cgra-base";
 kernel "feat01_latency_dependency" {
   latency_hide(window=1, mode=conservative);
-  cycle { @0,0: SADD ROUT, R1, ZERO; }
-  cycle { @0,1: SADD R2, RCL, ZERO; }
+  bundle { @0,0: SADD ROUT, R1, ZERO; }
+  bundle { @0,1: SADD R2, RCL, ZERO; }
 }
 `;
 
@@ -47,7 +47,7 @@ kernel "feat01_latency_dependency" {
 target "uma-cgra-base";
 kernel "feat01_latency_invalid" {
   latency_hide(mode=aggressive);
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `;
     const result = compile(source);

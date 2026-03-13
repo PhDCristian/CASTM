@@ -3,7 +3,7 @@ import {
   IoConfigInfo,
   SourceSpan,
   SymbolInfo
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 
 export interface RuntimeArtifactCollection {
   ioConfig: IoConfigInfo;

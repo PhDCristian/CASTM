@@ -1,4 +1,4 @@
-import { CycleAst } from '@openedge/compiler-ir';
+import { CycleAst } from '@castm/compiler-ir';
 import type { ParsedCondition } from '../control-flow.js';
 import { cycleHasControlFlow } from './cycle.js';
 

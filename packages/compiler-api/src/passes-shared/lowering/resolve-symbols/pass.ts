@@ -7,7 +7,7 @@ import {
   HirCycle,
   HirProgram,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { lowerCycleStatements } from './cycle-lowering.js';
 
 function collectLabels(ast: AstProgram, diagnostics: Diagnostic[]): Map<string, number> {

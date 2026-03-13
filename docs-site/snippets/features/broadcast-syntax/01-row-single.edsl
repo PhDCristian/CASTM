@@ -1,6 +1,0 @@
-target base;
-kernel "row_single" {
-  cycle {
-    at row 1: SADD R0, R0, 1;
-  }
-}

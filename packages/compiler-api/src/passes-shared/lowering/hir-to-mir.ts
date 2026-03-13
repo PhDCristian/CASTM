@@ -3,7 +3,7 @@ import {
   Diagnostic,
   HirProgram,
   MirProgram
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 
 export const lowerToMirPass: CompilerPass<HirProgram, MirProgram> = {
   name: 'lower-to-mir',

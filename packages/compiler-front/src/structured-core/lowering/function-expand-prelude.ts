@@ -1,4 +1,4 @@
-import { Diagnostic, ErrorCodes, KernelAst, WarningCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
+import { Diagnostic, ErrorCodes, KernelAst, WarningCodes, makeDiagnostic, spanAt } from '@castm/compiler-ir';
 import { parseAdvancedNamespaceIssue, parseStandardAdvancedCall } from './statements.js';
 import type { SourceLineEntry } from '../parser-utils/blocks.js';
 import { RESERVED_KEYWORDS } from '../constants.js';

@@ -1,5 +1,5 @@
 {
-  "name": "@openedge/lsp-server",
+  "name": "@castm/lsp-server",
   "version": "2.0.0-alpha.1",
   "type": "module",
   "main": "dist/index.js",
@@ -14,8 +14,8 @@
     "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@openedge/compiler-api": "2.0.0-alpha.1",
-    "@openedge/compiler-ir": "2.0.0-alpha.1",
-    "@openedge/lang-spec": "2.0.0-alpha.1"
+    "@castm/compiler-api": "2.0.0-alpha.1",
+    "@castm/compiler-ir": "2.0.0-alpha.1",
+    "@castm/lang-spec": "2.0.0-alpha.1"
   }
 }

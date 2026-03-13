@@ -4,7 +4,7 @@ import {
   Diagnostic,
   ErrorCodes,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   collectDataRegions,
   parseData2dDirectiveValue,

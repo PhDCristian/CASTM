@@ -37,11 +37,11 @@ Independent stage placements may be packed into fewer cycles depending on source
 target base;
 
 function stage_load(src) {
-  cycle { @0,0: SADD R2, src, ZERO; }
+  bundle { @0,0: SADD R2, src, ZERO; }
 }
 
 function stage_mix(dst) {
-  cycle { @0,1: SADD dst, R2, ZERO; }
+  bundle { @0,1: SADD dst, R2, ZERO; }
 }
 
 kernel "pipeline_doc" {

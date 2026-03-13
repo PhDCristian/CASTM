@@ -19,15 +19,15 @@ function main(): void {
   }
 
   const entries = fs.readdirSync(artifactsDir)
-    .filter((name) => name.endsWith('.edsl'))
+    .filter((name) => name.endsWith('.castm'))
     .sort();
 
   if (entries.length === 0) {
-    throw new Error(`No .edsl files found in ${artifactsDir}`);
+    throw new Error(`No .castm files found in ${artifactsDir}`);
   }
 
   for (const fileName of entries) {
-    const base = fileName.slice(0, -'.edsl'.length);
+    const base = fileName.slice(0, -'.castm'.length);
     const sourcePath = path.join(artifactsDir, fileName);
     const fullCsvPath = path.join(artifactsDir, `${base}.csv`);
     const excerptCsvPath = path.join(artifactsDir, `${base}.excerpt.csv`);

@@ -1,5 +1,5 @@
-import { Diagnostic } from '@openedge/compiler-ir';
-import { ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
+import { Diagnostic } from '@castm/compiler-ir';
+import { ErrorCodes, makeDiagnostic, spanAt } from '@castm/compiler-ir';
 import { FunctionSignature } from './types.js';
 
 export function bindFunctionCallArgs(

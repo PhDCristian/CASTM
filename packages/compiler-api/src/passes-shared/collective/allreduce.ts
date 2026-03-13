@@ -3,7 +3,7 @@ import {
   Diagnostic,
   GridSpec,
   SourceSpan
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { AllreducePragmaArgs } from '../advanced-args.js';
 import { buildBroadcastCycles } from '../route-builders.js';
 import { buildReduceCycles } from '../collective-scan-reduce.js';

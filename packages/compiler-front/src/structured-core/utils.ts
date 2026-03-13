@@ -1,7 +1,7 @@
 import {
   AstProgram,
   SourceSpan
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 
 export function cloneAstProgram(ast: AstProgram): AstProgram {
   return JSON.parse(JSON.stringify(ast)) as AstProgram;

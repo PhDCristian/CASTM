@@ -1,4 +1,4 @@
-import { GridSpec } from '@openedge/compiler-ir';
+import { GridSpec } from '@castm/compiler-ir';
 
 export interface GridPoint {
   row: number;

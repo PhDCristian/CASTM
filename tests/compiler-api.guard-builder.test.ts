@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ErrorCodes } from '@openedge/compiler-ir';
+import { ErrorCodes } from '@castm/compiler-ir';
 import { buildGuardCycles } from '../packages/compiler-api/src/passes-shared/collective/guard.js';
 
 const span = { startLine: 1, startColumn: 1, endLine: 1, endColumn: 2 };

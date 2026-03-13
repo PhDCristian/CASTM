@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { Diagnostic, ErrorCodes, spanAt } from '@openedge/compiler-ir';
+import { Diagnostic, ErrorCodes, spanAt } from '@castm/compiler-ir';
 import {
   getReduceOpcode,
   getScanIdentity,
@@ -310,7 +310,7 @@ describe('branch coverage round 2', () => {
 target "uma-cgra-base";
 kernel "k" {
   config(0xF, 32);
-  cycle { @0,0: NOP; }
+  bundle { @0,0: NOP; }
 }
 `);
     expect(withConfig.program.kernel?.config).toMatchObject({ mask: 15, startAddr: 32 });

@@ -1,0 +1,6 @@
+target base;
+kernel "ctrl_while" {
+  while (R1 < 3) at @0,0 {
+    bundle { @0,1: R1 = R1 + 1; }
+  }
+}

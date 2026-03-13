@@ -10,7 +10,7 @@ label: statement
 
 Where `statement` is one of:
 
-- A `cycle { ... }` block
+- A `bundle { ... }` block
 - An advanced statement (`std::*`)
 - A function call
 - A control-flow block (`for`, `if`, `while`)
@@ -19,7 +19,7 @@ Where `statement` is one of:
 
 ```text
 // Labeled cycle block
-mainEntry: cycle { at all: LWI R0, 0; }
+mainEntry: bundle { at all: LWI R0, 0; }
 
 // Labeled advanced statement
 subrC: std::extract_bytes(src=R0, dest=R1, axis=col, byteWidth=8, mask=255);
@@ -39,17 +39,17 @@ loadPhase: loadValues(R0, 720);
 
 In `expansion_mode "jump-reuse"`, labeled statements define subroutine entry points:
 
-```openedge
+```castm
 target base;
 
 function mySubroutine(dst) {
-  cycle { at all: SADD dst, dst, ZERO; }
+  bundle { at all: SADD dst, dst, ZERO; }
 }
 
 kernel "label_fn_demo" {
-  init: cycle { at all: LWI R0, 42; }
+  init: bundle { at all: LWI R0, 42; }
   subrEntry: mySubroutine(R0);
-  cycle { @0,0: EXIT; }
+  bundle { @0,0: EXIT; }
 }
 ```
 

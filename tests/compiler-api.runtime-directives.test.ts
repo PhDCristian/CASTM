@@ -3,7 +3,7 @@ import {
   AstProgram,
   ErrorCodes,
   spanAt
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { parseAssertionDirectiveValue } from '../packages/compiler-api/src/compiler-driver/assertions.js';
 import { collectDirectiveArtifacts } from '../packages/compiler-api/src/compiler-driver/runtime-artifacts/directives.js';
 import { createEmptySymbolCollections } from '../packages/compiler-api/src/compiler-driver/runtime-artifacts/symbols.js';

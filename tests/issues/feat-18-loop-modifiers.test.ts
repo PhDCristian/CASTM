@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 describe('FEAT-18 loop modifiers: unroll/collapse', () => {
   it('expands collapse(2) in deterministic row-major order', () => {
@@ -12,7 +12,7 @@ build {
 kernel "collapse_row_major" {
   for i in range(0, 2) collapse(2) {
     for j in range(0, 2) {
-      cycle { @i,j: NOP; }
+      bundle { @i,j: NOP; }
     }
   }
 }
@@ -38,7 +38,7 @@ build {
 }
 kernel "unroll_static" {
   for i in range(0, 4) unroll(2) {
-    cycle { @0,i: NOP; }
+    bundle { @0,i: NOP; }
   }
 }
 `;
@@ -55,7 +55,7 @@ kernel "unroll_static" {
 target "uma-cgra-base";
 kernel "collapse_insufficient_depth" {
   for i in range(0, 2) collapse(2) {
-    cycle { @0,i: NOP; }
+    bundle { @0,i: NOP; }
   }
 }
 `;
@@ -70,7 +70,7 @@ kernel "collapse_insufficient_depth" {
 target "uma-cgra-base";
 kernel "runtime_collapse" {
   for R0 in range(0, 2) at @0,0 runtime collapse(2) {
-    cycle { @0,1: NOP; }
+    bundle { @0,1: NOP; }
   }
 }
 `);
@@ -81,7 +81,7 @@ kernel "runtime_collapse" {
 target "uma-cgra-base";
 kernel "runtime_unroll" {
   for R0 in range(0, 2) at @0,0 runtime unroll(2) {
-    cycle { @0,1: NOP; }
+    bundle { @0,1: NOP; }
   }
 }
 `);

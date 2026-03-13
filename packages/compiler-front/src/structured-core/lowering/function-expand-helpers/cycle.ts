@@ -1,5 +1,5 @@
-import { CycleAst } from '@openedge/compiler-ir';
-import { spanAt } from '@openedge/compiler-ir';
+import { CycleAst } from '@castm/compiler-ir';
+import { spanAt } from '@castm/compiler-ir';
 import { parseInstruction } from '../instructions.js';
 
 const CONTROL_FLOW_OPCODES = new Set(['BEQ', 'BNE', 'BLT', 'BGE', 'JUMP']);

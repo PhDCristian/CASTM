@@ -1,8 +1,8 @@
 import {
   Diagnostic,
   KernelAst
-} from '@openedge/compiler-ir';
-import { ErrorCodes, makeDiagnostic, spanAt } from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
+import { ErrorCodes, makeDiagnostic, spanAt } from '@castm/compiler-ir';
 import {
   SourceLineEntry
 } from '../parser-utils/blocks.js';

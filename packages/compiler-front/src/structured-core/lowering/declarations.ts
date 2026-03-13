@@ -1,4 +1,4 @@
-import { DeclarationAst, spanAt } from '@openedge/compiler-ir';
+import { DeclarationAst, spanAt } from '@castm/compiler-ir';
 
 export function parseDirective(clean: string, line: number): DeclarationAst | null {
   const letData2d = clean.match(

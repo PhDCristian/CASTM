@@ -1,4 +1,4 @@
-import { Diagnostic } from '@openedge/compiler-ir';
+import { Diagnostic } from '@castm/compiler-ir';
 import { bindFunctionCallArgs } from '../functions.js';
 import {
   FunctionDefinitionLike
@@ -39,7 +39,7 @@ export function instantiateFunctionBody(
   }
 
   const labelMap = new Map<string, string>();
-  const labelPattern = new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*cycle\\b`, 'i');
+  const labelPattern = new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*(?:cycle|bundle)\\b`, 'i');
   for (const entry of def.body) {
     const match = entry.cleanLine.match(labelPattern);
     if (!match) continue;

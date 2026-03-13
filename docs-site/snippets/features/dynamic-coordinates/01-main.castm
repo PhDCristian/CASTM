@@ -1,0 +1,8 @@
+target base;
+kernel "dynamic_coords" {
+  for k in range(0, 16) {
+    bundle {
+      @k/4,k%4: SADD R0, R0, 1;
+    }
+  }
+}

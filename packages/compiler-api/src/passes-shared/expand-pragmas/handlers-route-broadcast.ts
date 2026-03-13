@@ -1,7 +1,7 @@
 import {
   ErrorCodes,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { isPointInGrid } from '../grid-utils.js';
 import { parseRoutePragmaArgs } from '../route-args.js';
 import { parseBroadcastPragmaArgs } from '../advanced-args.js';

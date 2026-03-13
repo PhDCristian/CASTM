@@ -4,7 +4,7 @@ import {
   WarningCodes,
   makeDiagnostic,
   StructuredKernelStmtAst
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   SourceLineEntry
 } from './parser-utils/blocks.js';

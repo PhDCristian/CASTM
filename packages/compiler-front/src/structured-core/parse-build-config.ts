@@ -3,7 +3,7 @@ import {
   Diagnostic,
   ErrorCodes,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import {
   collectBlockFromEntries,
   SourceLineEntry

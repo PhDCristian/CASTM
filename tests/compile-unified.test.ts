@@ -2,9 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
-import { compile, emit } from '@openedge/compiler-api';
+import { compile, emit } from '@castm/compiler-api';
 
-const inputPath = '/Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/poseidon2/kernels/unified/poseidon2_unified.edsl';
+const inputPath = '/Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/poseidon2/kernels/unified/poseidon2_unified.castm';
 const sourceDir = path.dirname(inputPath);
 
 const resolveInclude = (includePath: string): string | null => {

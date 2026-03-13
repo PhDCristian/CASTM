@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCompletions, validateSource } from '@openedge/lsp-server';
+import { getCompletions, validateSource } from '@castm/lsp-server';
 
 describe('lsp canonical contracts', () => {
   it('provides canonical keyword and statement completions', () => {
@@ -53,12 +53,12 @@ target "uma-cgra-base";
 .data A { 1, 2, 3 }
 #pragma route @0,1 -> @0,0 payload(R3) accum(R1)
 kernel "legacy" {
-  cycle { row 0: NOP; }
+  bundle { row 0: NOP; }
   if (R0 == IMM(0)) @0,0 {
-    cycle { @0,0: NOP; }
+    bundle { @0,0: NOP; }
   }
   for R0 in range(0, 2) @0,0 runtime {
-    cycle { @0,1: NOP; }
+    bundle { @0,1: NOP; }
   }
 }
 `;
@@ -70,7 +70,7 @@ kernel "legacy" {
     const source = `
 target "uma-cgra-base";
 .const X 1
-kernel "k" { cycle { row 0: NOP; } }
+kernel "k" { bundle { row 0: NOP; } }
 `;
     const diagnostics = validateSource(source);
     expect(diagnostics.some((d) => d.code === 'E2002')).toBe(true);

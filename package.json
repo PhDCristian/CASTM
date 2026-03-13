@@ -1,5 +1,5 @@
 {
-  "name": "@phdcristian/openedge-dsl",
+  "name": "@castm/monorepo",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -11,15 +11,15 @@
     "test:coverage": "vitest run -c ./vitest.config.ts --coverage",
     "test:watch": "vitest -c ./vitest.config.ts",
     "test:simulator-parity": "node ./scripts/run-simulator-parity.mjs",
-    "docs:generate": "npm run docs:generate --workspace @openedge/lang-spec",
+    "docs:generate": "npm run docs:generate --workspace @castm/lang-spec",
     "check:boundaries": "node ./scripts/check-boundaries.mjs"
   },
   "dependencies": {
-    "@openedge/compiler-api": "workspace:*",
-    "@openedge/compiler-backend-csv": "workspace:*",
-    "@openedge/compiler-front": "workspace:*",
-    "@openedge/compiler-ir": "workspace:*",
-    "@openedge/lang-spec": "workspace:*"
+    "@castm/compiler-api": "workspace:*",
+    "@castm/compiler-backend-csv": "workspace:*",
+    "@castm/compiler-front": "workspace:*",
+    "@castm/compiler-ir": "workspace:*",
+    "@castm/lang-spec": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.10.13",

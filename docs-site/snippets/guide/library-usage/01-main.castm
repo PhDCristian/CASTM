@@ -1,0 +1,14 @@
+target base;
+let IN = { 11, 12 };
+let OUT @240 = { 0 };
+
+kernel "library_usage" {
+  bundle {
+    at @0,0: R0 = IN[0];
+    at @0,1: R1 = IN[1];
+  }
+  bundle {
+    at @0,0: R2 = R0 + R1;
+    at @0,1: OUT[0] = R2;
+  }
+}

@@ -1,11 +1,11 @@
 # Configuration In Source
 
-OpenEdgeDSL configuration is source-owned.  
-You configure target and scheduling inside `.edsl`, not in external compiler flags.
+CASTM configuration is source-owned.  
+You configure target and scheduling inside `.castm`, not in external compiler flags.
 
 ## What is `target base;`?
 
-`base` is the canonical user alias for the default OpenEdge CGRA profile.
+`base` is the canonical user alias for the default CGRA profile.
 
 - Write: `target base;`
 - Internal resolver maps it to the baseline profile ID.
@@ -16,17 +16,17 @@ Target details and profile authoring:
 
 ## Minimal Configuration
 
-```openedge
+```castm
 target base;
 
 kernel "minimal" {
-  cycle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
 }
 ```
 
 ## Recommended Build Block
 
-```openedge
+```castm
 target base;
 
 build {
@@ -40,7 +40,7 @@ build {
 }
 
 kernel "configured" {
-  cycle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
 }
 ```
 
@@ -62,7 +62,7 @@ Function composition supports two expansion strategies:
 - `full-unroll` (default): call-site inline expansion.
 - `jump-reuse`: shared function specialization per call signature using branch/jump control flow.
 
-```openedge
+```castm
 target base;
 build {
   expansion_mode jump-reuse;
@@ -76,44 +76,44 @@ kernel "reuse_mode" {
 
 ### Stable debugging
 
-```openedge
+```castm
 target base;
 build {
   optimize O0;
 }
 kernel "stable_debug" {
-  cycle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
 }
 ```
 
 ### Good default for development
 
-```openedge
+```castm
 target base;
 build {
   optimize O2;
 }
 kernel "dev_default" {
-  cycle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
 }
 ```
 
 ### Max compaction attempts
 
-```openedge
+```castm
 target base;
 build {
   optimize O3;
   scheduler_window 6; // explicit override
 }
 kernel "max_compaction" {
-  cycle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,0: SADD R1, R0, 1; }
 }
 ```
 
 ## Runtime Statements (same source-owned model)
 
-```openedge
+```castm
 target base;
 kernel "runtime_cfg" {
   io.load(0, 4, 8);

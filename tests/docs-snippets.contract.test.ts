@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { compile } from '@openedge/compiler-api';
+import { compile } from '@castm/compiler-api';
 
 interface DslSnippet {
   source: string;
@@ -45,7 +45,7 @@ function extractDslSnippets(markdown: string): DslSnippet[] {
     const source = match[2].trim();
     if (!source) continue;
 
-    if (language === 'openedge' || language === 'dsl') {
+    if (language === 'castm' || language === 'dsl') {
       snippets.push({
         source,
         mode: 'pass',
@@ -54,7 +54,7 @@ function extractDslSnippets(markdown: string): DslSnippet[] {
       continue;
     }
 
-    if (language === 'openedge-fail' || language === 'dsl-fail') {
+    if (language === 'castm-fail' || language === 'dsl-fail') {
       const expectedErrorCodes = Array.from(
         source.matchAll(/^\s*\/\/\s*expect-error:\s*([A-Z]\d{4})\s*$/gim)
       ).map((codeMatch) => codeMatch[1]);
@@ -68,7 +68,7 @@ function extractDslSnippets(markdown: string): DslSnippet[] {
   }
 
   for (const line of markdown.split('\n')) {
-    const includeMatch = line.match(/^\s*<<<\s+.+\{(openedge|dsl|openedge-fail|dsl-fail)\}.*$/i);
+    const includeMatch = line.match(/^\s*<<<\s+.+\{(castm|dsl|castm-fail|dsl-fail)\}.*$/i);
     if (!includeMatch) continue;
     const language = includeMatch[1].toLowerCase();
     snippets.push({
@@ -81,16 +81,16 @@ function extractDslSnippets(markdown: string): DslSnippet[] {
   return snippets;
 }
 
-function collectEdslFiles(dir: string): string[] {
+function collectCastmFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   const files: string[] = [];
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      files.push(...collectEdslFiles(full));
+      files.push(...collectCastmFiles(full));
       continue;
     }
-    if (entry.isFile() && full.endsWith('.edsl')) {
+    if (entry.isFile() && full.endsWith('.castm')) {
       files.push(full);
     }
   }
@@ -175,7 +175,7 @@ describe('docs snippets contracts', () => {
     }
 
     const snippetsRoot = path.resolve(__dirname, '../docs-site/snippets');
-    const snippetFiles = collectEdslFiles(snippetsRoot);
+    const snippetFiles = collectCastmFiles(snippetsRoot);
     expect(snippetFiles.length).toBeGreaterThan(0);
 
     for (const snippetFile of snippetFiles) {

@@ -3,7 +3,7 @@ import {
   ErrorCodes,
   SourceSpan,
   makeDiagnostic
-} from '@openedge/compiler-ir';
+} from '@castm/compiler-ir';
 import { parseIntegerLiteral } from '../pragma-args-utils.js';
 import { DataSymbolInfo } from './types.js';
 
