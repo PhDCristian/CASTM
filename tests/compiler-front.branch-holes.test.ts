@@ -461,6 +461,14 @@ kernel "k" { bundle { @0,0: NOP; } }
 `);
     expect(unterminatedFunction.diagnostics.some((d) => d.message.includes('Unterminated function'))).toBe(true);
 
+    const unterminatedMacro = parseStructuredProgramFromSource(`
+target "uma-cgra-base";
+macro m(a) {
+  bundle { @0,0: NOP; }
+kernel "k" { bundle { @0,0: NOP; } }
+`);
+    expect(unterminatedMacro.diagnostics.some((d) => d.message.includes('Unterminated macro'))).toBe(true);
+
     const unterminatedKernel = parseStructuredProgramFromSource(`
 target "uma-cgra-base";
 kernel "k" {
