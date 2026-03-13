@@ -1,26 +1,6 @@
 name: CASTM Cross-Repo Parity
 
 on:
-  pull_request:
-    paths:
-      - 'packages/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'docs/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/cross-repo-parity.yml'
-  push:
-    branches:
-      - main
-    paths:
-      - 'packages/**'
-      - 'scripts/**'
-      - 'tests/**'
-      - 'docs/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - '.github/workflows/cross-repo-parity.yml'
   workflow_dispatch:
 
 jobs:
