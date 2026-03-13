@@ -16,6 +16,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: PhDCristian/UMA-CGRA-Simulator
+          token: ${{ secrets.CROSS_REPO_PAT }}
           ref: main
           path: UMA-CGRA-Simulator
 
