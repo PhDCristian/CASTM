@@ -1,0 +1,12 @@
+target base;
+let IN = { 2, 3 };
+
+kernel "features_index" {
+  bundle {
+    at @0,0: R0 = IN[0];
+    at @0,1: R1 = IN[1];
+  }
+  bundle {
+    at @0,0: R2 = R0 + R1;
+  }
+}

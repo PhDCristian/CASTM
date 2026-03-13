@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "reduce_invalid" {
+  std::reduce(op=add, dest=R1, src=R0, axis=diag);
+}

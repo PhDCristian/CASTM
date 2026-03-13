@@ -1,0 +1,4 @@
+target base;
+kernel "collect_adv" {
+  std::collect(from=row(1), to=row(0), via=RCB, local=R0, into=R2, combine=xor);
+}

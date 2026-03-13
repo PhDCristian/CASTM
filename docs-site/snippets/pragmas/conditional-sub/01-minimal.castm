@@ -1,0 +1,4 @@
+target base;
+kernel "condsub_min" {
+  std::conditional_sub(value=R0, sub=R1, dest=R2, target=row(0));
+}

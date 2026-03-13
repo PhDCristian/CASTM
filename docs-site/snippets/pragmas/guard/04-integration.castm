@@ -1,0 +1,4 @@
+target base;
+kernel "guard_min" {
+  std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+}

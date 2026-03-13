@@ -1,0 +1,8 @@
+target base;
+kernel "loops_collapse" {
+  for r in range(0, 2) collapse(2) {
+    for c in range(0, 2) {
+      bundle { @r,c: R3 = R1 + R2; }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+target base;
+kernel "reduce_min" {
+  std::reduce(op=add, dest=R1, src=R0, axis=row);
+}

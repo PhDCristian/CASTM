@@ -1,0 +1,14 @@
+target base;
+
+kernel "explicit_extract" {
+  bundle {
+    for k in range(0, 16) {
+      at @k/4,k%4: SRT R1, R0, (k/4)*8;
+    }
+  }
+  bundle {
+    for k in range(0, 16) {
+      at @k/4,k%4: LAND R1, R1, 255;
+    }
+  }
+}

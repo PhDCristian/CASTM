@@ -1,0 +1,5 @@
+target base;
+kernel "stream_min" {
+  std::stream_load(dest=R0, row=0, count=1);
+  std::stream_store(src=R0, row=0, count=1);
+}

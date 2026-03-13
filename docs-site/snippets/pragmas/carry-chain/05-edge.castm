@@ -1,0 +1,5 @@
+target base;
+let L = { 0, 0, 0, 0 };
+kernel "carry_adv" {
+  std::carry_chain(src=R1, carry=R2, store=L, limbs=3, width=16, row=1, start=3, dir=left, mask=65535);
+}

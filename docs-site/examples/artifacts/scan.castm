@@ -1,0 +1,7 @@
+target base;
+
+kernel "scan_reduce_example" {
+  std::scan(op=add, src=R0, dest=R1, dir=right, mode=inclusive);
+  std::reduce(op=add, dest=R2, src=R1, axis=row);
+  std::allreduce(op=add, dest=R3, src=R2, axis=col);
+}

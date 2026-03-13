@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "condsub_invalid" {
+  std::conditional_sub(value=R0, sub=R1, dest=R2, target=diag);
+}

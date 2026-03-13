@@ -1,0 +1,7 @@
+target base;
+function load(src) {
+  bundle { @0,0: SADD R2, src, ZERO; }
+}
+kernel "fn_basic" {
+  load(R0);
+}

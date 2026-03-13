@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "lib": ["ES2022"],
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "types": ["node"],
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "baseUrl": ".",
+    "paths": {
+      "@castm/lang-spec": ["./packages/lang-spec/src/index.ts"],
+      "@castm/compiler-ir": ["./packages/compiler-ir/src/index.ts"],
+      "@castm/compiler-front": ["./packages/compiler-front/src/index.ts"],
+      "@castm/compiler-backend-csv": ["./packages/compiler-backend-csv/src/index.ts"],
+      "@castm/compiler-api": ["./packages/compiler-api/src/index.ts"],
+      "@castm/lsp-server": ["./packages/lsp-server/src/index.ts"],
+      "@castm/testkit": ["./packages/testkit/src/index.ts"]
+    }
+  }
+}

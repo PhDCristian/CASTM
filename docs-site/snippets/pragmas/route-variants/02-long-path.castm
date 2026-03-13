@@ -1,0 +1,4 @@
+target base;
+kernel "route_long_path" {
+  std::route(@3,3 -> @1,0, payload=R2, accum=R0);
+}

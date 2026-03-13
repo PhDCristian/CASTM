@@ -1,0 +1,4 @@
+target base;
+kernel "stash_min" {
+  std::stash(action=save, reg=R0, addr=360, target=row(0));
+}

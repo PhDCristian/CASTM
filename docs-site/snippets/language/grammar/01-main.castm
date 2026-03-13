@@ -1,0 +1,19 @@
+target base;
+let M = 0xFF;
+let DATA = { 10, 20, 30, 40 };
+
+function bump(src) {
+  bundle { at @0,0: R2 = src + 1; }
+}
+
+kernel "grammar_glance" {
+  for i in range(0, 4) unroll(2) {
+    bundle { @i/4,i%4: R0 = DATA[i]; }
+  }
+  if (R0 != 0) at @0,0 {
+    bump(R0);
+  } else {
+    bundle { at @0,0: R2 = ZERO; }
+  }
+  bundle { at @0,0: R3 = R2 & M; }
+}

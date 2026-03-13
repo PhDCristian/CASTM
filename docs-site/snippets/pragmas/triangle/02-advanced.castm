@@ -1,0 +1,4 @@
+target base;
+kernel "triangle_adv" {
+  std::triangle(shape=lower, inclusive=false, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+}

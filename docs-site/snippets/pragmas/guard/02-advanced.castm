@@ -1,0 +1,4 @@
+target base;
+kernel "guard_adv" {
+  std::guard(cond=(row+col)%2==0, op=SADD, dest=R3, srcA=R1, srcB=R2);
+}

@@ -1,0 +1,4 @@
+target base;
+kernel "extract_adv" {
+  std::extract_bytes(src=R2, dest=R3, axis=row, byteWidth=4, mask=15);
+}

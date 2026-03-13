@@ -1,0 +1,16 @@
+[
+  {
+    "id": "uma-cgra-base",
+    "description": "UMA CGRA baseline profile",
+    "grid": { "rows": 4, "cols": 4, "topology": "torus", "wrapPolicy": "wrap" },
+    "registers": ["R0", "R1", "R2", "R3", "ROUT", "ZERO"],
+    "neighbors": ["SELF", "RCL", "RCR", "RCT", "RCB", "PREV"]
+  },
+  {
+    "id": "uma-cgra-mesh",
+    "description": "Portable mesh-oriented profile for larger arrays",
+    "grid": { "rows": 8, "cols": 8, "topology": "mesh", "wrapPolicy": "clamp" },
+    "registers": ["R0", "R1", "R2", "R3", "ROUT", "ZERO"],
+    "neighbors": ["SELF", "RCL", "RCR", "RCT", "RCB", "PREV"]
+  }
+]

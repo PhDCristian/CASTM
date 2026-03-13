@@ -1,0 +1,4 @@
+target base;
+kernel "scan_exclusive" {
+  std::scan(op=xor, src=R2, dest=R3, dir=down, mode=exclusive);
+}

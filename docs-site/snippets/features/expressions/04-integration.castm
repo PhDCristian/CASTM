@@ -1,0 +1,10 @@
+target base;
+function stage(src) {
+  bundle { @0,0: R2 = src + 1; }
+}
+kernel "expr_integration" {
+  stage(R0);
+  bundle {
+    @0,1: R3 = R2 * 2;
+  }
+}

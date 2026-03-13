@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "triangle_invalid" {
+  std::triangle(shape=diag, inclusive=true, op=SADD, dest=R3, srcA=R1, srcB=R2);
+}

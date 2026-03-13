@@ -1,0 +1,4 @@
+target base;
+kernel "collect_min" {
+  std::collect(from=row(0), to=row(0), via=SELF, local=R0, into=R3, combine=add);
+}

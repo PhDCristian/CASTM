@@ -1,0 +1,5 @@
+target base;
+kernel "sched_demo" {
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 1; }
+}

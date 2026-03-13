@@ -1,0 +1,4 @@
+target base;
+kernel "accumulate_adv" {
+  std::accumulate(pattern=col, products=R1, accum=R2, out=R3, combine=xor, steps=2, scope=col(1));
+}

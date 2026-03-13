@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "allreduce_invalid" {
+  std::allreduce(op=add, dest=R3, src=R0, axis=diag);
+}

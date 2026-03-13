@@ -1,0 +1,8 @@
+target base;
+kernel "dyn_coords_row_col" {
+  for r in range(0, 4) {
+    for c in range(0, 4) {
+      bundle { @r,c: SADD R0, R0, 1; }
+    }
+  }
+}

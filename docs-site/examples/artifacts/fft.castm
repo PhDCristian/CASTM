@@ -1,0 +1,9 @@
+target base;
+
+kernel "stream_route_example" {
+  std::stream_load(dest=R0, row=0, count=2);
+  std::rotate(reg=R0, direction=left, distance=1);
+  std::route(@0,1 -> @0,0, payload=R0, accum=R1);
+  std::shift(reg=R1, direction=right, distance=1, fill=0);
+  std::stream_store(src=R1, row=0, count=2);
+}

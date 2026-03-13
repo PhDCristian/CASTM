@@ -1,0 +1,6 @@
+target base;
+kernel "row_broadcast" {
+  bundle {
+    at row 0: SADD R0, R0, 1;
+  }
+}

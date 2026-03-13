@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "broadcast_invalid" {
+  std::broadcast(value=R0, from=@0,0, to=diag);
+}

@@ -1,0 +1,6 @@
+target base;
+kernel "expr_minimal" {
+  bundle {
+    @0,0: R2 = R0 + R1;
+  }
+}

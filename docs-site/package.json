@@ -1,0 +1,17 @@
+{
+  "name": "castm-docs",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "docs:dev": "vitepress dev",
+    "docs:build": "vitepress build",
+    "docs:preview": "vitepress preview",
+    "docs:examples:generate": "node ../node_modules/vite-node/vite-node.mjs scripts/generate-example-artifacts.ts",
+    "docs:artifacts:generate": "node ../node_modules/vite-node/vite-node.mjs scripts/generate-doc-artifacts.ts",
+    "docs:contracts:check": "node ../node_modules/vite-node/vite-node.mjs scripts/check-doc-contracts.ts",
+    "docs:validate": "npm run docs:artifacts:generate && npm run docs:contracts:check && npm run docs:build"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.3"
+  }
+}

@@ -1,0 +1,8 @@
+target base;
+kernel "parallel_adv" {
+  for r in range(0, 2) collapse(2) {
+    for c in range(0, 2) {
+      bundle { at @r,c: R3 = R1 + R2; }
+    }
+  }
+}

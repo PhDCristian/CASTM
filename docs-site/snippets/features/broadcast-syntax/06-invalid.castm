@@ -1,0 +1,7 @@
+// expect-error: E2002
+target base;
+kernel "row_invalid" {
+  bundle {
+    row 0: SADD R0, R0, 1;
+  }
+}

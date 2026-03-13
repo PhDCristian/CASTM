@@ -1,0 +1,172 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`compiler-api pipeline contracts > keeps deterministic snapshots across pipeline artifacts 1`] = `
+{
+  "ast": [
+    {
+      "index": 0,
+      "ops": [
+        {
+          "col": 1,
+          "row": 0,
+          "text": "SADD ROUT, R3, ZERO",
+        },
+      ],
+    },
+    {
+      "index": 1,
+      "ops": [
+        {
+          "col": 0,
+          "row": 0,
+          "text": "SADD R1, R1, RCR",
+        },
+        {
+          "col": 1,
+          "row": 0,
+          "text": "SADD R2, R0, 1",
+        },
+      ],
+    },
+    {
+      "index": 2,
+      "ops": [
+        {
+          "col": 0,
+          "row": 0,
+          "text": "LWI R0, 4",
+        },
+      ],
+    },
+  ],
+  "csv": [
+    "cycle,row,col,instruction",
+    "0,0,1,SADD ROUT R3 ZERO",
+    "1,0,0,SADD R1 R1 RCR",
+    "1,0,1,SADD R2 R0 1",
+    "2,0,0,LWI R0 4",
+  ],
+  "hir": [
+    {
+      "index": 0,
+      "ops": [
+        {
+          "col": 1,
+          "row": 0,
+          "text": "SADD ROUT R3 ZERO",
+        },
+      ],
+    },
+    {
+      "index": 1,
+      "ops": [
+        {
+          "col": 0,
+          "row": 0,
+          "text": "SADD R1 R1 RCR",
+        },
+        {
+          "col": 1,
+          "row": 0,
+          "text": "SADD R2 R0 1",
+        },
+      ],
+    },
+    {
+      "index": 2,
+      "ops": [
+        {
+          "col": 0,
+          "row": 0,
+          "text": "LWI R0 4",
+        },
+      ],
+    },
+  ],
+  "lir": [
+    {
+      "index": 0,
+      "ops": [
+        {
+          "col": 1,
+          "row": 0,
+          "text": "SADD ROUT R3 ZERO",
+        },
+      ],
+    },
+    {
+      "index": 1,
+      "ops": [
+        {
+          "col": 0,
+          "row": 0,
+          "text": "SADD R1 R1 RCR",
+        },
+        {
+          "col": 1,
+          "row": 0,
+          "text": "SADD R2 R0 1",
+        },
+      ],
+    },
+    {
+      "index": 2,
+      "ops": [
+        {
+          "col": 0,
+          "row": 0,
+          "text": "LWI R0 4",
+        },
+      ],
+    },
+  ],
+  "mir": [
+    {
+      "index": 0,
+      "ops": [
+        {
+          "col": 1,
+          "row": 0,
+          "text": "SADD ROUT R3 ZERO",
+        },
+      ],
+    },
+    {
+      "index": 1,
+      "ops": [
+        {
+          "col": 0,
+          "row": 0,
+          "text": "SADD R1 R1 RCR",
+        },
+        {
+          "col": 1,
+          "row": 0,
+          "text": "SADD R2 R0 1",
+        },
+      ],
+    },
+    {
+      "index": 2,
+      "ops": [
+        {
+          "col": 0,
+          "row": 0,
+          "text": "LWI R0 4",
+        },
+      ],
+    },
+  ],
+  "structured": {
+    "advancedTexts": [
+      "route(@0,1 -> @0,0, payload=R3, accum=R1)",
+    ],
+    "bodyKinds": [
+      "advanced",
+      "cycle",
+    ],
+    "kernelName": "pipeline_contract",
+    "targetProfileId": "uma-cgra-base",
+  },
+}
+`;

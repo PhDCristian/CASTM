@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "normalize_invalid" {
+  std::normalize(reg=R3, carry=R1, width=16, lane=0, axis=col, dir=right);
+}

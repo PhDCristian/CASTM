@@ -1,0 +1,4 @@
+target base;
+kernel "stencil_adv" {
+  std::stencil(horizontal, add, R2, R3);
+}

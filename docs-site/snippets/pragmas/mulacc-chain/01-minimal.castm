@@ -1,0 +1,4 @@
+target base;
+kernel "mulacc_min" {
+  std::mulacc_chain(src=R0, coeff=R1, acc=R2, out=R3, target=row(0), lanes=4, width=16, dir=right);
+}

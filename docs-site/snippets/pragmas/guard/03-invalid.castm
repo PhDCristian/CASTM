@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "guard_invalid" {
+  std::guard(cond=col>=row, op=SADD, dest=R2, srcA=R0);
+}

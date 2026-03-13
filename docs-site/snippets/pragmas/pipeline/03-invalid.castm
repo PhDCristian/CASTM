@@ -1,0 +1,5 @@
+// expect-error: E3004
+target base;
+kernel "pipeline_invalid" {
+  pipeline(missing_stage(R0));
+}

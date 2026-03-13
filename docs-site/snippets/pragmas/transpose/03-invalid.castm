@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "transpose_invalid" {
+  std::transpose(R0);
+}

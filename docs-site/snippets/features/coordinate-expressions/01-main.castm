@@ -1,0 +1,7 @@
+target base;
+kernel "coords" {
+  bundle {
+    @0,0..3: SADD R0, R0, 1;
+    @1..2,1: SMUL R1, R1, 2;
+  }
+}

@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "route_compare_invalid" {
+  std::route(@0,0 -> @0,1, payload=R0, dest=R1);
+}

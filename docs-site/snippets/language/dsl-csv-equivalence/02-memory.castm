@@ -1,0 +1,10 @@
+target base;
+let A = { 10, 20, 30, 40 };
+let B @100 = { 0, 0, 0, 0 };
+
+kernel "eq_mem" {
+  bundle {
+    at @0,0: R0 = A[1];
+    at @0,1: B[2] = R0;
+  }
+}

@@ -1,0 +1,9 @@
+target base;
+kernel "runtime_directives" {
+  io.load(0, 4, 8);
+  io.store(16, 20);
+  limit(64);
+  assert(at=@0,0, reg=R0, equals=0, cycle=0);
+
+  bundle { at @0,0: SADD R0, R0, 1; }
+}

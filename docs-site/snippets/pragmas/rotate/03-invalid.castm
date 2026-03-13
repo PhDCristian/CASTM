@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "rotate_invalid" {
+  std::rotate(reg=R0, direction=up, distance=1);
+}

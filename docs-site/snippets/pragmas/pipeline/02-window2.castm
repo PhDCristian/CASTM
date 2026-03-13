@@ -1,0 +1,19 @@
+target base;
+build {
+  optimize O2;
+  scheduler safe;
+  scheduler_window 2;
+  memory_reorder strict;
+}
+function s0(v) {
+  bundle { at @0,0: SADD R1, v, ZERO; }
+}
+function s1(v) {
+  bundle { at @0,1: SADD R2, v, R1; }
+}
+function s2(v) {
+  bundle { at @0,2: SADD R3, v, R2; }
+}
+kernel "pipeline_adv_window2" {
+  pipeline(s0(R0), s1(R0), s2(R0));
+}

@@ -1,0 +1,4 @@
+target base;
+kernel "route_custom_op" {
+  std::route(@0,1 -> @0,0, payload=R3, dest=R1, op=SMUL(R1, R0, INCOMING));
+}

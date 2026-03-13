@@ -1,0 +1,4 @@
+target base;
+kernel "scan_min" {
+  std::scan(op=add, src=R0, dest=R1, dir=right, mode=inclusive);
+}

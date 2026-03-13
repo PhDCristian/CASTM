@@ -1,0 +1,4 @@
+target base;
+kernel "allreduce_min" {
+  std::allreduce(op=add, dest=R3, src=R0, axis=row);
+}

@@ -1,0 +1,6 @@
+target base;
+kernel "loops_unroll" {
+  for i in range(0, 4) unroll(2) {
+    bundle { @0,i: R2 = R0 + 1; }
+  }
+}

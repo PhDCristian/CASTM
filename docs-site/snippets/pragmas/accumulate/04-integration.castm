@@ -1,0 +1,4 @@
+target base;
+kernel "accumulate_min" {
+  std::accumulate(pattern=row, products=R2, accum=R3, out=ROUT);
+}

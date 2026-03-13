@@ -1,0 +1,4 @@
+target base;
+kernel "stencil_min" {
+  std::stencil(cross, add, R0, R1);
+}

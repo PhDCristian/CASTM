@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "lat_hide_invalid" {
+  std::latency_hide(window=2, mode=aggressive);
+}

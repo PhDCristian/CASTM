@@ -1,0 +1,4 @@
+target base;
+kernel "normalize_min" {
+  std::normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=right);
+}

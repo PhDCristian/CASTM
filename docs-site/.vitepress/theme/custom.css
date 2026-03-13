@@ -1,0 +1,520 @@
+/**
+ * CASTM — Premium Theme
+ * Glassmorphism · Animated gradients · Micro-interactions
+ */
+
+/* ═══════════════════════════════════════════
+   Typography
+   ═══════════════════════════════════════════ */
+:root {
+  --vp-font-family-base: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --vp-font-family-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+}
+
+/* ═══════════════════════════════════════════
+   Brand Colors — Light Mode
+   ═══════════════════════════════════════════ */
+:root {
+  /* Primary — Vibrant Electric Blue */
+  --vp-c-brand-1: #2563EB;
+  --vp-c-brand-2: #3B82F6;
+  --vp-c-brand-3: #1D4ED8;
+  --vp-c-brand-soft: rgba(37, 99, 235, 0.14);
+
+  /* Accent — Emerald */
+  --vp-c-tip-1: #10B981;
+  --vp-c-tip-2: #059669;
+  --vp-c-tip-soft: rgba(16, 185, 129, 0.14);
+
+  /* Warning */
+  --vp-c-warning-1: #F59E0B;
+  --vp-c-warning-soft: rgba(245, 158, 11, 0.14);
+
+  /* Backgrounds — Cool Slate */
+  --vp-c-bg: #ffffff;
+  --vp-c-bg-alt: #F8FAFC;
+  --vp-c-bg-soft: #F1F5F9;
+  --vp-c-bg-mute: #E2E8F0;
+
+  /* Gradient tokens */
+  --oe-gradient-brand: linear-gradient(135deg, #2563EB 0%, #7C3AED 50%, #EC4899 100%);
+  --oe-gradient-subtle: linear-gradient(135deg, rgba(37,99,235,0.05) 0%, rgba(124,58,237,0.05) 50%, rgba(236,72,153,0.05) 100%);
+  --oe-glass-bg: rgba(255, 255, 255, 0.72);
+  --oe-glass-border: rgba(255, 255, 255, 0.2);
+  --oe-shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.06);
+  --oe-shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.08);
+}
+
+/* ═══════════════════════════════════════════
+   Dark Mode — Deep Navy
+   ═══════════════════════════════════════════ */
+.dark {
+  --vp-c-brand-1: #60A5FA;
+  --vp-c-brand-2: #93C5FD;
+  --vp-c-brand-3: #3B82F6;
+  --vp-c-brand-soft: rgba(96, 165, 250, 0.14);
+
+  --vp-c-tip-1: #34D399;
+  --vp-c-tip-2: #6EE7B7;
+  --vp-c-tip-soft: rgba(52, 211, 153, 0.14);
+
+  --vp-c-bg: #0B1120;
+  --vp-c-bg-alt: #111827;
+  --vp-c-bg-soft: #1E293B;
+  --vp-c-bg-mute: #334155;
+
+  --oe-gradient-subtle: linear-gradient(135deg, rgba(37,99,235,0.04) 0%, rgba(124,58,237,0.04) 50%, rgba(236,72,153,0.04) 100%);
+  --oe-glass-bg: rgba(11, 17, 32, 0.8);
+  --oe-glass-border: rgba(255, 255, 255, 0.06);
+  --oe-shadow-soft: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --oe-shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.4);
+}
+
+/* ═══════════════════════════════════════════
+   Glassmorphism Navbar
+   ═══════════════════════════════════════════ */
+.VPNav {
+  background: var(--oe-glass-bg) !important;
+  backdrop-filter: blur(16px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+  border-bottom: 1px solid var(--oe-glass-border) !important;
+}
+
+.VPNavBar .content-body {
+  background: transparent !important;
+}
+
+.VPNavBar .divider {
+  display: none !important;
+}
+
+/* Nav link hover with animated underline */
+.VPNavBarMenuLink .VPLink:hover {
+  color: var(--vp-c-brand-1) !important;
+}
+
+/* ═══════════════════════════════════════════
+   Hero Section — Full Premium
+   ═══════════════════════════════════════════ */
+.VPHero {
+  position: relative;
+  padding-top: 80px !important;
+  padding-bottom: 40px !important;
+}
+
+.VPHero .name {
+  background: var(--oe-gradient-brand);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 4rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em;
+  line-height: 1.1 !important;
+}
+
+.VPHero .text {
+  font-size: 2.5rem !important;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--vp-c-text-1);
+}
+
+.VPHero .tagline {
+  font-size: 1.15rem !important;
+  color: var(--vp-c-text-2);
+  max-width: 580px;
+  line-height: 1.65;
+}
+
+/* Hero image glow animation */
+.VPHero .image-bg {
+  animation: hero-glow 6s ease-in-out infinite alternate;
+}
+
+@keyframes hero-glow {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Feature Cards — Glass Effect
+   ═══════════════════════════════════════════ */
+.VPFeature {
+  background: var(--oe-glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid var(--oe-glass-border) !important;
+  border-radius: 16px !important;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  padding: 28px 24px !important;
+}
+
+.VPFeature:hover {
+  border-color: var(--vp-c-brand-1) !important;
+  transform: translateY(-4px) !important;
+  box-shadow: var(--oe-shadow-elevated) !important;
+}
+
+.dark .VPFeature:hover {
+  box-shadow: 0 12px 48px rgba(96, 165, 250, 0.08) !important;
+  border-color: rgba(96, 165, 250, 0.3) !important;
+}
+
+.VPFeature .icon {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.VPFeature .title {
+  font-weight: 700 !important;
+  font-size: 1.05rem !important;
+  letter-spacing: -0.01em;
+}
+
+.VPFeature .details {
+  color: var(--vp-c-text-2) !important;
+  line-height: 1.6 !important;
+  font-size: 0.9rem !important;
+}
+
+/* ═══════════════════════════════════════════
+   Buttons — Rounded + Glow
+   ═══════════════════════════════════════════ */
+.VPButton.brand {
+  border-radius: 10px !important;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 10px 28px !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.2);
+}
+
+.VPButton.brand:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(37, 99, 235, 0.35);
+}
+
+.dark .VPButton.brand:hover {
+  box-shadow: 0 6px 24px rgba(96, 165, 250, 0.25);
+}
+
+.VPButton.alt {
+  border-radius: 10px !important;
+  padding: 10px 28px !important;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.VPButton.alt:hover {
+  transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════════════════
+   Sidebar — Premium Polish
+   ═══════════════════════════════════════════ */
+.VPSidebar {
+  background: var(--oe-glass-bg) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border-right: 1px solid var(--oe-glass-border) !important;
+}
+
+.VPSidebarItem.level-0 .text {
+  font-weight: 700 !important;
+  font-size: 0.82rem !important;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--vp-c-text-2);
+}
+
+.VPSidebarItem .link.active {
+  border-left: 3px solid var(--vp-c-brand-1) !important;
+  background: var(--vp-c-brand-soft) !important;
+  border-radius: 0 8px 8px 0;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════
+   Code Blocks — Enhanced
+   ═══════════════════════════════════════════ */
+.vp-doc div[class*='language-'] {
+  border-radius: 14px;
+  border: 1px solid var(--oe-glass-border);
+  box-shadow: var(--oe-shadow-soft);
+  overflow: hidden;
+  transition: box-shadow 0.3s ease;
+}
+
+.vp-doc div[class*='language-']:hover {
+  box-shadow: var(--oe-shadow-elevated);
+}
+
+.vp-doc div[class*='language-'] code {
+  font-size: 0.85rem;
+  line-height: 1.75;
+}
+
+/* Code block language label */
+.vp-doc div[class*='language-'] > span.lang {
+  top: 10px;
+  right: 14px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vp-c-text-3);
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════
+   Content — Typography Polish
+   ═══════════════════════════════════════════ */
+.vp-doc {
+  max-width: 800px;
+}
+
+.vp-doc h1 {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: var(--oe-gradient-brand);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--vp-c-brand-soft);
+}
+
+.vp-doc h2 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--vp-c-bg-mute);
+}
+
+.vp-doc h3 {
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+/* Paragraph leading */
+.vp-doc p {
+  line-height: 1.8;
+}
+
+/* ═══════════════════════════════════════════
+   Tables — Premium Glass
+   ═══════════════════════════════════════════ */
+.vp-doc table {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--oe-glass-border);
+  box-shadow: var(--oe-shadow-soft);
+}
+
+.vp-doc table th {
+  background: var(--vp-c-bg-soft);
+  font-weight: 700;
+  font-size: 0.82rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 12px 16px;
+}
+
+.vp-doc table td {
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--vp-c-bg-mute);
+}
+
+.vp-doc table tr:last-child td {
+  border-bottom: none;
+}
+
+.vp-doc table tr:hover td {
+  background: var(--vp-c-brand-soft);
+  transition: background 0.2s ease;
+}
+
+/* ═══════════════════════════════════════════
+   Custom Containers — Refined
+   ═══════════════════════════════════════════ */
+.vp-doc .custom-block {
+  border-radius: 12px;
+  border: 1px solid var(--oe-glass-border);
+  padding: 20px 24px;
+  backdrop-filter: blur(8px);
+}
+
+.vp-doc .custom-block.tip {
+  background: var(--vp-c-tip-soft);
+  border-left: 4px solid var(--vp-c-tip-1);
+}
+
+.vp-doc .custom-block.warning {
+  background: var(--vp-c-warning-soft);
+  border-left: 4px solid var(--vp-c-warning-1);
+}
+
+.vp-doc .custom-block.info {
+  background: var(--vp-c-brand-soft);
+  border-left: 4px solid var(--vp-c-brand-1);
+}
+
+.vp-doc .custom-block .custom-block-title {
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.01em;
+}
+
+/* ═══════════════════════════════════════════
+   Inline Code — Pill Style
+   ═══════════════════════════════════════════ */
+.vp-doc :not(pre) > code {
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-size: 0.85em;
+  font-weight: 500;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.vp-doc :not(pre) > code:hover {
+  border-color: var(--vp-c-brand-1);
+}
+
+/* ═══════════════════════════════════════════
+   Badge Styles
+   ═══════════════════════════════════════════ */
+.badge-dsl {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.badge-hw {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--vp-c-tip-soft);
+  color: var(--vp-c-tip-1);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════
+   Scrollbar — Refined
+   ═══════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--vp-c-bg-mute);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--vp-c-brand-soft);
+}
+
+/* ═══════════════════════════════════════════
+   Footer — Gradient Accent
+   ═══════════════════════════════════════════ */
+.VPFooter {
+  border-top: 1px solid var(--oe-glass-border) !important;
+  background: var(--oe-gradient-subtle) !important;
+}
+
+.VPFooter .message,
+.VPFooter .copyright {
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+}
+
+/* ═══════════════════════════════════════════
+   Page Transition Animation
+   ═══════════════════════════════════════════ */
+.VPContent {
+  animation: page-enter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Outline / TOC — Right sidebar polish
+   ═══════════════════════════════════════════ */
+.VPDocOutlineItem .outline-link {
+  font-size: 0.82rem;
+  transition: all 0.2s ease;
+}
+
+.VPDocOutlineItem .outline-link:hover {
+  color: var(--vp-c-brand-1);
+}
+
+.VPDocOutlineItem .outline-link.active {
+  color: var(--vp-c-brand-1);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════
+   Responsive — Mobile Polish
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .VPHero .name {
+    font-size: 2.5rem !important;
+  }
+  .VPHero .text {
+    font-size: 1.5rem !important;
+  }
+  .vp-doc h1 {
+    font-size: 1.6rem;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Selection Highlight
+   ═══════════════════════════════════════════ */
+::selection {
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+}
+
+/* ═══════════════════════════════════════════
+   Smooth Scrolling
+   ═══════════════════════════════════════════ */
+html {
+  scroll-behavior: smooth;
+}

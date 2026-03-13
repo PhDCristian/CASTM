@@ -1,0 +1,11 @@
+target base;
+
+function load_all(reg, addr) {
+  bundle {
+    at all: LWI reg, addr;
+  }
+}
+
+kernel "load_all_demo" {
+  load_all(R0, 360);
+}

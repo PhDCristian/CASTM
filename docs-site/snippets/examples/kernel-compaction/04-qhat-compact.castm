@@ -1,0 +1,14 @@
+target base;
+let L = { 10, 20, 30, 40, 50, 60 };
+
+function compute_qhat_inregs() {
+  bundle {
+    for c in range(0, 4) {
+      at @0..2,c: R0 = L[c+1];
+    }
+  }
+}
+
+kernel "qhat_demo" {
+  compute_qhat_inregs();
+}

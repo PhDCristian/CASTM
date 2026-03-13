@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "stash_invalid" {
+  std::stash(action=copy, reg=R0, addr=360, target=all);
+}

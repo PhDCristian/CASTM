@@ -1,0 +1,4 @@
+target base;
+kernel "condsub_adv" {
+  std::conditional_sub(value=R2, sub=R3, dest=R0, target=point(1,1));
+}

@@ -1,0 +1,4 @@
+target base;
+kernel "stash_adv" {
+  std::stash(action=restore, reg=R2, addr=372, target=point(1,1));
+}

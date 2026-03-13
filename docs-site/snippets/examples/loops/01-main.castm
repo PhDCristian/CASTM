@@ -1,0 +1,15 @@
+target base;
+
+kernel "loops_example" {
+  for i in range(0, 4) {
+    bundle { at @0,i: NOP; }
+  }
+
+  for k in range(0, 16) {
+    bundle { at @k/4,k%4: NOP; }
+  }
+
+  for R0 in range(0, 3) at @0,0 runtime {
+    bundle { at @0,1: R1 = R0 + 1; }
+  }
+}

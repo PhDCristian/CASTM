@@ -1,0 +1,4 @@
+target base;
+kernel "reduce_col" {
+  std::reduce(op=xor, dest=R2, src=R1, axis=col);
+}

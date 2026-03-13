@@ -1,0 +1,5 @@
+target base;
+kernel "route_compare" {
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
+  std::route(@0,1 -> @0,0, payload=R3, dest=R2, op=SADD(R2, R2, INCOMING));
+}

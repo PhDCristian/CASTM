@@ -1,0 +1,5 @@
+target base;
+kernel "stream_adv" {
+  std::stream_load(dest=R1, row=1, count=2);
+  std::stream_store(src=R1, row=1, count=2);
+}

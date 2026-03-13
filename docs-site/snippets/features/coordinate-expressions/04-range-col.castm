@@ -1,0 +1,6 @@
+target base;
+kernel "coords_range_col" {
+  bundle {
+    @0..3,2: SADD R0, R0, 1;
+  }
+}

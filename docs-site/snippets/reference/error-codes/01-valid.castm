@@ -1,0 +1,6 @@
+target base;
+kernel "diag_valid" {
+  bundle {
+    at @0,0: R0 = R0 + 1;
+  }
+}

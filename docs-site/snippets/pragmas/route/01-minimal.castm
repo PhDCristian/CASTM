@@ -1,0 +1,4 @@
+target base;
+kernel "route_min" {
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
+}

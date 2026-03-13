@@ -1,0 +1,4 @@
+target base;
+kernel "allreduce_adv" {
+  std::allreduce(op=mul, dest=R2, src=R1, axis=col);
+}

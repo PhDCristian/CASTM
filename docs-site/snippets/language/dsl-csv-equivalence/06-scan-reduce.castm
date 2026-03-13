@@ -1,0 +1,5 @@
+target base;
+kernel "eq_scan_reduce" {
+  std::scan(op=add, src=R0, dest=R2, dir=right, mode=exclusive);
+  std::reduce(op=add, dest=R1, src=R0, axis=row);
+}

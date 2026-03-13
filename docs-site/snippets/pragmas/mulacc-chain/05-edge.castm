@@ -1,0 +1,4 @@
+target base;
+kernel "mulacc_adv" {
+  std::mulacc_chain(src=R1, coeff=R2, acc=R3, out=R0, target=col(1), lanes=4, width=8, mask=255, dir=down);
+}

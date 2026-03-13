@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "scan_invalid" {
+  std::scan(op=add, src=R0, dest=R1, dir=right, mode=middle);
+}

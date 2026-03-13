@@ -1,0 +1,4 @@
+target base;
+kernel "extract_min" {
+  std::extract_bytes(src=R0, dest=R1, axis=col, byteWidth=8, mask=255);
+}

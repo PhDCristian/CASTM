@@ -1,0 +1,17 @@
+target base;
+let S = { 7, 3 };
+
+kernel "isa_glance" {
+  bundle {
+    at @0,0: R0 = S[0];
+    at @0,1: R1 = S[1];
+    at @0,2: SADD R2, R0, R1;
+    at @0,3: LAND R3, R2, 15;
+  }
+  bundle {
+    at @0,0: BEQ R3, 0, 3;
+    at @0,1: SRT R2, R2, 1;
+    at @0,2: NOP;
+    at @0,3: EXIT;
+  }
+}

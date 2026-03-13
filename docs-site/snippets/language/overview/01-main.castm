@@ -1,0 +1,10 @@
+target base;
+let A = { 1, 2, 3, 4 };
+
+kernel "overview" {
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
+  bundle {
+    at @0,0: R0 = A[0];
+    at row 1: NOP;
+  }
+}

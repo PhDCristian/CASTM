@@ -1,0 +1,5 @@
+// expect-error: E2002
+target base;
+kernel "collect_invalid" {
+  std::collect(from=row(0), to=col(0), via=R2, local=R0, into=R3, combine=add);
+}

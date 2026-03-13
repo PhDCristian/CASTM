@@ -1,0 +1,4 @@
+target base;
+kernel "eq_route" {
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
+}

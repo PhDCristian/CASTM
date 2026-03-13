@@ -1,0 +1,7 @@
+// expect-error: E2002
+target base;
+kernel "invalid_row_without_at" {
+  bundle {
+    row 0: SADD R0, R0, 1 | SMUL R1, R1, 2 | LAND R2, R2, 255 | SRT R3, R3, 1;
+  }
+}

@@ -1,0 +1,6 @@
+target base;
+kernel "row_single" {
+  bundle {
+    at row 1: SADD R0, R0, 1;
+  }
+}

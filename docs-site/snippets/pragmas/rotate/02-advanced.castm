@@ -1,0 +1,4 @@
+target base;
+kernel "rotate_dist" {
+  std::rotate(reg=R2, direction=right, distance=2);
+}

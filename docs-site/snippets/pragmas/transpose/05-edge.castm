@@ -1,0 +1,4 @@
+target base;
+kernel "transpose_adv" {
+  std::transpose(reg=R2);
+}

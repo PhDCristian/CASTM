@@ -1,0 +1,15 @@
+target base;
+
+let MASK = 0xFFFF;
+let acc = R1;
+let input = { 10, 20, 30, 40 };
+let matrix[2][2] = { 1, 2, 3, 4 };
+
+function stage(src) {
+  bundle { at @0,0: SADD R2, src, ZERO; }
+}
+
+kernel "structure" {
+  stage(R0);
+  bundle { at @0,1: NOP; }
+}

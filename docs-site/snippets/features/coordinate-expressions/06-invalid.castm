@@ -1,0 +1,7 @@
+// expect-error: E3011
+target base;
+kernel "coords_invalid" {
+  bundle {
+    @0,i: SADD R0, R0, 1;
+  }
+}

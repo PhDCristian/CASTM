@@ -1,0 +1,4 @@
+target base;
+kernel "normalize_adv" {
+  std::normalize(reg=R2, carry=R0, width=8, lane=1, axis=col, dir=down, mask=255);
+}

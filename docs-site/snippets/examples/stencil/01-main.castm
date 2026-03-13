@@ -1,0 +1,7 @@
+target base;
+
+kernel "stencil_guard_example" {
+  std::stencil(cross, add, R0, R1);
+  std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  std::triangle(shape=upper, inclusive=true, op=SADD, dest=R3, srcA=R1, srcB=R2);
+}

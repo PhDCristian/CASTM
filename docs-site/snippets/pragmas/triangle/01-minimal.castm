@@ -1,0 +1,4 @@
+target base;
+kernel "triangle_min" {
+  std::triangle(shape=upper, inclusive=true, op=SADD, dest=R3, srcA=R1, srcB=R2);
+}

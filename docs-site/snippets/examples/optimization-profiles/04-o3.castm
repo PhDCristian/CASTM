@@ -1,0 +1,13 @@
+target base;
+build {
+  optimize O3;
+}
+kernel "profile_compare_o3" {
+  bundle { at @0,0: SADD R1, R0, 1; }
+  bundle { at @0,1: SADD R2, R0, 2; }
+  bundle { at @0,2: SADD R3, R0, 3; }
+  bundle { at @0,3: SADD R0, R0, 4; }
+  bundle { at @1,0: SADD R1, R1, R2; }
+  bundle { at @1,1: SADD R2, R2, R3; }
+  bundle { at @1,2: SADD R3, R3, R0; }
+}

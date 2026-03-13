@@ -1,0 +1,8 @@
+target base;
+let M[2][2] = { 1, 2, 3, 4 };
+kernel "mem_2d" {
+  bundle {
+    @0,0: R0 = M[1][1];
+    @0,1: M[0][1] = R0;
+  }
+}
