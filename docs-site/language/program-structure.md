@@ -39,7 +39,6 @@ kernel "structure" {
 
 Inside `kernel { ... }`, canonical items are:
 
-- `config(...)`
 - runtime statements (`io.load(...)`, `io.store(...)`, `limit(...)`, `assert(...)`)
 - `bundle { ... }`
 - `if/else`, `while`, `for`

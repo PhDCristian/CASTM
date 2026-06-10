@@ -11,8 +11,6 @@
 target base;
 
 kernel "CLikeArithmetic" {
-    config(0xF, 0);
-
     // Bundle 0: Load initial values using assembly syntax
     bundle {
         @0,0: SADD R0, ZERO, 10;   // R0 = 10

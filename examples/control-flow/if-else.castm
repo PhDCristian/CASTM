@@ -6,8 +6,6 @@
 target base;
 
 kernel "IfElse" {
-    config(0xF, 0);
-
     // Set R0 = 5
     bundle {
         @0,0: SADD R0, ZERO, 5;

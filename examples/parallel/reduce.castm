@@ -6,8 +6,6 @@
 target base;
 
 kernel "Reduce" {
-    config(0xF, 0);
-
     // Load values into each PE of row 0
     bundle {
         @0,0: SADD R0, ZERO, 10;

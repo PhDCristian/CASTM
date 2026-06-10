@@ -6,8 +6,6 @@
 target base;
 
 kernel "Route" {
-    config(0xF, 0);
-
     // Load value at PE(0,0)
     bundle {
         @0,0: SADD R0, ZERO, 42;

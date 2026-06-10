@@ -6,7 +6,7 @@ Canonical spatial syntax supports concise point placements and row-segment paylo
 
 - Use short point form `@r,c:` for compact direct placements.
 - Use `at row N: a | b | c | d` when you want explicit per-column row segments.
-- Keep `row N:` (without `at`) out of source; it is intentionally invalid in canonical mode.
+- Row scopes must stay within the target grid.
 
 ## Target and assumptions
 
@@ -59,11 +59,11 @@ Full CSV: `docs-site/snippets/features/spatial-short-forms/04-row-broadcast.csv`
 
 Full CSV: `docs-site/snippets/features/spatial-short-forms/05-mixed.csv`.
 
-## Case F — Invalid unsupported-style row namespace
+## Case F — Invalid row outside the target grid
 
 <<< ../snippets/features/spatial-short-forms/06-invalid.castm{castm-fail} [CASTM fail]
 
-Expected diagnostic: `E2002`.
+Expected diagnostic: `E3003`.
 
 ## Related patterns
 

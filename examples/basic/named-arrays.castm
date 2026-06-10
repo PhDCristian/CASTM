@@ -9,8 +9,6 @@ let input = { 10, 20, 30, 40 };
 let output = { 0, 0, 0, 0 };
 
 kernel "NamedArrays" {
-    config(0xF, 0);
-
     // Load first and last elements
     bundle {
         @0,0: LWI R0, input[0];       // Load input[0] = 10

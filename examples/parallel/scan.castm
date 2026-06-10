@@ -6,8 +6,6 @@
 target base;
 
 kernel "Scan" {
-    config(0xF, 0);
-
     // Load values into row 0
     bundle {
         @0,0: SADD R0, ZERO, 1;

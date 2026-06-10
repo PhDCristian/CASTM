@@ -13,8 +13,6 @@ let matrix[2][2] = { 1, 2, 3, 4 };
 //   matrix[1][1] = 4  (addr 12)
 
 kernel "Data2D" {
-    config(0xF, 0);
-
     // Load diagonal elements
     bundle {
         @0,0: LWI R0, matrix[0][0];   // = 1

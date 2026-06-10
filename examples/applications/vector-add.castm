@@ -10,8 +10,6 @@ let B = { 1, 2, 3, 4 };
 let C = { 0, 0, 0, 0 };
 
 kernel "VectorAdd" {
-    config(0xF, 0);
-
     // Load A[i] and B[i] in parallel across 4 PEs
     for i in range(4) {
         bundle {

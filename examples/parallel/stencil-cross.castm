@@ -6,8 +6,6 @@
 target base;
 
 kernel "StencilCross" {
-    config(0xF, 0);
-
     // Initialize all PEs with different values
     bundle {
         @0,0: SADD R0, ZERO, 1;

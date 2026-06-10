@@ -4,7 +4,7 @@ CASTM uses a staged compiler pipeline with explicit contracts and artifacts.
 
 ## Target and assumptions
 
-- Snippets in this page use canonical source-owned config (`target` + optional `build`).
+- Snippets in this page use canonical source-owned configuration (`target` + optional `build`).
 - Pipeline behavior is deterministic for a fixed source.
 - CSV snippets are generated through `docs:artifacts:generate`.
 - Canonical target alias is `target base;` (no need to use internal profile IDs in source).

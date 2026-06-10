@@ -11,8 +11,6 @@ let B[2][2] = { 5, 6, 7, 8 };
 let C[2][2] = { 0, 0, 0, 0 };
 
 kernel "MatMul2x2" {
-    config(0xF, 0);
-
     // For each element C[i][j] = sum_k(A[i][k] * B[k][j])
     for i in range(2) {
         for j in range(2) {

@@ -6,8 +6,6 @@
 target base;
 
 kernel "Broadcast" {
-    config(0xF, 0);
-
     // Load value at PE(0,0) only
     bundle {
         @0,0: SADD R0, ZERO, 99;

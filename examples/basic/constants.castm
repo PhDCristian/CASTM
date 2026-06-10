@@ -11,8 +11,6 @@ let counter = R0;
 let value = R1;
 
 kernel "Constants" {
-    config(0xF, 0);
-
     // Initialize counter to 0
     bundle {
         @0,0: SADD counter, ZERO, ZERO;

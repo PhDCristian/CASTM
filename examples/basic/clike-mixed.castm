@@ -12,8 +12,6 @@ let input = { 5, 10, 15, 20 };
 let output @100 = { 0, 0, 0, 0 };
 
 kernel "MixedSyntax" {
-    config(0xF, 0);
-
     // Bundle 0: Load from memory (assembly - LWI has no C-like equivalent)
     bundle {
         @0,0: LWI R0, input[0];

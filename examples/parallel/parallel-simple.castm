@@ -6,8 +6,6 @@
 target base;
 
 kernel "ParallelSimple" {
-    config(0xF, 0);
-
     // Distribute i=0..3 across columns 0..3
     for i in range(4) {
         bundle {

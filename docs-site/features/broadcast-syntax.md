@@ -12,7 +12,7 @@ Canonical spatial scopes support concise full-row, full-column, and full-grid pl
 
 - Snippets use `target base;`.
 - `at row N: INSTR;` auto-broadcasts when one instruction is provided.
-- `row N:` without `at` is intentionally invalid.
+- Row and column scopes must stay within the target grid.
 
 ## Case A — Row auto-broadcast
 
@@ -59,11 +59,11 @@ Full CSV: `docs-site/snippets/features/broadcast-syntax/04-all-single.csv`.
 
 Full CSV: `docs-site/snippets/features/broadcast-syntax/05-short-point-multi.csv`.
 
-## Case F — Invalid row namespace without `at`
+## Case F — Invalid row outside the target grid
 
 <<< ../snippets/features/broadcast-syntax/06-invalid.castm{castm-fail} [CASTM fail]
 
-Expected diagnostic: `E2002`.
+Expected diagnostic: `E3003`.
 
 ## Related examples
 

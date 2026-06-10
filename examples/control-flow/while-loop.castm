@@ -6,8 +6,6 @@
 target base;
 
 kernel "WhileLoop" {
-    config(0xF, 0);
-
     // Initialize counter R0 = 0
     bundle {
         @0,0: SADD R0, ZERO, ZERO;
