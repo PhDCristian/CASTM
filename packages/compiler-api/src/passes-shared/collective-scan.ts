@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
@@ -9,49 +9,49 @@ import {
 } from '@castm/compiler-ir';
 import {
   createInstruction,
-  createMultiAtCycle
+  createMultiAtBundle
 } from './ast-utils.js';
-import { ScanPragmaArgs } from './advanced-args.js';
+import { ScanAdvancedStatementArgs } from './advanced-args.js';
 import {
   getScanIdentity,
   getScanIncomingRegister,
   getScanOpcode
 } from './collective-scan-reduce-helpers.js';
 
-export function buildScanCycles(
-  pragma: ScanPragmaArgs,
+export function buildScanBundles(
+  advancedStatement: ScanAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
-  const compareOp = pragma.operation === 'max' || pragma.operation === 'min';
-  const simpleOpcode = getScanOpcode(pragma.operation);
+): BundleAst[] {
+  const compareOp = advancedStatement.operation === 'max' || advancedStatement.operation === 'min';
+  const simpleOpcode = getScanOpcode(advancedStatement.operation);
   if (!compareOp && !simpleOpcode) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Unsupported scan operation '${pragma.operation}'.`,
+      `Unsupported scan operation '${advancedStatement.operation}'.`,
       'Supported operations: add, and, or, xor, max, min.'
     ));
     return [];
   }
 
-  const horizontal = pragma.direction === 'left' || pragma.direction === 'right';
+  const horizontal = advancedStatement.direction === 'left' || advancedStatement.direction === 'right';
   const lineCount = horizontal ? grid.rows : grid.cols;
   const laneLength = horizontal ? grid.cols : grid.rows;
   if (laneLength <= 0 || lineCount <= 0) {
     return [];
   }
 
-  const forward = pragma.direction === 'right' || pragma.direction === 'down';
-  const incoming = getScanIncomingRegister(pragma.direction);
-  const identity = getScanIdentity(pragma.operation);
-  const bsfaFirst = pragma.operation === 'max' ? incoming : pragma.dstReg;
-  const bsfaSecond = pragma.operation === 'max' ? pragma.dstReg : incoming;
+  const forward = advancedStatement.direction === 'right' || advancedStatement.direction === 'down';
+  const incoming = getScanIncomingRegister(advancedStatement.direction);
+  const identity = getScanIdentity(advancedStatement.operation);
+  const bsfaFirst = advancedStatement.operation === 'max' ? incoming : advancedStatement.dstReg;
+  const bsfaSecond = advancedStatement.operation === 'max' ? advancedStatement.dstReg : incoming;
 
-  const cycles: CycleAst[] = [];
+  const bundles: BundleAst[] = [];
 
   for (let i = 0; i < laneLength; i++) {
     const laneIndex = forward ? i : laneLength - 1 - i;
@@ -63,17 +63,17 @@ export function buildScanCycles(
       const col = horizontal ? laneIndex : line;
 
       if (first) {
-        if (pragma.mode === 'inclusive') {
+        if (advancedStatement.mode === 'inclusive') {
           stagePlacements.push({
             row,
             col,
-            instruction: createInstruction('SADD', [pragma.dstReg, pragma.srcReg, 'ZERO'], span)
+            instruction: createInstruction('SADD', [advancedStatement.dstReg, advancedStatement.srcReg, 'ZERO'], span)
           });
         } else {
           stagePlacements.push({
             row,
             col,
-            instruction: createInstruction('SADD', [pragma.dstReg, 'ZERO', String(identity)], span)
+            instruction: createInstruction('SADD', [advancedStatement.dstReg, 'ZERO', String(identity)], span)
           });
         }
         continue;
@@ -83,7 +83,7 @@ export function buildScanCycles(
         stagePlacements.push({
           row,
           col,
-          instruction: createInstruction(simpleOpcode, [pragma.dstReg, pragma.dstReg, incoming], span)
+          instruction: createInstruction(simpleOpcode, [advancedStatement.dstReg, advancedStatement.dstReg, incoming], span)
         });
         continue;
       }
@@ -91,16 +91,16 @@ export function buildScanCycles(
       stagePlacements.push({
         row,
         col,
-        instruction: createInstruction('SSUB', ['R2', pragma.dstReg, incoming], span)
+        instruction: createInstruction('SSUB', ['R2', advancedStatement.dstReg, incoming], span)
       });
     }
 
     if (first) {
-      cycles.push(createMultiAtCycle(startIndex + cycles.length, stagePlacements, span));
+      bundles.push(createMultiAtBundle(startIndex + bundles.length, stagePlacements, span));
     } else if (!compareOp && simpleOpcode) {
-      cycles.push(createMultiAtCycle(startIndex + cycles.length, stagePlacements, span));
+      bundles.push(createMultiAtBundle(startIndex + bundles.length, stagePlacements, span));
     } else {
-      cycles.push(createMultiAtCycle(startIndex + cycles.length, stagePlacements, span));
+      bundles.push(createMultiAtBundle(startIndex + bundles.length, stagePlacements, span));
 
       const selectPlacements: Array<{ row: number; col: number; instruction: InstructionAst }> = [];
       for (let line = 0; line < lineCount; line++) {
@@ -109,16 +109,16 @@ export function buildScanCycles(
         selectPlacements.push({
           row,
           col,
-          instruction: createInstruction('BSFA', [pragma.dstReg, bsfaFirst, bsfaSecond, 'SELF'], span)
+          instruction: createInstruction('BSFA', [advancedStatement.dstReg, bsfaFirst, bsfaSecond, 'SELF'], span)
         });
       }
-      cycles.push(createMultiAtCycle(startIndex + cycles.length, selectPlacements, span));
+      bundles.push(createMultiAtBundle(startIndex + bundles.length, selectPlacements, span));
     }
 
     if (i < laneLength - 1) {
-      const relaySource = first && pragma.mode === 'exclusive'
-        ? pragma.srcReg
-        : pragma.dstReg;
+      const relaySource = first && advancedStatement.mode === 'exclusive'
+        ? advancedStatement.srcReg
+        : advancedStatement.dstReg;
       const relayPlacements: Array<{ row: number; col: number; instruction: InstructionAst }> = [];
       for (let line = 0; line < lineCount; line++) {
         const row = horizontal ? line : laneIndex;
@@ -129,9 +129,9 @@ export function buildScanCycles(
           instruction: createInstruction('SADD', ['ROUT', relaySource, 'ZERO'], span)
         });
       }
-      cycles.push(createMultiAtCycle(startIndex + cycles.length, relayPlacements, span));
+      bundles.push(createMultiAtBundle(startIndex + bundles.length, relayPlacements, span));
     }
   }
 
-  return cycles;
+  return bundles;
 }

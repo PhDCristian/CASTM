@@ -1,19 +1,19 @@
 export {
   createDesugarMemoryPass,
-  desugarAutoCyclePass,
+  desugarAutoBundlePass,
   desugarExpressionsPass,
   desugarGotoPass,
   desugarInlineArithmeticPass,
   createSlotPackPass,
-  pruneNoopCyclesPass,
+  pruneNoopBundlesPass,
   specializePass,
   desugarMemoryPass
 } from './passes-shared/desugar-passes.js';
 
 export {
-  createExpandPragmasPass,
-  expandPragmasPass
-} from './passes-shared/expand-pragmas-pass.js';
+  createExpandAdvancedStatementsPass,
+  expandAdvancedStatementsPass
+} from './passes-shared/expand-advanced-statements-pass.js';
 
 export {
   createResolveSymbolsPass,

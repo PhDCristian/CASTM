@@ -4,7 +4,7 @@ layout: home
 hero:
   name: CASTM
   text: Canonical CGRA Compiler Language
-  tagline: Canon-only DSL for CGRA kernels. Deterministic lowering to ISA-compatible CSV with structured compilation artifacts.
+  tagline: Canon-only CASTM for CGRA kernels. Deterministic lowering to ISA-compatible CSV with structured compilation artifacts.
   image:
     src: /logo.svg
     alt: CASTM
@@ -39,7 +39,7 @@ features:
       height: 32
     title: Advanced Spatial Statements
     details: route, reduce, scan, stencil, collect, normalize, carry_chain, latency_hide, stash, and more, all lowered through the same stable pass pipeline.
-    link: /features/pragmas/
+    link: /features/advanced-statements/
     linkText: Explore advanced statements
   - icon:
       src: /icons/file-code.svg
@@ -62,14 +62,14 @@ features:
       width: 32
       height: 32
     title: Simulator-Ready Output
-    details: Emit flat CSV or simulator matrix CSV from the same canonical source without changing DSL semantics.
+    details: Emit flat CSV or simulator matrix CSV from the same canonical source without changing CASTM semantics.
     link: /guide/library-usage
     linkText: Integration usage
 ---
 
 <StatsBar />
 
-## Quick DSL ↔ CSV
+## Quick CASTM ↔ CSV
 
 Use this minimal canonical snippet as a fast sanity check of the toolchain.
 Snippet target: `target base;`.

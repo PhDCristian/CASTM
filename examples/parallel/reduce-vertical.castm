@@ -1,7 +1,9 @@
 // Vertical (Column) Reduce
 //
-// Demonstrates: #pragma reduce with axis=col, reducing across rows in column 0.
+// Demonstrates: std::reduce with axis=col, reducing across rows in column 0.
 // Computes the sum of values in rows 0-3 of column 0.
+
+target base;
 
 kernel "ReduceVertical" {
     config(0xF, 0);
@@ -21,7 +23,7 @@ kernel "ReduceVertical" {
     }
 
     // Vertical reduce: R1 at (0,0) = 10 + 20 + 30 + 40 = 100
-    #pragma reduce(sum, R1, R0, axis=col)
+    std::reduce(op=add, dest=R1, src=R0, axis=col);
 
     bundle {
         @0,0: EXIT;

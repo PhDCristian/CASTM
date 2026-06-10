@@ -1,4 +1,4 @@
-import { isIdentifier, parseKeyValueArgs, splitPositionalArgs } from './pragma-args-utils.js';
+import { isIdentifier, parseKeyValueArgs, splitPositionalArgs } from './advanced-statement-args-utils.js';
 
 export interface RoutePoint {
   row: number;
@@ -12,7 +12,7 @@ export interface RouteCustomOp {
   srcB: string;
 }
 
-export interface RoutePragmaArgs {
+export interface RouteAdvancedStatementArgs {
   src: RoutePoint;
   dst: RoutePoint;
   payload: string;
@@ -79,7 +79,7 @@ function parseRouteCustomOp(text: string): RouteCustomOp | null {
   return { opcode, dest, srcA, srcB };
 }
 
-export function parseRoutePragmaArgs(text: string): RoutePragmaArgs | null {
+export function parseRouteAdvancedStatementArgs(text: string): RouteAdvancedStatementArgs | null {
   const match = text
     .trim()
     .match(/^route\s*\(\s*(@\s*[^,]+\s*,\s*[^,\s\)]+)\s*->\s*(@\s*[^,]+\s*,\s*[^,\s\)]+)\s*,\s*(.+)\)\s*;?\s*$/i);

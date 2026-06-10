@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const docsRoot = path.resolve(__dirname, '..');
-const pragmasDir = path.resolve(docsRoot, 'features/pragmas');
+const advancedStatementsDir = path.resolve(docsRoot, 'features/advanced-statements');
 const examplesDir = path.resolve(docsRoot, 'examples');
 const coreFeaturePages = [
   'features/expressions.md',
@@ -33,12 +33,12 @@ interface Violation {
   message: string;
 }
 
-function listPragmaPages(): string[] {
+function listAdvancedStatementPages(): string[] {
   return fs
-    .readdirSync(pragmasDir)
+    .readdirSync(advancedStatementsDir)
     .filter((name) => name.endsWith('.md') && name !== 'index.md')
     .sort()
-    .map((name) => path.join(pragmasDir, name));
+    .map((name) => path.join(advancedStatementsDir, name));
 }
 
 function listExamplePages(): string[] {
@@ -57,7 +57,7 @@ function hasCanonicalTargetMention(content: string): boolean {
   return /target\s+base\b/i.test(content) || /target\s+"uma-cgra-base"/i.test(content);
 }
 
-function checkPragmaPage(file: string): Violation[] {
+function checkAdvancedStatementPage(file: string): Violation[] {
   const content = fs.readFileSync(file, 'utf8');
   const violations: Violation[] = [];
 
@@ -184,10 +184,10 @@ function checkExamplePage(file: string): Violation[] {
 }
 
 function main(): void {
-  const pragmaPages = listPragmaPages();
+  const advancedStatementPages = listAdvancedStatementPages();
   const examplePages = listExamplePages();
   const allViolations = [
-    ...pragmaPages.flatMap(checkPragmaPage),
+    ...advancedStatementPages.flatMap(checkAdvancedStatementPage),
     ...coreFeaturePages.flatMap((relativePath) => checkCoreFeaturePage(path.join(docsRoot, relativePath))),
     ...examplePages.flatMap(checkExamplePage),
   ];
@@ -201,7 +201,7 @@ function main(): void {
   }
 
   console.log(
-    `Documentation contract passed for ${pragmaPages.length} pragmas pages, ${coreFeaturePages.length} core feature pages and ${examplePages.length} examples pages.`,
+    `Documentation contract passed for ${advancedStatementPages.length} advancedStatements pages, ${coreFeaturePages.length} core feature pages and ${examplePages.length} examples pages.`,
   );
 }
 

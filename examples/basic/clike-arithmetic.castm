@@ -8,6 +8,8 @@
 // ROUT = R0 * R2 desugars to   SMUL ROUT, R0, R2
 // R1 = R0 << 2   desugars to   SLT R1, R0, 2
 
+target base;
+
 kernel "CLikeArithmetic" {
     config(0xF, 0);
 

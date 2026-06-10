@@ -102,7 +102,7 @@ kernel "ex_bad_if_header" {
 
 - static loops expand deterministically by iteration order,
 - runtime loops emit control-flow instructions at the declared control PE,
-- `if/else` and `while` introduce branch cycles tied to explicit control headers.
+- `if/else` and `while` introduce branch bundles tied to explicit control headers.
 
 ## Practical rule
 

@@ -8,7 +8,7 @@ import {
   tryExpandIfStatement,
   tryExpandWhileStatement
 } from './function-expand-control-flow.js';
-import { tryExpandCycleStatement } from './function-expand-cycle.js';
+import { tryExpandBundleStatement } from './function-expand-bundle.js';
 import { tryExpandFunctionCall } from './function-expand-call.js';
 
 const STEP_HANDLERS: Array<(input: FunctionExpandStepInput) => FunctionExpandStepResult> = [
@@ -16,7 +16,7 @@ const STEP_HANDLERS: Array<(input: FunctionExpandStepInput) => FunctionExpandSte
   tryExpandForStatement,
   tryExpandIfStatement,
   tryExpandWhileStatement,
-  tryExpandCycleStatement,
+  tryExpandBundleStatement,
   tryExpandFunctionCall
 ];
 

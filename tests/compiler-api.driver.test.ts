@@ -25,10 +25,10 @@ function makeAst(): AstProgram {
     span,
     kernel: {
       name: 'k',
-      cycles: [{ index: 0, label: 'L0', statements: [], span }],
+      bundles: [{ index: 0, label: 'L0', statements: [], span }],
       directives: [],
       runtime: [],
-      pragmas: [],
+      advancedStatements: [],
       span
     }
   };

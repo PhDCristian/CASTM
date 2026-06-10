@@ -34,9 +34,9 @@ export function collectArrayAndLabelSymbols(ast: AstProgram, dataRegions: Memory
     });
   }
 
-  for (const cycle of ast.kernel?.cycles ?? []) {
-    if (!cycle.label) continue;
-    symbols.labels[cycle.label] = cycle.index;
+  for (const bundle of ast.kernel?.bundles ?? []) {
+    if (!bundle.label) continue;
+    symbols.labels[bundle.label] = bundle.index;
   }
 
   return symbols;

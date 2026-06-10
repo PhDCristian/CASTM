@@ -8,13 +8,13 @@ import {
   RuntimeLoopPlan
 } from './types.js';
 
-export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: RuntimeLoopPlan): void {
+export function emitRuntimeLoopBundles(input: ExpandRuntimeForInput, plan: RuntimeLoopPlan): void {
   const {
     header,
     lineNo,
     lineLength,
     kernel,
-    cycleCounter,
+    bundleCounter,
     callbacks
   } = input;
   const {
@@ -27,16 +27,16 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
     aggressivePlan
   } = plan;
 
-  kernel.cycles.push(callbacks.makeControlCycle(
-    cycleCounter.value++,
+  kernel.bundles.push(callbacks.makeControlBundle(
+    bundleCounter.value++,
     lineNo,
     controlRow,
     controlCol,
     `SADD ${header.variable}, ZERO, ${header.start}`
   ));
 
-  kernel.cycles.push(callbacks.makeControlCycle(
-    cycleCounter.value++,
+  kernel.bundles.push(callbacks.makeControlBundle(
+    bundleCounter.value++,
     lineNo,
     controlRow,
     controlCol,
@@ -45,8 +45,8 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
   ));
 
   if (aggressivePlan) {
-    const conditionCycle = kernel.cycles[kernel.cycles.length - 1];
-    conditionCycle.statements.push({
+    const conditionBundle = kernel.bundles[kernel.bundles.length - 1];
+    conditionBundle.statements.push({
       kind: 'at',
       row: aggressivePlan.bodyRow,
       col: aggressivePlan.bodyCol,
@@ -59,8 +59,8 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
     });
 
     const jumpCol = chooseJumpColumn(controlCol, aggressivePlan.bodyCol);
-    kernel.cycles.push({
-      index: cycleCounter.value++,
+    kernel.bundles.push({
+      index: bundleCounter.value++,
       label: continueLabel,
       statements: [
         {
@@ -92,13 +92,13 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
       span: spanAt(lineNo, 1, lineLength)
     });
   } else {
-    for (const cycle of loopKernel.cycles) {
-      kernel.cycles.push(callbacks.cloneCycle(cycle, cycleCounter.value++));
+    for (const bundle of loopKernel.bundles) {
+      kernel.bundles.push(callbacks.cloneBundle(bundle, bundleCounter.value++));
     }
 
     const jumpCol = chooseJumpColumn(controlCol);
-    kernel.cycles.push({
-      index: cycleCounter.value++,
+    kernel.bundles.push({
+      index: bundleCounter.value++,
       label: continueLabel,
       statements: [
         {
@@ -124,8 +124,8 @@ export function emitRuntimeLoopCycles(input: ExpandRuntimeForInput, plan: Runtim
     });
   }
 
-  kernel.cycles.push(callbacks.makeControlCycle(
-    cycleCounter.value++,
+  kernel.bundles.push(callbacks.makeControlBundle(
+    bundleCounter.value++,
     lineNo,
     controlRow,
     controlCol,

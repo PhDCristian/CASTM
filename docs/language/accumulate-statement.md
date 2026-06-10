@@ -13,7 +13,7 @@ Accepted values:
 - `pattern`: accumulation topology.
 - `products`: source register that holds per-PE product/input values.
 - `accum`: intermediate accumulation register.
-- `out`: final output register written in the last cycle.
+- `out`: final output register written in the last bundle.
 - `combine`: optional combiner opcode selector (default `add`).
 - `steps`: optional number of propagation passes per pattern stage (default `1`).
 - `scope`: optional spatial subset (`all` by default).
@@ -84,7 +84,7 @@ std::accumulate(pattern=row, products=R1, accum=R4, out=R5, scope=row(1));
 
 ## Executable Snippet
 
-```dsl
+```castm
 target base;
 kernel "accumulate_doc" {
   std::accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
@@ -105,5 +105,5 @@ Executable contract tests:
 
 - `tests/issues/feat-13-accumulate.test.ts`
 - `tests/compiler-api.collective-builders.test.ts`
-- `tests/compiler-api.expand-pragmas.handlers.test.ts`
+- `tests/compiler-api.expand-advanced-statements.handlers.test.ts`
 - `tests/compiler-api.passes-shared.test.ts`

@@ -5,8 +5,8 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 interface MemState {
   input: (number | null)[]    // input array values (null = not yet loaded)
   output: (number | null)[]   // output array values
-  readIdx?: number[]          // indices being read this cycle
-  writeIdx?: number[]         // indices being written this cycle
+  readIdx?: number[]          // indices being read this bundle
+  writeIdx?: number[]         // indices being written this bundle
 }
 
 interface bundle {
@@ -20,9 +20,9 @@ interface bundle {
 
 // ── Kernel data ──
 // Sum4: input = {10, 20, 30, 40} → output = sum = 100
-// #pragma parallel: column j loads input[j]
-// #pragma reduce(sum, R0): compiler generates tree reduction (2 cycles)
-const cycles: Cycle[] = [
+// #advancedStatement parallel: column j loads input[j]
+// #advancedStatement reduce(sum, R0): compiler generates tree reduction (2 bundles)
+const bundles: Bundle[] = [
   {
     label: 'LOAD', codeLine: 8, codeEnd: 10,
     grid: [
@@ -108,7 +108,7 @@ const cycles: Cycle[] = [
 
 // ── Source code tokens ──
 // Simplified kernel: load, reduce, store — 17 lines
-type Token = { text: string; type: 'kw' | 'instr' | 'reg' | 'num' | 'dir' | 'pragma' | 'cmt' | 'str' | 'op' | 'plain' | 'neigh' }
+type Token = { text: string; type: 'kw' | 'instr' | 'reg' | 'num' | 'dir' | 'advancedStatement' | 'cmt' | 'str' | 'op' | 'plain' | 'neigh' }
 
 const codeLines: Token[][] = [
   // 1: .data input { 10, 20, 30, 40 }
@@ -121,14 +121,14 @@ const codeLines: Token[][] = [
   [{ text: 'kernel', type: 'kw' }, { text: ' ', type: 'plain' }, { text: '"Sum4"', type: 'str' }, { text: ' {', type: 'op' }],
   // 5:   config(0xF, 0);
   [{ text: '  config', type: 'kw' }, { text: '(', type: 'op' }, { text: '0xF', type: 'num' }, { text: ', ', type: 'op' }, { text: '0', type: 'num' }, { text: ');', type: 'op' }],
-  // 6:   #pragma parallel
-  [{ text: '  ', type: 'plain' }, { text: '#pragma parallel', type: 'pragma' }],
+  // 6:   #advancedStatement parallel
+  [{ text: '  ', type: 'plain' }, { text: '#advancedStatement parallel', type: 'advancedStatement' }],
   // 7:   for j in range(4) {
   [{ text: '  ', type: 'plain' }, { text: 'for', type: 'kw' }, { text: ' j ', type: 'plain' }, { text: 'in', type: 'kw' }, { text: ' range(', type: 'plain' }, { text: '4', type: 'num' }, { text: ') {', type: 'op' }],
   // 8: (empty)
   [],
   // 9:     bundle {  // Load
-  [{ text: '    ', type: 'plain' }, { text: 'cycle', type: 'kw' }, { text: ' {', type: 'op' }, { text: '  ', type: 'plain' }, { text: '// Load values', type: 'cmt' }],
+  [{ text: '    ', type: 'plain' }, { text: 'bundle', type: 'kw' }, { text: ' {', type: 'op' }, { text: '  ', type: 'plain' }, { text: '// Load values', type: 'cmt' }],
   // 10:       @0,j: R0 = LWI input[j];
   [{ text: '      @', type: 'plain' }, { text: '0', type: 'num' }, { text: ',j: ', type: 'op' }, { text: 'R0', type: 'reg' }, { text: ' = ', type: 'op' }, { text: 'LWI', type: 'instr' }, { text: ' input[j];', type: 'plain' }],
   // 11:     }
@@ -137,12 +137,12 @@ const codeLines: Token[][] = [
   [{ text: '  }', type: 'op' }],
   // 13: (empty)
   [],
-  // 14:   #pragma reduce(sum, R0)     ← highlighted for both REDUCE cycles
-  [{ text: '  ', type: 'plain' }, { text: '#pragma reduce', type: 'pragma' }, { text: '(sum, ', type: 'plain' }, { text: 'R0', type: 'reg' }, { text: ')', type: 'op' }],
+  // 14:   #advancedStatement reduce(sum, R0)     ← highlighted for both REDUCE bundles
+  [{ text: '  ', type: 'plain' }, { text: '#advancedStatement reduce', type: 'advancedStatement' }, { text: '(sum, ', type: 'plain' }, { text: 'R0', type: 'reg' }, { text: ')', type: 'op' }],
   // 15: (empty)
   [],
   // 16:   bundle {  // Store result
-  [{ text: '  ', type: 'plain' }, { text: 'cycle', type: 'kw' }, { text: ' {', type: 'op' }, { text: '  ', type: 'plain' }, { text: '// Store result', type: 'cmt' }],
+  [{ text: '  ', type: 'plain' }, { text: 'bundle', type: 'kw' }, { text: ' {', type: 'op' }, { text: '  ', type: 'plain' }, { text: '// Store result', type: 'cmt' }],
   // 17:     @0,0: SWD output[0] = R0;
   [{ text: '    @', type: 'plain' }, { text: '0', type: 'num' }, { text: ',', type: 'op' }, { text: '0', type: 'num' }, { text: ': ', type: 'op' }, { text: 'SWD', type: 'instr' }, { text: ' output[', type: 'plain' }, { text: '0', type: 'num' }, { text: '] = ', type: 'op' }, { text: 'R0', type: 'reg' }, { text: ';', type: 'op' }],
   // 18:   }
@@ -152,13 +152,13 @@ const codeLines: Token[][] = [
 ]
 
 // ── State ──
-const currentCycle = ref(0)
+const currentBundle = ref(0)
 let timer: ReturnType<typeof setInterval>
 
-const cycle = computed(() => cycles[currentCycle.value])
+const bundle = computed(() => bundles[currentBundle.value])
 
 function isHighlighted(lineIdx: number): boolean {
-  const c = cycle.value
+  const c = bundle.value
   const start = c.codeLine
   const end = c.codeEnd ?? c.codeLine
   return lineIdx >= start && lineIdx <= end
@@ -174,15 +174,15 @@ function peType(instr: string): string {
 }
 
 function isMemRead(idx: number): boolean {
-  return (cycle.value.mem.readIdx ?? []).includes(idx)
+  return (bundle.value.mem.readIdx ?? []).includes(idx)
 }
 
 function isMemWrite(idx: number): boolean {
-  return (cycle.value.mem.writeIdx ?? []).includes(idx)
+  return (bundle.value.mem.writeIdx ?? []).includes(idx)
 }
 
 function advance() {
-  currentCycle.value = (currentCycle.value + 1) % cycles.length
+  currentBundle.value = (currentBundle.value + 1) % bundles.length
 }
 
 onMounted(() => { timer = setInterval(advance, 2400) })
@@ -198,8 +198,8 @@ onUnmounted(() => clearInterval(timer))
         <span class="wdot yellow"></span>
         <span class="wdot green"></span>
       </div>
-      <div class="sc-title">sum4.edsl</div>
-      <div class="sc-badge" :key="cycle.label">{{ cycle.label }}</div>
+      <div class="sc-title">sum4.castm</div>
+      <div class="sc-badge" :key="bundle.label">{{ bundle.label }}</div>
     </div>
 
     <div class="sc-body">
@@ -232,7 +232,7 @@ onUnmounted(() => clearInterval(timer))
             <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </div>
-        <div class="conn-label">CC {{ currentCycle }}</div>
+        <div class="conn-label">CC {{ currentBundle }}</div>
       </div>
 
       <!-- Right side: CGRA + Memory -->
@@ -244,10 +244,10 @@ onUnmounted(() => clearInterval(timer))
               v-for="c in 4"
               :key="c"
               class="pe"
-              :class="peType(cycle.grid[r-1][c-1])"
+              :class="peType(bundle.grid[r-1][c-1])"
             >
-              <span class="pe-text">{{ cycle.grid[r-1][c-1] }}</span>
-              <span v-if="cycle.vals[r-1][c-1] !== null" class="pe-val">= {{ cycle.vals[r-1][c-1] }}</span>
+              <span class="pe-text">{{ bundle.grid[r-1][c-1] }}</span>
+              <span v-if="bundle.vals[r-1][c-1] !== null" class="pe-val">= {{ bundle.vals[r-1][c-1] }}</span>
             </div>
           </div>
         </div>
@@ -258,7 +258,7 @@ onUnmounted(() => clearInterval(timer))
             <span class="mem-label">input[]</span>
             <div class="mem-cells">
               <div
-                v-for="(val, i) in cycle.mem.input"
+                v-for="(val, i) in bundle.mem.input"
                 :key="'in' + i"
                 class="mem-cell"
                 :class="{ reading: isMemRead(i) }"
@@ -271,7 +271,7 @@ onUnmounted(() => clearInterval(timer))
             <span class="mem-label">output[]</span>
             <div class="mem-cells">
               <div
-                v-for="(val, i) in cycle.mem.output"
+                v-for="(val, i) in bundle.mem.output"
                 :key="'out' + i"
                 class="mem-cell out"
                 :class="{ writing: isMemWrite(i) }"
@@ -288,11 +288,11 @@ onUnmounted(() => clearInterval(timer))
     <div class="sc-footer">
       <div class="progress">
         <div
-          v-for="(c, i) in cycles"
+          v-for="(c, i) in bundles"
           :key="i"
           class="progress-dot"
-          :class="{ active: i === currentCycle }"
-          @click="currentCycle = i"
+          :class="{ active: i === currentBundle }"
+          @click="currentBundle = i"
         ></div>
       </div>
       <div class="legend">
@@ -385,7 +385,7 @@ onUnmounted(() => clearInterval(timer))
 .tok-neigh { color: #22D3EE; }
 .tok-num { color: #FB923C; }
 .tok-dir { color: #F472B6; }
-.tok-pragma { color: #F472B6; }
+.tok-advancedStatement { color: #F472B6; }
 .tok-cmt { color: #6B7280; font-style: italic; }
 .tok-str { color: #D4A574; }
 .tok-op { color: rgba(255,255,255,0.5); }
@@ -595,7 +595,7 @@ onUnmounted(() => clearInterval(timer))
 :root:not(.dark) .tok-neigh { color: #0891B2; }
 :root:not(.dark) .tok-num { color: #EA580C; }
 :root:not(.dark) .tok-dir { color: #DB2777; }
-:root:not(.dark) .tok-pragma { color: #DB2777; }
+:root:not(.dark) .tok-advancedStatement { color: #DB2777; }
 :root:not(.dark) .tok-cmt { color: #9CA3AF; }
 :root:not(.dark) .tok-str { color: #B45309; }
 :root:not(.dark) .tok-op { color: rgba(0,0,0,0.45); }

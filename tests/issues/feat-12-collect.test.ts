@@ -11,7 +11,7 @@ describe('issues/FEAT-12 collect statement', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat12_row_add" {
-  collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
+  std::collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
 }
 `;
 
@@ -30,7 +30,7 @@ kernel "feat12_row_add" {
     const source = `
 target "uma-cgra-base";
 kernel "feat12_shift_add" {
-  collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=shift_add);
+  std::collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=shift_add);
 }
 `;
 
@@ -50,7 +50,7 @@ build {
   grid 3x5 mesh;
 }
 kernel "feat12_col_xor" {
-  collect(from=col(2), to=col(1), via=RCR, local=R4, into=R5, combine=xor);
+  std::collect(from=col(2), to=col(1), via=RCR, local=R4, into=R5, combine=xor);
 }
 `;
 
@@ -67,7 +67,7 @@ kernel "feat12_col_xor" {
     const wrongVia = compile(`
 target "uma-cgra-base";
 kernel "feat12_wrong_via" {
-  collect(from=row(1), to=row(0), via=RCL, local=R2, into=R3, combine=add);
+  std::collect(from=row(1), to=row(0), via=RCL, local=R2, into=R3, combine=add);
 }
 `);
 
@@ -77,7 +77,7 @@ kernel "feat12_wrong_via" {
     const nonAdjacent = compile(`
 target "uma-cgra-base";
 kernel "feat12_non_adjacent" {
-  collect(from=row(3), to=row(0), via=RCB, local=R2, into=R3, combine=add);
+  std::collect(from=row(3), to=row(0), via=RCB, local=R2, into=R3, combine=add);
 }
 `);
     expect(nonAdjacent.success).toBe(false);
@@ -86,7 +86,7 @@ kernel "feat12_non_adjacent" {
     const outOfBounds = compile(`
 target "uma-cgra-base";
 kernel "feat12_oob" {
-  collect(from=col(9), to=col(0), via=SELF, local=R2, into=R3, combine=copy);
+  std::collect(from=col(9), to=col(0), via=SELF, local=R2, into=R3, combine=copy);
 }
 `);
     expect(outOfBounds.success).toBe(false);

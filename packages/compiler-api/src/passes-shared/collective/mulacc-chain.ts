@@ -1,13 +1,13 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
   SourceSpan,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { MulaccChainPragmaArgs } from '../advanced-args.js';
-import { createInstruction, createMultiAtCycle } from '../ast-utils.js';
+import { MulaccChainAdvancedStatementArgs } from '../advanced-args.js';
+import { createInstruction, createMultiAtBundle } from '../ast-utils.js';
 
 interface LanePlacement {
   row: number;
@@ -15,7 +15,7 @@ interface LanePlacement {
   boundary: boolean;
 }
 
-function incomingForDirection(direction: MulaccChainPragmaArgs['direction']): 'RCL' | 'RCR' | 'RCT' | 'RCB' {
+function incomingForDirection(direction: MulaccChainAdvancedStatementArgs['direction']): 'RCL' | 'RCR' | 'RCT' | 'RCB' {
   if (direction === 'right') return 'RCL';
   if (direction === 'left') return 'RCR';
   if (direction === 'down') return 'RCT';
@@ -34,15 +34,15 @@ function inBounds(index: number, limit: number): boolean {
   return index >= 0 && index < limit;
 }
 
-function horizontalDirection(direction: MulaccChainPragmaArgs['direction']): boolean {
+function horizontalDirection(direction: MulaccChainAdvancedStatementArgs['direction']): boolean {
   return direction === 'left' || direction === 'right';
 }
 
-function verticalDirection(direction: MulaccChainPragmaArgs['direction']): boolean {
+function verticalDirection(direction: MulaccChainAdvancedStatementArgs['direction']): boolean {
   return direction === 'up' || direction === 'down';
 }
 
-function buildOrderedIndices(size: number, direction: MulaccChainPragmaArgs['direction']): number[] {
+function buildOrderedIndices(size: number, direction: MulaccChainAdvancedStatementArgs['direction']): number[] {
   const forward = Array.from({ length: size }, (_, i) => i);
   if (direction === 'left' || direction === 'up') {
     return forward.reverse();
@@ -51,13 +51,13 @@ function buildOrderedIndices(size: number, direction: MulaccChainPragmaArgs['dir
 }
 
 function buildLanePlacements(
-  pragma: MulaccChainPragmaArgs,
+  advancedStatement: MulaccChainAdvancedStatementArgs,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
 ): LanePlacement[] | null {
   const placements: LanePlacement[] = [];
-  const target = pragma.target;
+  const target = advancedStatement.target;
 
   if (target.kind === 'row') {
     if (!inBounds(target.index, grid.rows)) {
@@ -70,29 +70,29 @@ function buildLanePlacements(
       ));
       return null;
     }
-    if (!horizontalDirection(pragma.direction)) {
+    if (!horizontalDirection(advancedStatement.direction)) {
       diagnostics.push(makeDiagnostic(
         ErrorCodes.Semantic.UnsupportedOperation,
         'error',
         span,
-        `mulacc_chain target row(...) requires dir=left|right, received '${pragma.direction}'.`,
+        `mulacc_chain target row(...) requires dir=left|right, received '${advancedStatement.direction}'.`,
         'Use dir=left or dir=right for row targets.'
       ));
       return null;
     }
 
-    const laneCount = resolveLaneLimit(pragma.lanes, grid.cols);
+    const laneCount = resolveLaneLimit(advancedStatement.lanes, grid.cols);
     if (!Number.isInteger(laneCount) || laneCount <= 0 || laneCount > grid.cols) {
       diagnostics.push(makeDiagnostic(
         ErrorCodes.Semantic.UnsupportedOperation,
         'error',
         span,
-        `mulacc_chain lanes=${String(pragma.lanes)} is invalid for row target on ${grid.cols} columns.`,
+        `mulacc_chain lanes=${String(advancedStatement.lanes)} is invalid for row target on ${grid.cols} columns.`,
         `Use lanes in range [1, ${grid.cols}].`
       ));
       return null;
     }
-    const orderedCols = buildOrderedIndices(grid.cols, pragma.direction).slice(0, laneCount);
+    const orderedCols = buildOrderedIndices(grid.cols, advancedStatement.direction).slice(0, laneCount);
     orderedCols.forEach((col, lane) => {
       placements.push({
         row: target.index,
@@ -114,29 +114,29 @@ function buildLanePlacements(
       ));
       return null;
     }
-    if (!verticalDirection(pragma.direction)) {
+    if (!verticalDirection(advancedStatement.direction)) {
       diagnostics.push(makeDiagnostic(
         ErrorCodes.Semantic.UnsupportedOperation,
         'error',
         span,
-        `mulacc_chain target col(...) requires dir=up|down, received '${pragma.direction}'.`,
+        `mulacc_chain target col(...) requires dir=up|down, received '${advancedStatement.direction}'.`,
         'Use dir=up or dir=down for col targets.'
       ));
       return null;
     }
 
-    const laneCount = resolveLaneLimit(pragma.lanes, grid.rows);
+    const laneCount = resolveLaneLimit(advancedStatement.lanes, grid.rows);
     if (!Number.isInteger(laneCount) || laneCount <= 0 || laneCount > grid.rows) {
       diagnostics.push(makeDiagnostic(
         ErrorCodes.Semantic.UnsupportedOperation,
         'error',
         span,
-        `mulacc_chain lanes=${String(pragma.lanes)} is invalid for col target on ${grid.rows} rows.`,
+        `mulacc_chain lanes=${String(advancedStatement.lanes)} is invalid for col target on ${grid.rows} rows.`,
         `Use lanes in range [1, ${grid.rows}].`
       ));
       return null;
     }
-    const orderedRows = buildOrderedIndices(grid.rows, pragma.direction).slice(0, laneCount);
+    const orderedRows = buildOrderedIndices(grid.rows, advancedStatement.direction).slice(0, laneCount);
     orderedRows.forEach((row, lane) => {
       placements.push({
         row,
@@ -147,19 +147,19 @@ function buildLanePlacements(
     return placements;
   }
 
-  if (horizontalDirection(pragma.direction)) {
-    const laneCount = resolveLaneLimit(pragma.lanes, grid.cols);
+  if (horizontalDirection(advancedStatement.direction)) {
+    const laneCount = resolveLaneLimit(advancedStatement.lanes, grid.cols);
     if (!Number.isInteger(laneCount) || laneCount <= 0 || laneCount > grid.cols) {
       diagnostics.push(makeDiagnostic(
         ErrorCodes.Semantic.UnsupportedOperation,
         'error',
         span,
-        `mulacc_chain lanes=${String(pragma.lanes)} is invalid for target=all with horizontal direction.`,
+        `mulacc_chain lanes=${String(advancedStatement.lanes)} is invalid for target=all with horizontal direction.`,
         `Use lanes in range [1, ${grid.cols}].`
       ));
       return null;
     }
-    const orderedCols = buildOrderedIndices(grid.cols, pragma.direction).slice(0, laneCount);
+    const orderedCols = buildOrderedIndices(grid.cols, advancedStatement.direction).slice(0, laneCount);
     for (let row = 0; row < grid.rows; row++) {
       orderedCols.forEach((col, lane) => {
         placements.push({
@@ -172,18 +172,18 @@ function buildLanePlacements(
     return placements;
   }
 
-  const laneCount = resolveLaneLimit(pragma.lanes, grid.rows);
+  const laneCount = resolveLaneLimit(advancedStatement.lanes, grid.rows);
   if (!Number.isInteger(laneCount) || laneCount <= 0 || laneCount > grid.rows) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `mulacc_chain lanes=${String(pragma.lanes)} is invalid for target=all with vertical direction.`,
+      `mulacc_chain lanes=${String(advancedStatement.lanes)} is invalid for target=all with vertical direction.`,
       `Use lanes in range [1, ${grid.rows}].`
     ));
     return null;
   }
-  const orderedRows = buildOrderedIndices(grid.rows, pragma.direction).slice(0, laneCount);
+  const orderedRows = buildOrderedIndices(grid.rows, advancedStatement.direction).slice(0, laneCount);
   for (let col = 0; col < grid.cols; col++) {
     orderedRows.forEach((row, lane) => {
       placements.push({
@@ -200,28 +200,28 @@ function toUpper(value: string): string {
   return value.trim().toUpperCase();
 }
 
-export function buildMulaccChainCycles(
-  pragma: MulaccChainPragmaArgs,
+export function buildMulaccChainBundles(
+  advancedStatement: MulaccChainAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
-  const placements = buildLanePlacements(pragma, grid, span, diagnostics);
+): BundleAst[] {
+  const placements = buildLanePlacements(advancedStatement, grid, span, diagnostics);
   if (!placements || placements.length === 0) return [];
 
-  const srcReg = toUpper(pragma.srcReg);
-  const coeffReg = toUpper(pragma.coeffReg);
-  const accReg = toUpper(pragma.accReg);
-  const outReg = toUpper(pragma.outReg);
-  const incoming = incomingForDirection(pragma.direction);
-  const width = String(pragma.width);
-  const mask = String(pragma.mask);
+  const srcReg = toUpper(advancedStatement.srcReg);
+  const coeffReg = toUpper(advancedStatement.coeffReg);
+  const accReg = toUpper(advancedStatement.accReg);
+  const outReg = toUpper(advancedStatement.outReg);
+  const incoming = incomingForDirection(advancedStatement.direction);
+  const width = String(advancedStatement.width);
+  const mask = String(advancedStatement.mask);
 
-  const cycles: CycleAst[] = [];
+  const bundles: BundleAst[] = [];
 
-  cycles.push(createMultiAtCycle(
-    startIndex + cycles.length,
+  bundles.push(createMultiAtBundle(
+    startIndex + bundles.length,
     placements.map((lane) => ({
       row: lane.row,
       col: lane.col,
@@ -230,8 +230,8 @@ export function buildMulaccChainCycles(
     span
   ));
 
-  cycles.push(createMultiAtCycle(
-    startIndex + cycles.length,
+  bundles.push(createMultiAtBundle(
+    startIndex + bundles.length,
     placements.map((lane) => ({
       row: lane.row,
       col: lane.col,
@@ -240,8 +240,8 @@ export function buildMulaccChainCycles(
     span
   ));
 
-  cycles.push(createMultiAtCycle(
-    startIndex + cycles.length,
+  bundles.push(createMultiAtBundle(
+    startIndex + bundles.length,
     placements.map((lane) => ({
       row: lane.row,
       col: lane.col,
@@ -250,8 +250,8 @@ export function buildMulaccChainCycles(
     span
   ));
 
-  cycles.push(createMultiAtCycle(
-    startIndex + cycles.length,
+  bundles.push(createMultiAtBundle(
+    startIndex + bundles.length,
     placements.map((lane) => ({
       row: lane.row,
       col: lane.col,
@@ -260,5 +260,5 @@ export function buildMulaccChainCycles(
     span
   ));
 
-  return cycles;
+  return bundles;
 }

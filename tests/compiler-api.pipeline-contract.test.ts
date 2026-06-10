@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import { compile } from '@castm/compiler-api';
 
-type SerializedCycle = {
+type SerializedBundle = {
   index: number;
   ops: Array<{ row: number; col: number; text: string }>;
 };
 
-function serializeAst(ast: any): SerializedCycle[] {
-  const cycles = ast?.kernel?.cycles ?? [];
-  return cycles.map((cycle: any) => ({
-    index: cycle.index,
-    ops: cycle.statements.flatMap((stmt: any) => {
+function serializeAst(ast: any): SerializedBundle[] {
+  const bundles = ast?.kernel?.bundles ?? [];
+  return bundles.map((bundle: any) => ({
+    index: bundle.index,
+    ops: bundle.statements.flatMap((stmt: any) => {
       if (stmt.kind === 'row') {
         return stmt.instructions.map((inst: any) => ({
           row: stmt.row,
@@ -26,10 +26,10 @@ function serializeAst(ast: any): SerializedCycle[] {
   }));
 }
 
-function serializeLowered(program: any): SerializedCycle[] {
-  return (program?.cycles ?? []).map((cycle: any) => ({
-    index: cycle.index,
-    ops: (cycle.operations ?? cycle.slots ?? []).map((item: any) => {
+function serializeLowered(program: any): SerializedBundle[] {
+  return (program?.bundles ?? []).map((bundle: any) => ({
+    index: bundle.index,
+    ops: (bundle.operations ?? bundle.slots ?? []).map((item: any) => {
       const instruction = item.instruction ?? item;
       return {
         row: item.row,
@@ -46,7 +46,7 @@ describe('compiler-api pipeline contracts', () => {
 target "uma-cgra-base";
 let A = { 10, 20, 30, 40 };
 kernel "pipeline_contract" {
-  route(@0,1 -> @0,0, payload=R3, accum=R1);
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
   bundle {
     @0,0: R0 = A[1];
     @0,1: R2 = R0 + IMM(1);

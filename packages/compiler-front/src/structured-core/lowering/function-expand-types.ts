@@ -16,7 +16,7 @@ export interface FunctionExpandStepInput {
   functions: ReadonlyMap<string, FunctionDefinitionLike>;
   constants: ReadonlyMap<string, number>;
   diagnostics: Diagnostic[];
-  cycleCounter: { value: number };
+  bundleCounter: { value: number };
   callStack: string[];
   expansionCounter: { value: number };
   controlFlowCounter: { value: number };
@@ -26,7 +26,7 @@ export interface FunctionExpandStepInput {
     functions: ReadonlyMap<string, FunctionDefinitionLike>,
     constants: ReadonlyMap<string, number>,
     diagnostics: Diagnostic[],
-    cycleCounter: { value: number },
+    bundleCounter: { value: number },
     callStack: string[],
     expansionCounter: { value: number },
     controlFlowCounter: { value: number },

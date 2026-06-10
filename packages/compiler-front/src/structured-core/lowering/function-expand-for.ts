@@ -4,9 +4,9 @@ import { parseInstruction } from './instructions.js';
 import { collectBlockFromEntries } from '../parser-utils/blocks.js';
 import { expandForLoopIntoKernel } from './for-expand.js';
 import {
-  cloneCycle,
-  cycleHasControlFlow,
-  makeControlCycle
+  cloneBundle,
+  bundleHasControlFlow,
+  makeControlBundle
 } from './function-expand-helpers.js';
 import {
   FunctionExpandStepInput,
@@ -33,7 +33,7 @@ export function tryExpandForStatement(input: FunctionExpandStepInput): FunctionE
     functions,
     constants,
     diagnostics,
-    cycleCounter,
+    bundleCounter,
     callStack,
     expansionCounter,
     controlFlowCounter,
@@ -60,8 +60,8 @@ export function tryExpandForStatement(input: FunctionExpandStepInput): FunctionE
     return { handled: true, nextIndex: index, shouldBreak: true };
   }
 
-  const prevCycleCount = kernel.cycles.length;
-  const prevPragmaCount = kernel.pragmas.length;
+  const prevBundleCount = kernel.bundles.length;
+  const prevAdvancedStatementCount = kernel.advancedStatements.length;
   expandForLoopIntoKernel(
     forHeader,
     labelResult?.label,
@@ -72,15 +72,15 @@ export function tryExpandForStatement(input: FunctionExpandStepInput): FunctionE
     functions,
     constants,
     diagnostics,
-    cycleCounter,
+    bundleCounter,
     callStack,
     expansionCounter,
     controlFlowCounter,
     {
-      cycleHasControlFlow,
-      cloneCycle,
+      bundleHasControlFlow,
+      cloneBundle,
       parseInstruction,
-      makeControlCycle,
+      makeControlBundle,
       expandFunctionBodyIntoKernel: expandBody
     },
     expansionContext,
@@ -88,13 +88,13 @@ export function tryExpandForStatement(input: FunctionExpandStepInput): FunctionE
   );
 
   if (labelResult) {
-    if (kernel.cycles.length > prevCycleCount) {
-      kernel.cycles[prevCycleCount].label = labelResult.label;
-    } else if (kernel.pragmas.length > prevPragmaCount) {
-      kernel.pragmas[prevPragmaCount].label = labelResult.label;
+    if (kernel.bundles.length > prevBundleCount) {
+      kernel.bundles[prevBundleCount].label = labelResult.label;
+    } else if (kernel.advancedStatements.length > prevAdvancedStatementCount) {
+      kernel.advancedStatements[prevAdvancedStatementCount].label = labelResult.label;
     } else {
-      kernel.cycles.push({
-        index: cycleCounter.value++,
+      kernel.bundles.push({
+        index: bundleCounter.value++,
         label: labelResult.label,
         statements: [],
         span: spanAt(entry.lineNo, 1, toParse.length)

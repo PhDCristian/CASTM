@@ -78,7 +78,7 @@ kernel "mem2mem" {
 target "uma-cgra-base";
 build {
   scheduler safe;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "spatial" {
   bundle {
@@ -139,7 +139,7 @@ kernel "runtime_for" {
 target "uma-cgra-base";
 build {
   scheduler safe;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "loop_modifiers" {
   for i in range(0, 2) unroll(2) collapse(2) {
@@ -151,12 +151,12 @@ kernel "loop_modifiers" {
 `;
     const result = compile(source, { emitArtifacts: ['mir'] });
     expect(result.success).toBe(true);
-    expect(result.stats.cycles).toBe(4);
+    expect(result.stats.bundles).toBe(4);
     expect(result.stats.instructions).toBe(4);
     expect(result.stats.activeSlots).toBe(4);
     expect(result.stats.totalSlots).toBe(64);
     expect(result.stats.utilization).toBe(4 / 64);
-    expect(result.stats.estimatedCriticalCycles).toBe(4);
+    expect(result.stats.estimatedCriticalBundles).toBe(4);
     expect(result.stats.schedulerMode).toBe('safe');
   });
 
@@ -178,7 +178,7 @@ kernel "bad_collapse" {
     const source = `
 target "uma-cgra-base";
 kernel "route_stmt" {
-  route(@0,1 -> @0,0, payload=R3, accum=R1);
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
 }
 `;
     const result = compile(source);
@@ -191,7 +191,7 @@ kernel "route_stmt" {
     const source = `
 target "uma-cgra-base";
 kernel "route_custom_stmt" {
-  route(@0,0 -> @1,1, payload=R3, dest=R1, op=SMUL(R1, R0, INCOMING));
+  std::route(@0,0 -> @1,1, payload=R3, dest=R1, op=SMUL(R1, R0, INCOMING));
 }
 `;
     const result = compile(source);
@@ -203,7 +203,7 @@ kernel "route_custom_stmt" {
     const source = `
 target "uma-cgra-base";
 kernel "route_non_canonical" {
-  route((0,1) -> (0,0), payload=R3, accum=R1);
+  std::route((0,1) -> (0,0), payload=R3, accum=R1);
 }
 `;
     const result = compile(source);
@@ -215,8 +215,8 @@ kernel "route_non_canonical" {
     const source = `
 target "uma-cgra-base";
 kernel "advanced" {
-  reduce(op=add, dest=R1, src=R0, axis=row);
-  scan(op=add, src=R0, dest=R2, dir=right, mode=exclusive);
+  std::reduce(op=add, dest=R1, src=R0, axis=row);
+  std::scan(op=add, src=R0, dest=R2, dir=right, mode=exclusive);
 }
 `;
     const result = compile(source);
@@ -229,7 +229,7 @@ kernel "advanced" {
     const source = `
 target "uma-cgra-base";
 kernel "structured_boundary" {
-  route(@0,1 -> @0,0, payload=R3, accum=R1);
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
   bundle { @0,0: NOP; }
 }
 `;
@@ -237,7 +237,7 @@ kernel "structured_boundary" {
     expect(result.success).toBe(true);
     expect(result.artifacts.structuredAst).toBeDefined();
     expect(result.artifacts.structuredAst?.kernel?.body.some((stmt) => stmt.kind === 'advanced')).toBe(true);
-    expect(result.artifacts.structuredAst?.kernel?.body.some((stmt) => stmt.kind === 'cycle')).toBe(true);
+    expect(result.artifacts.structuredAst?.kernel?.body.some((stmt) => stmt.kind === 'bundle')).toBe(true);
   });
 
   it('records semantic and staged lowering phases in compile stats', () => {
@@ -254,7 +254,7 @@ kernel "phase_trace" {
     expect(result.success).toBe(true);
     expect(result.stats.loweredPasses).toContain('semantic-checker');
     expect(result.stats.loweredPasses).toContain('semantic-resolver');
-    expect(result.stats.loweredPasses.some((name) => name.startsWith('desugar+pragmas:'))).toBe(true);
+    expect(result.stats.loweredPasses.some((name) => name.startsWith('desugar+advancedStatements:'))).toBe(true);
     expect(result.stats.loweredPasses.some((name) => name.startsWith('resolve+validate:'))).toBe(true);
     expect(result.stats.schedulerMode).toBe('safe');
     expect(result.stats.totalSlots).toBeGreaterThanOrEqual(result.stats.activeSlots);
@@ -286,14 +286,14 @@ kernel "scheduler_mode_trace" {
     );
     const safe = compile(safeSource);
     expect(safe.success).toBe(true);
-    expect(first.stats.cycles).toBeLessThanOrEqual(safe.stats.cycles);
+    expect(first.stats.bundles).toBeLessThanOrEqual(safe.stats.bundles);
   });
 
-  it('rejects legacy declarations', () => {
+  it('rejects malformed top-level declarations', () => {
     const source = `
 target "uma-cgra-base";
-.const X 10
-kernel "legacy_decl" {
+let X 10
+kernel "unsupported_decl" {
   bundle { @0,0: NOP; }
 }
 `;
@@ -302,11 +302,11 @@ kernel "legacy_decl" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
-  it('rejects legacy pragmas', () => {
+  it('rejects invalid non-CASTM statements as ordinary syntax', () => {
     const source = `
 target "uma-cgra-base";
-kernel "legacy_pragma" {
-  #pragma route @0,1 -> @0,0 payload(R3) accum(R1)
+kernel "unsupported_hash_directive" {
+  not_castm route @0,1 -> @0,0 payload(R3) accum(R1)
 }
 `;
     const result = compile(source);
@@ -314,11 +314,11 @@ kernel "legacy_pragma" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
-  it('rejects legacy control pragmas', () => {
+  it('rejects unsupported control-like directives as ordinary syntax', () => {
     const source = `
 target "uma-cgra-base";
-kernel "legacy_control_pragma" {
-  #pragma unroll(4)
+kernel "unsupported_control_directive" {
+  not_castm_unroll(4)
   for i in range(0, 4) {
     bundle { @0,0: NOP; }
   }
@@ -329,13 +329,13 @@ kernel "legacy_control_pragma" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
-  it('rejects legacy auto_cycle pragmas', () => {
+  it('rejects unsupported auto-bundle-like directives as ordinary syntax', () => {
     const source = `
 target "uma-cgra-base";
-kernel "legacy_auto_cycle" {
-  #pragma auto_cycle
+kernel "unsupported_auto_bundle_directive" {
+  not_castm_auto_bundle
   @0,0: NOP;
-  #pragma end_auto_cycle
+  not_castm_end_auto_bundle
 }
 `;
     const result = compile(source);
@@ -343,10 +343,10 @@ kernel "legacy_auto_cycle" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
-  it('rejects legacy spatial namespace without at', () => {
+  it('rejects unsupported spatial namespace without at', () => {
     const source = `
 target "uma-cgra-base";
-kernel "legacy_spatial" {
+kernel "unsupported_spatial" {
   bundle { row 0: NOP; }
 }
 `;
@@ -355,10 +355,10 @@ kernel "legacy_spatial" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
-  it('rejects legacy control-location headers without at', () => {
+  it('rejects unsupported control-location headers without at', () => {
     const source = `
 target "uma-cgra-base";
-kernel "legacy_ctrl" {
+kernel "unsupported_ctrl" {
   if (R0 == IMM(0)) @0,0 {
     bundle { @0,1: NOP; }
   }
@@ -369,10 +369,10 @@ kernel "legacy_ctrl" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
-  it('rejects legacy for-loop control-location headers without at', () => {
+  it('rejects unsupported for-loop control-location headers without at', () => {
     const source = `
 target "uma-cgra-base";
-kernel "legacy_for" {
+kernel "unsupported_for" {
   for R0 in range(0, 2) @0,0 runtime {
     bundle { @0,1: NOP; }
   }
@@ -383,7 +383,7 @@ kernel "legacy_for" {
     expect(result.diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
   });
 
-  it('prunes noop-only unlabeled cycles when safe to do so', () => {
+  it('prunes noop-only unlabeled bundles when safe to do so', () => {
     const source = `
 target "uma-cgra-base";
 kernel "noop_prune" {
@@ -391,13 +391,13 @@ kernel "noop_prune" {
   bundle { at @0,0: R1 = R0 + 1; }
 }
 `;
-    const result = compile(source, { emitArtifacts: ['mir', 'csv'], pruneNoopCycles: true });
+    const result = compile(source, { emitArtifacts: ['mir', 'csv'], pruneNoopBundles: true });
     expect(result.success).toBe(true);
-    expect(result.stats.cycles).toBe(1);
+    expect(result.stats.bundles).toBe(1);
     expect(result.artifacts.csv).toContain('0,0,0,SADD R1 R0 1');
   });
 
-  it('keeps noop-only cycles when numeric branch targets exist', () => {
+  it('keeps noop-only bundles when numeric branch targets exist', () => {
     const source = `
 target "uma-cgra-base";
 kernel "noop_prune_guarded" {
@@ -405,9 +405,9 @@ kernel "noop_prune_guarded" {
   bundle { at @0,0: NOP; }
 }
 `;
-    const result = compile(source, { emitArtifacts: ['mir', 'csv'], pruneNoopCycles: true });
+    const result = compile(source, { emitArtifacts: ['mir', 'csv'], pruneNoopBundles: true });
     expect(result.success).toBe(true);
-    expect(result.stats.cycles).toBe(2);
+    expect(result.stats.bundles).toBe(2);
     expect(result.artifacts.csv).toContain('0,0,0,BEQ R0 0 1');
   });
 });

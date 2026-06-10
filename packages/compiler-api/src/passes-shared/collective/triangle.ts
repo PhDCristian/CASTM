@@ -1,14 +1,14 @@
 import {
-  CycleAst,
+  BundleAst,
   GridSpec,
   SourceSpan
 } from '@castm/compiler-ir';
 import {
-  TrianglePragmaArgs
+  TriangleAdvancedStatementArgs
 } from '../advanced-args.js';
 import {
   createInstruction,
-  createMultiAtCycle
+  createMultiAtBundle
 } from '../ast-utils.js';
 
 function isSelectedCell(
@@ -24,23 +24,23 @@ function isSelectedCell(
   return inclusive ? row >= col : row > col;
 }
 
-export function buildTriangleCycles(
-  pragma: TrianglePragmaArgs,
+export function buildTriangleBundles(
+  advancedStatement: TriangleAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan
-): CycleAst[] {
+): BundleAst[] {
   const placements: Array<{ row: number; col: number; instruction: ReturnType<typeof createInstruction> }> = [];
 
   for (let row = 0; row < grid.rows; row++) {
     for (let col = 0; col < grid.cols; col++) {
-      if (!isSelectedCell(pragma.shape, pragma.inclusive, row, col)) continue;
+      if (!isSelectedCell(advancedStatement.shape, advancedStatement.inclusive, row, col)) continue;
       placements.push({
         row,
         col,
         instruction: createInstruction(
-          pragma.opcode,
-          [pragma.destReg, pragma.srcA, pragma.srcB],
+          advancedStatement.opcode,
+          [advancedStatement.destReg, advancedStatement.srcA, advancedStatement.srcB],
           span
         )
       });
@@ -49,5 +49,5 @@ export function buildTriangleCycles(
 
   if (placements.length === 0) return [];
 
-  return [createMultiAtCycle(startIndex, placements, span)];
+  return [createMultiAtBundle(startIndex, placements, span)];
 }

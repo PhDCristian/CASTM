@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
@@ -8,20 +8,20 @@ import {
 } from '@castm/compiler-ir';
 import {
   createInstruction,
-  createMultiAtCycle
+  createMultiAtBundle
 } from '../ast-utils.js';
-import { TransposePragmaArgs } from '../advanced-args.js';
+import { TransposeAdvancedStatementArgs } from '../advanced-args.js';
 import { RoutePoint } from '../route-args.js';
-import { buildRouteTransferCycles } from '../route-builders.js';
+import { buildRouteTransferBundles } from '../route-builders.js';
 import { pickScratchRegisters } from '../collective-scan-reduce.js';
 
-export function buildTransposeCycles(
-  pragma: TransposePragmaArgs,
+export function buildTransposeBundles(
+  advancedStatement: TransposeAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
+): BundleAst[] {
   if (grid.rows !== grid.cols) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
@@ -33,20 +33,20 @@ export function buildTransposeCycles(
     return [];
   }
 
-  const scratch = pickScratchRegisters([pragma.reg]);
+  const scratch = pickScratchRegisters([advancedStatement.reg]);
   if (!scratch) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Could not allocate scratch registers for transpose on '${pragma.reg}'.`,
+      `Could not allocate scratch registers for transpose on '${advancedStatement.reg}'.`,
       'Use a target profile with at least two general-purpose registers besides the transposed register.'
     ));
     return [];
   }
 
   const [tmpA, tmpB] = scratch;
-  const cycles: CycleAst[] = [];
+  const bundles: BundleAst[] = [];
   const n = grid.rows;
 
   for (let i = 0; i < n; i++) {
@@ -54,40 +54,40 @@ export function buildTransposeCycles(
       const a: RoutePoint = { row: i, col: j };
       const b: RoutePoint = { row: j, col: i };
 
-      const forwardCycles = buildRouteTransferCycles(
+      const forwardBundles = buildRouteTransferBundles(
         a,
         b,
-        pragma.reg,
+        advancedStatement.reg,
         tmpA,
-        startIndex + cycles.length,
+        startIndex + bundles.length,
         grid,
         span,
         diagnostics
       );
-      cycles.push(...forwardCycles);
+      bundles.push(...forwardBundles);
 
-      const backwardCycles = buildRouteTransferCycles(
+      const backwardBundles = buildRouteTransferBundles(
         b,
         a,
-        pragma.reg,
+        advancedStatement.reg,
         tmpB,
-        startIndex + cycles.length,
+        startIndex + bundles.length,
         grid,
         span,
         diagnostics
       );
-      cycles.push(...backwardCycles);
+      bundles.push(...backwardBundles);
 
-      cycles.push(createMultiAtCycle(
-        startIndex + cycles.length,
+      bundles.push(createMultiAtBundle(
+        startIndex + bundles.length,
         [
-          { row: b.row, col: b.col, instruction: createInstruction('SADD', [pragma.reg, tmpA, 'ZERO'], span) },
-          { row: a.row, col: a.col, instruction: createInstruction('SADD', [pragma.reg, tmpB, 'ZERO'], span) }
+          { row: b.row, col: b.col, instruction: createInstruction('SADD', [advancedStatement.reg, tmpA, 'ZERO'], span) },
+          { row: a.row, col: a.col, instruction: createInstruction('SADD', [advancedStatement.reg, tmpB, 'ZERO'], span) }
         ],
         span
       ));
     }
   }
 
-  return cycles;
+  return bundles;
 }

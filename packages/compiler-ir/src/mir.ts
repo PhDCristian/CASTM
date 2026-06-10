@@ -12,7 +12,7 @@ export interface MirSlot {
   instruction: MirInstruction;
 }
 
-export interface MirCycle {
+export interface MirBundle {
   index: number;
   slots: MirSlot[];
 }
@@ -20,5 +20,5 @@ export interface MirCycle {
 export interface MirProgram {
   targetProfileId: string;
   grid: GridSpec;
-  cycles: MirCycle[];
+  bundles: MirBundle[];
 }

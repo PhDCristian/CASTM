@@ -19,7 +19,7 @@ Canonical diagnostics currently exposed by `@castm/compiler-ir`.
 - `E3001` Invalid assignment
 - `E3002` Unsupported operation
 - `E3003` Coordinate out of bounds
-- `E3004` Spatial collision in the same cycle
+- `E3004` Spatial collision in the same bundle
 - `E3005` Unknown opcode
 - `E3006` Unknown target profile
 - `E3007` Invalid grid specification
@@ -49,8 +49,8 @@ Full CSV: `docs-site/snippets/reference/error-codes/01-valid.csv`.
 
 Expected diagnostic:
 
-- `E3004` Spatial collision in the same cycle
-- hint: keep one placement per PE (`row,col`) in each cycle
+- `E3004` Spatial collision in the same bundle
+- hint: keep one placement per PE (`row,col`) in each bundle
 
 ## Diagnostic Shape
 

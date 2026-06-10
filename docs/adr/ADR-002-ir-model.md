@@ -7,7 +7,7 @@ Accepted
 The compiler defines separate `AST`, `HIR`, and `MIR` structures:
 - `AST`: syntactic representation of source.
 - `HIR`: normalized semantic statements.
-- `MIR`: grid-normalized per-cycle per-PE operations.
+- `MIR`: grid-normalized per-bundle per-PE operations.
 
 `MIR` is backend-facing and target-aware (`GridSpec`, topology).
 

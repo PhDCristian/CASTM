@@ -5,14 +5,14 @@ import {
   makeDiagnostic,
   spanAt
 } from '@castm/compiler-ir';
-import { parseBroadcastPragmaArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/broadcast.js';
-import { buildReduceCycles } from '../packages/compiler-api/src/passes-shared/collective-reduce.js';
-import { buildRouteTransferCycles } from '../packages/compiler-api/src/passes-shared/route-transfer.js';
+import { parseBroadcastAdvancedStatementArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/broadcast.js';
+import { buildReduceBundles } from '../packages/compiler-api/src/passes-shared/collective-reduce.js';
+import { buildRouteTransferBundles } from '../packages/compiler-api/src/passes-shared/route-transfer.js';
 import { tryParseControlStatement } from '../packages/compiler-front/src/structured-core/statements/control-handler.js';
 import { tryExpandIfStatement } from '../packages/compiler-front/src/structured-core/lowering/function-expand-if.js';
 import { tryExpandWhileStatement } from '../packages/compiler-front/src/structured-core/lowering/function-expand-while.js';
 import { expandFunctionBodyIntoKernel } from '../packages/compiler-front/src/structured-core/lowering/function-expand.js';
-import { emitWhileControlFlowCycles } from '../packages/compiler-front/src/structured-core/lowering/control-flow-emit/while-cycles.js';
+import { emitWhileControlFlowBundles } from '../packages/compiler-front/src/structured-core/lowering/control-flow-emit/while-bundles.js';
 import { resolveGrid } from '../packages/compiler-api/src/compiler-driver/grid-resolver.js';
 
 const span = spanAt(1, 1, 1);
@@ -26,8 +26,8 @@ function kernel() {
     name: 'k',
     config: undefined,
     directives: [],
-    pragmas: [],
-    cycles: [],
+    advancedStatements: [],
+    bundles: [],
     span
   };
 }
@@ -40,13 +40,13 @@ afterEach(() => {
 
 describe('branch coverage round 3', () => {
   it('covers broadcast fallback parser path and invalids', () => {
-    expect(parseBroadcastPragmaArgs('broadcast(value=R1, from=@0,0, to=diag)')).toBeNull();
-    expect(parseBroadcastPragmaArgs('broadcast(value=R1, from=@bad, to=row)')).toBeNull();
+    expect(parseBroadcastAdvancedStatementArgs('broadcast(value=R1, from=@0,0, to=diag)')).toBeNull();
+    expect(parseBroadcastAdvancedStatementArgs('broadcast(value=R1, from=@bad, to=row)')).toBeNull();
   });
 
   it('covers broadcast fallback success path via parser-utils mock', async () => {
-    vi.doMock('../packages/compiler-api/src/passes-shared/pragma-args-utils.js', async () => {
-      const actual = await vi.importActual<any>('../packages/compiler-api/src/passes-shared/pragma-args-utils.js');
+    vi.doMock('../packages/compiler-api/src/passes-shared/advanced-statement-args-utils.js', async () => {
+      const actual = await vi.importActual<any>('../packages/compiler-api/src/passes-shared/advanced-statement-args-utils.js');
       return {
         ...actual,
         parseKeyValueArgs: () => new Map([
@@ -57,7 +57,7 @@ describe('branch coverage round 3', () => {
       };
     });
     const mod = await import('../packages/compiler-api/src/passes-shared/advanced-args/broadcast.js');
-    expect(mod.parseBroadcastPragmaArgs('broadcast(any_order_here)')).toMatchObject({
+    expect(mod.parseBroadcastAdvancedStatementArgs('broadcast(any_order_here)')).toMatchObject({
       valueReg: 'R1',
       scope: 'column',
       from: { row: 0, col: 0 }
@@ -65,7 +65,7 @@ describe('branch coverage round 3', () => {
   });
 
   it('covers reduce lanes<=0 and mocked scratch allocation failure', async () => {
-    const lanesEmpty = buildReduceCycles(
+    const lanesEmpty = buildReduceBundles(
       { operation: 'add', destReg: 'R1', srcReg: 'R0', axis: 'row' },
       0,
       { rows: 4, cols: 0, topology: 'mesh', wrapPolicy: 'clamp' } as any,
@@ -83,7 +83,7 @@ describe('branch coverage round 3', () => {
     });
     const mod = await import('../packages/compiler-api/src/passes-shared/collective-reduce.js');
     const diagnostics: Diagnostic[] = [];
-    const reduced = mod.buildReduceCycles(
+    const reduced = mod.buildReduceBundles(
       { operation: 'add', destReg: 'R1', srcReg: 'R0', axis: 'row' },
       0,
       { rows: 4, cols: 4, topology: 'torus', wrapPolicy: 'wrap' } as any,
@@ -95,7 +95,7 @@ describe('branch coverage round 3', () => {
   });
 
   it('covers route-transfer local hop and mocked incoming-direction failure', async () => {
-    const local = buildRouteTransferCycles(
+    const local = buildRouteTransferBundles(
       { row: 1, col: 1 },
       { row: 1, col: 1 },
       'R0',
@@ -118,7 +118,7 @@ describe('branch coverage round 3', () => {
     });
     const mod = await import('../packages/compiler-api/src/passes-shared/route-transfer.js');
     const diagnostics: Diagnostic[] = [];
-    const broken = mod.buildRouteTransferCycles(
+    const broken = mod.buildRouteTransferBundles(
       { row: 0, col: 0 },
       { row: 0, col: 1 },
       'R0',
@@ -185,7 +185,7 @@ describe('branch coverage round 3', () => {
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
@@ -207,7 +207,7 @@ describe('branch coverage round 3', () => {
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
@@ -224,7 +224,7 @@ describe('branch coverage round 3', () => {
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
@@ -250,15 +250,15 @@ describe('branch coverage round 3', () => {
     expect(diagnostics.at(-1)?.message).toContain('Unsupported function body statement');
   });
 
-  it('covers cycle-loop fallback by mocking all steps as unhandled', async () => {
-    vi.doMock('../packages/compiler-front/src/structured-core/lowering/cycle-loop/steps.js', () => ({
+  it('covers bundle-loop fallback by mocking all steps as unhandled', async () => {
+    vi.doMock('../packages/compiler-front/src/structured-core/lowering/bundle-loop/steps.js', () => ({
       tryExpandNestedForLoopStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 }),
       tryExpandSpatialAtBlockStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 }),
-      tryExpandSingleCycleStatementStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 })
+      tryExpandSingleBundleStatementStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 })
     }));
-    const { expandLoopBody } = await import('../packages/compiler-front/src/structured-core/lowering/cycle-loop.js');
+    const { expandLoopBody } = await import('../packages/compiler-front/src/structured-core/lowering/bundle-loop.js');
     const out = expandLoopBody(
-      [entry(1, 'cycle ???')],
+      [entry(1, 'bundle ???')],
       new Map(),
       new Map(),
       []
@@ -266,29 +266,29 @@ describe('branch coverage round 3', () => {
     expect(out).toEqual([]);
   });
 
-  it('covers while-cycles non-fused back-edge emission', () => {
+  it('covers while-bundles non-fused back-edge emission', () => {
     const k = kernel();
-    const next = emitWhileControlFlowCycles({
+    const next = emitWhileControlFlowBundles({
       kernel: k as any,
-      cycleIndex: 0,
+      bundleIndex: 0,
       lineNo: 1,
       row: 0,
       col: 0,
       condition: { lhs: 'R0', operator: '!=', rhs: 'ZERO' },
       startLabel: 'L_START',
       endLabel: 'L_END',
-      loopCycles: [],
+      loopBundles: [],
       fusionPlan: null
     } as any);
     expect(next).toBe(3);
-    expect(k.cycles.some((cycle: any) => (cycle.statements[0] as any).instruction.text.includes('JUMP ZERO, L_START'))).toBe(true);
+    expect(k.bundles.some((bundle: any) => (bundle.statements[0] as any).instruction.text.includes('JUMP ZERO, L_START'))).toBe(true);
   });
 
   it('covers compile-driver analysisAst fallback and instructions=0 path with mocks', async () => {
     const ast: any = {
       targetProfileId: 'uma-cgra-base',
       span,
-      kernel: { name: 'k', config: undefined, directives: [], pragmas: [], cycles: [], span }
+      kernel: { name: 'k', config: undefined, directives: [], advancedStatements: [], bundles: [], span }
     };
     vi.doMock('../packages/compiler-api/src/compiler-driver/parse-driver.js', () => ({
       parse: () => ({ success: true, diagnostics: [], ast, structuredAst: undefined })

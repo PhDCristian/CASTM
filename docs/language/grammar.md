@@ -14,11 +14,11 @@ scheduler_stmt   ::= "scheduler" ("safe" | "balanced" | "aggressive") ";"
 scheduler_window_stmt ::= "scheduler_window" ("auto" | int_expr) ";"
 memory_reorder_stmt ::= "memory_reorder" ("strict" | "same_address_fence") ";"
 expansion_mode_stmt ::= "expansion_mode" ("full-unroll" | "jump-reuse") ";"
-prune_noop_stmt  ::= "prune_noop_cycles" ("on" | "off" | "true" | "false") ";"
+prune_noop_stmt  ::= "prune_noop_bundles" ("on" | "off" | "true" | "false") ";"
 grid_stmt        ::= "grid" int_expr "x" int_expr ("torus" | "mesh")? ";"
 kernel_decl      ::= "kernel" string_lit "{" kernel_item* "}"
-kernel_item      ::= config_stmt | runtime_stmt | cycle_block | labeled_stmt | control_stmt | for_stmt | loop_control_stmt | advanced_stmt | pipeline_stmt | function_call
-labeled_stmt     ::= label ":" (cycle_block | advanced_stmt | function_call | for_stmt | if_stmt | while_stmt)
+kernel_item      ::= config_stmt | runtime_stmt | bundle_block | labeled_stmt | control_stmt | for_stmt | loop_control_stmt | advanced_stmt | pipeline_stmt | function_call
+labeled_stmt     ::= label ":" (bundle_block | advanced_stmt | function_call | for_stmt | if_stmt | while_stmt)
 label            ::= ident
 ```
 
@@ -36,14 +36,14 @@ runtime_stmt     ::= io_load | io_store | limit | assert
 io_load          ::= "io.load" "(" int_expr ("," int_expr)* ")" ";"
 io_store         ::= "io.store" "(" int_expr ("," int_expr)* ")" ";"
 limit            ::= "limit" "(" int_expr ")" ";"
-assert           ::= "assert" "(" "at" "=" "@" int_expr "," int_expr "," "reg" "=" register "," "equals" "=" int_expr ("," "cycle" "=" int_expr)? ")" ";"
+assert           ::= "assert" "(" "at" "=" "@" int_expr "," int_expr "," "reg" "=" register "," "equals" "=" int_expr ("," "bundle" "=" int_expr)? ")" ";"
 ```
 
-## Spatial / Cycle
+## Spatial / Bundle
 
 ```text
-cycle_block      ::= "cycle" "{" cycle_stmt* "}"
-cycle_stmt       ::= at_point_stmt | at_row_stmt | at_col_stmt | at_all_stmt | short_point_stmt
+bundle_block      ::= "bundle" "{" bundle_stmt* "}"
+bundle_stmt       ::= at_point_stmt | at_row_stmt | at_col_stmt | at_all_stmt | short_point_stmt
 coord_expr       ::= int_expr | int_expr ".." int_expr
 at_point_stmt    ::= "at" "@" coord_expr "," coord_expr ":" instruction ";"
 at_row_stmt      ::= "at" "row" int_expr ":" instruction ";"
@@ -54,7 +54,7 @@ short_point_stmt ::= "@" coord_expr "," coord_expr ":" instruction ";"
 
 Notes:
 
-- A single source line inside `bundle { ... }` may contain multiple `cycle_stmt` entries separated by `;`.
+- A single source line inside `bundle { ... }` may contain multiple `bundle_stmt` entries separated by `;`.
 - Short point form `@r,c:` is canonical and equivalent to `at @r,c:`.
 - Spatial coordinate expressions are integer expressions; when division appears (for example `@k/4,k%4`) canonical lowering uses integer truncation semantics after loop binding.
 - Coordinate ranges expand inclusively. Example: `@0,0..3` expands to `@0,0`, `@0,1`, `@0,2`, `@0,3`; `@1..2,1..2` expands to the cartesian product.
@@ -120,7 +120,7 @@ triangle_stmt    ::= std_prefix "triangle" "(" "shape" "=" ("upper" | "lower") [
 
 ## Executable snippet
 
-```dsl
+```castm
 target base;
 let A = { 10, 20, 30, 40 };
 kernel "grammar_example" {

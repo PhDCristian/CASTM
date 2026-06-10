@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
@@ -7,13 +7,13 @@ import {
   makeDiagnostic
 } from '@castm/compiler-ir';
 import {
-  createAtCycle,
+  createAtBundle,
   createInstruction
 } from './ast-utils.js';
 import { computeRoutePath, getIncomingRegister } from './grid-utils.js';
 import { RoutePoint } from './route-args.js';
 
-export function buildRouteTransferCycles(
+export function buildRouteTransferBundles(
   src: RoutePoint,
   dst: RoutePoint,
   payloadReg: string,
@@ -22,20 +22,20 @@ export function buildRouteTransferCycles(
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
+): BundleAst[] {
   const path = computeRoutePath(src, dst, grid);
-  const cycles: CycleAst[] = [];
-  if (path.length === 0) return cycles;
+  const bundles: BundleAst[] = [];
+  if (path.length === 0) return bundles;
 
   if (path.length === 1) {
-    cycles.push(createAtCycle(
+    bundles.push(createAtBundle(
       startIndex,
       src.row,
       src.col,
       createInstruction('SADD', [destReg, payloadReg, 'ZERO'], span),
       span
     ));
-    return cycles;
+    return bundles;
   }
 
   for (let i = 0; i < path.length; i++) {
@@ -44,7 +44,7 @@ export function buildRouteTransferCycles(
     const isLast = i === path.length - 1;
 
     if (isFirst) {
-      cycles.push(createAtCycle(
+      bundles.push(createAtBundle(
         startIndex + i,
         point.row,
         point.col,
@@ -66,7 +66,7 @@ export function buildRouteTransferCycles(
     }
 
     if (!isLast) {
-      cycles.push(createAtCycle(
+      bundles.push(createAtBundle(
         startIndex + i,
         point.row,
         point.col,
@@ -76,7 +76,7 @@ export function buildRouteTransferCycles(
       continue;
     }
 
-    cycles.push(createAtCycle(
+    bundles.push(createAtBundle(
       startIndex + i,
       point.row,
       point.col,
@@ -85,5 +85,5 @@ export function buildRouteTransferCycles(
     ));
   }
 
-  return cycles;
+  return bundles;
 }

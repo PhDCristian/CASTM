@@ -11,7 +11,7 @@ describe('issues/FEAT-5 normalize statement', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat5_row" {
-  normalize(reg=R3, carry=R1, width=16, lane=0);
+  std::normalize(reg=R3, carry=R1, width=16, lane=0);
 }
 `;
 
@@ -35,7 +35,7 @@ build {
   grid 3x5 mesh;
 }
 kernel "feat5_col" {
-  normalize(reg=R2, carry=R0, width=8, mask=255, axis=col, lane=1, dir=up);
+  std::normalize(reg=R2, carry=R0, width=8, mask=255, axis=col, lane=1, dir=up);
 }
 `;
 
@@ -54,7 +54,7 @@ kernel "feat5_col" {
     const malformed = compile(`
 target "uma-cgra-base";
 kernel "feat5_bad_parse" {
-  normalize(reg=R3, carry=R1, width=16);
+  std::normalize(reg=R3, carry=R1, width=16);
 }
 `);
 
@@ -66,7 +66,7 @@ kernel "feat5_bad_parse" {
     const wrongDirection = compile(`
 target "uma-cgra-base";
 kernel "feat5_bad_dir" {
-  normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=up);
+  std::normalize(reg=R3, carry=R1, width=16, lane=0, axis=row, dir=up);
 }
 `);
     expect(wrongDirection.success).toBe(false);
@@ -75,7 +75,7 @@ kernel "feat5_bad_dir" {
     const badLane = compile(`
 target "uma-cgra-base";
 kernel "feat5_bad_lane" {
-  normalize(reg=R3, carry=R1, width=16, lane=9, axis=row, dir=right);
+  std::normalize(reg=R3, carry=R1, width=16, lane=9, axis=row, dir=right);
 }
 `);
     expect(badLane.success).toBe(false);
@@ -84,7 +84,7 @@ kernel "feat5_bad_lane" {
     const badWidth = compile(`
 target "uma-cgra-base";
 kernel "feat5_bad_width" {
-  normalize(reg=R3, carry=R1, width=31, lane=0);
+  std::normalize(reg=R3, carry=R1, width=31, lane=0);
 }
 `);
     expect(badWidth.success).toBe(false);

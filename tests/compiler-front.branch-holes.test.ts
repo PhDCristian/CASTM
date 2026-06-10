@@ -19,7 +19,7 @@ import { buildRuntimeLoopPlan } from '../packages/compiler-front/src/structured-
 import { parseInstruction } from '../packages/compiler-front/src/structured-core/lowering/instructions.js';
 import { buildWhileFusionPlan, rewriteConditionForWhileFusion } from '../packages/compiler-front/src/structured-core/lowering/function-expand-helpers/while-fusion.js';
 import { tryParseControlStatement } from '../packages/compiler-front/src/structured-core/statements/control-handler.js';
-import { emitWhileControlFlowCycles } from '../packages/compiler-front/src/structured-core/lowering/control-flow-emit/while-cycles.js';
+import { emitWhileControlFlowBundles } from '../packages/compiler-front/src/structured-core/lowering/control-flow-emit/while-bundles.js';
 import { lowerStructuredProgramToAst, toStructuredProgramAst } from '../packages/compiler-front/src/structured-core/conversion.js';
 import { parseStructuredProgramFromSource } from '../packages/compiler-front/src/structured-core/parse-source.js';
 
@@ -34,8 +34,8 @@ function makeKernel(): KernelAst {
     name: 'k',
     config: undefined,
     directives: [],
-    pragmas: [],
-    cycles: [],
+    advancedStatements: [],
+    bundles: [],
     span
   };
 }
@@ -91,7 +91,7 @@ describe('compiler-front branch holes', () => {
     const constants = new Map<string, number>();
     const expansionCounter = { value: 0 };
     const controlFlowCounter = { value: 0 };
-    const cycleCounter = { value: 0 };
+    const bundleCounter = { value: 0 };
 
     const recursiveDiagnostics: Diagnostic[] = [];
     const recursive = tryExpandFunctionCall({
@@ -103,7 +103,7 @@ describe('compiler-front branch holes', () => {
       functions,
       constants,
       diagnostics: recursiveDiagnostics,
-      cycleCounter,
+      bundleCounter,
       callStack: ['mix'],
       expansionCounter,
       controlFlowCounter,
@@ -122,7 +122,7 @@ describe('compiler-front branch holes', () => {
       functions,
       constants,
       diagnostics: badArgsDiagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
@@ -141,7 +141,7 @@ describe('compiler-front branch holes', () => {
       functions,
       constants,
       diagnostics: [],
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
@@ -195,7 +195,7 @@ describe('compiler-front branch holes', () => {
     expect(buildRuntimeNoUnrollExitBranch('R0', 10, 'L_END', 1)).toContain('BGE R0');
     expect(buildRuntimeNoUnrollExitBranch('R0', 10, 'L_END', -1)).toContain('BGE 10, R0');
 
-    const loopCycle = {
+    const loopBundle = {
       index: 0,
       span,
       statements: [
@@ -209,7 +209,7 @@ describe('compiler-front branch holes', () => {
       ]
     };
     const aggressive = buildRuntimeNoUnrollAggressivePlan(
-      [loopCycle as any],
+      [loopBundle as any],
       'R0',
       0,
       0,
@@ -220,8 +220,8 @@ describe('compiler-front branch holes', () => {
     expect(aggressive?.incomingRegister).toBe('RCL');
     expect(aggressive?.bodyInstruction.text).toContain('R3');
 
-    expect(buildRuntimeNoUnrollAggressivePlan([loopCycle as any, loopCycle as any], 'R0', 0, 0, () => false, parseInstruction)).toBeNull();
-    expect(buildRuntimeNoUnrollAggressivePlan([loopCycle as any], 'R0', 0, 3, () => false, parseInstruction)).toBeNull();
+    expect(buildRuntimeNoUnrollAggressivePlan([loopBundle as any, loopBundle as any], 'R0', 0, 0, () => false, parseInstruction)).toBeNull();
+    expect(buildRuntimeNoUnrollAggressivePlan([loopBundle as any], 'R0', 0, 3, () => false, parseInstruction)).toBeNull();
   });
 
   it('buildRuntimeLoopPlan defaults control position when header has no explicit control', () => {
@@ -234,15 +234,15 @@ describe('compiler-front branch holes', () => {
       functions: new Map(),
       constants: new Map(),
       diagnostics: [],
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
       callbacks: {
-        cycleHasControlFlow: () => false,
-        cloneCycle: (cycle) => ({ ...cycle }),
+        bundleHasControlFlow: () => false,
+        cloneBundle: (bundle) => ({ ...bundle }),
         parseInstruction,
-        makeControlCycle: (index, lineNo, row, col, text, label) => ({
+        makeControlBundle: (index, lineNo, row, col, text, label) => ({
           index,
           label,
           span: spanAt(lineNo, 1, text.length),
@@ -255,7 +255,7 @@ describe('compiler-front branch holes', () => {
           }]
         }),
         expandFunctionBodyIntoKernel: (body, kernel) => {
-          kernel.cycles.push({
+          kernel.bundles.push({
             index: 0,
             span,
             statements: [{
@@ -276,7 +276,7 @@ describe('compiler-front branch holes', () => {
   });
 
   it('builds and rewrites while-fusion plans', () => {
-    const cycle = {
+    const bundle = {
       index: 0,
       span,
       statements: [{
@@ -287,14 +287,14 @@ describe('compiler-front branch holes', () => {
         span
       }]
     };
-    const plan = buildWhileFusionPlan([cycle as any], 0, 0);
+    const plan = buildWhileFusionPlan([bundle as any], 0, 0);
     expect(plan).toMatchObject({ bodyRow: 0, bodyCol: 1, incomingRegister: 'RCR' });
-    expect(buildWhileFusionPlan([{ ...cycle, label: 'L' } as any], 0, 0)).toBeNull();
+    expect(buildWhileFusionPlan([{ ...bundle, label: 'L' } as any], 0, 0)).toBeNull();
     const rewritten = rewriteConditionForWhileFusion({ lhs: 'R0', operator: '==', rhs: 'IMM(1)' }, 'RCL');
     expect(rewritten).toEqual({ lhs: 'RCL', operator: '==', rhs: 'IMM(1)' });
   });
 
-  it('parses structured control statements and emits while control-flow cycles', () => {
+  it('parses structured control statements and emits while control-flow bundles', () => {
     const parseNested = () => [];
     const diagnostics: Diagnostic[] = [];
     const entries = [
@@ -327,16 +327,16 @@ describe('compiler-front branch holes', () => {
     expect(notControl.handled).toBe(false);
 
     const kernel = makeKernel();
-    const cycleIndex = emitWhileControlFlowCycles({
+    const bundleIndex = emitWhileControlFlowBundles({
       kernel,
-      cycleIndex: 0,
+      bundleIndex: 0,
       lineNo: 20,
       row: 0,
       col: 0,
       condition: { lhs: 'R0', operator: '<', rhs: 'IMM(4)' },
       startLabel: 'L_START',
       endLabel: 'L_END',
-      loopCycles: [{
+      loopBundles: [{
         index: 0,
         span,
         statements: [{
@@ -349,8 +349,8 @@ describe('compiler-front branch holes', () => {
       }],
       fusionPlan: { bodyRow: 0, bodyCol: 1, incomingRegister: 'RCR' }
     });
-    expect(cycleIndex).toBeGreaterThan(0);
-    expect(kernel.cycles.at(-1)?.label).toBe('L_END');
+    expect(bundleIndex).toBeGreaterThan(0);
+    expect(kernel.bundles.at(-1)?.label).toBe('L_END');
   });
 
   it('reports malformed structured control headers with explicit diagnostics', () => {
@@ -416,16 +416,16 @@ describe('compiler-front branch holes', () => {
         name: 'k',
         config: undefined,
         directives: [],
-        pragmas: [
+        advancedStatements: [
           { text: 'route(@0,1 -> @0,0, payload=R3, accum=R1)', span },
           { text: 'broadcast', span }
         ],
-        cycles: [{ index: 0, statements: [], span }],
+        bundles: [{ index: 0, statements: [], span }],
         span
       }
     } as any;
     const structured = toStructuredProgramAst(ast);
-    expect(structured.kernel?.body.map((stmt: any) => stmt.kind)).toEqual(['advanced', 'advanced', 'cycle']);
+    expect(structured.kernel?.body.map((stmt: any) => stmt.kind)).toEqual(['advanced', 'advanced', 'bundle']);
 
     const loweredNoKernel = lowerStructuredProgramToAst({
       targetProfileId: 'uma-cgra-base',

@@ -5,27 +5,27 @@ function csvRows(csv: string): string[] {
   return csv.trim().split('\n').slice(1);
 }
 
-function cycleCount(csv: string): number {
+function bundleCount(csv: string): number {
   const rows = csvRows(csv);
-  const cycles = new Set(rows.map((row) => row.split(',')[0]));
-  return cycles.size;
+  const bundles = new Set(rows.map((row) => row.split(',')[0]));
+  return bundles.size;
 }
 
 describe('issues/OPT-B route overlap baseline', () => {
-  it('reduces cycle count for disjoint single-hop routes under conservative packing', () => {
+  it('reduces bundle count for disjoint single-hop routes under conservative packing', () => {
     const baseline = compile(`
 target "uma-cgra-base";
 kernel "opt_b_routes_baseline" {
-  route(@0,0 -> @0,1, payload=R1, accum=R2);
-  route(@2,2 -> @2,3, payload=R3, accum=R4);
+  std::route(@0,0 -> @0,1, payload=R1, accum=R2);
+  std::route(@2,2 -> @2,3, payload=R3, accum=R4);
 }
 `);
     const packed = compile(`
 target "uma-cgra-base";
 kernel "opt_b_routes_packed" {
-  latency_hide(window=4, mode=conservative);
-  route(@0,0 -> @0,1, payload=R1, accum=R2);
-  route(@2,2 -> @2,3, payload=R3, accum=R4);
+  std::latency_hide(window=4, mode=conservative);
+  std::route(@0,0 -> @0,1, payload=R1, accum=R2);
+  std::route(@2,2 -> @2,3, payload=R3, accum=R4);
 }
 `);
 
@@ -34,7 +34,7 @@ kernel "opt_b_routes_packed" {
 
     const baseCsv = baseline.artifacts.csv ?? '';
     const packedCsv = packed.artifacts.csv ?? '';
-    expect(cycleCount(baseCsv)).toBeGreaterThan(cycleCount(packedCsv));
+    expect(bundleCount(baseCsv)).toBeGreaterThan(bundleCount(packedCsv));
 
     const rows = csvRows(packedCsv);
     expect(rows.some((row) => row.endsWith(',SADD ROUT R1 ZERO'))).toBe(true);
@@ -47,14 +47,14 @@ kernel "opt_b_routes_packed" {
     const packed = compile(`
 target "uma-cgra-base";
 kernel "opt_b_routes_conflict" {
-  latency_hide(window=4, mode=conservative);
-  route(@0,0 -> @0,1, payload=R1, accum=R2);
-  route(@0,1 -> @0,2, payload=R3, accum=R4);
+  std::latency_hide(window=4, mode=conservative);
+  std::route(@0,0 -> @0,1, payload=R1, accum=R2);
+  std::route(@0,1 -> @0,2, payload=R3, accum=R4);
 }
 `);
 
     expect(packed.success).toBe(true);
-    const packedCycles = cycleCount(packed.artifacts.csv ?? '');
-    expect(packedCycles).toBeGreaterThanOrEqual(4);
+    const packedBundles = bundleCount(packed.artifacts.csv ?? '');
+    expect(packedBundles).toBeGreaterThanOrEqual(4);
   });
 });

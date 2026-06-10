@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { ErrorCodes, spanAt } from '@castm/compiler-ir';
 import {
   tryExpandNestedForLoopStep,
-  tryExpandSingleCycleStatementStep,
+  tryExpandSingleBundleStatementStep,
   tryExpandSpatialAtBlockStep
-} from '../packages/compiler-front/src/structured-core/lowering/cycle-loop/steps.js';
-import { tryExpandCycleStatement } from '../packages/compiler-front/src/structured-core/lowering/function-expand-cycle.js';
+} from '../packages/compiler-front/src/structured-core/lowering/bundle-loop/steps.js';
+import { tryExpandBundleStatement } from '../packages/compiler-front/src/structured-core/lowering/function-expand-bundle.js';
 
 function inst(opcode: string, operands: string[] = []) {
   return {
@@ -24,7 +24,7 @@ function entry(lineNo: number, cleanLine: string) {
   };
 }
 
-describe('compiler-front lowering cycle/function step handlers', () => {
+describe('compiler-front lowering bundle/function step handlers', () => {
   it('handles nested for-loop step paths (no-match, control/modifier errors, unterminated, expanded)', () => {
     const noMatch = tryExpandNestedForLoopStep(
       {
@@ -191,9 +191,9 @@ describe('compiler-front lowering cycle/function step handlers', () => {
     expect((ok.statements[0] as any).col).toBe(2);
   });
 
-  it('handles single cycle statement step errors and valid statement parse', () => {
+  it('handles single bundle statement step errors and valid statement parse', () => {
     const closeDiagnostics: any[] = [];
-    const close = tryExpandSingleCycleStatementStep(
+    const close = tryExpandSingleBundleStatementStep(
       {
         body: [entry(1, '}')],
         index: 0,
@@ -209,7 +209,7 @@ describe('compiler-front lowering cycle/function step handlers', () => {
     expect(closeDiagnostics[0].message).toContain('Unexpected closing brace');
 
     const invalidDiagnostics: any[] = [];
-    const invalid = tryExpandSingleCycleStatementStep(
+    const invalid = tryExpandSingleBundleStatementStep(
       {
         body: [entry(2, 'bad statement')],
         index: 0,
@@ -226,7 +226,7 @@ describe('compiler-front lowering cycle/function step handlers', () => {
     expect(invalidDiagnostics[0].message).toContain('Invalid bundle statement');
 
     const okDiagnostics: any[] = [];
-    const ok = tryExpandSingleCycleStatementStep(
+    const ok = tryExpandSingleBundleStatementStep(
       {
         body: [entry(3, '@0,0: NOP;')],
         index: 0,
@@ -243,14 +243,14 @@ describe('compiler-front lowering cycle/function step handlers', () => {
     expect((ok.statements[0] as any).kind).toBe('at');
   });
 
-  it('handles function cycle expansion branches', () => {
+  it('handles function bundle expansion branches', () => {
     const makeInput = (body: Array<{ lineNo: number; cleanLine: string }>, index = 0) => {
       const kernel: any = {
         name: 'k',
         config: undefined,
         directives: [],
-        pragmas: [],
-        cycles: [],
+        advancedStatements: [],
+        bundles: [],
         span: spanAt(1, 1, 1)
       };
       const entryObj = {
@@ -268,7 +268,7 @@ describe('compiler-front lowering cycle/function step handlers', () => {
           functions: new Map(),
           constants: new Map(),
           diagnostics: [] as any[],
-          cycleCounter: { value: 0 },
+          bundleCounter: { value: 0 },
           callStack: [],
           expansionCounter: { value: 0 },
           controlFlowCounter: { value: 0 },
@@ -279,13 +279,13 @@ describe('compiler-front lowering cycle/function step handlers', () => {
     };
 
     const inlineLabeled = makeInput([{ lineNo: 1, cleanLine: 'L0: bundle { @0,0: NOP; }' }]);
-    const inlineLabeledResult = tryExpandCycleStatement(inlineLabeled.input as any);
+    const inlineLabeledResult = tryExpandBundleStatement(inlineLabeled.input as any);
     expect(inlineLabeledResult.handled).toBe(true);
-    expect(inlineLabeled.kernel.cycles).toHaveLength(1);
-    expect(inlineLabeled.kernel.cycles[0].label).toBe('L0');
+    expect(inlineLabeled.kernel.bundles).toHaveLength(1);
+    expect(inlineLabeled.kernel.bundles[0].label).toBe('L0');
 
     const labeledUnterminated = makeInput([{ lineNo: 2, cleanLine: 'L1: bundle {' }]);
-    const labeledUnterminatedResult = tryExpandCycleStatement(labeledUnterminated.input as any);
+    const labeledUnterminatedResult = tryExpandBundleStatement(labeledUnterminated.input as any);
     expect(labeledUnterminatedResult.shouldBreak).toBe(true);
     expect(labeledUnterminated.input.diagnostics[0].message).toContain('Unterminated labeled bundle');
 
@@ -294,26 +294,26 @@ describe('compiler-front lowering cycle/function step handlers', () => {
       { lineNo: 4, cleanLine: '@0,0: NOP;' },
       { lineNo: 5, cleanLine: '}' }
     ]);
-    const labeledBlockResult = tryExpandCycleStatement(labeledBlock.input as any);
+    const labeledBlockResult = tryExpandBundleStatement(labeledBlock.input as any);
     expect(labeledBlockResult.handled).toBe(true);
     expect(labeledBlockResult.nextIndex).toBe(2);
-    expect(labeledBlock.kernel.cycles).toHaveLength(1);
-    expect(labeledBlock.kernel.cycles[0].label).toBe('L2');
+    expect(labeledBlock.kernel.bundles).toHaveLength(1);
+    expect(labeledBlock.kernel.bundles[0].label).toBe('L2');
 
-    const inlineCycle = makeInput([{ lineNo: 6, cleanLine: 'bundle { @0,0: NOP; }' }]);
-    const inlineCycleResult = tryExpandCycleStatement(inlineCycle.input as any);
-    expect(inlineCycleResult.handled).toBe(true);
-    expect(inlineCycle.kernel.cycles).toHaveLength(1);
-    expect(inlineCycle.kernel.cycles[0].label).toBeUndefined();
+    const inlineBundle = makeInput([{ lineNo: 6, cleanLine: 'bundle { @0,0: NOP; }' }]);
+    const inlineBundleResult = tryExpandBundleStatement(inlineBundle.input as any);
+    expect(inlineBundleResult.handled).toBe(true);
+    expect(inlineBundle.kernel.bundles).toHaveLength(1);
+    expect(inlineBundle.kernel.bundles[0].label).toBeUndefined();
 
-    const nonCycle = makeInput([{ lineNo: 7, cleanLine: 'foo();' }]);
-    const nonCycleResult = tryExpandCycleStatement(nonCycle.input as any);
-    expect(nonCycleResult).toMatchObject({ handled: false, shouldBreak: false });
+    const nonBundle = makeInput([{ lineNo: 7, cleanLine: 'foo();' }]);
+    const nonBundleResult = tryExpandBundleStatement(nonBundle.input as any);
+    expect(nonBundleResult).toMatchObject({ handled: false, shouldBreak: false });
 
-    const cycleUnterminated = makeInput([{ lineNo: 8, cleanLine: 'bundle {' }]);
-    const cycleUnterminatedResult = tryExpandCycleStatement(cycleUnterminated.input as any);
-    expect(cycleUnterminatedResult.handled).toBe(true);
-    expect(cycleUnterminatedResult.shouldBreak).toBe(true);
-    expect(cycleUnterminated.input.diagnostics[0].message).toContain('Unterminated bundle block');
+    const bundleUnterminated = makeInput([{ lineNo: 8, cleanLine: 'bundle {' }]);
+    const bundleUnterminatedResult = tryExpandBundleStatement(bundleUnterminated.input as any);
+    expect(bundleUnterminatedResult.handled).toBe(true);
+    expect(bundleUnterminatedResult.shouldBreak).toBe(true);
+    expect(bundleUnterminated.input.diagnostics[0].message).toContain('Unterminated bundle block');
   });
 });

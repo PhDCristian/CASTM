@@ -3,6 +3,8 @@
 // Demonstrates: nested for loops, both loop variables
 //               used in expressions.
 
+target base;
+
 kernel "NestedLoops" {
     config(0xF, 0);
 

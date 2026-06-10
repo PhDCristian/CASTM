@@ -205,21 +205,21 @@ function parseRuntimeStatementLine(
     };
   }
 
-  const legacyRuntime = cleanLine.match(/^\.(io_load|io_store|limit|assert)\b/i);
-  if (legacyRuntime) {
-    const legacy = legacyRuntime[1].toLowerCase();
-    const hint = legacy === 'io_load'
+  const unsupportedRuntime = cleanLine.match(/^\.(io_load|io_store|limit|assert)\b/i);
+  if (unsupportedRuntime) {
+    const unsupported = unsupportedRuntime[1].toLowerCase();
+    const hint = unsupported === 'io_load'
       ? 'Use io.load(...) instead of .io_load.'
-      : legacy === 'io_store'
+      : unsupported === 'io_store'
         ? 'Use io.store(...) instead of .io_store.'
-        : legacy === 'limit'
+        : unsupported === 'limit'
           ? 'Use limit(...) instead of .limit.'
           : 'Use assert(...) instead of .assert.';
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Parse.InvalidSyntax,
       'error',
       spanAt(lineNo, cleanLine.length),
-      `Legacy runtime directive '.${legacy}' is not supported in canonical mode.`,
+      `Unsupported runtime directive '.${unsupported}' is not supported in canonical mode.`,
       hint,
       'MIG-RUNTIME-001'
     ));
@@ -479,9 +479,9 @@ export function parseStructuredProgramFromSource(source: string): StructuredProg
     if (parsedRuntime.stmt) runtime.push(parsedRuntime.stmt);
   }
 
-  const cycleCounter = { value: 0 };
+  const bundleCounter = { value: 0 };
   const bodyEntries = kernelBlock.body.filter((entry) => !runtimeLines.has(entry.lineNo));
-  const body = parseStructuredStatements(bodyEntries, cycleCounter, diagnostics);
+  const body = parseStructuredStatements(bodyEntries, bundleCounter, diagnostics);
 
   return {
     program: {

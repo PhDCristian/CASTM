@@ -18,7 +18,7 @@ Accepted values:
 
 ## Semantics
 
-Lowering is deterministic and emits 2 cycles over every PE:
+Lowering is deterministic and emits 2 bundles over every PE:
 
 1. `SRT dest, src, shift`
 2. `LAND dest, dest, mask`
@@ -46,7 +46,7 @@ std::extract_bytes(src=R2, dest=R3, axis=row, byteWidth=4, mask=15);
 
 ## Executable Snippet
 
-```dsl
+```castm
 target base;
 kernel "extract_doc" {
   std::extract_bytes(src=R0, dest=R1, axis=col);
@@ -66,5 +66,5 @@ Executable contract tests:
 
 - `tests/issues/feat-11-extract-bytes.test.ts`
 - `tests/compiler-api.collective-builders.test.ts`
-- `tests/compiler-api.expand-pragmas.handlers.test.ts`
+- `tests/compiler-api.expand-advanced-statements.handlers.test.ts`
 - `tests/compiler-api.passes-shared.test.ts`

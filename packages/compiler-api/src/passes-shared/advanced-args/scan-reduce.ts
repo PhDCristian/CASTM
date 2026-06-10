@@ -1,11 +1,11 @@
-import { isIdentifier, parseKeyValueArgs } from '../pragma-args-utils.js';
+import { isIdentifier, parseKeyValueArgs } from '../advanced-statement-args-utils.js';
 import {
-  AllreducePragmaArgs,
-  ReducePragmaArgs,
-  ScanPragmaArgs
+  AllreduceAdvancedStatementArgs,
+  ReduceAdvancedStatementArgs,
+  ScanAdvancedStatementArgs
 } from './types.js';
 
-export function parseScanPragmaArgs(text: string): ScanPragmaArgs | null {
+export function parseScanAdvancedStatementArgs(text: string): ScanAdvancedStatementArgs | null {
   const match = text.trim().match(/^scan\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -42,7 +42,7 @@ export function parseScanPragmaArgs(text: string): ScanPragmaArgs | null {
   };
 }
 
-export function parseReducePragmaArgs(text: string): ReducePragmaArgs | null {
+export function parseReduceAdvancedStatementArgs(text: string): ReduceAdvancedStatementArgs | null {
   const match = text.trim().match(/^reduce\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -65,7 +65,7 @@ export function parseReducePragmaArgs(text: string): ReducePragmaArgs | null {
   };
 }
 
-export function parseAllreducePragmaArgs(text: string): AllreducePragmaArgs | null {
+export function parseAllreduceAdvancedStatementArgs(text: string): AllreduceAdvancedStatementArgs | null {
   const match = text.trim().match(/^allreduce\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);

@@ -17,21 +17,17 @@ kernel "std_route" {
     expect(result.artifacts.csv).toContain('SADD ROUT R3 ZERO');
   });
 
-  it('keeps unqualified advanced statements as compatibility form with migration warning', () => {
+  it('rejects unqualified advanced statements instead of keeping compatibility syntax', () => {
     const source = `
 target "uma-cgra-base";
-kernel "compat_route" {
+kernel "unqualified_route" {
   route(@0,1 -> @0,0, payload=R3, accum=R1);
 }
 `;
 
     const result = compile(source);
-    expect(result.success).toBe(true);
-    expect(result.diagnostics.some((d) =>
-      d.code === WarningCodes.Style.UnqualifiedStdBuiltin
-      && d.severity === 'warning'
-      && d.hintCode === 'MIG-STD-001'
-    )).toBe(true);
+    expect(result.success).toBe(false);
+    expect(result.diagnostics.some((d) => d.code === WarningCodes.Style.UnqualifiedStdBuiltin)).toBe(false);
   });
 
   it('rejects non-std namespaces for standard advanced statements', () => {

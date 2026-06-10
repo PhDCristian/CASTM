@@ -1,5 +1,5 @@
 import instructionSet from './instruction-set.json' with { type: 'json' };
-import pragmaSet from './pragmas.json' with { type: 'json' };
+import advancedStatementSet from './advanced-statements.json' with { type: 'json' };
 import targetProfiles from './target-profiles.json' with { type: 'json' };
 
 export type Topology = 'torus' | 'mesh';
@@ -12,7 +12,7 @@ export interface InstructionSpec {
   description: string;
 }
 
-export interface PragmaSpec {
+export interface AdvancedStatementSpec {
   name: string;
   kind: 'loop' | 'codegen';
 }
@@ -31,7 +31,7 @@ export interface TargetProfileSpec {
 }
 
 const INSTRUCTIONS = instructionSet as InstructionSpec[];
-const PRAGMAS = pragmaSet as PragmaSpec[];
+const ADVANCED_STATEMENTS = advancedStatementSet as AdvancedStatementSpec[];
 const TARGETS = targetProfiles as TargetProfileSpec[];
 const TARGET_ALIASES: Record<string, string> = {
   base: 'uma-cgra-base',
@@ -42,8 +42,8 @@ export function getInstructionSet(): InstructionSpec[] {
   return INSTRUCTIONS.map((x) => ({ ...x, operands: [...x.operands] }));
 }
 
-export function getPragmas(): PragmaSpec[] {
-  return PRAGMAS.map((x) => ({ ...x }));
+export function getAdvancedStatements(): AdvancedStatementSpec[] {
+  return ADVANCED_STATEMENTS.map((x) => ({ ...x }));
 }
 
 export function getTargetProfiles(): TargetProfileSpec[] {

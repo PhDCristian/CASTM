@@ -102,8 +102,8 @@ Full generated CSV: `docs-site/snippets/examples/loop-strategies/01-main.csv`.
 ## Related features
 
 - [/features/loops](/features/loops)
-- [/features/pragmas/unroll](/features/pragmas/unroll)
-- [/features/pragmas/parallel](/features/pragmas/parallel)
+- [/features/advanced-statements/unroll](/features/advanced-statements/unroll)
+- [/features/advanced-statements/parallel](/features/advanced-statements/parallel)
 
 ## Continue
 

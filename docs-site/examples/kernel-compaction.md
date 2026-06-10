@@ -29,7 +29,7 @@ Use this page when your kernel is functionally correct but too verbose and you w
 
 Full CSV: `docs-site/snippets/examples/kernel-compaction/01-std-extract.csv`.
 
-## Case B — Equivalent explicit form with `for` inside `cycle`
+## Case B — Equivalent explicit form with `for` inside `bundle`
 
 ::: code-group
 <<< ../snippets/examples/kernel-compaction/02-explicit-for.castm{castm} [CASTM]
@@ -58,9 +58,9 @@ Full CSV: `docs-site/snippets/examples/kernel-compaction/04-qhat-compact.csv`.
 
 ## Why this CSV looks like this
 
-- compact statements expand to deterministic placement cycles,
+- compact statements expand to deterministic placement bundles,
 - explicit and compact forms preserve the same observable semantics,
-- cycle growth comes from declared operations, not documentation shorthand.
+- bundle growth comes from declared operations, not documentation shorthand.
 
 ## Practical rules
 
@@ -72,10 +72,10 @@ Full CSV: `docs-site/snippets/examples/kernel-compaction/04-qhat-compact.csv`.
 
 Current optimized kernels in `UMA-CGRA-Simulator`:
 
-- `examples/dsl_port/sbox_k7_v10_compact.castm`
-- `examples/dsl_port/sbox_k7_v10_nocompact.castm`
+- `examples/castm_port/sbox_k7_v10_compact.castm`
+- `examples/castm_port/sbox_k7_v10_nocompact.castm`
 
-Measured cycle budget (2026-02-13):
+Measured bundle budget (2026-02-13):
 
 - `safe`: **205**
 - `balanced`: **205**
@@ -84,13 +84,13 @@ Measured cycle budget (2026-02-13):
 Reproduce:
 
 ```bash
-npx tsx scripts/sbox/stats.ts --file ./examples/dsl_port/sbox_k7_v10_compact.castm --scheduler safe
-npx tsx scripts/sbox/stats.ts --file ./examples/dsl_port/sbox_k7_v10_nocompact.castm --scheduler safe
+npx tsx scripts/sbox/stats.ts --file ./examples/castm_port/sbox_k7_v10_compact.castm --scheduler safe
+npx tsx scripts/sbox/stats.ts --file ./examples/castm_port/sbox_k7_v10_nocompact.castm --scheduler safe
 ```
 
 ## Related features
 
-- [/features/pragmas/extract-bytes](/features/pragmas/extract-bytes)
+- [/features/advanced-statements/extract-bytes](/features/advanced-statements/extract-bytes)
 - [/features/coordinate-expressions](/features/coordinate-expressions)
 - [/features/loops](/features/loops)
 

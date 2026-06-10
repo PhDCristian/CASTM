@@ -1,20 +1,20 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
   SourceSpan,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { StashPragmaArgs } from '../advanced-args.js';
-import { createInstruction, createMultiAtCycle } from '../ast-utils.js';
+import { StashAdvancedStatementArgs } from '../advanced-args.js';
+import { createInstruction, createMultiAtBundle } from '../ast-utils.js';
 
 interface Point {
   row: number;
   col: number;
 }
 
-function targetPoints(target: StashPragmaArgs['target'], grid: GridSpec): Point[] | null {
+function targetPoints(target: StashAdvancedStatementArgs['target'], grid: GridSpec): Point[] | null {
   if (target.kind === 'all') {
     const points: Point[] = [];
     for (let row = 0; row < grid.rows; row++) {
@@ -40,14 +40,14 @@ function targetPoints(target: StashPragmaArgs['target'], grid: GridSpec): Point[
   return [{ row: target.row, col: target.col }];
 }
 
-export function buildStashCycles(
-  pragma: StashPragmaArgs,
+export function buildStashBundles(
+  advancedStatement: StashAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
-  const points = targetPoints(pragma.target, grid);
+): BundleAst[] {
+  const points = targetPoints(advancedStatement.target, grid);
   if (!points) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.CoordinateOutOfBounds,
@@ -60,13 +60,13 @@ export function buildStashCycles(
   }
 
   if (points.length === 0) return [];
-  const opcode = pragma.action === 'save' ? 'SWI' : 'LWI';
-  return [createMultiAtCycle(
+  const opcode = advancedStatement.action === 'save' ? 'SWI' : 'LWI';
+  return [createMultiAtBundle(
     startIndex,
     points.map((point) => ({
       row: point.row,
       col: point.col,
-      instruction: createInstruction(opcode, [pragma.reg, pragma.addr], span)
+      instruction: createInstruction(opcode, [advancedStatement.reg, advancedStatement.addr], span)
     })),
     span
   )];

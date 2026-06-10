@@ -25,7 +25,7 @@ Direction constraints:
 
 ## Semantics
 
-Lowering is deterministic and emits 4 cycles over the selected lane:
+Lowering is deterministic and emits 4 bundles over the selected lane:
 
 1. `SRT carry, reg, width`
 2. `LAND reg, reg, mask`
@@ -55,7 +55,7 @@ std::normalize(reg=R2, carry=R0, width=8, mask=255, axis=col, lane=1, dir=up);
 
 ## Executable Snippet
 
-```dsl
+```castm
 target base;
 kernel "normalize_doc" {
   std::normalize(reg=R3, carry=R1, width=16, lane=0);
@@ -76,5 +76,5 @@ Executable contract tests:
 
 - `tests/issues/feat-05-normalize.test.ts`
 - `tests/compiler-api.collective-builders.test.ts`
-- `tests/compiler-api.expand-pragmas.handlers.test.ts`
+- `tests/compiler-api.expand-advanced-statements.handlers.test.ts`
 - `tests/compiler-api.passes-shared.test.ts`

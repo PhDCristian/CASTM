@@ -7,11 +7,11 @@ function csvRows(csv: string): string[] {
 }
 
 describe('issues/FEAT-1 latency_hide statement', () => {
-  it('compacts independent adjacent cycles into a single cycle index', () => {
+  it('compacts independent adjacent bundles into a single bundle index', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat01_latency_hide" {
-  latency_hide(window=1, mode=conservative);
+  std::latency_hide(window=1, mode=conservative);
   bundle { at row 1: SMUL R2, R0, R1; }
   bundle { @0,3: LWI R1, 4; }
 }
@@ -25,11 +25,11 @@ kernel "feat01_latency_hide" {
     expect(rows.every((line) => line.startsWith('0,'))).toBe(true);
   });
 
-  it('keeps route-dependent cycles in separate cycle indices', () => {
+  it('keeps route-dependent bundles in separate bundle indices', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat01_latency_dependency" {
-  latency_hide(window=1, mode=conservative);
+  std::latency_hide(window=1, mode=conservative);
   bundle { @0,0: SADD ROUT, R1, ZERO; }
   bundle { @0,1: SADD R2, RCL, ZERO; }
 }
@@ -46,7 +46,7 @@ kernel "feat01_latency_dependency" {
     const source = `
 target "uma-cgra-base";
 kernel "feat01_latency_invalid" {
-  latency_hide(mode=aggressive);
+  std::latency_hide(mode=aggressive);
   bundle { @0,0: NOP; }
 }
 `;

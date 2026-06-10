@@ -8,7 +8,7 @@ export interface InstructionAst {
   span: SourceSpan;
 }
 
-export interface CycleStmtAt {
+export interface BundleStmtAt {
   kind: 'at';
   row: number;
   col: number;
@@ -16,7 +16,7 @@ export interface CycleStmtAt {
   span: SourceSpan;
 }
 
-export interface CycleStmtAtExpr {
+export interface BundleStmtAtExpr {
   kind: 'at-expr';
   rowExpr: string;
   colExpr: string;
@@ -24,32 +24,32 @@ export interface CycleStmtAtExpr {
   span: SourceSpan;
 }
 
-export interface CycleStmtRow {
+export interface BundleStmtRow {
   kind: 'row';
   row: number;
   instructions: InstructionAst[];
   span: SourceSpan;
 }
 
-export interface CycleStmtCol {
+export interface BundleStmtCol {
   kind: 'col';
   col: number;
   instruction: InstructionAst;
   span: SourceSpan;
 }
 
-export interface CycleStmtAll {
+export interface BundleStmtAll {
   kind: 'all';
   instruction: InstructionAst;
   span: SourceSpan;
 }
 
-export type CycleStatementAst = CycleStmtAt | CycleStmtAtExpr | CycleStmtRow | CycleStmtCol | CycleStmtAll;
+export type BundleStatementAst = BundleStmtAt | BundleStmtAtExpr | BundleStmtRow | BundleStmtCol | BundleStmtAll;
 
-export interface CycleAst {
+export interface BundleAst {
   index: number;
   label?: string;
-  statements: CycleStatementAst[];
+  statements: BundleStatementAst[];
   span: SourceSpan;
 }
 
@@ -86,7 +86,7 @@ export interface BuildConfigAst {
   memoryReorder?: MemoryReorderPolicy;
   expansionMode?: ExpansionMode;
   jumpReuseDepth?: number;
-  pruneNoopCycles?: boolean;
+  pruneNoopBundles?: boolean;
   grid?: {
     rows: number;
     cols: number;
@@ -95,16 +95,10 @@ export interface BuildConfigAst {
   span: SourceSpan;
 }
 
-export interface PragmaAst {
+export interface AdvancedStatementAst {
   text: string;
-  anchorCycleIndex?: number;
+  anchorBundleIndex?: number;
   label?: string;
-  span: SourceSpan;
-}
-
-export interface AdvancedStmtAst {
-  kind: string;
-  text: string;
   span: SourceSpan;
 }
 
@@ -115,7 +109,7 @@ export interface RuntimeForAst {
   span: SourceSpan;
 }
 
-export type SpatialStmtAst = CycleStatementAst;
+export type SpatialStmtAst = BundleStatementAst;
 
 export interface IoLoadStmtAst {
   kind: 'io_load';
@@ -160,12 +154,11 @@ export type RuntimeStmtAst =
 export interface KernelAst {
   name: string;
   config?: { mask: number; startAddr: number; span: SourceSpan };
-  cycles: CycleAst[];
+  bundles: BundleAst[];
   directives: DeclarationAst[];
   runtime?: RuntimeStmtAst[];
   declarations?: DeclarationAst[];
-  pragmas: PragmaAst[];
-  advancedStatements?: AdvancedStmtAst[];
+  advancedStatements: AdvancedStatementAst[];
   span: SourceSpan;
 }
 
@@ -177,9 +170,9 @@ export interface AstProgram {
   span: SourceSpan;
 }
 
-export interface StructuredCycleStmtAst {
-  kind: 'cycle';
-  cycle: CycleAst;
+export interface StructuredBundleStmtAst {
+  kind: 'bundle';
+  bundle: BundleAst;
   span: SourceSpan;
 }
 
@@ -250,7 +243,7 @@ export interface StructuredFunctionDefAst {
 }
 
 export type StructuredKernelStmtAst =
-  | StructuredCycleStmtAst
+  | StructuredBundleStmtAst
   | StructuredAdvancedStmtAst
   | StructuredForStmtAst
   | StructuredIfStmtAst

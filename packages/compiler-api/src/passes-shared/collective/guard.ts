@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
@@ -7,11 +7,11 @@ import {
   makeDiagnostic
 } from '@castm/compiler-ir';
 import {
-  GuardPragmaArgs
+  GuardAdvancedStatementArgs
 } from '../advanced-args.js';
 import {
   createInstruction,
-  createMultiAtCycle
+  createMultiAtBundle
 } from '../ast-utils.js';
 
 const IDENT_RE = /\b[A-Za-z_][A-Za-z0-9_]*\b/g;
@@ -119,20 +119,20 @@ function matchesCondition(parsed: ParsedCondition, bindings: Record<string, numb
   }
 }
 
-export function buildGuardCycles(
-  pragma: GuardPragmaArgs,
+export function buildGuardBundles(
+  advancedStatement: GuardAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
-  const parsed = parseCondition(pragma.condition);
+): BundleAst[] {
+  const parsed = parseCondition(advancedStatement.condition);
   if (!parsed) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Parse.InvalidSyntax,
       'error',
       span,
-      `Invalid guard condition '${pragma.condition}'.`,
+      `Invalid guard condition '${advancedStatement.condition}'.`,
       'Use a numeric predicate over row/col/idx (for example cond=col>=row or cond=(idx%2)==0).'
     ));
     return [];
@@ -155,7 +155,7 @@ export function buildGuardCycles(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
           span,
-          `Guard condition '${pragma.condition}' is not evaluable for spatial bindings.`,
+          `Guard condition '${advancedStatement.condition}' is not evaluable for spatial bindings.`,
           'Use only row/col/idx/rows/cols, integer literals and arithmetic operators.'
         ));
         return [];
@@ -166,8 +166,8 @@ export function buildGuardCycles(
         row,
         col,
         instruction: createInstruction(
-          pragma.opcode,
-          [pragma.destReg, pragma.srcA, pragma.srcB],
+          advancedStatement.opcode,
+          [advancedStatement.destReg, advancedStatement.srcA, advancedStatement.srcB],
           span
         )
       });
@@ -175,5 +175,5 @@ export function buildGuardCycles(
   }
 
   if (placements.length === 0) return [];
-  return [createMultiAtCycle(startIndex, placements, span)];
+  return [createMultiAtBundle(startIndex, placements, span)];
 }

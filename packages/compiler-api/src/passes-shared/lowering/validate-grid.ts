@@ -13,9 +13,9 @@ export function createValidateGridPass(grid: GridSpec): CompilerPass<HirProgram,
     run(input) {
       const diagnostics: Diagnostic[] = [];
 
-      for (const cycle of input.cycles) {
+      for (const bundle of input.bundles) {
         const seen = new Set<string>();
-        for (const op of cycle.operations) {
+        for (const op of bundle.operations) {
           if (op.row < 0 || op.row >= grid.rows || op.col < 0 || op.col >= grid.cols) {
             diagnostics.push(makeDiagnostic(
               ErrorCodes.Semantic.CoordinateOutOfBounds,
@@ -25,13 +25,13 @@ export function createValidateGridPass(grid: GridSpec): CompilerPass<HirProgram,
             ));
           }
 
-          const key = `${cycle.index}:${op.row}:${op.col}`;
+          const key = `${bundle.index}:${op.row}:${op.col}`;
           if (seen.has(key)) {
             diagnostics.push(makeDiagnostic(
               ErrorCodes.Semantic.Collision,
               'error',
               op.span,
-              `Duplicate operation at @${op.row},${op.col} in cycle ${cycle.index}.`
+              `Duplicate operation at @${op.row},${op.col} in bundle ${bundle.index}.`
             ));
           }
           seen.add(key);

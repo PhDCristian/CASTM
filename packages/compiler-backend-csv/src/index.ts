@@ -5,9 +5,9 @@ type CsvProgram = MirProgram | LirProgram;
 function sortSlotsByPosition(program: CsvProgram): CsvProgram {
   return {
     ...program,
-    cycles: program.cycles.map((cycle) => ({
-      ...cycle,
-      slots: [...cycle.slots].sort((a, b) => {
+    bundles: program.bundles.map((bundle) => ({
+      ...bundle,
+      slots: [...bundle.slots].sort((a, b) => {
         if (a.row !== b.row) return a.row - b.row;
         return a.col - b.col;
       })
@@ -34,11 +34,11 @@ function emitFlatCsv(program: CsvProgram, includeHeader: boolean): string {
     lines.push('bundle,row,col,instruction');
   }
 
-  const cycles = [...program.cycles].sort((a, b) => a.index - b.index);
-  for (const cycle of cycles) {
-    for (const slot of cycle.slots) {
+  const bundles = [...program.bundles].sort((a, b) => a.index - b.index);
+  for (const bundle of bundles) {
+    for (const slot of bundle.slots) {
       const instruction = [slot.instruction.opcode, ...slot.instruction.operands].join(' ').trim();
-      lines.push(`${cycle.index},${slot.row},${slot.col},${instruction}`);
+      lines.push(`${bundle.index},${slot.row},${slot.col},${instruction}`);
     }
   }
 
@@ -50,12 +50,12 @@ function emitSimMatrixCsv(program: CsvProgram): string {
   const rows = program.grid.rows;
   const cols = program.grid.cols;
 
-  const cycles = [...program.cycles].sort((a, b) => a.index - b.index);
-  for (const cycle of cycles) {
-    lines.push(String(cycle.index));
+  const bundles = [...program.bundles].sort((a, b) => a.index - b.index);
+  for (const bundle of bundles) {
+    lines.push(String(bundle.index));
 
     const grid = Array.from({ length: rows }, () => Array.from({ length: cols }, () => 'NOP'));
-    for (const slot of cycle.slots) {
+    for (const slot of bundle.slots) {
       if (slot.row < 0 || slot.row >= rows || slot.col < 0 || slot.col >= cols) continue;
       grid[slot.row][slot.col] = formatInstruction(
         slot.instruction.opcode,

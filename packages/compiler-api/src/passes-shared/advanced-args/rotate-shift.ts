@@ -1,8 +1,8 @@
-import { parseIntegerLiteral, parseKeyValueArgs } from '../pragma-args-utils.js';
-import { RotateShiftPragmaArgs } from './types.js';
+import { parseIntegerLiteral, parseKeyValueArgs } from '../advanced-statement-args-utils.js';
+import { RotateShiftAdvancedStatementArgs } from './types.js';
 
-export function parseRotateShiftPragmaArgs(text: string, pragmaName: 'rotate' | 'shift'): RotateShiftPragmaArgs | null {
-  const match = text.trim().match(new RegExp(`^${pragmaName}\\s*\\((.+)\\)\\s*;?\\s*$`, 'i'));
+export function parseRotateShiftAdvancedStatementArgs(text: string, advancedStatementName: 'rotate' | 'shift'): RotateShiftAdvancedStatementArgs | null {
+  const match = text.trim().match(new RegExp(`^${advancedStatementName}\\s*\\((.+)\\)\\s*;?\\s*$`, 'i'));
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
   if (!args) return null;

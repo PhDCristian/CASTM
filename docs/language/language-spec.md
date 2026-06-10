@@ -1,7 +1,7 @@
 # CASTM Canonical Language Spec (Private)
 
 CASTM canonical syntax is the only supported public language surface.  
-Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas (`#pragma ...`) are not valid source syntax.
+Malformed non-CASTM declarations and directives are not valid source syntax.
 
 - Grammar: `docs/language/grammar.md`
 
@@ -12,25 +12,25 @@ Legacy declarations (`.const`, `.alias`, `.data`, `.data2d`) and legacy pragmas 
 - `pipeline(...)` function-call sequencing macro
 - explicit spatial namespace (`at ...`)
 - standard advanced statements (`std::route(...)`, `std::reduce(...)`, `std::scan(...)`, etc.)
-- conservative cycle compaction statement (`std::latency_hide(...)`)
+- conservative bundle compaction statement (`std::latency_hide(...)`)
 - explicit stash statement (`std::stash(...)`) for deterministic register spill/restore placement
 - explicit runtime loop form
 - static loop strategy modifiers in headers: `unroll(k)` and `collapse(n)`
 - loop-control statements: `break;`, `continue;`, `break label;`, `continue label;`
-- labels on compound statements: `label: cycle|for|if|while|std::...|fnCall(...)`
+- labels on compound statements: `label: bundle|for|if|while|std::...|fnCall(...)`
 - runtime statements (`io.load(...)`, `io.store(...)`, `limit(...)`, `assert(...)`)
 - source-owned build configuration (`build { optimize/scheduler/... }`)
 
 ## Example (executable)
 
-```dsl
+```castm
 target base;
 build {
   optimize O2;
   scheduler balanced;
   scheduler_window auto;
   memory_reorder same_address_fence;
-  prune_noop_cycles on;
+  prune_noop_bundles on;
   grid 4x4 torus;
 }
 let MASK = 0xFFFF;
@@ -88,26 +88,26 @@ kernel "canonical_example" {
 ## Notes
 
 - Memory sugar in `bundle {}` lowers to existing ISA (`LWI/SWI`) without changing CSV format.
-- `std::` advanced statements lower to existing codegen passes. Unqualified forms are temporary compatibility syntax and emit migration warnings.
+- Only `std::`-qualified advanced statements are supported; unqualified advanced calls are ordinary invalid syntax.
 - `std::accumulate(...)` provides deterministic NxM accumulation patterns (`row`, `col`, `anti_diagonal`) with optional `steps=N` propagation depth and optional `scope=all|row(i)|col(j)` sub-grid targeting, removing manual ROUT-graph boilerplate from kernels.
 - `std::mulacc_chain(...)` provides deterministic lane-local multiply-accumulate propagation (`row(i)`/`col(j)`) with explicit `width`, `mask`, `lanes`, and direction (`dir`).
-- `std::accumulate(...)` omits redundant seed/final stages when `products == accum` and/or `accum == out` to reduce cycles without changing semantics.
-- `std::carry_chain(...)` provides deterministic limb carry propagation + store staging without manual repeated cycles.
+- `std::accumulate(...)` omits redundant seed/final stages when `products == accum` and/or `accum == out` to reduce bundles without changing semantics.
+- `std::carry_chain(...)` provides deterministic limb carry propagation + store staging without manual repeated bundles.
 - `std::conditional_sub(...)` provides deterministic branchless subtraction/select (`SSUB` + `BSFA`) scoped to `all`, `row`, `col`, or one point target (`point(r,c)`).
-- `pipeline(...)` expands ordered function-call sequences and keeps function-based composition explicit without introducing legacy macro engines.
+- `pipeline(...)` expands ordered function-call sequences and keeps function-based composition explicit without introducing unsupported macro engines.
 - `std::collect(...)` provides deterministic lane collection (`row/col`) with explicit path modes: `single_hop` (adjacent/same-lane) and `multi_hop` (bounded hop chain via `max_hops`).
-- `std::normalize(...)` provides canonical carry-normalization over one row/column lane using deterministic multi-cycle lowering (`SRT` + `LAND` + carry relay + lane add).
-- `std::extract_bytes(...)` unifies row/column byte-lane extraction as a canonical two-cycle pattern (`SRT` + `LAND`) over the active grid.
-- `std::triangle(...)` expands deterministically in row-major order over the active grid (`shape=upper|lower`, optional `inclusive=true|false`) and emits one canonical cycle with per-PE placements.
+- `std::normalize(...)` provides canonical carry-normalization over one row/column lane using deterministic multi-bundle lowering (`SRT` + `LAND` + carry relay + lane add).
+- `std::extract_bytes(...)` unifies row/column byte-lane extraction as a canonical two-bundle pattern (`SRT` + `LAND`) over the active grid.
+- `std::triangle(...)` expands deterministically in row-major order over the active grid (`shape=upper|lower`, optional `inclusive=true|false`) and emits one canonical bundle with per-PE placements.
 - `std::guard(...)` applies a compile-time predicate (`cond`) over `row`, `col`, `idx`, `rows`, `cols` and emits deterministic row-major placements for matching PEs only.
-- `std::route(...)` lowering preserves lexical position relative to neighboring cycles (no global hoisting).
+- `std::route(...)` lowering preserves lexical position relative to neighboring bundles (no global hoisting).
 - Static `for` modifiers are deterministic:
   - `unroll(k)` controls static expansion chunking.
   - `collapse(n)` currently requires perfectly nested static loops and applies row-major mapping.
-- `std::latency_hide(...)` applies deterministic post-expansion slot packing with explicit hazard guards (PE overlap, route-hop dependencies, control barriers, memory policy fences), can overlap disjoint route steps safely, and remaps numeric branch targets when noop cycles are removed.
+- `std::latency_hide(...)` applies deterministic post-expansion slot packing with explicit hazard guards (PE overlap, route-hop dependencies, control barriers, memory policy fences), can overlap disjoint route steps safely, and remaps numeric branch targets when noop bundles are removed.
 - Build configuration is source-owned and deterministic:
   - `optimize` preset: `O0`, `O1`, `O2`, `O3`.
-  - optional overrides in `build {}`: `scheduler`, `scheduler_window`, `memory_reorder`, `prune_noop_cycles`, `grid`.
+  - optional overrides in `build {}`: `scheduler`, `scheduler_window`, `memory_reorder`, `prune_noop_bundles`, `grid`.
   - explicit `build` keys override `optimize` defaults.
 - `std::stash(...)` provides deterministic explicit spill/restore lowering to `SWI/LWI` for selected spatial targets (`all`, `row`, `col`, `point`).
 - Inside `bundle { ... }`, semicolon-separated placements on the same line are supported.

@@ -6,7 +6,7 @@ import {
 import {
   FunctionDefinitionLike
 } from './for-expand.js';
-import { instantiateFunctionBody, makeControlCycle } from './function-expand-helpers.js';
+import { instantiateFunctionBody, makeControlBundle } from './function-expand-helpers.js';
 import type { LoopControlScope } from './loop-control-scope.js';
 
 interface JumpReuseSpecialization {
@@ -40,7 +40,7 @@ export interface FunctionExpansionContext {
   mode: ExpansionMode;
   /** Register name used as link (return address) register. */
   linkRegName: string;
-  /** PE used for JUMP instructions in call cycles. */
+  /** PE used for JUMP instructions in call bundles. */
   jumpPeRow: number;
   jumpPeCol: number;
   /**
@@ -70,7 +70,7 @@ interface FinalizeJumpReuseInput {
   functions: ReadonlyMap<string, FunctionDefinitionLike>;
   constants: ReadonlyMap<string, number>;
   diagnostics: Diagnostic[];
-  cycleCounter: { value: number };
+  bundleCounter: { value: number };
   expansionCounter: { value: number };
   controlFlowCounter: { value: number };
   expandBody: (
@@ -79,7 +79,7 @@ interface FinalizeJumpReuseInput {
     functions: ReadonlyMap<string, FunctionDefinitionLike>,
     constants: ReadonlyMap<string, number>,
     diagnostics: Diagnostic[],
-    cycleCounter: { value: number },
+    bundleCounter: { value: number },
     callStack: string[],
     expansionCounter: { value: number },
     controlFlowCounter: { value: number },
@@ -166,7 +166,7 @@ export function finalizeJumpReuseFunctions(input: FinalizeJumpReuseInput): void 
     functions,
     constants,
     diagnostics,
-    cycleCounter,
+    bundleCounter,
     expansionCounter,
     controlFlowCounter,
     expandBody,
@@ -199,8 +199,8 @@ export function finalizeJumpReuseFunctions(input: FinalizeJumpReuseInput): void 
     if (!instantiated) continue;
 
     // Record the array position where the body will begin.
-    const bodyStartArrayIndex = kernel.cycles.length;
-    const bodyStartPragmaIndex = kernel.pragmas.length;
+    const bodyStartArrayIndex = kernel.bundles.length;
+    const bodyStartAdvancedStatementIndex = kernel.advancedStatements.length;
 
     // Build a callStack that reflects the nesting depth so that
     // inner calls at depth+1 are handled correctly.
@@ -214,7 +214,7 @@ export function finalizeJumpReuseFunctions(input: FinalizeJumpReuseInput): void 
       functions,
       constants,
       diagnostics,
-      cycleCounter,
+      bundleCounter,
       specializationCallStack,
       expansionCounter,
       controlFlowCounter,
@@ -223,20 +223,20 @@ export function finalizeJumpReuseFunctions(input: FinalizeJumpReuseInput): void 
       loopControlStack
     );
 
-    // Attach the entry label to the first cycle of the expanded body,
-    // or to the first new pragma when the body is pragma-only
+    // Attach the entry label to the first bundle of the expanded body,
+    // or to the first new advancedStatement when the body is advancedStatement-only
     // (e.g. std::extract_bytes).
-    if (bodyStartArrayIndex < kernel.cycles.length) {
-      kernel.cycles[bodyStartArrayIndex].label = spec.entryLabel;
-    } else if (bodyStartPragmaIndex < kernel.pragmas.length) {
-      // Pragma-only body: label the first pragma so that pragma
-      // expansion later attaches the label to the generated cycles.
-      kernel.pragmas[bodyStartPragmaIndex].label = spec.entryLabel;
+    if (bodyStartArrayIndex < kernel.bundles.length) {
+      kernel.bundles[bodyStartArrayIndex].label = spec.entryLabel;
+    } else if (bodyStartAdvancedStatementIndex < kernel.advancedStatements.length) {
+      // AdvancedStatement-only body: label the first advancedStatement so that advancedStatement
+      // expansion later attaches the label to the generated bundles.
+      kernel.advancedStatements[bodyStartAdvancedStatementIndex].label = spec.entryLabel;
     } else {
-      // Edge case: body generated zero cycles AND zero pragmas — emit a labelled NOP.
+      // Edge case: body generated zero bundles AND zero advancedStatements — emit a labelled NOP.
       const linkPe = context.linkPeByDepth[spec.depth] ?? context.linkPeByDepth[0];
-      kernel.cycles.push(makeControlCycle(
-        cycleCounter.value++,
+      kernel.bundles.push(makeControlBundle(
+        bundleCounter.value++,
         spec.lineNo,
         linkPe.row,
         linkPe.col,
@@ -247,8 +247,8 @@ export function finalizeJumpReuseFunctions(input: FinalizeJumpReuseInput): void 
 
     // Emit the register-based return: JUMP ZERO, R3 on the link PE.
     const linkPe = context.linkPeByDepth[spec.depth] ?? context.linkPeByDepth[0];
-    kernel.cycles.push(makeControlCycle(
-      cycleCounter.value++,
+    kernel.bundles.push(makeControlBundle(
+      bundleCounter.value++,
       spec.lineNo,
       linkPe.row,
       linkPe.col,

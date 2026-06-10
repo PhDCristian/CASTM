@@ -21,7 +21,7 @@ kernel "label_interp" {
 `;
     const result = parseStructuredSource(source);
     expect(result.success).toBe(true);
-    const labels = result.ast!.kernel!.cycles.map((c) => c.label).filter(Boolean);
+    const labels = result.ast!.kernel!.bundles.map((c) => c.label).filter(Boolean);
     expect(labels).toEqual(['label_0', 'label_1', 'label_2']);
   });
 
@@ -37,14 +37,14 @@ kernel "label_goto" {
 `;
     const result = parseStructuredSource(source);
     expect(result.success).toBe(true);
-    const cycles = result.ast!.kernel!.cycles;
-    expect(cycles.length).toBe(4);
-    expect(cycles[0].label).toBe('ret_0');
-    expect(cycles[2].label).toBe('ret_1');
+    const bundles = result.ast!.kernel!.bundles;
+    expect(bundles.length).toBe(4);
+    expect(bundles[0].label).toBe('ret_0');
+    expect(bundles[2].label).toBe('ret_1');
     // Verify goto references expanded correctly
-    const goto0 = cycles[1].statements[0];
+    const goto0 = bundles[1].statements[0];
     expect(goto0.instruction.text).toContain('ret_0');
-    const goto1 = cycles[3].statements[0];
+    const goto1 = bundles[3].statements[0];
     expect(goto1.instruction.text).toContain('ret_1');
   });
 
@@ -60,12 +60,12 @@ kernel "label_imm" {
 `;
     const result = parseStructuredSource(source);
     expect(result.success).toBe(true);
-    const cycles = result.ast!.kernel!.cycles;
-    expect(cycles.length).toBe(4);
-    expect(cycles[0].label).toBe('target_0');
-    expect(cycles[2].label).toBe('target_1');
-    expect(cycles[1].statements[0].instruction.text).toContain('target_0');
-    expect(cycles[3].statements[0].instruction.text).toContain('target_1');
+    const bundles = result.ast!.kernel!.bundles;
+    expect(bundles.length).toBe(4);
+    expect(bundles[0].label).toBe('target_0');
+    expect(bundles[2].label).toBe('target_1');
+    expect(bundles[1].statements[0].instruction.text).toContain('target_0');
+    expect(bundles[3].statements[0].instruction.text).toContain('target_1');
   });
 
   it('supports nested for loops with label interpolation', () => {
@@ -81,7 +81,7 @@ kernel "nested_label" {
 `;
     const result = parseStructuredSource(source);
     expect(result.success).toBe(true);
-    const labels = result.ast!.kernel!.cycles.map((c) => c.label).filter(Boolean);
+    const labels = result.ast!.kernel!.bundles.map((c) => c.label).filter(Boolean);
     expect(labels).toEqual(['lbl_0_0', 'lbl_0_1', 'lbl_1_0', 'lbl_1_1']);
   });
 
@@ -99,7 +99,7 @@ kernel "no_false_interp" {
     // The label will contain literal braces: lbl_0_{notavar}, lbl_1_{notavar}
     // This parses successfully but the braces remain unresolved.
     expect(result.success).toBe(true);
-    const labels = result.ast!.kernel!.cycles.map((c) => c.label).filter(Boolean);
+    const labels = result.ast!.kernel!.bundles.map((c) => c.label).filter(Boolean);
     expect(labels).toEqual(['lbl_0_{notavar}', 'lbl_1_{notavar}']);
   });
 });
@@ -123,16 +123,16 @@ kernel "macro_basic" {
 `;
     const result = parseStructuredSource(source);
     expect(result.success).toBe(true);
-    const cycles = result.ast!.kernel!.cycles;
-    expect(cycles.length).toBe(2);
-    expect(cycles[0].statements[0].kind).toBe('at');
-    if (cycles[0].statements[0].kind === 'at') {
-      expect(cycles[0].statements[0].row).toBe(0);
-      expect(cycles[0].statements[0].col).toBe(0);
+    const bundles = result.ast!.kernel!.bundles;
+    expect(bundles.length).toBe(2);
+    expect(bundles[0].statements[0].kind).toBe('at');
+    if (bundles[0].statements[0].kind === 'at') {
+      expect(bundles[0].statements[0].row).toBe(0);
+      expect(bundles[0].statements[0].col).toBe(0);
     }
-    if (cycles[1].statements[0].kind === 'at') {
-      expect(cycles[1].statements[0].row).toBe(1);
-      expect(cycles[1].statements[0].col).toBe(1);
+    if (bundles[1].statements[0].kind === 'at') {
+      expect(bundles[1].statements[0].row).toBe(1);
+      expect(bundles[1].statements[0].col).toBe(1);
     }
   });
 
@@ -152,11 +152,11 @@ kernel "macro_labels" {
 `;
     const result = parseStructuredSource(source);
     expect(result.success).toBe(true);
-    const cycles = result.ast!.kernel!.cycles;
-    expect(cycles.length).toBe(3);
-    expect(cycles[0].statements[0].instruction.text).toContain('after_call');
-    expect(cycles[1].statements[0].instruction.text).toContain('my_func');
-    expect(cycles[2].label).toBe('after_call');
+    const bundles = result.ast!.kernel!.bundles;
+    expect(bundles.length).toBe(3);
+    expect(bundles[0].statements[0].instruction.text).toContain('after_call');
+    expect(bundles[1].statements[0].instruction.text).toContain('my_func');
+    expect(bundles[2].label).toBe('after_call');
   });
 
   it('macros do not rename internal labels (unlike functions)', () => {
@@ -173,7 +173,7 @@ kernel "macro_no_rename" {
 `;
     const result = parseStructuredSource(source);
     expect(result.success).toBe(true);
-    const labels = result.ast!.kernel!.cycles.map((c) => c.label).filter(Boolean);
+    const labels = result.ast!.kernel!.bundles.map((c) => c.label).filter(Boolean);
     // Macro should NOT rename 'internal' to '__fn_with_label_1_internal'
     expect(labels).toEqual(['internal']);
   });
@@ -197,8 +197,8 @@ kernel "macro_for_labels" {
 `;
     const result = parseStructuredSource(source);
     expect(result.success).toBe(true);
-    const cycles = result.ast!.kernel!.cycles;
-    const labels = cycles.map((c) => c.label).filter(Boolean);
+    const bundles = result.ast!.kernel!.bundles;
+    const labels = bundles.map((c) => c.label).filter(Boolean);
     expect(labels).toContain('entry');
     expect(labels).toContain('ret_0');
     expect(labels).toContain('ret_1');
@@ -230,7 +230,7 @@ function helper_func(r, c) {
 
     const result = parseStructuredSource(mainSource, { resolveInclude });
     expect(result.success).toBe(true);
-    expect(result.ast!.kernel!.cycles.length).toBe(1);
+    expect(result.ast!.kernel!.bundles.length).toBe(1);
   });
 
   it('reports error for unresolvable includes', () => {
@@ -279,7 +279,7 @@ function from_b(x) {
     const result = parseStructuredSource(mainSource, { resolveInclude });
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(result.success).toBe(true);
-    expect(result.ast!.kernel!.cycles.length).toBe(1);
+    expect(result.ast!.kernel!.bundles.length).toBe(1);
   });
 
   it('reports unresolved include when no resolveInclude option provided', () => {
@@ -319,9 +319,9 @@ kernel "let_immediates" {
     expect(addrDirective?.value).toBe('128');
     // Instruction text at AST level preserves the symbolic name;
     // resolution happens in later analysis passes
-    const cycles = result.ast!.kernel!.cycles;
-    expect(cycles.length).toBe(2);
-    expect(cycles[0].statements[0].instruction.text).toContain('ADDR');
+    const bundles = result.ast!.kernel!.bundles;
+    expect(bundles.length).toBe(2);
+    expect(bundles[0].statements[0].instruction.text).toContain('ADDR');
   });
 
   it('let constants are used for for-loop range evaluation', () => {
@@ -337,8 +337,8 @@ kernel "let_for_range" {
     const result = parseStructuredSource(source);
     expect(result.success).toBe(true);
     // The for loop should expand 3 times using the constant N=3
-    const cycles = result.ast!.kernel!.cycles;
-    expect(cycles.length).toBe(3);
+    const bundles = result.ast!.kernel!.bundles;
+    expect(bundles.length).toBe(3);
   });
 
   it('let constants can reference earlier constants for range evaluation', () => {
@@ -355,7 +355,7 @@ kernel "let_chain" {
     const result = parseStructuredSource(source);
     expect(result.success).toBe(true);
     // B = A + 1 = 3, so 3 iterations
-    const cycles = result.ast!.kernel!.cycles;
-    expect(cycles.length).toBe(3);
+    const bundles = result.ast!.kernel!.bundles;
+    expect(bundles.length).toBe(3);
   });
 });

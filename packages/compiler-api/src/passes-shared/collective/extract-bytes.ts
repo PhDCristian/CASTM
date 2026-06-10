@@ -1,32 +1,32 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
   SourceSpan,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { createInstruction, createMultiAtCycle } from '../ast-utils.js';
-import { ExtractBytesPragmaArgs } from '../advanced-args.js';
+import { createInstruction, createMultiAtBundle } from '../ast-utils.js';
+import { ExtractBytesAdvancedStatementArgs } from '../advanced-args.js';
 
 function shiftFor(axis: 'row' | 'col', row: number, col: number, byteWidth: number): number {
   const laneIndex = axis === 'row' ? row : col;
   return laneIndex * byteWidth;
 }
 
-export function buildExtractBytesCycles(
-  pragma: ExtractBytesPragmaArgs,
+export function buildExtractBytesBundles(
+  advancedStatement: ExtractBytesAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
-  if (pragma.byteWidth <= 0 || pragma.byteWidth > 16) {
+): BundleAst[] {
+  if (advancedStatement.byteWidth <= 0 || advancedStatement.byteWidth > 16) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Unsupported extract_bytes byteWidth '${pragma.byteWidth}'.`,
+      `Unsupported extract_bytes byteWidth '${advancedStatement.byteWidth}'.`,
       'Use byteWidth in range [1, 16].'
     ));
     return [];
@@ -36,16 +36,16 @@ export function buildExtractBytesCycles(
     return [];
   }
 
-  const srcReg = pragma.srcReg.trim().toUpperCase();
-  const destReg = pragma.destReg.trim().toUpperCase();
-  const mask = String(pragma.mask);
+  const srcReg = advancedStatement.srcReg.trim().toUpperCase();
+  const destReg = advancedStatement.destReg.trim().toUpperCase();
+  const mask = String(advancedStatement.mask);
 
   const shiftPlacements: Array<{ row: number; col: number; instruction: ReturnType<typeof createInstruction> }> = [];
   const maskPlacements: Array<{ row: number; col: number; instruction: ReturnType<typeof createInstruction> }> = [];
 
   for (let row = 0; row < grid.rows; row++) {
     for (let col = 0; col < grid.cols; col++) {
-      const shift = String(shiftFor(pragma.axis, row, col, pragma.byteWidth));
+      const shift = String(shiftFor(advancedStatement.axis, row, col, advancedStatement.byteWidth));
       shiftPlacements.push({
         row,
         col,
@@ -60,7 +60,7 @@ export function buildExtractBytesCycles(
   }
 
   return [
-    createMultiAtCycle(startIndex, shiftPlacements, span),
-    createMultiAtCycle(startIndex + 1, maskPlacements, span)
+    createMultiAtBundle(startIndex, shiftPlacements, span),
+    createMultiAtBundle(startIndex + 1, maskPlacements, span)
   ];
 }

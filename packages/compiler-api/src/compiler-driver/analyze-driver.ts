@@ -15,13 +15,13 @@ import {
   createResolveSymbolsPass,
   createValidateGridPass,
   createDesugarMemoryPass,
-  createExpandPragmasPass,
+  createExpandAdvancedStatementsPass,
   createSlotPackPass,
-  desugarAutoCyclePass,
+  desugarAutoBundlePass,
   desugarExpressionsPass,
   desugarGotoPass,
   desugarInlineArithmeticPass,
-  pruneNoopCyclesPass,
+  pruneNoopBundlesPass,
   specializePass,
   lowerToLirPass,
   lowerToMirPass
@@ -44,7 +44,7 @@ interface EffectiveBuildSettings {
   schedulerMode: 'safe' | 'balanced' | 'aggressive';
   schedulerWindow: number;
   memoryReorderPolicy: 'strict' | 'same-address-fence';
-  pruneNoopCycles: boolean;
+  pruneNoopBundles: boolean;
 }
 
 function presetFromOptimize(level: BuildConfigAst['optimize']): EffectiveBuildSettings {
@@ -53,7 +53,7 @@ function presetFromOptimize(level: BuildConfigAst['optimize']): EffectiveBuildSe
       schedulerMode: 'safe',
       schedulerWindow: 0,
       memoryReorderPolicy: 'strict',
-      pruneNoopCycles: false
+      pruneNoopBundles: false
     };
   }
 
@@ -62,7 +62,7 @@ function presetFromOptimize(level: BuildConfigAst['optimize']): EffectiveBuildSe
       schedulerMode: 'safe',
       schedulerWindow: 1,
       memoryReorderPolicy: 'strict',
-      pruneNoopCycles: true
+      pruneNoopBundles: true
     };
   }
 
@@ -71,7 +71,7 @@ function presetFromOptimize(level: BuildConfigAst['optimize']): EffectiveBuildSe
       schedulerMode: 'aggressive',
       schedulerWindow: 4,
       memoryReorderPolicy: 'same-address-fence',
-      pruneNoopCycles: true
+      pruneNoopBundles: true
     };
   }
 
@@ -79,7 +79,7 @@ function presetFromOptimize(level: BuildConfigAst['optimize']): EffectiveBuildSe
     schedulerMode: 'balanced',
     schedulerWindow: 2,
     memoryReorderPolicy: 'same-address-fence',
-    pruneNoopCycles: true
+    pruneNoopBundles: true
   };
 }
 
@@ -100,7 +100,7 @@ function resolveEffectiveBuildSettings(ast: AstProgram): EffectiveBuildSettings 
       : ast.build?.memoryReorder === 'same_address_fence'
         ? 'same-address-fence'
         : preset.memoryReorderPolicy,
-    pruneNoopCycles: ast.build?.pruneNoopCycles ?? preset.pruneNoopCycles
+    pruneNoopBundles: ast.build?.pruneNoopBundles ?? preset.pruneNoopBundles
   };
 }
 
@@ -120,7 +120,7 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
   const schedulerMode = buildSettings.schedulerMode;
   const effectiveSchedulerWindow = buildSettings.schedulerWindow;
   const memoryReorderPolicy = buildSettings.memoryReorderPolicy;
-  const pruneNoopCycles = buildSettings.pruneNoopCycles;
+  const pruneNoopBundles = buildSettings.pruneNoopBundles;
 
   if (!target) {
     return {
@@ -142,21 +142,21 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
     desugarExpressionsPass,
     desugarInlineArithmeticPass,
     specializePass,
-    desugarAutoCyclePass,
-    createExpandPragmasPass(strictUnsupported, target.grid),
+    desugarAutoBundlePass,
+    createExpandAdvancedStatementsPass(strictUnsupported, target.grid),
     createSlotPackPass(target.grid, {
       window: effectiveSchedulerWindow,
       memoryReorderPolicy
     })
   ];
 
-  if (pruneNoopCycles) {
-    astPasses.push(pruneNoopCyclesPass);
+  if (pruneNoopBundles) {
+    astPasses.push(pruneNoopBundlesPass);
   }
 
   const astPipeline = runStagedPipeline(
     semaAst,
-    [{ name: 'desugar+pragmas', passes: astPasses }],
+    [{ name: 'desugar+advancedStatements', passes: astPasses }],
     diagnostics
   );
   const loweredAst = astPipeline.output as AstProgram;
@@ -190,12 +190,12 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
   );
   const lir = lirPipeline.output as LirProgram;
 
-  if (runtime.bundleLimit !== undefined && mir.cycles.length > runtime.bundleLimit) {
+  if (runtime.bundleLimit !== undefined && mir.bundles.length > runtime.bundleLimit) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       runtime.bundleLimitSpan ?? semaAst.span,
-      `Kernel expands to ${mir.cycles.length} bundles but limit(...) is ${runtime.bundleLimit}.`,
+      `Kernel expands to ${mir.bundles.length} bundles but limit(...) is ${runtime.bundleLimit}.`,
       'Increase limit(...) or reduce generated bundles.'
     ));
   }

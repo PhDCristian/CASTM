@@ -7,7 +7,7 @@ describe('FEAT-18 loop modifiers: unroll/collapse', () => {
 target "uma-cgra-base";
 build {
   optimize O0;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "collapse_row_major" {
   for i in range(0, 2) collapse(2) {
@@ -21,8 +21,8 @@ kernel "collapse_row_major" {
     const result = compile(source, { emitArtifacts: ['mir'] });
     expect(result.success).toBe(true);
 
-    const placements = result.artifacts.mir?.cycles.map((cycle) => {
-      const slot = cycle.slots[0];
+    const placements = result.artifacts.mir?.bundles.map((bundle) => {
+      const slot = bundle.slots[0];
       return slot ? `${slot.row},${slot.col}` : 'none';
     });
 
@@ -34,7 +34,7 @@ kernel "collapse_row_major" {
 target "uma-cgra-base";
 build {
   optimize O0;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "unroll_static" {
   for i in range(0, 4) unroll(2) {

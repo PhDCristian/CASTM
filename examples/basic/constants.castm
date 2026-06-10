@@ -1,13 +1,14 @@
 // Constants and Aliases
 //
-// Demonstrates: .const directive, .alias directive,
-//               constant references with dot prefix (.NAME) and direct name.
+// Demonstrates: canonical let constants and register aliases.
 
-.const THRESHOLD 100
-.const STEP 4
+target base;
 
-.alias counter R0
-.alias value   R1
+let THRESHOLD = 100;
+let STEP = 4;
+
+let counter = R0;
+let value = R1;
 
 kernel "Constants" {
     config(0xF, 0);
@@ -19,7 +20,7 @@ kernel "Constants" {
 
     // Load threshold into value register
     bundle {
-        @0,0: SADD value, ZERO, .THRESHOLD;
+        @0,0: SADD value, ZERO, THRESHOLD;
     }
 
     // Add step to counter

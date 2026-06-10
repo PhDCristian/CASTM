@@ -1,8 +1,8 @@
-import { isIdentifier, parseKeyValueArgs } from '../pragma-args-utils.js';
+import { isIdentifier, parseKeyValueArgs } from '../advanced-statement-args-utils.js';
 import { parseCoordinateLiteral } from '../route-args.js';
-import { BroadcastPragmaArgs } from './types.js';
+import { BroadcastAdvancedStatementArgs } from './types.js';
 
-export function parseBroadcastPragmaArgs(text: string): BroadcastPragmaArgs | null {
+export function parseBroadcastAdvancedStatementArgs(text: string): BroadcastAdvancedStatementArgs | null {
   const direct = text.trim().match(
     /^broadcast\s*\(\s*value\s*=\s*([^,]+)\s*,\s*from\s*=\s*(@\s*[^,]+,\s*[^,\s\)]+|\(\s*-?\d+\s*,\s*-?\d+\s*\))\s*,\s*to\s*=\s*(row|column|all)\s*\)\s*;?\s*$/i
   );

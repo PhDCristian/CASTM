@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { cycleHasControlFlow } from '../packages/compiler-front/src/structured-core/lowering/function-expand-helpers/cycle.js';
+import { bundleHasControlFlow } from '../packages/compiler-front/src/structured-core/lowering/function-expand-helpers/bundle.js';
 import { tryParseControlStatement } from '../packages/compiler-front/src/structured-core/statements/control-handler.js';
 import { tryExpandIfStatement } from '../packages/compiler-front/src/structured-core/lowering/function-expand-if.js';
 import {
@@ -24,8 +24,8 @@ afterEach(() => {
 });
 
 describe('branch coverage round 6', () => {
-  it('covers cycle-loop handled+break branches via staged mocks', async () => {
-    vi.doMock('../packages/compiler-front/src/structured-core/lowering/cycle-loop/steps.js', () => ({
+  it('covers bundle-loop handled+break branches via staged mocks', async () => {
+    vi.doMock('../packages/compiler-front/src/structured-core/lowering/bundle-loop/steps.js', () => ({
       tryExpandNestedForLoopStep: () => ({
         handled: true,
         statements: [],
@@ -38,7 +38,7 @@ describe('branch coverage round 6', () => {
         shouldBreak: true,
         nextIndex: 0
       }),
-      tryExpandSingleCycleStatementStep: () => ({
+      tryExpandSingleBundleStatementStep: () => ({
         handled: true,
         statements: [],
         shouldBreak: true,
@@ -52,7 +52,7 @@ describe('branch coverage round 6', () => {
         applyBindings: (text: string) => (text === 'ERASE_ME' ? '' : text)
       };
     });
-    const { expandLoopBody } = await import('../packages/compiler-front/src/structured-core/lowering/cycle-loop.js');
+    const { expandLoopBody } = await import('../packages/compiler-front/src/structured-core/lowering/bundle-loop.js');
 
     const fromNestedBreak = expandLoopBody(
       [entry(1, 'anything')],
@@ -109,7 +109,7 @@ describe('branch coverage round 6', () => {
 
   it('covers if-expander falseTarget without else branch', () => {
     const diagnostics: any[] = [];
-    const outKernel: any = { name: 'k', config: undefined, directives: [], pragmas: [], cycles: [], span };
+    const outKernel: any = { name: 'k', config: undefined, directives: [], advancedStatements: [], bundles: [], span };
     const result = tryExpandIfStatement({
       body: [
         entry(1, 'if (R0 == IMM(0)) at @0,0 {'),
@@ -123,31 +123,31 @@ describe('branch coverage round 6', () => {
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
       expandBody: () => {}
     } as any);
     expect(result.handled).toBe(true);
-    const branchText = outKernel.cycles[0].statements[0].instruction.text;
+    const branchText = outKernel.bundles[0].statements[0].instruction.text;
     expect(branchText).toContain('__if_end_');
   });
 
-  it('covers cycleHasControlFlow remaining branches', () => {
+  it('covers bundleHasControlFlow remaining branches', () => {
     const rowNoControl: any = {
       index: 0,
       span,
       statements: [{ kind: 'row', row: 0, instructions: [{ text: 'SADD R0, R0, R1', opcode: 'SADD', operands: [], span }], span }]
     };
-    expect(cycleHasControlFlow(rowNoControl)).toBe(false);
+    expect(bundleHasControlFlow(rowNoControl)).toBe(false);
 
     const atControl: any = {
       index: 0,
       span,
       statements: [{ kind: 'at', row: 0, col: 0, instruction: { text: 'JUMP L, ZERO', opcode: 'JUMP', operands: [], span }, span }]
     };
-    expect(cycleHasControlFlow(atControl)).toBe(true);
+    expect(bundleHasControlFlow(atControl)).toBe(true);
   });
 
   it('covers collectBlockFromSource nextDepth=0 and unterminated paths', () => {
@@ -168,7 +168,7 @@ describe('branch coverage round 6', () => {
     const ast: any = {
       targetProfileId: 'uma-cgra-base',
       span,
-      kernel: { name: 'k', config: undefined, directives: [], pragmas: [], cycles: [], span }
+      kernel: { name: 'k', config: undefined, directives: [], advancedStatements: [], bundles: [], span }
     };
     const structuredAst: any = {
       targetProfileId: 'uma-cgra-base',
@@ -184,8 +184,8 @@ describe('branch coverage round 6', () => {
       analyze: () => ({
         diagnostics: [],
         ast,
-        hir: { targetProfileId: 'uma-cgra-base', grid: { rows: 4, cols: 4 }, cycles: [] },
-        mir: { targetProfileId: 'uma-cgra-base', grid: { rows: 4, cols: 4 }, cycles: [{ index: 0, slots: [{ row: 0, col: 0, instruction: { opcode: 'NOP', operands: [], text: 'NOP' } }] }] },
+        hir: { targetProfileId: 'uma-cgra-base', grid: { rows: 4, cols: 4 }, bundles: [] },
+        mir: { targetProfileId: 'uma-cgra-base', grid: { rows: 4, cols: 4 }, bundles: [{ index: 0, slots: [{ row: 0, col: 0, instruction: { opcode: 'NOP', operands: [], text: 'NOP' } }] }] },
         lir: undefined,
         memoryRegions: [],
         ioConfig: { loadAddrs: [], storeAddrs: [] },
@@ -203,7 +203,7 @@ describe('branch coverage round 6', () => {
     expect(full.artifacts.csv).toContain('bundle,row,col');
     expect(full.artifacts.lir).toBeUndefined();
     expect(full.stats.instructions).toBe(1);
-    expect(full.stats.cycles).toBe(1);
+    expect(full.stats.bundles).toBe(1);
 
     vi.resetModules();
     vi.doMock('../packages/compiler-api/src/compiler-driver/parse-driver.js', () => ({
@@ -212,7 +212,7 @@ describe('branch coverage round 6', () => {
     vi.doMock('../packages/compiler-api/src/compiler-driver/analyze-driver.js', () => ({
       analyze: () => ({
         diagnostics: [],
-        ast: { ...ast, kernel: { ...ast.kernel, cycles: [{ index: 9, statements: [], span }] } },
+        ast: { ...ast, kernel: { ...ast.kernel, bundles: [{ index: 9, statements: [], span }] } },
         hir: undefined,
         mir: undefined,
         lir: undefined,
@@ -231,6 +231,6 @@ describe('branch coverage round 6', () => {
     const noMir = mod2.compile('kernel "k" {}', { emitArtifacts: ['ast'] as any });
     expect(noMir.artifacts.csv).toBeUndefined();
     expect(noMir.stats.instructions).toBe(0);
-    expect(noMir.stats.cycles).toBe(1);
+    expect(noMir.stats.bundles).toBe(1);
   });
 });

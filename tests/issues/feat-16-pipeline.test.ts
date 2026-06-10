@@ -6,10 +6,10 @@ function csvRows(csv: string): string[] {
   return csv.trim().split('\n').slice(1);
 }
 
-function parseCsvRow(row: string): { cycle: number; peRow: number; col: number; instruction: string } {
-  const [cycle, peRow, col, ...instruction] = row.split(',');
+function parseCsvRow(row: string): { bundle: number; peRow: number; col: number; instruction: string } {
+  const [bundle, peRow, col, ...instruction] = row.split(',');
   return {
-    cycle: Number(cycle),
+    bundle: Number(bundle),
     peRow: Number(peRow),
     col: Number(col),
     instruction: instruction.join(',')
@@ -48,7 +48,7 @@ kernel "feat16_pipeline" {
     expect(second.peRow).toBe(0);
     expect(second.col).toBe(1);
     expect(second.instruction).toBe('SADD R3 R2 ZERO');
-    expect(second.cycle).toBeGreaterThanOrEqual(first.cycle);
+    expect(second.bundle).toBeGreaterThanOrEqual(first.bundle);
   });
 
   it('supports pipeline steps with mixed argument arity', () => {

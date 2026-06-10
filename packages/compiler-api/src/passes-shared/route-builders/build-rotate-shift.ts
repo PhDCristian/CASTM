@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
@@ -9,18 +9,18 @@ import {
 } from '@castm/compiler-ir';
 import {
   createInstruction,
-  createMultiAtCycle
+  createMultiAtBundle
 } from '../ast-utils.js';
-import { RotateShiftPragmaArgs } from '../advanced-args.js';
+import { RotateShiftAdvancedStatementArgs } from '../advanced-args.js';
 
-export function buildRotateShiftCycles(
-  pragma: RotateShiftPragmaArgs,
+export function buildRotateShiftBundles(
+  advancedStatement: RotateShiftAdvancedStatementArgs,
   isShift: boolean,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
+): BundleAst[] {
   if (grid.rows <= 0 || grid.cols <= 0) {
     return [];
   }
@@ -37,16 +37,16 @@ export function buildRotateShiftCycles(
   }
 
   const iterations = isShift
-    ? pragma.distance
-    : (pragma.distance % grid.cols + grid.cols) % grid.cols;
+    ? advancedStatement.distance
+    : (advancedStatement.distance % grid.cols + grid.cols) % grid.cols;
   if (iterations === 0) {
     return [];
   }
 
-  const cycles: CycleAst[] = [];
-  const neighborReg = pragma.direction === 'left' ? 'RCR' : 'RCL';
-  const edgeCol = pragma.direction === 'left' ? grid.cols - 1 : 0;
-  const fillValue = pragma.fill ?? 0;
+  const bundles: BundleAst[] = [];
+  const neighborReg = advancedStatement.direction === 'left' ? 'RCR' : 'RCL';
+  const edgeCol = advancedStatement.direction === 'left' ? grid.cols - 1 : 0;
+  const fillValue = advancedStatement.fill ?? 0;
 
   for (let step = 0; step < iterations; step++) {
     const sendPlacements: Array<{ row: number; col: number; instruction: InstructionAst }> = [];
@@ -55,11 +55,11 @@ export function buildRotateShiftCycles(
         sendPlacements.push({
           row,
           col,
-          instruction: createInstruction('SADD', ['ROUT', pragma.reg, 'ZERO'], span)
+          instruction: createInstruction('SADD', ['ROUT', advancedStatement.reg, 'ZERO'], span)
         });
       }
     }
-    cycles.push(createMultiAtCycle(startIndex + cycles.length, sendPlacements, span));
+    bundles.push(createMultiAtBundle(startIndex + bundles.length, sendPlacements, span));
 
     const recvPlacements: Array<{ row: number; col: number; instruction: InstructionAst }> = [];
     for (let row = 0; row < grid.rows; row++) {
@@ -68,7 +68,7 @@ export function buildRotateShiftCycles(
           recvPlacements.push({
             row,
             col,
-            instruction: createInstruction('SADD', [pragma.reg, 'ZERO', String(fillValue)], span)
+            instruction: createInstruction('SADD', [advancedStatement.reg, 'ZERO', String(fillValue)], span)
           });
           continue;
         }
@@ -76,12 +76,12 @@ export function buildRotateShiftCycles(
         recvPlacements.push({
           row,
           col,
-          instruction: createInstruction('SADD', [pragma.reg, neighborReg, 'ZERO'], span)
+          instruction: createInstruction('SADD', [advancedStatement.reg, neighborReg, 'ZERO'], span)
         });
       }
     }
-    cycles.push(createMultiAtCycle(startIndex + cycles.length, recvPlacements, span));
+    bundles.push(createMultiAtBundle(startIndex + bundles.length, recvPlacements, span));
   }
 
-  return cycles;
+  return bundles;
 }

@@ -33,9 +33,9 @@ Full generated CSV: `docs-site/snippets/examples/scan/01-main.csv`.
 
 ## Related features
 
-- [/features/pragmas/scan](/features/pragmas/scan)
-- [/features/pragmas/reduce](/features/pragmas/reduce)
-- [/features/pragmas/allreduce](/features/pragmas/allreduce)
+- [/features/advanced-statements/scan](/features/advanced-statements/scan)
+- [/features/advanced-statements/reduce](/features/advanced-statements/reduce)
+- [/features/advanced-statements/allreduce](/features/advanced-statements/allreduce)
 
 ## Continue
 

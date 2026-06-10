@@ -1,7 +1,9 @@
 // Cross Stencil
 //
-// Demonstrates: #pragma stencil with cross pattern,
+// Demonstrates: std::stencil with cross pattern,
 //               each PE accumulates values from its 4 neighbors.
+
+target base;
 
 kernel "StencilCross" {
     config(0xF, 0);
@@ -15,7 +17,7 @@ kernel "StencilCross" {
     }
 
     // Cross stencil: R1 = sum of R0 from N/S/E/W neighbors
-    #pragma stencil(cross, add, R1, R0)
+    std::stencil(cross, add, R0, R1);
 
     bundle {
         @0,0: EXIT;

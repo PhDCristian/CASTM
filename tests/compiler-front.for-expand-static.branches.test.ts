@@ -11,18 +11,18 @@ function makeKernel() {
     name: 'k',
     config: undefined,
     directives: [],
-    pragmas: [],
-    cycles: [],
+    advancedStatements: [],
+    bundles: [],
     span: spanAt(1, 1, 1)
   };
 }
 
 function makeCallbacks() {
   return {
-    cycleHasControlFlow: () => false,
-    cloneCycle: (cycle: any, index: number) => ({ ...cycle, index }),
+    bundleHasControlFlow: () => false,
+    cloneBundle: (bundle: any, index: number) => ({ ...bundle, index }),
     parseInstruction: () => ({ text: 'NOP', opcode: 'NOP', operands: [], span: spanAt(1, 1, 1) }),
-    makeControlCycle: () => ({ index: 0, span: spanAt(1, 1, 1), statements: [] }),
+    makeControlBundle: () => ({ index: 0, span: spanAt(1, 1, 1), statements: [] }),
     expandFunctionBodyIntoKernel: () => {}
   };
 }
@@ -49,14 +49,14 @@ describe('compiler-front for-expand-static branch coverage', () => {
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
       callbacks: makeCallbacks()
     } as any);
 
-    expect(kernel.cycles).toHaveLength(0);
+    expect(kernel.bundles).toHaveLength(0);
     expect(diagnostics.some((d) => d.message.includes('collapse(n) is not supported'))).toBe(true);
   });
 
@@ -79,14 +79,14 @@ describe('compiler-front for-expand-static branch coverage', () => {
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
       callbacks: makeCallbacks()
     } as any);
 
-    expect(kernel.cycles).toHaveLength(0);
+    expect(kernel.bundles).toHaveLength(0);
     expect(diagnostics.some((d) => d.message.includes('requires 2 nested static for-loops'))).toBe(true);
   });
 
@@ -113,14 +113,14 @@ describe('compiler-front for-expand-static branch coverage', () => {
       functions: new Map(),
       constants: new Map([['N', 2]]),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
       callbacks: makeCallbacks()
     } as any);
 
-    expect(kernel.cycles).toHaveLength(0);
+    expect(kernel.bundles).toHaveLength(0);
     expect(diagnostics.some((d) => d.message.includes('supports only static nested for-loops'))).toBe(true);
   });
 
@@ -146,14 +146,14 @@ describe('compiler-front for-expand-static branch coverage', () => {
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
       callbacks: makeCallbacks()
     } as any);
 
-    expect(kernel.cycles).toHaveLength(0);
+    expect(kernel.bundles).toHaveLength(0);
     expect(diagnostics.some((d) => d.message.includes('Unterminated nested for-loop'))).toBe(true);
   });
 
@@ -182,14 +182,14 @@ describe('compiler-front for-expand-static branch coverage', () => {
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
       callbacks: makeCallbacks()
     } as any);
 
-    expect(kernel.cycles).toHaveLength(0);
+    expect(kernel.bundles).toHaveLength(0);
     expect(diagnostics.some((d) => d.message.includes('perfectly nested loops'))).toBe(true);
   });
 
@@ -216,14 +216,14 @@ describe('compiler-front for-expand-static branch coverage', () => {
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
       callbacks: makeCallbacks()
     } as any);
 
-    expect(kernel.cycles).toHaveLength(0);
+    expect(kernel.bundles).toHaveLength(0);
     expect(diagnostics.some((d) => d.message.includes('exceeds max supported iterations'))).toBe(true);
   });
 });

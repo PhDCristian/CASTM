@@ -3,7 +3,7 @@ import {
   CompilerPass,
   InstructionAst
 } from '@castm/compiler-ir';
-import { parseIntegerLiteral } from '../pragma-args-utils.js';
+import { parseIntegerLiteral } from '../advanced-statement-args-utils.js';
 import { transformInstructions } from '../desugar-utils.js';
 
 function parseImmediateOperand(token: string): number | null {

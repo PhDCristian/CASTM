@@ -29,7 +29,7 @@ function at(row: number, col: number, opcode: string, operands: string[]): any {
   };
 }
 
-function cycle(index: number, statements: any[], label?: string): any {
+function bundle(index: number, statements: any[], label?: string): any {
   return {
     index,
     label,
@@ -38,14 +38,14 @@ function cycle(index: number, statements: any[], label?: string): any {
   };
 }
 
-function program(cycles: any[]): any {
+function program(bundles: any[]): any {
   return {
     targetProfileId: 'uma-cgra-base',
     kernel: {
       name: 'slot_pack_test',
       directives: [],
-      pragmas: [],
-      cycles,
+      advancedStatements: [],
+      bundles,
       span
     },
     span
@@ -53,10 +53,10 @@ function program(cycles: any[]): any {
 }
 
 describe('compiler-api slot-pack pass', () => {
-  it('packs independent ALU placements into earlier cycles', () => {
+  it('packs independent ALU placements into earlier bundles', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'SADD', ['R1', 'R0', 'ZERO'])]),
-      cycle(1, [at(0, 1, 'SADD', ['R2', 'R3', 'ZERO'])])
+      bundle(0, [at(0, 0, 'SADD', ['R1', 'R0', 'ZERO'])]),
+      bundle(1, [at(0, 1, 'SADD', ['R2', 'R3', 'ZERO'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -66,15 +66,15 @@ describe('compiler-api slot-pack pass', () => {
     const first = pass.run(input, { diagnostics: [] }).output;
     const second = pass.run(input, { diagnostics: [] }).output;
 
-    expect(first.kernel.cycles).toHaveLength(1);
-    expect(first.kernel.cycles[0].statements).toHaveLength(2);
+    expect(first.kernel.bundles).toHaveLength(1);
+    expect(first.kernel.bundles[0].statements).toHaveLength(2);
     expect(JSON.stringify(first)).toBe(JSON.stringify(second));
   });
 
   it('keeps memory ops pinned in strict policy but still packs independent ALU placements', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'LWI', ['R0', '4'])]),
-      cycle(1, [at(0, 1, 'SADD', ['R2', 'R3', 'ZERO'])])
+      bundle(0, [at(0, 0, 'LWI', ['R0', '4'])]),
+      bundle(1, [at(0, 1, 'SADD', ['R2', 'R3', 'ZERO'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -83,17 +83,17 @@ describe('compiler-api slot-pack pass', () => {
     });
     const output = pass.run(input, { diagnostics: [] }).output;
 
-    expect(output.kernel.cycles).toHaveLength(1);
-    expect(output.kernel.cycles[0].statements).toHaveLength(2);
-    const opcodes = output.kernel.cycles[0].statements.map((stmt: any) => stmt.instruction.opcode);
+    expect(output.kernel.bundles).toHaveLength(1);
+    expect(output.kernel.bundles[0].statements).toHaveLength(2);
+    const opcodes = output.kernel.bundles[0].statements.map((stmt: any) => stmt.instruction.opcode);
     expect(opcodes).toContain('LWI');
     expect(opcodes).toContain('SADD');
   });
 
   it('keeps memory ops fixed under same-address-fence policy', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'LWI', ['R0', '4'])]),
-      cycle(1, [at(0, 1, 'LWI', ['R1', '8'])])
+      bundle(0, [at(0, 0, 'LWI', ['R0', '4'])]),
+      bundle(1, [at(0, 1, 'LWI', ['R1', '8'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -102,15 +102,15 @@ describe('compiler-api slot-pack pass', () => {
     });
     const output = pass.run(input, { diagnostics: [] }).output;
 
-    expect(output.kernel.cycles).toHaveLength(2);
-    expect(output.kernel.cycles[0].statements).toHaveLength(1);
-    expect(output.kernel.cycles[1].statements).toHaveLength(1);
+    expect(output.kernel.bundles).toHaveLength(2);
+    expect(output.kernel.bundles[0].statements).toHaveLength(1);
+    expect(output.kernel.bundles[1].statements).toHaveLength(1);
   });
 
   it('keeps same-address memory operations ordered under same-address-fence policy', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'LWI', ['R0', '4'])]),
-      cycle(1, [at(0, 1, 'SWI', ['R1', '4'])])
+      bundle(0, [at(0, 0, 'LWI', ['R0', '4'])]),
+      bundle(1, [at(0, 1, 'SWI', ['R1', '4'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -119,13 +119,13 @@ describe('compiler-api slot-pack pass', () => {
     });
     const output = pass.run(input, { diagnostics: [] }).output;
 
-    expect(output.kernel.cycles).toHaveLength(2);
+    expect(output.kernel.bundles).toHaveLength(2);
   });
 
   it('does not move memory ops with unresolved addresses under same-address-fence policy', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'LWI', ['R0', 'A[i]'])]),
-      cycle(1, [at(0, 1, 'LWI', ['R1', 'B[j]'])])
+      bundle(0, [at(0, 0, 'LWI', ['R0', 'A[i]'])]),
+      bundle(1, [at(0, 1, 'LWI', ['R1', 'B[j]'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -134,13 +134,13 @@ describe('compiler-api slot-pack pass', () => {
     });
     const output = pass.run(input, { diagnostics: [] }).output;
 
-    expect(output.kernel.cycles).toHaveLength(2);
+    expect(output.kernel.bundles).toHaveLength(2);
   });
 
   it('keeps route-sensitive placements pinned while allowing independent ALU packing', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'SADD', ['ROUT', 'R1', 'ZERO'])]),
-      cycle(1, [at(0, 1, 'SADD', ['R2', 'R3', 'ZERO'])])
+      bundle(0, [at(0, 0, 'SADD', ['ROUT', 'R1', 'ZERO'])]),
+      bundle(1, [at(0, 1, 'SADD', ['R2', 'R3', 'ZERO'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -149,15 +149,15 @@ describe('compiler-api slot-pack pass', () => {
     });
     const output = pass.run(input, { diagnostics: [] }).output;
 
-    expect(output.kernel.cycles).toHaveLength(1);
-    expect(output.kernel.cycles[0].statements).toHaveLength(2);
+    expect(output.kernel.bundles).toHaveLength(1);
+    expect(output.kernel.bundles[0].statements).toHaveLength(2);
   });
 
   it('preserves same-PE order while compacting', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
-      cycle(1, [at(0, 1, 'SADD', ['R2', 'R0', '1'])]),
-      cycle(2, [at(0, 0, 'SADD', ['R1', 'R1', '1'])])
+      bundle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
+      bundle(1, [at(0, 1, 'SADD', ['R2', 'R0', '1'])]),
+      bundle(2, [at(0, 0, 'SADD', ['R1', 'R1', '1'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -166,19 +166,19 @@ describe('compiler-api slot-pack pass', () => {
     });
     const output = pass.run(input, { diagnostics: [] }).output;
 
-    expect(output.kernel.cycles).toHaveLength(2);
-    const firstCycleCoords = output.kernel.cycles[0].statements.map((stmt: any) => [stmt.row, stmt.col]);
-    const secondCycleCoords = output.kernel.cycles[1].statements.map((stmt: any) => [stmt.row, stmt.col]);
-    expect(firstCycleCoords).toContainEqual([0, 0]);
-    expect(secondCycleCoords).toContainEqual([0, 0]);
+    expect(output.kernel.bundles).toHaveLength(2);
+    const firstBundleCoords = output.kernel.bundles[0].statements.map((stmt: any) => [stmt.row, stmt.col]);
+    const secondBundleCoords = output.kernel.bundles[1].statements.map((stmt: any) => [stmt.row, stmt.col]);
+    expect(firstBundleCoords).toContainEqual([0, 0]);
+    expect(secondBundleCoords).toContainEqual([0, 0]);
   });
 
-  it('remaps numeric branch targets when intermediate noop cycles are removed', () => {
+  it('remaps numeric branch targets when intermediate noop bundles are removed', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'BEQ', ['R0', '0', '3'])]),
-      cycle(1, []),
-      cycle(2, [at(0, 1, 'SADD', ['R2', 'R3', 'ZERO'])]),
-      cycle(3, [at(0, 0, 'BNE', ['R1', '0', '0'])])
+      bundle(0, [at(0, 0, 'BEQ', ['R0', '0', '3'])]),
+      bundle(1, []),
+      bundle(2, [at(0, 1, 'SADD', ['R2', 'R3', 'ZERO'])]),
+      bundle(3, [at(0, 0, 'BNE', ['R1', '0', '0'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -187,8 +187,8 @@ describe('compiler-api slot-pack pass', () => {
     });
     const output = pass.run(input, { diagnostics: [] }).output;
 
-    expect(output.kernel.cycles).toHaveLength(3);
-    const branch = output.kernel.cycles[0].statements.find(
+    expect(output.kernel.bundles).toHaveLength(3);
+    const branch = output.kernel.bundles[0].statements.find(
       (stmt: any) => stmt.instruction.opcode === 'BEQ'
     );
     expect(branch).toBeTruthy();
@@ -197,8 +197,8 @@ describe('compiler-api slot-pack pass', () => {
 
   it('allows ROUT writers to move in non-strict policy when no incoming consumers are crossed', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
-      cycle(1, [at(0, 1, 'SADD', ['ROUT', 'R2', 'ZERO'])])
+      bundle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
+      bundle(1, [at(0, 1, 'SADD', ['ROUT', 'R2', 'ZERO'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -207,15 +207,15 @@ describe('compiler-api slot-pack pass', () => {
     });
     const output = pass.run(input, { diagnostics: [] }).output;
 
-    expect(output.kernel.cycles).toHaveLength(1);
-    const opcodes = output.kernel.cycles[0].statements.map((stmt: any) => stmt.instruction.opcode);
+    expect(output.kernel.bundles).toHaveLength(1);
+    const opcodes = output.kernel.bundles[0].statements.map((stmt: any) => stmt.instruction.opcode);
     expect(opcodes).toContain('SADD');
   });
 
   it('allows ROUT writers to move in strict policy when no incoming or route writers are crossed', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
-      cycle(1, [at(0, 1, 'SADD', ['ROUT', 'R2', 'ZERO'])])
+      bundle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
+      bundle(1, [at(0, 1, 'SADD', ['ROUT', 'R2', 'ZERO'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -224,18 +224,18 @@ describe('compiler-api slot-pack pass', () => {
     });
     const output = pass.run(input, { diagnostics: [] }).output;
 
-    expect(output.kernel.cycles).toHaveLength(1);
-    const routPlacement = output.kernel.cycles[0].statements.find(
+    expect(output.kernel.bundles).toHaveLength(1);
+    const routPlacement = output.kernel.bundles[0].statements.find(
       (stmt: any) => stmt.row === 0 && stmt.col === 1
     );
     expect(routPlacement?.instruction.operands[0]).toBe('ROUT');
   });
 
-  it('does not move ROUT writers across incoming-read cycles', () => {
+  it('does not move ROUT writers across incoming-read bundles', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
-      cycle(1, [at(0, 1, 'SADD', ['R2', 'RCL', 'ZERO'])]),
-      cycle(2, [at(0, 2, 'SADD', ['ROUT', 'R3', 'ZERO'])])
+      bundle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
+      bundle(1, [at(0, 1, 'SADD', ['R2', 'RCL', 'ZERO'])]),
+      bundle(2, [at(0, 2, 'SADD', ['ROUT', 'R3', 'ZERO'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -244,8 +244,8 @@ describe('compiler-api slot-pack pass', () => {
     });
     const output = pass.run(input, { diagnostics: [] }).output;
 
-    expect(output.kernel.cycles).toHaveLength(3);
-    const tail = output.kernel.cycles[2].statements.find(
+    expect(output.kernel.bundles).toHaveLength(3);
+    const tail = output.kernel.bundles[2].statements.find(
       (stmt: any) => stmt.row === 0 && stmt.col === 2
     );
     expect(tail?.instruction.operands[0]).toBe('ROUT');
@@ -253,9 +253,9 @@ describe('compiler-api slot-pack pass', () => {
 
   it('keeps ROUT writers ordered under strict policy', () => {
     const input = program([
-      cycle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
-      cycle(1, [at(0, 1, 'SADD', ['ROUT', 'R2', 'ZERO'])]),
-      cycle(2, [at(0, 2, 'SADD', ['ROUT', 'R3', 'ZERO'])])
+      bundle(0, [at(0, 0, 'SADD', ['R1', 'R0', '1'])]),
+      bundle(1, [at(0, 1, 'SADD', ['ROUT', 'R2', 'ZERO'])]),
+      bundle(2, [at(0, 2, 'SADD', ['ROUT', 'R3', 'ZERO'])])
     ]);
 
     const pass = createSlotPackPass(grid, {
@@ -264,14 +264,14 @@ describe('compiler-api slot-pack pass', () => {
     });
     const output = pass.run(input, { diagnostics: [] }).output;
 
-    const firstRouteCycle = output.kernel.cycles.findIndex((cycleNode: any) =>
-      cycleNode.statements.some((stmt: any) => stmt.row === 0 && stmt.col === 1)
+    const firstRouteBundle = output.kernel.bundles.findIndex((bundleNode: any) =>
+      bundleNode.statements.some((stmt: any) => stmt.row === 0 && stmt.col === 1)
     );
-    const secondRouteCycle = output.kernel.cycles.findIndex((cycleNode: any) =>
-      cycleNode.statements.some((stmt: any) => stmt.row === 0 && stmt.col === 2)
+    const secondRouteBundle = output.kernel.bundles.findIndex((bundleNode: any) =>
+      bundleNode.statements.some((stmt: any) => stmt.row === 0 && stmt.col === 2)
     );
 
-    expect(firstRouteCycle).toBeGreaterThanOrEqual(0);
-    expect(secondRouteCycle).toBeGreaterThan(firstRouteCycle);
+    expect(firstRouteBundle).toBeGreaterThanOrEqual(0);
+    expect(secondRouteBundle).toBeGreaterThan(firstRouteBundle);
   });
 });

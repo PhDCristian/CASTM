@@ -34,9 +34,9 @@ export function buildRuntimeLoopPlan(input: ExpandRuntimeForInput): RuntimeLoopP
   const loopKernel: KernelAst = {
     name: '__for_runtime_body__',
     config: undefined,
-    cycles: [],
+    bundles: [],
     directives: [],
-    pragmas: [],
+    advancedStatements: [],
     span: spanAt(lineNo, 1, lineLength)
   };
   const loopCounter = { value: 0 };
@@ -67,11 +67,11 @@ export function buildRuntimeLoopPlan(input: ExpandRuntimeForInput): RuntimeLoopP
   );
 
   const aggressivePlan = buildRuntimeNoUnrollAggressivePlan(
-    loopKernel.cycles,
+    loopKernel.bundles,
     header.variable,
     controlRow,
     controlCol,
-    callbacks.cycleHasControlFlow,
+    callbacks.bundleHasControlFlow,
     callbacks.parseInstruction
   );
 

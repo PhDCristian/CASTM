@@ -28,33 +28,33 @@ import {
   isStep
 } from '../packages/compiler-api/src/passes-shared/grid-utils.js';
 import {
-  extractPragmaName,
+  extractAdvancedStatementName,
   extractStatementBody,
   parseIntegerLiteral,
   parseKeyValueArgs,
   splitPositionalArgs
-} from '../packages/compiler-api/src/passes-shared/pragma-args-utils.js';
+} from '../packages/compiler-api/src/passes-shared/advanced-statement-args-utils.js';
 import {
   parseCoordinateLiteral,
-  parseRoutePragmaArgs
+  parseRouteAdvancedStatementArgs
 } from '../packages/compiler-api/src/passes-shared/route-args.js';
 import {
-  parseBroadcastPragmaArgs,
-  parseGatherPragmaArgs,
-  parseRotateShiftPragmaArgs,
-  parseScanPragmaArgs,
-  parseStencilPragmaArgs,
-  parseStreamLoadPragmaArgs,
-  parseStreamStorePragmaArgs,
-  parseTransposePragmaArgs
+  parseBroadcastAdvancedStatementArgs,
+  parseGatherAdvancedStatementArgs,
+  parseRotateShiftAdvancedStatementArgs,
+  parseScanAdvancedStatementArgs,
+  parseStencilAdvancedStatementArgs,
+  parseStreamLoadAdvancedStatementArgs,
+  parseStreamStoreAdvancedStatementArgs,
+  parseTransposeAdvancedStatementArgs
 } from '../packages/compiler-api/src/passes-shared/advanced-args.js';
 import {
-  buildGatherCycles,
-  buildReduceCycles,
-  buildScanCycles,
-  buildStreamCycles
+  buildGatherBundles,
+  buildReduceBundles,
+  buildScanBundles,
+  buildStreamBundles
 } from '../packages/compiler-api/src/passes-shared/collective-builders.js';
-import { buildRotateShiftCycles } from '../packages/compiler-api/src/passes-shared/route-builders.js';
+import { buildRotateShiftBundles } from '../packages/compiler-api/src/passes-shared/route-builders.js';
 import { desugarExpressionsPass } from '../packages/compiler-api/src/passes-shared/desugar/expressions-pass.js';
 import { createDesugarMemoryPass } from '../packages/compiler-api/src/passes-shared/desugar/memory-pass.js';
 import {
@@ -66,7 +66,7 @@ import { parseStructuredProgramFromSource } from '../packages/compiler-front/src
 import { parseProgramHeadersFromTokens } from '../packages/compiler-front/src/structured-core/token-stream.js';
 import { parseStructuredStatements } from '../packages/compiler-front/src/structured-core/statements.js';
 import { parseDirective } from '../packages/compiler-front/src/structured-core/lowering/declarations.js';
-import { parseCycleStatement } from '../packages/compiler-front/src/structured-core/lowering/statements.js';
+import { parseBundleStatement } from '../packages/compiler-front/src/structured-core/lowering/statements.js';
 import { parseForHeader } from '../packages/compiler-front/src/structured-core/lowering/control-flow-for.js';
 import { parseControlHeader } from '../packages/compiler-front/src/structured-core/lowering/control-flow-branch.js';
 import { buildWhileFusionPlan } from '../packages/compiler-front/src/structured-core/lowering/function-expand-helpers/while-fusion.js';
@@ -82,7 +82,7 @@ import {
   evaluateNumericExpression,
   parseNumber
 } from '../packages/compiler-front/src/structured-core/parser-utils/numbers.js';
-import { tryParseCycleStatement } from '../packages/compiler-front/src/structured-core/statements/cycle-handler.js';
+import { tryParseBundleStatement } from '../packages/compiler-front/src/structured-core/statements/bundle-handler.js';
 import {
   parseFunctionCall,
   shouldSkipStructuredLine
@@ -106,8 +106,8 @@ function makeAst(overrides: Partial<AstProgram> = {}): AstProgram {
       config: undefined,
       directives: [],
       runtime: [],
-      pragmas: [],
-      cycles: [],
+      advancedStatements: [],
+      bundles: [],
       span
     },
     ...overrides
@@ -152,7 +152,7 @@ describe('branch coverage round 9 - compiler api helpers', () => {
         ...makeAst(),
         kernel: {
           ...makeAst().kernel!,
-          cycles: [{ index: 0, statements: [], span }]
+          bundles: [{ index: 0, statements: [], span }]
         }
       },
       [{ name: '', start: 0, values: [1] } as any]
@@ -172,16 +172,16 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     expect(resolved?.grid.wrapPolicy).toBe('clamp');
   });
 
-  it('covers assertion default-cycle selection branches', () => {
+  it('covers assertion default-bundle selection branches', () => {
     const ast: AstProgram = {
       targetProfileId: 'uma-cgra-base',
       span,
       kernel: {
         name: 'k',
         directives: [],
-        pragmas: [],
+        advancedStatements: [],
         config: undefined,
-        cycles: [
+        bundles: [
           { index: 9, span: spanAt(10, 1, 1), statements: [] },
           { index: 13, span: spanAt(20, 1, 1), statements: [] }
         ],
@@ -203,14 +203,14 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     expect(createInstruction('nop', [], span).text).toBe('NOP');
   });
 
-  it('covers grid/pragma util branches', () => {
+  it('covers grid/advancedStatement util branches', () => {
     const grid = { rows: 4, cols: 4, topology: 'mesh', wrapPolicy: 'clamp' } as const;
     const path = computeRoutePath({ row: 3, col: 3 }, { row: 1, col: 1 }, grid);
     expect(path.at(-1)).toEqual({ row: 1, col: 1 });
     expect(isStep({ row: 1, col: 1 }, { row: 1, col: 0 }, 0, -1, grid)).toBe(true);
     expect(getIncomingRegister({ row: 1, col: 1 }, { row: 1, col: 0 }, grid)).toBe('RCR');
 
-    expect(extractPragmaName('???')).toBe('unknown');
+    expect(extractAdvancedStatementName('???')).toBe('unknown');
     expect(extractStatementBody('route(@0,0->@0,1)', 'scan')).toBeNull();
     expect(parseIntegerLiteral('-0x10')).toBe(-16);
     expect(splitPositionalArgs('a,,b')).toBeNull();
@@ -222,89 +222,89 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     expect(parseCoordinateLiteral('@1 x')).toBeNull();
     expect(parseCoordinateLiteral('@1,')).toBeNull();
 
-    expect(parseRoutePragmaArgs('route(@0,0 -> bad, payload=R0, accum=R1)')).toBeNull();
-    expect(parseRoutePragmaArgs('route(@0,0 -> @0,1, payload=R0, dest=R1, op=ADD(R1,R2))')).toBeNull();
-    expect(parseRoutePragmaArgs('route(@0,0 -> @0,1, payload=R0, dest=R1, op=ADD( ,R2,R3))')).toBeNull();
-    expect(parseRoutePragmaArgs('route(@0,0 -> @0,1, payload=1, accum=R1)')).toBeNull();
-    expect(parseRoutePragmaArgs('route(@0,0 -> @0,1, payload=R0, accum=R1, extra=R2)')).toBeNull();
+    expect(parseRouteAdvancedStatementArgs('route(@0,0 -> bad, payload=R0, accum=R1)')).toBeNull();
+    expect(parseRouteAdvancedStatementArgs('route(@0,0 -> @0,1, payload=R0, dest=R1, op=ADD(R1,R2))')).toBeNull();
+    expect(parseRouteAdvancedStatementArgs('route(@0,0 -> @0,1, payload=R0, dest=R1, op=ADD( ,R2,R3))')).toBeNull();
+    expect(parseRouteAdvancedStatementArgs('route(@0,0 -> @0,1, payload=1, accum=R1)')).toBeNull();
+    expect(parseRouteAdvancedStatementArgs('route(@0,0 -> @0,1, payload=R0, accum=R1, extra=R2)')).toBeNull();
   });
 
   it('covers advanced args parser branches', () => {
-    expect(parseBroadcastPragmaArgs('bad')).toBeNull();
-    expect(parseBroadcastPragmaArgs('broadcast(value=R1, from=bad, to=row)')).toBeNull();
-    expect(parseBroadcastPragmaArgs('broadcast(value=, from=@0,0, to=row)')).toBeNull();
-    expect(parseBroadcastPragmaArgs('broadcast(value=R1, from=@0,0, to=diag)')).toBeNull();
+    expect(parseBroadcastAdvancedStatementArgs('bad')).toBeNull();
+    expect(parseBroadcastAdvancedStatementArgs('broadcast(value=R1, from=bad, to=row)')).toBeNull();
+    expect(parseBroadcastAdvancedStatementArgs('broadcast(value=, from=@0,0, to=row)')).toBeNull();
+    expect(parseBroadcastAdvancedStatementArgs('broadcast(value=R1, from=@0,0, to=diag)')).toBeNull();
 
-    expect(parseStencilPragmaArgs('stencil(x)')).toBeNull();
-    expect(parseStencilPragmaArgs('stencil(diag, add, R0, R1)')).toBeNull();
-    expect(parseTransposePragmaArgs('transpose(reg=R0,extra=R1)')).toBeNull();
+    expect(parseStencilAdvancedStatementArgs('stencil(x)')).toBeNull();
+    expect(parseStencilAdvancedStatementArgs('stencil(diag, add, R0, R1)')).toBeNull();
+    expect(parseTransposeAdvancedStatementArgs('transpose(reg=R0,extra=R1)')).toBeNull();
 
-    expect(parseGatherPragmaArgs('gather(src=R0,dest=bad,destreg=R1,op=add)')).toBeNull();
-    expect(parseGatherPragmaArgs('gather(src=R0,dest=@0,0,destreg=R1,op=1)')).toBeNull();
-    expect(parseGatherPragmaArgs('gather(src=R0,foo=R1)')).toBeNull();
+    expect(parseGatherAdvancedStatementArgs('gather(src=R0,dest=bad,destreg=R1,op=add)')).toBeNull();
+    expect(parseGatherAdvancedStatementArgs('gather(src=R0,dest=@0,0,destreg=R1,op=1)')).toBeNull();
+    expect(parseGatherAdvancedStatementArgs('gather(src=R0,foo=R1)')).toBeNull();
 
-    expect(parseRotateShiftPragmaArgs('bad', 'rotate')).toBeNull();
-    expect(parseRotateShiftPragmaArgs('rotate(reg=R0,direction=left,distance=0)', 'rotate')).toBeNull();
-    expect(parseRotateShiftPragmaArgs('shift(reg=R0,direction=right)', 'shift')).toMatchObject({ distance: 1 });
+    expect(parseRotateShiftAdvancedStatementArgs('bad', 'rotate')).toBeNull();
+    expect(parseRotateShiftAdvancedStatementArgs('rotate(reg=R0,direction=left,distance=0)', 'rotate')).toBeNull();
+    expect(parseRotateShiftAdvancedStatementArgs('shift(reg=R0,direction=right)', 'shift')).toMatchObject({ distance: 1 });
 
-    expect(parseScanPragmaArgs('bad')).toBeNull();
-    expect(parseScanPragmaArgs('scan(op=add, src=R0, dest=R1, dir=left, bad=1)')).toBeNull();
-    expect(parseScanPragmaArgs('scan(op=add, src=1, dest=R1, dir=left)')).toBeNull();
+    expect(parseScanAdvancedStatementArgs('bad')).toBeNull();
+    expect(parseScanAdvancedStatementArgs('scan(op=add, src=R0, dest=R1, dir=left, bad=1)')).toBeNull();
+    expect(parseScanAdvancedStatementArgs('scan(op=add, src=1, dest=R1, dir=left)')).toBeNull();
 
-    expect(parseStreamLoadPragmaArgs('bad')).toBeNull();
-    expect(parseStreamLoadPragmaArgs('stream_load(dest=R0,bad=1)')).toBeNull();
-    expect(parseStreamLoadPragmaArgs('stream_load(dest=R0,count=a)')).toBeNull();
+    expect(parseStreamLoadAdvancedStatementArgs('bad')).toBeNull();
+    expect(parseStreamLoadAdvancedStatementArgs('stream_load(dest=R0,bad=1)')).toBeNull();
+    expect(parseStreamLoadAdvancedStatementArgs('stream_load(dest=R0,count=a)')).toBeNull();
 
-    expect(parseStreamStorePragmaArgs('bad')).toBeNull();
-    expect(parseStreamStorePragmaArgs('stream_store(src=R0,bad=1)')).toBeNull();
-    expect(parseStreamStorePragmaArgs('stream_store(src=R0,row=a)')).toBeNull();
+    expect(parseStreamStoreAdvancedStatementArgs('bad')).toBeNull();
+    expect(parseStreamStoreAdvancedStatementArgs('stream_store(src=R0,bad=1)')).toBeNull();
+    expect(parseStreamStoreAdvancedStatementArgs('stream_store(src=R0,row=a)')).toBeNull();
   });
 
   it('covers collective builders and route rotate/shift branches', () => {
     const diagnostics: any[] = [];
     const spanLocal = spanAt(2, 1, 1);
 
-    expect(buildRotateShiftCycles({ reg: 'R0', direction: 'left', distance: 1 }, true, 0, {
+    expect(buildRotateShiftBundles({ reg: 'R0', direction: 'left', distance: 1 }, true, 0, {
       rows: 0,
       cols: 4,
       topology: 'torus',
       wrapPolicy: 'wrap'
     }, spanLocal, diagnostics)).toEqual([]);
 
-    expect(buildRotateShiftCycles({ reg: 'R0', direction: 'left', distance: 1 }, false, 0, {
+    expect(buildRotateShiftBundles({ reg: 'R0', direction: 'left', distance: 1 }, false, 0, {
       rows: 4,
       cols: 4,
       topology: 'mesh',
       wrapPolicy: 'clamp'
     }, spanLocal, diagnostics)).toEqual([]);
 
-    expect(buildRotateShiftCycles({ reg: 'R0', direction: 'left', distance: 4 }, false, 0, {
+    expect(buildRotateShiftBundles({ reg: 'R0', direction: 'left', distance: 4 }, false, 0, {
       rows: 2,
       cols: 4,
       topology: 'torus',
       wrapPolicy: 'wrap'
     }, spanLocal, diagnostics)).toEqual([]);
 
-    const shiftCycles = buildRotateShiftCycles({ reg: 'R0', direction: 'right', distance: 1 }, true, 0, {
+    const shiftBundles = buildRotateShiftBundles({ reg: 'R0', direction: 'right', distance: 1 }, true, 0, {
       rows: 1,
       cols: 3,
       topology: 'mesh',
       wrapPolicy: 'clamp'
     }, spanLocal, []);
-    expect(shiftCycles.length).toBeGreaterThan(0);
+    expect(shiftBundles.length).toBeGreaterThan(0);
 
     const gatherOps = ['and', 'or', 'xor', 'mul'] as const;
     for (const op of gatherOps) {
-      const cycles = buildGatherCycles({ srcReg: 'R0', dest: { row: 0, col: 0 }, destReg: 'R1', operation: op }, 0, {
+      const bundles = buildGatherBundles({ srcReg: 'R0', dest: { row: 0, col: 0 }, destReg: 'R1', operation: op }, 0, {
         rows: 1,
         cols: 1,
         topology: 'torus',
         wrapPolicy: 'wrap'
       }, spanLocal, []);
-      expect(cycles.length).toBe(1);
+      expect(bundles.length).toBe(1);
     }
 
-    const gatherTie = buildGatherCycles({ srcReg: 'R0', dest: { row: 1, col: 1 }, destReg: 'R1', operation: 'add' }, 0, {
+    const gatherTie = buildGatherBundles({ srcReg: 'R0', dest: { row: 1, col: 1 }, destReg: 'R1', operation: 'add' }, 0, {
       rows: 3,
       cols: 3,
       topology: 'torus',
@@ -313,25 +313,25 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     expect(gatherTie.length).toBeGreaterThan(1);
 
     const reduceTieSpy = vi.spyOn(Math, 'abs').mockImplementation(() => 1);
-    const reduceCycles = buildReduceCycles({ operation: 'min', destReg: 'R1', srcReg: 'R0', axis: 'row' }, 0, {
+    const reduceBundles = buildReduceBundles({ operation: 'min', destReg: 'R1', srcReg: 'R0', axis: 'row' }, 0, {
       rows: 1,
       cols: 4,
       topology: 'torus',
       wrapPolicy: 'wrap'
     }, spanLocal, []);
-    expect(reduceCycles.length).toBeGreaterThan(0);
+    expect(reduceBundles.length).toBeGreaterThan(0);
     reduceTieSpy.mockRestore();
 
-    const scanCycles = buildScanCycles({ operation: 'min', srcReg: 'R0', dstReg: 'R1', direction: 'up', mode: 'exclusive' }, 0, {
+    const scanBundles = buildScanBundles({ operation: 'min', srcReg: 'R0', dstReg: 'R1', direction: 'up', mode: 'exclusive' }, 0, {
       rows: 3,
       cols: 2,
       topology: 'torus',
       wrapPolicy: 'wrap'
     }, spanLocal, []);
-    expect(scanCycles.length).toBeGreaterThan(0);
+    expect(scanBundles.length).toBeGreaterThan(0);
 
-    expect(buildStreamCycles('SWD', 'R0', -1, 1, 0, { rows: 2, cols: 2, topology: 'mesh', wrapPolicy: 'clamp' }, spanLocal, []).length).toBe(0);
-    expect(buildStreamCycles('SWD', 'R0', 0, 0, 0, { rows: 2, cols: 2, topology: 'mesh', wrapPolicy: 'clamp' }, spanLocal, []).length).toBe(0);
+    expect(buildStreamBundles('SWD', 'R0', -1, 1, 0, { rows: 2, cols: 2, topology: 'mesh', wrapPolicy: 'clamp' }, spanLocal, []).length).toBe(0);
+    expect(buildStreamBundles('SWD', 'R0', 0, 0, 0, { rows: 2, cols: 2, topology: 'mesh', wrapPolicy: 'clamp' }, spanLocal, []).length).toBe(0);
   });
 
   it('covers desugar helper/pass edge branches', () => {
@@ -339,7 +339,7 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     expect(splitTopLevelBinary('-R0')).toBeNull();
 
     const ast = makeAst();
-    ast.kernel!.cycles.push({
+    ast.kernel!.bundles.push({
       index: 0,
       span,
       statements: [
@@ -379,7 +379,7 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     expect(mem.diagnostics.length).toBeGreaterThan(0);
 
     const expr = desugarExpressionsPass.run(ast);
-    expect(expr.output.kernel?.cycles.length).toBe(1);
+    expect(expr.output.kernel?.bundles.length).toBe(1);
   });
 
   it('covers analyze-driver nullable bundleLimitSpan branch via mock', async () => {
@@ -402,12 +402,12 @@ describe('branch coverage round 9 - compiler api helpers', () => {
         optimize: 'O0',
         scheduler: 'safe',
         schedulerWindow: 0,
-        pruneNoopCycles: false,
+        pruneNoopBundles: false,
         span
       },
       kernel: {
         ...makeAst().kernel!,
-        cycles: [
+        bundles: [
           {
             index: 0,
             span,
@@ -428,15 +428,15 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     expect(result.diagnostics.some((d) => d.message.includes('limit(...)'))).toBe(true);
   });
 
-  it('covers expand-pragmas missing branches with mocked registry sets', async () => {
-    vi.doMock('../packages/compiler-api/src/passes-shared/expand-pragmas-handlers.js', () => ({
-      NOOP_PRAGMAS: new Set(['noopx']),
-      SUPPORTED_PRAGMAS: new Set(['noopx', 'supported_no_handler']),
+  it('covers expand-advanced-statements missing branches with mocked registry sets', async () => {
+    vi.doMock('../packages/compiler-api/src/passes-shared/expand-advanced-statements-handlers.js', () => ({
+      NOOP_ADVANCED_STATEMENTS: new Set(['noopx']),
+      SUPPORTED_ADVANCED_STATEMENTS: new Set(['noopx', 'supported_no_handler']),
       PRAGMA_HANDLERS: new Map()
     }));
-    const { createExpandPragmasPass } = await import('../packages/compiler-api/src/passes-shared/expand-pragmas-pass.js');
+    const { createExpandAdvancedStatementsPass } = await import('../packages/compiler-api/src/passes-shared/expand-advanced-statements-pass.js');
 
-    const noKernelOut = createExpandPragmasPass(true, { rows: 1, cols: 1, topology: 'torus', wrapPolicy: 'wrap' }).run({
+    const noKernelOut = createExpandAdvancedStatementsPass(true, { rows: 1, cols: 1, topology: 'torus', wrapPolicy: 'wrap' }).run({
       targetProfileId: 'uma-cgra-base',
       span,
       kernel: null
@@ -444,25 +444,25 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     expect(noKernelOut.diagnostics).toEqual([]);
 
     const ast = makeAst();
-    ast.kernel!.pragmas.push(
+    ast.kernel!.advancedStatements.push(
       { text: 'noopx(1)', span },
       { text: 'supported_no_handler(1)', span },
-      { text: 'unknown_pragma(1)', span }
+      { text: 'unknown_advancedStatement(1)', span }
     );
 
-    const strictFalse = createExpandPragmasPass(false, { rows: 1, cols: 1, topology: 'torus', wrapPolicy: 'wrap' }).run(ast);
+    const strictFalse = createExpandAdvancedStatementsPass(false, { rows: 1, cols: 1, topology: 'torus', wrapPolicy: 'wrap' }).run(ast);
     expect(strictFalse.diagnostics).toEqual([]);
 
-    const strictTrue = createExpandPragmasPass(true, { rows: 1, cols: 1, topology: 'torus', wrapPolicy: 'wrap' }).run(ast);
-    expect(strictTrue.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedPragma)).toBe(true);
+    const strictTrue = createExpandAdvancedStatementsPass(true, { rows: 1, cols: 1, topology: 'torus', wrapPolicy: 'wrap' }).run(ast);
+    expect(strictTrue.diagnostics.some((d) => d.code === ErrorCodes.Semantic.UnsupportedAdvancedStatement)).toBe(true);
   });
 
   it('covers rotate/stream handler invalid-shift hint branch', async () => {
-    const { handleRotateShift } = await import('../packages/compiler-api/src/passes-shared/expand-pragmas/handlers-rotate-stream.js');
+    const { handleRotateShift } = await import('../packages/compiler-api/src/passes-shared/expand-advanced-statements/handlers-rotate-stream.js');
     const diagnostics: any[] = [];
     const ctx = {
       grid: { rows: 2, cols: 2, topology: 'mesh', wrapPolicy: 'clamp' },
-      generatedCycles: [],
+      generatedBundles: [],
       diagnostics
     };
     handleRotateShift({ text: 'shift(x)', span } as any, ctx as any);
@@ -494,25 +494,25 @@ describe('branch coverage round 9 - compiler front helpers', () => {
     expect(parseFunctionCall('if(x)')).toBeNull();
   });
 
-  it('covers declarations/cycle statement parser null branches', () => {
+  it('covers declarations/bundle statement parser null branches', () => {
     expect(parseDirective('let M[4][4];', 1)?.kind).toBe('data2d');
     expect(parseDirective('let A[4];', 1)?.kind).toBe('data2d');
     expect(parseDirective('let A[4] = {1,2,3,4};', 1)?.kind).toBe('data2d');
 
-    expect(parseCycleStatement('@bad,0: NOP;', 1, '@bad,0: NOP;', new Map(), new Map())).toMatchObject([{
+    expect(parseBundleStatement('@bad,0: NOP;', 1, '@bad,0: NOP;', new Map(), new Map())).toMatchObject([{
       kind: 'at-expr',
       rowExpr: 'bad',
       colExpr: '0'
     }]);
-    expect(parseCycleStatement('@0..,1: NOP;', 1, '@0..,1: NOP;', new Map(), new Map())).toBeNull();
-    expect(parseCycleStatement('@bad..1,0: NOP;', 1, '@bad..1,0: NOP;', new Map(), new Map())).toBeNull();
-    expect(parseCycleStatement('@a[0]{1}x,(0)..(1): NOP;', 1, '@a[0]{1}x,(0)..(1): NOP;', new Map(), new Map()))
+    expect(parseBundleStatement('@0..,1: NOP;', 1, '@0..,1: NOP;', new Map(), new Map())).toBeNull();
+    expect(parseBundleStatement('@bad..1,0: NOP;', 1, '@bad..1,0: NOP;', new Map(), new Map())).toBeNull();
+    expect(parseBundleStatement('@a[0]{1}x,(0)..(1): NOP;', 1, '@a[0]{1}x,(0)..(1): NOP;', new Map(), new Map()))
       .toMatchObject([
         { kind: 'at-expr', rowExpr: 'a[0]{1}x', colExpr: '0' },
         { kind: 'at-expr', rowExpr: 'a[0]{1}x', colExpr: '1' }
       ]);
-    expect(parseCycleStatement('at row bad: NOP;', 1, 'at row bad: NOP;', new Map(), new Map())).toBeNull();
-    expect(parseCycleStatement('at col bad: NOP;', 1, 'at col bad: NOP;', new Map(), new Map())).toBeNull();
+    expect(parseBundleStatement('at row bad: NOP;', 1, 'at row bad: NOP;', new Map(), new Map())).toBeNull();
+    expect(parseBundleStatement('at col bad: NOP;', 1, 'at col bad: NOP;', new Map(), new Map())).toBeNull();
   });
 
   it('covers control-flow parser branches', () => {
@@ -526,7 +526,7 @@ describe('branch coverage round 9 - compiler front helpers', () => {
 
   it('covers runtime plan/while fusion/front helpers edge branches', () => {
     const parseInst = (text: string) => ({ text, opcode: text.split(' ')[0], operands: [], span } as any);
-    const baseCycle: any = {
+    const baseBundle: any = {
       index: 0,
       label: undefined,
       span,
@@ -534,12 +534,12 @@ describe('branch coverage round 9 - compiler front helpers', () => {
     };
 
     expect(chooseJumpColumn(0, 1)).toBe(2);
-    expect(buildRuntimeNoUnrollAggressivePlan([baseCycle], 'R0', 0, 0, () => true, parseInst)).toBeNull();
-    expect(buildRuntimeNoUnrollAggressivePlan([{ ...baseCycle, label: 'L' }], 'R0', 0, 0, () => false, parseInst)).toBeNull();
-    expect(buildRuntimeNoUnrollAggressivePlan([{ ...baseCycle, statements: [] }], 'R0', 0, 0, () => false, parseInst)).toBeNull();
+    expect(buildRuntimeNoUnrollAggressivePlan([baseBundle], 'R0', 0, 0, () => true, parseInst)).toBeNull();
+    expect(buildRuntimeNoUnrollAggressivePlan([{ ...baseBundle, label: 'L' }], 'R0', 0, 0, () => false, parseInst)).toBeNull();
+    expect(buildRuntimeNoUnrollAggressivePlan([{ ...baseBundle, statements: [] }], 'R0', 0, 0, () => false, parseInst)).toBeNull();
 
-    expect(buildWhileFusionPlan([{ ...baseCycle, statements: [] }], 0, 0)).toBeNull();
-    expect(buildWhileFusionPlan([{ ...baseCycle, statements: [{ ...baseCycle.statements[0], row: 0, col: 0 }] }], 0, 0)).toBeNull();
+    expect(buildWhileFusionPlan([{ ...baseBundle, statements: [] }], 0, 0)).toBeNull();
+    expect(buildWhileFusionPlan([{ ...baseBundle, statements: [{ ...baseBundle.statements[0], row: 0, col: 0 }] }], 0, 0)).toBeNull();
 
     const bindDiagnostics: any[] = [];
     expect(bindFunctionCallArgs({ name: 'f', params: ['x'] }, ['y: 1', '2'], 1, bindDiagnostics)).toBeNull();
@@ -552,15 +552,15 @@ describe('branch coverage round 9 - compiler front helpers', () => {
     expect(evaluateCoordinateExpression('1/4', new Map(), new Map())).toBe(0);
     expect(evaluateCoordinateExpression('1/0', new Map(), new Map())).toBeNull();
 
-    const cycleResult = tryParseCycleStatement([{ lineNo: 1, rawLine: 'bundle {', cleanLine: 'bundle {' }] as any, 0, 'bundle {', 1, { value: 0 }, []);
-    expect(cycleResult.stop).toBe(true);
+    const bundleResult = tryParseBundleStatement([{ lineNo: 1, rawLine: 'bundle {', cleanLine: 'bundle {' }] as any, 0, 'bundle {', 1, { value: 0 }, []);
+    expect(bundleResult.stop).toBe(true);
   });
 
-  it('covers cycle-loop runtime-only branch via parser mock', async () => {
+  it('covers bundle-loop runtime-only branch via parser mock', async () => {
     vi.doMock('../packages/compiler-front/src/structured-core/lowering/control-flow-for.js', () => ({
       parseForHeader: () => ({ variable: 'i', start: 0, end: 2, step: 1, runtime: true, control: undefined })
     }));
-    const steps = await import('../packages/compiler-front/src/structured-core/lowering/cycle-loop/steps.js');
+    const steps = await import('../packages/compiler-front/src/structured-core/lowering/bundle-loop/steps.js');
     const diagnostics: any[] = [];
     const out = steps.tryExpandNestedForLoopStep({
       body: [{ lineNo: 1, rawLine: 'for i in range(0,2) runtime {', cleanLine: 'for i in range(0,2) runtime {' }],

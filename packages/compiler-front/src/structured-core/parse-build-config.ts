@@ -122,10 +122,10 @@ export function parseBuildConfig(
       continue;
     }
 
-    const prune = clean.match(/^prune_noop_cycles\s+(on|off|true|false)\s*;?\s*$/i);
+    const prune = clean.match(/^prune_noop_bundles\s+(on|off|true|false)\s*;?\s*$/i);
     if (prune) {
       const normalized = prune[1].toLowerCase();
-      config.pruneNoopCycles = normalized === 'on' || normalized === 'true';
+      config.pruneNoopBundles = normalized === 'on' || normalized === 'true';
       continue;
     }
 
@@ -156,7 +156,7 @@ export function parseBuildConfig(
       'error',
       spanAt(entry.lineNo, clean.length),
       `Unknown build setting '${clean}'.`,
-      'Supported keys: optimize, scheduler, scheduler_window, memory_reorder, expansion_mode, jump_reuse_depth, prune_noop_cycles, grid.'
+      'Supported keys: optimize, scheduler, scheduler_window, memory_reorder, expansion_mode, jump_reuse_depth, prune_noop_bundles, grid.'
     ));
   }
 

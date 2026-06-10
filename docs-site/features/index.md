@@ -35,11 +35,11 @@ Full CSV: `docs-site/snippets/features/index/01-main.csv`.
 
 ## Advanced statements (by family)
 
-- Routing/streaming: [/features/pragmas/route](/features/pragmas/route), [/features/pragmas/stream](/features/pragmas/stream)
-- Collectives: [/features/pragmas/reduce](/features/pragmas/reduce), [/features/pragmas/scan](/features/pragmas/scan), [/features/pragmas/allreduce](/features/pragmas/allreduce)
-- Geometry/patterns: [/features/pragmas/stencil](/features/pragmas/stencil), [/features/pragmas/triangle](/features/pragmas/triangle), [/features/pragmas/gather](/features/pragmas/gather)
-- Arithmetic blocks: [/features/pragmas/carry-chain](/features/pragmas/carry-chain), [/features/pragmas/normalize](/features/pragmas/normalize), [/features/pragmas/conditional-sub](/features/pragmas/conditional-sub), [/features/pragmas/mulacc-chain](/features/pragmas/mulacc-chain)
-- Scheduling/helpers: [/features/pragmas/auto-cycle](/features/pragmas/auto-cycle), [/features/pragmas/stash](/features/pragmas/stash), [/features/pragmas/pipeline](/features/pragmas/pipeline)
+- Routing/streaming: [/features/advanced-statements/route](/features/advanced-statements/route), [/features/advanced-statements/stream](/features/advanced-statements/stream)
+- Collectives: [/features/advanced-statements/reduce](/features/advanced-statements/reduce), [/features/advanced-statements/scan](/features/advanced-statements/scan), [/features/advanced-statements/allreduce](/features/advanced-statements/allreduce)
+- Geometry/patterns: [/features/advanced-statements/stencil](/features/advanced-statements/stencil), [/features/advanced-statements/triangle](/features/advanced-statements/triangle), [/features/advanced-statements/gather](/features/advanced-statements/gather)
+- Arithmetic blocks: [/features/advanced-statements/carry-chain](/features/advanced-statements/carry-chain), [/features/advanced-statements/normalize](/features/advanced-statements/normalize), [/features/advanced-statements/conditional-sub](/features/advanced-statements/conditional-sub), [/features/advanced-statements/mulacc-chain](/features/advanced-statements/mulacc-chain)
+- Scheduling/helpers: [/features/advanced-statements/auto-bundle](/features/advanced-statements/auto-bundle), [/features/advanced-statements/stash](/features/advanced-statements/stash), [/features/advanced-statements/pipeline](/features/advanced-statements/pipeline)
 
 ## Jump to examples
 

@@ -10,7 +10,7 @@ const KEYWORDS = new Set([
   'target', 'build', 'kernel', 'config', 'bundle',
   'let', 'at', 'row', 'col', 'all',
   'if', 'else', 'while', 'for', 'break', 'continue', 'in', 'range', 'runtime', 'pipeline',
-  'optimize', 'scheduler', 'scheduler_window', 'memory_reorder', 'prune_noop_cycles', 'grid',
+  'optimize', 'scheduler', 'scheduler_window', 'memory_reorder', 'prune_noop_bundles', 'grid',
   'io', 'load', 'store', 'limit', 'assert',
   'function'
 ]);

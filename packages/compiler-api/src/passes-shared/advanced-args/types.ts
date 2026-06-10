@@ -1,6 +1,6 @@
 import { RoutePoint } from '../route-args.js';
 
-export interface BroadcastPragmaArgs {
+export interface BroadcastAdvancedStatementArgs {
   valueReg: string;
   from: RoutePoint;
   scope: 'row' | 'column' | 'all';
@@ -11,7 +11,7 @@ export interface CollectAxisRef {
   index: number;
 }
 
-export interface CollectPragmaArgs {
+export interface CollectAdvancedStatementArgs {
   from: CollectAxisRef;
   to: CollectAxisRef;
   viaReg: string;
@@ -22,7 +22,7 @@ export interface CollectPragmaArgs {
   combine: 'copy' | 'add' | 'sum' | 'sub' | 'and' | 'or' | 'xor' | 'mul' | 'shift_add';
 }
 
-export interface AccumulatePragmaArgs {
+export interface AccumulateAdvancedStatementArgs {
   pattern: 'row' | 'col' | 'anti_diagonal';
   productsReg: string;
   accumReg: string;
@@ -37,7 +37,7 @@ export type MulaccChainTarget =
   | { kind: 'row'; index: number }
   | { kind: 'col'; index: number };
 
-export interface MulaccChainPragmaArgs {
+export interface MulaccChainAdvancedStatementArgs {
   srcReg: string;
   coeffReg: string;
   accReg: string;
@@ -55,14 +55,14 @@ export type ConditionalSubTarget =
   | { kind: 'col'; index: number }
   | { kind: 'point'; row: number; col: number };
 
-export interface ConditionalSubPragmaArgs {
+export interface ConditionalSubAdvancedStatementArgs {
   valueReg: string;
   subReg: string;
   destReg: string;
   target: ConditionalSubTarget;
 }
 
-export interface CarryChainPragmaArgs {
+export interface CarryChainAdvancedStatementArgs {
   srcReg: string;
   carryReg: string;
   storeSymbol: string;
@@ -74,7 +74,7 @@ export interface CarryChainPragmaArgs {
   direction: 'right' | 'left';
 }
 
-export interface NormalizePragmaArgs {
+export interface NormalizeAdvancedStatementArgs {
   reg: string;
   carryReg: string;
   width: number;
@@ -84,7 +84,7 @@ export interface NormalizePragmaArgs {
   direction: 'left' | 'right' | 'up' | 'down';
 }
 
-export interface ExtractBytesPragmaArgs {
+export interface ExtractBytesAdvancedStatementArgs {
   srcReg: string;
   destReg: string;
   axis: 'row' | 'col';
@@ -92,14 +92,14 @@ export interface ExtractBytesPragmaArgs {
   mask: number;
 }
 
-export interface RotateShiftPragmaArgs {
+export interface RotateShiftAdvancedStatementArgs {
   reg: string;
   direction: 'left' | 'right';
   distance: number;
   fill?: number;
 }
 
-export interface ScanPragmaArgs {
+export interface ScanAdvancedStatementArgs {
   operation: string;
   srcReg: string;
   dstReg: string;
@@ -107,21 +107,21 @@ export interface ScanPragmaArgs {
   mode: 'inclusive' | 'exclusive';
 }
 
-export interface ReducePragmaArgs {
+export interface ReduceAdvancedStatementArgs {
   operation: string;
   destReg: string;
   srcReg: string;
   axis: 'row' | 'col';
 }
 
-export interface StencilPragmaArgs {
+export interface StencilAdvancedStatementArgs {
   pattern: 'cross' | 'horizontal' | 'vertical';
   operation: string;
   srcReg: string;
   destReg: string;
 }
 
-export interface TrianglePragmaArgs {
+export interface TriangleAdvancedStatementArgs {
   shape: 'upper' | 'lower';
   inclusive: boolean;
   opcode: string;
@@ -130,7 +130,7 @@ export interface TrianglePragmaArgs {
   srcB: string;
 }
 
-export interface GuardPragmaArgs {
+export interface GuardAdvancedStatementArgs {
   condition: string;
   opcode: string;
   destReg: string;
@@ -138,37 +138,37 @@ export interface GuardPragmaArgs {
   srcB: string;
 }
 
-export interface AllreducePragmaArgs {
+export interface AllreduceAdvancedStatementArgs {
   operation: string;
   destReg: string;
   srcReg: string;
   axis: 'row' | 'col';
 }
 
-export interface TransposePragmaArgs {
+export interface TransposeAdvancedStatementArgs {
   reg: string;
 }
 
-export interface GatherPragmaArgs {
+export interface GatherAdvancedStatementArgs {
   srcReg: string;
   dest: RoutePoint;
   destReg: string;
   operation: string;
 }
 
-export interface StreamLoadPragmaArgs {
+export interface StreamLoadAdvancedStatementArgs {
   destReg: string;
   row: number;
   count: number;
 }
 
-export interface StreamStorePragmaArgs {
+export interface StreamStoreAdvancedStatementArgs {
   srcReg: string;
   row: number;
   count: number;
 }
 
-export interface LatencyHidePragmaArgs {
+export interface LatencyHideAdvancedStatementArgs {
   window: number;
   mode: 'conservative';
 }
@@ -179,7 +179,7 @@ export type StashTarget =
   | { kind: 'col'; index: number }
   | { kind: 'point'; row: number; col: number };
 
-export interface StashPragmaArgs {
+export interface StashAdvancedStatementArgs {
   action: 'save' | 'restore';
   reg: string;
   addr: string;

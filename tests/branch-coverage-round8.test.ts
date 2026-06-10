@@ -40,7 +40,7 @@ describe('branch coverage round 8', () => {
     const resultA = modA.compile('kernel "k" {}', { emitArtifacts: [] as any });
     expect(resultA.artifacts.ast).toBeUndefined();
     expect(resultA.artifacts.structuredAst).toBeUndefined();
-    expect(resultA.stats.cycles).toBe(0);
+    expect(resultA.stats.bundles).toBe(0);
 
     vi.resetModules();
     vi.doMock('../packages/compiler-api/src/compiler-driver/parse-driver.js', () => ({
@@ -87,12 +87,12 @@ describe('branch coverage round 8', () => {
     const resultB = modB.compile('kernel "k" {}', { emitArtifacts: ['hir'] as any });
     expect(resultB.artifacts.ast).toBeUndefined();
     expect(resultB.artifacts.memoryRegions).toEqual([]);
-    expect(resultB.stats.cycles).toBe(0);
+    expect(resultB.stats.bundles).toBe(0);
   });
 
   it('covers collectives gather fallback-return branch via parser mocks', async () => {
-    vi.doMock('../packages/compiler-api/src/passes-shared/pragma-args-utils.js', async () => {
-      const actual = await vi.importActual<any>('../packages/compiler-api/src/passes-shared/pragma-args-utils.js');
+    vi.doMock('../packages/compiler-api/src/passes-shared/advanced-statement-args-utils.js', async () => {
+      const actual = await vi.importActual<any>('../packages/compiler-api/src/passes-shared/advanced-statement-args-utils.js');
       return {
         ...actual,
         parseKeyValueArgs: () => new Map([
@@ -111,7 +111,7 @@ describe('branch coverage round 8', () => {
       };
     });
     const collectives = await import('../packages/compiler-api/src/passes-shared/advanced-args/collectives.js');
-    const parsed = collectives.parseGatherPragmaArgs('gather(anything)');
+    const parsed = collectives.parseGatherAdvancedStatementArgs('gather(anything)');
     expect(parsed).toMatchObject({
       srcReg: 'R0',
       destReg: 'R1',
@@ -120,7 +120,7 @@ describe('branch coverage round 8', () => {
   });
 
   it('covers while-fusion primary horizontal branch and block depth bootstrap branch', () => {
-    const cycle: any = {
+    const bundle: any = {
       index: 0,
       label: undefined,
       span: { startLine: 1, startColumn: 1, endLine: 1, endColumn: 2 },
@@ -132,7 +132,7 @@ describe('branch coverage round 8', () => {
         span: { startLine: 1, startColumn: 1, endLine: 1, endColumn: 2 }
       }]
     };
-    const plan = buildWhileFusionPlan([cycle], 0, 0);
+    const plan = buildWhileFusionPlan([bundle], 0, 0);
     expect(plan?.incomingRegister).toBe('RCR');
 
     const block = collectBlockFromSource(['header-without-brace', 'body', '}'], 0);

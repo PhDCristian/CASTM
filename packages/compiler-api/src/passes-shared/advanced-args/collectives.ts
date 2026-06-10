@@ -3,22 +3,22 @@ import {
   parseIntegerLiteral,
   parseKeyValueArgs,
   splitPositionalArgs
-} from '../pragma-args-utils.js';
+} from '../advanced-statement-args-utils.js';
 import { parseCoordinateLiteral } from '../route-args.js';
 import {
-  AccumulatePragmaArgs,
-  CarryChainPragmaArgs,
+  AccumulateAdvancedStatementArgs,
+  CarryChainAdvancedStatementArgs,
   CollectAxisRef,
-  CollectPragmaArgs,
-  ConditionalSubPragmaArgs,
-  ExtractBytesPragmaArgs,
-  GuardPragmaArgs,
-  GatherPragmaArgs,
-  MulaccChainPragmaArgs,
-  NormalizePragmaArgs,
-  StencilPragmaArgs,
-  TrianglePragmaArgs,
-  TransposePragmaArgs
+  CollectAdvancedStatementArgs,
+  ConditionalSubAdvancedStatementArgs,
+  ExtractBytesAdvancedStatementArgs,
+  GuardAdvancedStatementArgs,
+  GatherAdvancedStatementArgs,
+  MulaccChainAdvancedStatementArgs,
+  NormalizeAdvancedStatementArgs,
+  StencilAdvancedStatementArgs,
+  TriangleAdvancedStatementArgs,
+  TransposeAdvancedStatementArgs
 } from './types.js';
 
 const COLLECT_COMBINE_VALUES = new Set([
@@ -47,7 +47,7 @@ const MULACC_DIRECTIONS = new Set([
   'up',
   'down'
 ]);
-function parseAccumulateScope(value: string): AccumulatePragmaArgs['scope'] | null {
+function parseAccumulateScope(value: string): AccumulateAdvancedStatementArgs['scope'] | null {
   const normalized = value.trim();
   if (normalized.toLowerCase() === 'all') {
     return { kind: 'all' };
@@ -81,7 +81,7 @@ function defaultMaskForWidth(width: number): number | null {
   if (!Number.isInteger(width) || width <= 0 || width >= 31) return null;
   return (1 << width) - 1;
 }
-function parseMulaccTarget(value: string): MulaccChainPragmaArgs['target'] | null {
+function parseMulaccTarget(value: string): MulaccChainAdvancedStatementArgs['target'] | null {
   const normalized = value.trim();
   if (normalized.toLowerCase() === 'all') return { kind: 'all' as const };
 
@@ -100,7 +100,7 @@ function parseMulaccTarget(value: string): MulaccChainPragmaArgs['target'] | nul
   return null;
 }
 
-export function parseMulaccChainPragmaArgs(text: string): MulaccChainPragmaArgs | null {
+export function parseMulaccChainAdvancedStatementArgs(text: string): MulaccChainAdvancedStatementArgs | null {
   const match = text.trim().match(/^mulacc_chain\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -151,10 +151,10 @@ export function parseMulaccChainPragmaArgs(text: string): MulaccChainPragmaArgs 
     lanes: lanes ?? undefined,
     width,
     mask,
-    direction: dirRaw as MulaccChainPragmaArgs['direction']
+    direction: dirRaw as MulaccChainAdvancedStatementArgs['direction']
   };
 }
-export function parseStencilPragmaArgs(text: string): StencilPragmaArgs | null {
+export function parseStencilAdvancedStatementArgs(text: string): StencilAdvancedStatementArgs | null {
   const match = text.trim().match(/^stencil\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const parts = splitPositionalArgs(match[1]);
@@ -185,7 +185,7 @@ function parseTriangleInclusive(value: string | undefined): boolean | null {
   if (normalized === 'false' || normalized === 'exclusive') return false;
   return null;
 }
-export function parseTrianglePragmaArgs(text: string): TrianglePragmaArgs | null {
+export function parseTriangleAdvancedStatementArgs(text: string): TriangleAdvancedStatementArgs | null {
   const match = text.trim().match(/^triangle\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -218,7 +218,7 @@ export function parseTrianglePragmaArgs(text: string): TrianglePragmaArgs | null
   };
 }
 
-export function parseGuardPragmaArgs(text: string): GuardPragmaArgs | null {
+export function parseGuardAdvancedStatementArgs(text: string): GuardAdvancedStatementArgs | null {
   const match = text.trim().match(/^guard\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -245,7 +245,7 @@ export function parseGuardPragmaArgs(text: string): GuardPragmaArgs | null {
   };
 }
 
-export function parseCollectPragmaArgs(text: string): CollectPragmaArgs | null {
+export function parseCollectAdvancedStatementArgs(text: string): CollectAdvancedStatementArgs | null {
   const match = text.trim().match(/^collect\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -276,7 +276,7 @@ export function parseCollectPragmaArgs(text: string): CollectPragmaArgs | null {
 
   const pathRaw = (args.get('path') ?? 'single_hop').trim().toLowerCase();
   if (pathRaw !== 'single_hop' && pathRaw !== 'multi_hop') return null;
-  const path = pathRaw as CollectPragmaArgs['path'];
+  const path = pathRaw as CollectAdvancedStatementArgs['path'];
 
   const maxHopsRaw = args.get('max_hops');
   let maxHops: number | undefined;
@@ -294,11 +294,11 @@ export function parseCollectPragmaArgs(text: string): CollectPragmaArgs | null {
     destReg,
     path,
     ...(maxHops !== undefined ? { maxHops } : {}),
-    combine: combine as CollectPragmaArgs['combine']
+    combine: combine as CollectAdvancedStatementArgs['combine']
   };
 }
 
-export function parseAccumulatePragmaArgs(text: string): AccumulatePragmaArgs | null {
+export function parseAccumulateAdvancedStatementArgs(text: string): AccumulateAdvancedStatementArgs | null {
   const match = text.trim().match(/^accumulate\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -311,7 +311,7 @@ export function parseAccumulatePragmaArgs(text: string): AccumulatePragmaArgs | 
   if (patternRaw !== 'row' && patternRaw !== 'col' && patternRaw !== 'anti_diagonal') {
     return null;
   }
-  const pattern = patternRaw as AccumulatePragmaArgs['pattern'];
+  const pattern = patternRaw as AccumulateAdvancedStatementArgs['pattern'];
 
   const productsReg = args.get('products')?.trim();
   const accumReg = args.get('accum')?.trim();
@@ -331,7 +331,7 @@ export function parseAccumulatePragmaArgs(text: string): AccumulatePragmaArgs | 
   }
 
   const scopeRaw = args.get('scope');
-  let scope: AccumulatePragmaArgs['scope'];
+  let scope: AccumulateAdvancedStatementArgs['scope'];
   if (scopeRaw !== undefined) {
     const parsedScope = parseAccumulateScope(scopeRaw);
     if (!parsedScope) return null;
@@ -345,13 +345,13 @@ export function parseAccumulatePragmaArgs(text: string): AccumulatePragmaArgs | 
     productsReg,
     accumReg,
     outReg,
-    combine: combineRaw as AccumulatePragmaArgs['combine'],
+    combine: combineRaw as AccumulateAdvancedStatementArgs['combine'],
     steps,
     scope
   };
 }
 
-function parseConditionalSubTarget(value: string): ConditionalSubPragmaArgs['target'] | null {
+function parseConditionalSubTarget(value: string): ConditionalSubAdvancedStatementArgs['target'] | null {
   const normalized = value.trim();
   if (normalized.toLowerCase() === 'all') {
     return { kind: 'all' as const };
@@ -379,7 +379,7 @@ function parseConditionalSubTarget(value: string): ConditionalSubPragmaArgs['tar
   return null;
 }
 
-export function parseConditionalSubPragmaArgs(text: string): ConditionalSubPragmaArgs | null {
+export function parseConditionalSubAdvancedStatementArgs(text: string): ConditionalSubAdvancedStatementArgs | null {
   const match = text.trim().match(/^conditional_sub\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -406,7 +406,7 @@ export function parseConditionalSubPragmaArgs(text: string): ConditionalSubPragm
   };
 }
 
-export function parseCarryChainPragmaArgs(text: string): CarryChainPragmaArgs | null {
+export function parseCarryChainAdvancedStatementArgs(text: string): CarryChainAdvancedStatementArgs | null {
   const match = text.trim().match(/^carry_chain\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -456,7 +456,7 @@ export function parseCarryChainPragmaArgs(text: string): CarryChainPragmaArgs | 
   };
 }
 
-export function parseNormalizePragmaArgs(text: string): NormalizePragmaArgs | null {
+export function parseNormalizeAdvancedStatementArgs(text: string): NormalizeAdvancedStatementArgs | null {
   const match = text.trim().match(/^normalize\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -503,7 +503,7 @@ export function parseNormalizePragmaArgs(text: string): NormalizePragmaArgs | nu
   };
 }
 
-export function parseExtractBytesPragmaArgs(text: string): ExtractBytesPragmaArgs | null {
+export function parseExtractBytesAdvancedStatementArgs(text: string): ExtractBytesAdvancedStatementArgs | null {
   const match = text.trim().match(/^extract_bytes\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -538,7 +538,7 @@ export function parseExtractBytesPragmaArgs(text: string): ExtractBytesPragmaArg
   };
 }
 
-export function parseTransposePragmaArgs(text: string): TransposePragmaArgs | null {
+export function parseTransposeAdvancedStatementArgs(text: string): TransposeAdvancedStatementArgs | null {
   const match = text.trim().match(/^transpose\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -549,7 +549,7 @@ export function parseTransposePragmaArgs(text: string): TransposePragmaArgs | nu
   return { reg };
 }
 
-export function parseGatherPragmaArgs(text: string): GatherPragmaArgs | null {
+export function parseGatherAdvancedStatementArgs(text: string): GatherAdvancedStatementArgs | null {
   const direct = text.trim().match(
     /^gather\s*\(\s*src\s*=\s*([^,]+)\s*,\s*dest\s*=\s*(@\s*[^,]+,\s*[^,\s\)]+|\(\s*-?\d+\s*,\s*-?\d+\s*\))\s*,\s*destreg\s*=\s*([^,]+)\s*,\s*op\s*=\s*([^,]+)\s*\)\s*;?\s*$/i
   );

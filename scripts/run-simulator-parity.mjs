@@ -5,7 +5,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { spawnSync } from 'node:child_process';
 
-const PARITY_TEST = 'src/__tests__/dsl-compiler-parity.test.ts';
+const PARITY_TEST = 'src/__tests__/castm-compiler-parity.test.ts';
 
 const projectRoot = path.resolve(import.meta.dirname, '..');
 
@@ -78,10 +78,10 @@ function discoverDefaultTests(simulatorPath) {
 
   const entries = readdirSync(testsDir).filter((name) => name.endsWith('.test.ts'));
   const adapterCandidates = entries
-    .filter((name) => /^dsl-compiler-.*adapter.*\.test\.ts$/i.test(name))
+    .filter((name) => /^castm-compiler-.*adapter.*\.test\.ts$/i.test(name))
     .sort((a, b) => a.localeCompare(b));
 
-  const preferred = adapterCandidates.find((name) => /^dsl-compiler-adapter\.test\.ts$/i.test(name))
+  const preferred = adapterCandidates.find((name) => /^castm-compiler-adapter\.test\.ts$/i.test(name))
     ?? adapterCandidates[0];
   if (preferred) {
     tests.push(`src/__tests__/${preferred}`);

@@ -4,7 +4,7 @@ import {
   ErrorCodes,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { isIdentifier } from '../pragma-args-utils.js';
+import { isIdentifier } from '../advanced-statement-args-utils.js';
 import {
   isMemoryReference,
   splitAssignment,

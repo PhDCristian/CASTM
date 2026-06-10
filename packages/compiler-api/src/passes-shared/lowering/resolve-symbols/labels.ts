@@ -4,7 +4,7 @@ import {
   SourceSpan,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { isNumericLiteralToken } from '../../pragma-args-utils.js';
+import { isNumericLiteralToken } from '../../advanced-statement-args-utils.js';
 
 /**
  * Branch instructions: label operand is REQUIRED — an unresolved
@@ -43,8 +43,8 @@ export function resolveLabelOperand(
       return [...operands];
     }
 
-    const targetCycle = labels.get(token);
-    if (targetCycle === undefined) {
+    const targetBundle = labels.get(token);
+    if (targetBundle === undefined) {
       diagnostics.push(makeDiagnostic(
         ErrorCodes.Semantic.UnknownLabel,
         'error',
@@ -56,7 +56,7 @@ export function resolveLabelOperand(
     }
 
     const resolved = [...operands];
-    resolved[branchIndex] = String(targetCycle);
+    resolved[branchIndex] = String(targetBundle);
     return resolved;
   }
 
@@ -68,18 +68,18 @@ export function resolveLabelOperand(
       return [...operands];
     }
 
-    const targetCycle = labels.get(token);
-    if (targetCycle !== undefined) {
+    const targetBundle = labels.get(token);
+    if (targetBundle !== undefined) {
       const resolved = [...operands];
-      resolved[carrierIndex] = String(targetCycle);
+      resolved[carrierIndex] = String(targetBundle);
       return resolved;
     }
 
     if (opcode === 'JUMP') {
-      const bodyTargetCycle = labels.get(`${token}__body`);
-      if (bodyTargetCycle !== undefined) {
+      const bodyTargetBundle = labels.get(`${token}__body`);
+      if (bodyTargetBundle !== undefined) {
         const resolved = [...operands];
-        resolved[carrierIndex] = String(bodyTargetCycle);
+        resolved[carrierIndex] = String(bodyTargetBundle);
         return resolved;
       }
     }

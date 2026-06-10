@@ -13,9 +13,9 @@ export const lowerToMirPass: CompilerPass<HirProgram, MirProgram> = {
     const output: MirProgram = {
       targetProfileId: input.targetProfileId,
       grid: input.grid,
-      cycles: input.cycles.map((cycle) => ({
-        index: cycle.index,
-        slots: [...cycle.operations]
+      bundles: input.bundles.map((bundle) => ({
+        index: bundle.index,
+        slots: [...bundle.operations]
           .sort((a, b) => (a.row - b.row) || (a.col - b.col))
           .map((op) => ({
             row: op.row,

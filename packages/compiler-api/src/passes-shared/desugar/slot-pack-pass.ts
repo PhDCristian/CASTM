@@ -1,8 +1,8 @@
 import {
   AstProgram,
   CompilerPass,
-  CycleAst,
-  CycleStatementAst,
+  BundleAst,
+  BundleStatementAst,
   GridSpec,
   InstructionAst
 } from '@castm/compiler-ir';
@@ -52,7 +52,7 @@ interface Placement {
   row: number;
   col: number;
   instruction: InstructionAst;
-  span: CycleStatementAst['span'];
+  span: BundleStatementAst['span'];
   originOrder: number;
   hasControl: boolean;
   hasMemory: boolean;
@@ -67,12 +67,12 @@ interface ExpandedPlacement {
   row: number;
   col: number;
   instruction: InstructionAst;
-  span: CycleStatementAst['span'];
+  span: BundleStatementAst['span'];
 }
 
-interface CycleBucket {
+interface BundleBucket {
   label?: string;
-  span: CycleAst['span'];
+  span: BundleAst['span'];
   placements: Placement[];
   barrier: boolean;
 }
@@ -139,7 +139,7 @@ function extractMemoryAddressKey(instruction: InstructionAst): string | null {
   return null;
 }
 
-function expandStatement(statement: CycleStatementAst, grid: GridSpec): ExpandedPlacement[] | null {
+function expandStatement(statement: BundleStatementAst, grid: GridSpec): ExpandedPlacement[] | null {
   if (statement.kind === 'at-expr') return null;
 
   if (statement.kind === 'at') {
@@ -237,31 +237,31 @@ function formatIntegerLike(original: string, value: number): string {
   return String(value);
 }
 
-function resolveRemappedCycleTarget(
+function resolveRemappedBundleTarget(
   target: number,
-  oldToNewCycle: number[],
-  newCycleLength: number
+  oldToNewBundle: number[],
+  newBundleLength: number
 ): number {
   if (!Number.isFinite(target)) return target;
   if (target < 0) return target;
-  if (target >= oldToNewCycle.length) return target;
+  if (target >= oldToNewBundle.length) return target;
 
-  for (let index = target; index < oldToNewCycle.length; index++) {
-    const mapped = oldToNewCycle[index];
+  for (let index = target; index < oldToNewBundle.length; index++) {
+    const mapped = oldToNewBundle[index];
     if (mapped >= 0) return mapped;
   }
 
-  // If the original target was a trailing removed noop cycle, jump to end.
-  return newCycleLength;
+  // If the original target was a trailing removed noop bundle, jump to end.
+  return newBundleLength;
 }
 
 function remapNumericBranchTargets(
-  cycles: CycleBucket[],
-  oldToNewCycle: number[],
-  newCycleLength: number
+  bundles: BundleBucket[],
+  oldToNewBundle: number[],
+  newBundleLength: number
 ): void {
-  for (const cycle of cycles) {
-    for (const placement of cycle.placements) {
+  for (const bundle of bundles) {
+    for (const placement of bundle.placements) {
       const opcode = normalizeOpcode(placement.instruction);
       if (!BRANCH_WITH_NUMERIC_TARGET.has(opcode)) continue;
 
@@ -272,7 +272,7 @@ function remapNumericBranchTargets(
       const target = parseIntegerLiteral(originalTargetToken);
       if (target === null) continue;
 
-      const remappedTarget = resolveRemappedCycleTarget(target, oldToNewCycle, newCycleLength);
+      const remappedTarget = resolveRemappedBundleTarget(target, oldToNewBundle, newBundleLength);
       if (remappedTarget === target) continue;
 
       const nextOperands = operands.slice();
@@ -289,10 +289,10 @@ function remapNumericBranchTargets(
 
 function canPlacementMove(
   placement: Placement,
-  cycle: CycleBucket,
+  bundle: BundleBucket,
   policy: MemoryReorderPolicy
 ): boolean {
-  if (cycle.barrier) return false;
+  if (bundle.barrier) return false;
   if (placement.isNoop) return false;
   if (placement.hasControl) return false;
   if (placement.readsIncoming) return false;
@@ -300,50 +300,50 @@ function canPlacementMove(
   return true;
 }
 
-function maxPreviousCycleOnSamePe(
+function maxPreviousBundleOnSamePe(
   placement: Placement,
   coordinateMap: Map<string, Placement[]>,
-  currentCycleByPlacement: Map<number, number>
+  currentBundleByPlacement: Map<number, number>
 ): number {
   const key = `${placement.row},${placement.col}`;
   const peers = coordinateMap.get(key) ?? [];
-  let maxCycle = -1;
+  let maxBundle = -1;
   for (const peer of peers) {
     if (peer.originOrder >= placement.originOrder) break;
-    const peerCycle = currentCycleByPlacement.get(peer.id);
-    if (peerCycle !== undefined && peerCycle > maxCycle) {
-      maxCycle = peerCycle;
+    const peerBundle = currentBundleByPlacement.get(peer.id);
+    if (peerBundle !== undefined && peerBundle > maxBundle) {
+      maxBundle = peerBundle;
     }
   }
-  return maxCycle;
+  return maxBundle;
 }
 
-function canMovePlacementToCycle(
+function canMovePlacementToBundle(
   placement: Placement,
-  fromCycle: number,
-  toCycle: number,
-  cycles: CycleBucket[],
-  currentCycleByPlacement: Map<number, number>,
+  fromBundle: number,
+  toBundle: number,
+  bundles: BundleBucket[],
+  currentBundleByPlacement: Map<number, number>,
   coordinateMap: Map<string, Placement[]>,
   policy: MemoryReorderPolicy
 ): boolean {
-  if (toCycle < 0 || toCycle >= fromCycle) return false;
-  if (cycles[toCycle].barrier) return false;
+  if (toBundle < 0 || toBundle >= fromBundle) return false;
+  if (bundles[toBundle].barrier) return false;
 
-  for (let cycleIndex = toCycle + 1; cycleIndex < fromCycle; cycleIndex++) {
-    if (cycles[cycleIndex].barrier) return false;
+  for (let bundleIndex = toBundle + 1; bundleIndex < fromBundle; bundleIndex++) {
+    if (bundles[bundleIndex].barrier) return false;
   }
 
-  for (const peer of cycles[toCycle].placements) {
+  for (const peer of bundles[toBundle].placements) {
     if (peer.row === placement.row && peer.col === placement.col) return false;
   }
 
-  const maxPrevious = maxPreviousCycleOnSamePe(placement, coordinateMap, currentCycleByPlacement);
-  if (toCycle <= maxPrevious) return false;
+  const maxPrevious = maxPreviousBundleOnSamePe(placement, coordinateMap, currentBundleByPlacement);
+  if (toBundle <= maxPrevious) return false;
 
   if (placement.writesRoute) {
-    for (let cycleIndex = toCycle; cycleIndex < fromCycle; cycleIndex++) {
-      for (const peer of cycles[cycleIndex].placements) {
+    for (let bundleIndex = toBundle; bundleIndex < fromBundle; bundleIndex++) {
+      for (const peer of bundles[bundleIndex].placements) {
         if (peer.readsIncoming) return false;
         if (policy === 'strict' && peer.writesRoute) return false;
       }
@@ -377,16 +377,16 @@ export function createSlotPackPass(
 
       let placementId = 0;
       let originOrder = 0;
-      const cycles: CycleBucket[] = [];
+      const bundles: BundleBucket[] = [];
       const allPlacements: Placement[] = [];
 
-      for (const cycle of output.kernel.cycles) {
+      for (const bundle of output.kernel.bundles) {
         const placements: Placement[] = [];
         let hasControl = false;
         let hasRouteSensitive = false;
         let unsupported = false;
 
-        for (const statement of cycle.statements) {
+        for (const statement of bundle.statements) {
           const expanded = expandStatement(statement, grid);
           if (!expanded) {
             unsupported = true;
@@ -425,58 +425,58 @@ export function createSlotPackPass(
           return { output, diagnostics: [] };
         }
 
-        const barrier = Boolean(cycle.label)
+        const barrier = Boolean(bundle.label)
           || hasControl;
 
-        cycles.push({
-          label: cycle.label,
-          span: cycle.span,
+        bundles.push({
+          label: bundle.label,
+          span: bundle.span,
           placements,
           barrier
         });
       }
 
       const coordinateMap = new Map<string, Placement[]>();
-      const currentCycleByPlacement = new Map<number, number>();
-      for (let cycleIndex = 0; cycleIndex < cycles.length; cycleIndex++) {
-        for (const placement of cycles[cycleIndex].placements) {
+      const currentBundleByPlacement = new Map<number, number>();
+      for (let bundleIndex = 0; bundleIndex < bundles.length; bundleIndex++) {
+        for (const placement of bundles[bundleIndex].placements) {
           const key = `${placement.row},${placement.col}`;
           const list = coordinateMap.get(key) ?? [];
           list.push(placement);
           coordinateMap.set(key, list);
-          currentCycleByPlacement.set(placement.id, cycleIndex);
+          currentBundleByPlacement.set(placement.id, bundleIndex);
         }
       }
       for (const list of coordinateMap.values()) {
         list.sort((a, b) => a.originOrder - b.originOrder);
       }
 
-      for (let sourceCycle = 0; sourceCycle < cycles.length; sourceCycle++) {
-        const sourcePlacements = [...cycles[sourceCycle].placements];
+      for (let sourceBundle = 0; sourceBundle < bundles.length; sourceBundle++) {
+        const sourcePlacements = [...bundles[sourceBundle].placements];
         for (const placement of sourcePlacements) {
-          const currentSourceCycle = currentCycleByPlacement.get(placement.id)!;
-          if (!canPlacementMove(placement, cycles[currentSourceCycle], policy)) continue;
+          const currentSourceBundle = currentBundleByPlacement.get(placement.id)!;
+          if (!canPlacementMove(placement, bundles[currentSourceBundle], policy)) continue;
 
-          const minCycle = Math.max(0, currentSourceCycle - window);
+          const minBundle = Math.max(0, currentSourceBundle - window);
           let moved = false;
-          for (let targetCycle = minCycle; targetCycle < currentSourceCycle; targetCycle++) {
-            if (!canMovePlacementToCycle(
+          for (let targetBundle = minBundle; targetBundle < currentSourceBundle; targetBundle++) {
+            if (!canMovePlacementToBundle(
               placement,
-              currentSourceCycle,
-              targetCycle,
-              cycles,
-              currentCycleByPlacement,
+              currentSourceBundle,
+              targetBundle,
+              bundles,
+              currentBundleByPlacement,
               coordinateMap,
               policy
             )) {
               continue;
             }
 
-            const originBucket = cycles[currentSourceCycle];
+            const originBucket = bundles[currentSourceBundle];
             const originIndex = originBucket.placements.findIndex((item) => item.id === placement.id);
             originBucket.placements.splice(originIndex, 1);
-            cycles[targetCycle].placements.push(placement);
-            currentCycleByPlacement.set(placement.id, targetCycle);
+            bundles[targetBundle].placements.push(placement);
+            currentBundleByPlacement.set(placement.id, targetBundle);
             moved = true;
             break;
           }
@@ -485,31 +485,31 @@ export function createSlotPackPass(
         }
       }
 
-      for (const cycle of cycles) {
-        cycle.placements.sort((a, b) => a.originOrder - b.originOrder);
+      for (const bundle of bundles) {
+        bundle.placements.sort((a, b) => a.originOrder - b.originOrder);
       }
 
-      const cycleRetained = cycles.map((cycle) => cycle.placements.length > 0 || Boolean(cycle.label));
-      const oldToNewCycle = new Array<number>(cycles.length).fill(-1);
-      let newCycleLength = 0;
-      for (let index = 0; index < cycles.length; index++) {
-        if (!cycleRetained[index]) continue;
-        oldToNewCycle[index] = newCycleLength++;
+      const bundleRetained = bundles.map((bundle) => bundle.placements.length > 0 || Boolean(bundle.label));
+      const oldToNewBundle = new Array<number>(bundles.length).fill(-1);
+      let newBundleLength = 0;
+      for (let index = 0; index < bundles.length; index++) {
+        if (!bundleRetained[index]) continue;
+        oldToNewBundle[index] = newBundleLength++;
       }
-      remapNumericBranchTargets(cycles, oldToNewCycle, newCycleLength);
+      remapNumericBranchTargets(bundles, oldToNewBundle, newBundleLength);
 
-      const rebuiltCycles: CycleAst[] = [];
-      for (let oldIndex = 0; oldIndex < cycles.length; oldIndex++) {
-        const cycle = cycles[oldIndex];
-        if (!cycleRetained[oldIndex]) {
+      const rebuiltBundles: BundleAst[] = [];
+      for (let oldIndex = 0; oldIndex < bundles.length; oldIndex++) {
+        const bundle = bundles[oldIndex];
+        if (!bundleRetained[oldIndex]) {
           continue;
         }
 
-        rebuiltCycles.push({
-          index: rebuiltCycles.length,
-          label: cycle.label,
-          span: cycle.span,
-          statements: cycle.placements.map((placement) => ({
+        rebuiltBundles.push({
+          index: rebuiltBundles.length,
+          label: bundle.label,
+          span: bundle.span,
+          statements: bundle.placements.map((placement) => ({
             kind: 'at' as const,
             row: placement.row,
             col: placement.col,
@@ -519,7 +519,7 @@ export function createSlotPackPass(
         });
       }
 
-      output.kernel.cycles = rebuiltCycles;
+      output.kernel.bundles = rebuiltBundles;
       return { output, diagnostics: [] };
     }
   };
@@ -532,10 +532,10 @@ export const __slotPackTestUtils = {
   expandStatement,
   parseIntegerLiteral,
   formatIntegerLike,
-  resolveRemappedCycleTarget,
+  resolveRemappedBundleTarget,
   remapNumericBranchTargets,
   canPlacementMove,
-  maxPreviousCycleOnSamePe,
-  canMovePlacementToCycle,
+  maxPreviousBundleOnSamePe,
+  canMovePlacementToBundle,
   normalizeWindow
 };

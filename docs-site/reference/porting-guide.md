@@ -32,7 +32,7 @@ This page defines the recommended writing style for production CASTM sources.
 ## Kernel Hygiene
 
 - group declarations first, then function helpers, then kernel logic.
-- keep cycles focused: one intent per cycle when possible.
+- keep bundles focused: one intent per bundle when possible.
 - use `latency_hide(...)` only when needed and keep window conservative.
 
 ## Tooling

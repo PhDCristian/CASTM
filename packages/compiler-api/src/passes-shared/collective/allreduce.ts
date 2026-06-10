@@ -1,27 +1,27 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   GridSpec,
   SourceSpan
 } from '@castm/compiler-ir';
-import { AllreducePragmaArgs } from '../advanced-args.js';
-import { buildBroadcastCycles } from '../route-builders.js';
-import { buildReduceCycles } from '../collective-scan-reduce.js';
+import { AllreduceAdvancedStatementArgs } from '../advanced-args.js';
+import { buildBroadcastBundles } from '../route-builders.js';
+import { buildReduceBundles } from '../collective-scan-reduce.js';
 
-export function buildAllreduceCycles(
-  pragma: AllreducePragmaArgs,
+export function buildAllreduceBundles(
+  advancedStatement: AllreduceAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
+): BundleAst[] {
   const reduceBefore = diagnostics.length;
-  const reduceCycles = buildReduceCycles(
+  const reduceBundles = buildReduceBundles(
     {
-      operation: pragma.operation,
-      destReg: pragma.destReg,
-      srcReg: pragma.srcReg,
-      axis: pragma.axis
+      operation: advancedStatement.operation,
+      destReg: advancedStatement.destReg,
+      srcReg: advancedStatement.srcReg,
+      axis: advancedStatement.axis
     },
     startIndex,
     grid,
@@ -29,21 +29,21 @@ export function buildAllreduceCycles(
     diagnostics
   );
 
-  if (diagnostics.length > reduceBefore && reduceCycles.length === 0) {
+  if (diagnostics.length > reduceBefore && reduceBundles.length === 0) {
     return [];
   }
 
-  const broadcastCycles = buildBroadcastCycles(
+  const broadcastBundles = buildBroadcastBundles(
     {
-      valueReg: pragma.destReg,
+      valueReg: advancedStatement.destReg,
       from: { row: 0, col: 0 },
-      scope: pragma.axis === 'col' ? 'column' : 'row'
+      scope: advancedStatement.axis === 'col' ? 'column' : 'row'
     },
-    startIndex + reduceCycles.length,
+    startIndex + reduceBundles.length,
     grid,
     span,
     diagnostics
   );
 
-  return [...reduceCycles, ...broadcastCycles];
+  return [...reduceBundles, ...broadcastBundles];
 }

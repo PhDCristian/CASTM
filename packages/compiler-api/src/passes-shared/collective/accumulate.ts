@@ -1,15 +1,15 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
   SourceSpan,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { AccumulatePragmaArgs } from '../advanced-args.js';
-import { createInstruction, createMultiAtCycle } from '../ast-utils.js';
+import { AccumulateAdvancedStatementArgs } from '../advanced-args.js';
+import { createInstruction, createMultiAtBundle } from '../ast-utils.js';
 
-const COMBINE_OPCODE: ReadonlyMap<AccumulatePragmaArgs['combine'], string> = new Map([
+const COMBINE_OPCODE: ReadonlyMap<AccumulateAdvancedStatementArgs['combine'], string> = new Map([
   ['add', 'SADD'],
   ['sum', 'SADD'],
   ['sub', 'SSUB'],
@@ -43,7 +43,7 @@ function buildStagePlacements(
   return placements;
 }
 
-function maxPatternSteps(pattern: AccumulatePragmaArgs['pattern'], rows: number, cols: number): number {
+function maxPatternSteps(pattern: AccumulateAdvancedStatementArgs['pattern'], rows: number, cols: number): number {
   if (pattern === 'row') {
     return Math.max(1, cols - 1);
   }
@@ -58,12 +58,12 @@ function inBounds(index: number, limit: number): boolean {
 }
 
 function resolveScope(
-  pragma: AccumulatePragmaArgs,
+  advancedStatement: AccumulateAdvancedStatementArgs,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
 ): { rows: number[]; cols: number[]; mode: 'all' | 'row' | 'col' } | null {
-  const scope = pragma.scope ?? { kind: 'all' as const };
+  const scope = advancedStatement.scope ?? { kind: 'all' as const };
   if (scope.kind === 'all') {
     return {
       rows: Array.from({ length: grid.rows }, (_, i) => i),
@@ -109,7 +109,7 @@ function resolveScope(
 }
 
 function isPatternCompatibleWithScope(
-  pattern: AccumulatePragmaArgs['pattern'],
+  pattern: AccumulateAdvancedStatementArgs['pattern'],
   mode: 'all' | 'row' | 'col'
 ): boolean {
   if (mode === 'all') return true;
@@ -117,38 +117,38 @@ function isPatternCompatibleWithScope(
   return pattern === 'col';
 }
 
-export function buildAccumulateCycles(
-  pragma: AccumulatePragmaArgs,
+export function buildAccumulateBundles(
+  advancedStatement: AccumulateAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
-  const combineOpcode = COMBINE_OPCODE.get(pragma.combine);
+): BundleAst[] {
+  const combineOpcode = COMBINE_OPCODE.get(advancedStatement.combine);
   if (!combineOpcode) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Unsupported accumulate combine mode '${pragma.combine}'.`,
+      `Unsupported accumulate combine mode '${advancedStatement.combine}'.`,
       'Use one of: add, sum, sub, and, or, xor, mul.'
     ));
     return [];
   }
 
-  const productsReg = upperToken(pragma.productsReg);
-  const accumReg = upperToken(pragma.accumReg);
-  const outReg = upperToken(pragma.outReg);
-  const steps = Number.isInteger(pragma.steps) ? pragma.steps : 1;
-  const scopeInfo = resolveScope(pragma, grid, span, diagnostics);
+  const productsReg = upperToken(advancedStatement.productsReg);
+  const accumReg = upperToken(advancedStatement.accumReg);
+  const outReg = upperToken(advancedStatement.outReg);
+  const steps = Number.isInteger(advancedStatement.steps) ? advancedStatement.steps : 1;
+  const scopeInfo = resolveScope(advancedStatement, grid, span, diagnostics);
   if (!scopeInfo) return [];
 
-  if (!isPatternCompatibleWithScope(pragma.pattern, scopeInfo.mode)) {
+  if (!isPatternCompatibleWithScope(advancedStatement.pattern, scopeInfo.mode)) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Unsupported accumulate pattern '${pragma.pattern}' for scope '${scopeInfo.mode}'.`,
+      `Unsupported accumulate pattern '${advancedStatement.pattern}' for scope '${scopeInfo.mode}'.`,
       scopeInfo.mode === 'row'
         ? 'Use pattern=row with scope=row(i), or scope=all for full-grid patterns.'
         : 'Use pattern=col with scope=col(j), or scope=all for full-grid patterns.'
@@ -156,14 +156,14 @@ export function buildAccumulateCycles(
     return [];
   }
 
-  const maxSteps = maxPatternSteps(pragma.pattern, scopeInfo.rows.length, scopeInfo.cols.length);
+  const maxSteps = maxPatternSteps(advancedStatement.pattern, scopeInfo.rows.length, scopeInfo.cols.length);
 
   if (steps <= 0) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Unsupported accumulate steps '${String((pragma as { steps?: unknown }).steps)}'.`,
+      `Unsupported accumulate steps '${String((advancedStatement as { steps?: unknown }).steps)}'.`,
       'Use an integer value >= 1.'
     ));
     return [];
@@ -174,41 +174,41 @@ export function buildAccumulateCycles(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Unsupported accumulate steps '${steps}' for pattern '${pragma.pattern}' on ${grid.rows}x${grid.cols} grid (max ${maxSteps}).`,
+      `Unsupported accumulate steps '${steps}' for pattern '${advancedStatement.pattern}' on ${grid.rows}x${grid.cols} grid (max ${maxSteps}).`,
       `Use steps <= ${maxSteps} for this grid/pattern combination.`
     ));
     return [];
   }
 
-  const cycles: CycleAst[] = [];
+  const bundles: BundleAst[] = [];
 
   if (accumReg !== productsReg) {
     const seedPlacements = buildStagePlacements(scopeInfo.rows, scopeInfo.cols, span, () => ({
       opcode: 'SADD',
       operands: [accumReg, productsReg, 'ZERO']
     }));
-    cycles.push(createMultiAtCycle(startIndex + cycles.length, seedPlacements, span));
+    bundles.push(createMultiAtBundle(startIndex + bundles.length, seedPlacements, span));
   }
 
-  if (pragma.pattern === 'row') {
+  if (advancedStatement.pattern === 'row') {
     const leftBoundaryCol = scopeInfo.cols[0] ?? 0;
     for (let step = 0; step < steps; step++) {
       const rowPlacements = buildStagePlacements(scopeInfo.rows, scopeInfo.cols, span, (_row, col) => ({
         opcode: combineOpcode,
         operands: [accumReg, accumReg, col === leftBoundaryCol ? 'ZERO' : 'RCL']
       }));
-      cycles.push(createMultiAtCycle(startIndex + cycles.length, rowPlacements, span));
+      bundles.push(createMultiAtBundle(startIndex + bundles.length, rowPlacements, span));
     }
-  } else if (pragma.pattern === 'col') {
+  } else if (advancedStatement.pattern === 'col') {
     const topBoundaryRow = scopeInfo.rows[0] ?? 0;
     for (let step = 0; step < steps; step++) {
       const colPlacements = buildStagePlacements(scopeInfo.rows, scopeInfo.cols, span, (row) => ({
         opcode: combineOpcode,
         operands: [accumReg, accumReg, row === topBoundaryRow ? 'ZERO' : 'RCT']
       }));
-      cycles.push(createMultiAtCycle(startIndex + cycles.length, colPlacements, span));
+      bundles.push(createMultiAtBundle(startIndex + bundles.length, colPlacements, span));
     }
-  } else if (pragma.pattern === 'anti_diagonal') {
+  } else if (advancedStatement.pattern === 'anti_diagonal') {
     const topBoundaryRow = scopeInfo.rows[0] ?? 0;
     const rightBoundaryCol = scopeInfo.cols[scopeInfo.cols.length - 1] ?? 0;
     for (let step = 0; step < steps; step++) {
@@ -216,7 +216,7 @@ export function buildAccumulateCycles(
         opcode: combineOpcode,
         operands: [accumReg, accumReg, (row === topBoundaryRow || col === rightBoundaryCol) ? 'ZERO' : 'RCT']
       }));
-      cycles.push(createMultiAtCycle(startIndex + cycles.length, verticalPlacements, span));
+      bundles.push(createMultiAtBundle(startIndex + bundles.length, verticalPlacements, span));
     }
 
     for (let step = 0; step < steps; step++) {
@@ -224,14 +224,14 @@ export function buildAccumulateCycles(
         opcode: combineOpcode,
         operands: [accumReg, accumReg, col === rightBoundaryCol ? 'ZERO' : 'RCR']
       }));
-      cycles.push(createMultiAtCycle(startIndex + cycles.length, horizontalPlacements, span));
+      bundles.push(createMultiAtBundle(startIndex + bundles.length, horizontalPlacements, span));
     }
   } else {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Unsupported accumulate pattern '${pragma.pattern}'.`,
+      `Unsupported accumulate pattern '${advancedStatement.pattern}'.`,
       'Use one of: row, col, anti_diagonal.'
     ));
     return [];
@@ -242,8 +242,8 @@ export function buildAccumulateCycles(
       opcode: 'SADD',
       operands: [outReg, accumReg, 'ZERO']
     }));
-    cycles.push(createMultiAtCycle(startIndex + cycles.length, finalPlacements, span));
+    bundles.push(createMultiAtBundle(startIndex + bundles.length, finalPlacements, span));
   }
 
-  return cycles;
+  return bundles;
 }

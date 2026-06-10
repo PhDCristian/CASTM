@@ -6,7 +6,7 @@ CASTM supports typed runtime statements inside kernels for IO pointers, limits, 
 
 - `io.load(<addr0>, <addr1>, ...)`
 - `io.store(<addr0>, <addr1>, ...)`
-- `limit(<max_cycles>)`
+- `limit(<max_bundles>)`
 - `assert(at=@r,c, reg=R0, equals=0)`
 
 ## Executable Snippet

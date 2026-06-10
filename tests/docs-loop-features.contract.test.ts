@@ -23,12 +23,12 @@ function extractCastmSnippets(markdown: string): ExtractedSnippet[] {
     const source = match[2].trim();
     if (!source) continue;
 
-    if (language === 'castm' || language === 'dsl') {
+    if (language === 'castm' || language === 'castm') {
       snippets.push({ source, mode: 'pass', expectedErrorCodes: [] });
       continue;
     }
 
-    if (language === 'castm-fail' || language === 'dsl-fail') {
+    if (language === 'castm-fail' || language === 'castm-fail') {
       const expectedErrorCodes = Array.from(
         source.matchAll(/^\s*\/\/\s*expect-error:\s*([A-Z]\d{4})\s*$/gim)
       ).map((m) => m[1]);
@@ -37,7 +37,7 @@ function extractCastmSnippets(markdown: string): ExtractedSnippet[] {
   }
 
   for (const line of markdown.split('\n')) {
-    const includeMatch = line.match(/^\s*<<<\s+.+\{(castm|dsl|castm-fail|dsl-fail)\}.*$/i);
+    const includeMatch = line.match(/^\s*<<<\s+.+\{(castm|castm|castm-fail|castm-fail)\}.*$/i);
     if (!includeMatch) continue;
     const language = includeMatch[1].toLowerCase();
     snippets.push({
@@ -72,8 +72,8 @@ describe('docs-site loop feature contracts', () => {
     const __dirname = path.dirname(__filename);
     const files = [
       path.resolve(__dirname, '../docs-site/features/loops.md'),
-      path.resolve(__dirname, '../docs-site/features/pragmas/parallel.md'),
-      path.resolve(__dirname, '../docs-site/features/pragmas/unroll.md'),
+      path.resolve(__dirname, '../docs-site/features/advanced-statements/parallel.md'),
+      path.resolve(__dirname, '../docs-site/features/advanced-statements/unroll.md'),
       path.resolve(__dirname, '../docs-site/examples/loop-strategies.md'),
       path.resolve(__dirname, '../docs-site/examples/for-control-flow.md'),
       path.resolve(__dirname, '../docs-site/examples/scheduler-modes.md')

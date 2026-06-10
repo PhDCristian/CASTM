@@ -4,7 +4,7 @@ import {
   spanAt
 } from '@castm/compiler-ir';
 import { buildRuntimeLoopPlan } from './for-expand-runtime/build-plan.js';
-import { emitRuntimeLoopCycles } from './for-expand-runtime/emit.js';
+import { emitRuntimeLoopBundles } from './for-expand-runtime/emit.js';
 import type { ExpandRuntimeForInput } from './for-expand-runtime/types.js';
 
 export function expandRuntimeForLoop(input: ExpandRuntimeForInput): boolean {
@@ -29,6 +29,6 @@ export function expandRuntimeForLoop(input: ExpandRuntimeForInput): boolean {
   }
 
   const plan = buildRuntimeLoopPlan(input);
-  emitRuntimeLoopCycles(input, plan);
+  emitRuntimeLoopBundles(input, plan);
   return true;
 }

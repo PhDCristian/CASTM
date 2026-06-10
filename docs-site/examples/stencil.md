@@ -33,9 +33,9 @@ Full generated CSV: `docs-site/snippets/examples/stencil/01-main.csv`.
 
 ## Related features
 
-- [/features/pragmas/stencil](/features/pragmas/stencil)
-- [/features/pragmas/guard](/features/pragmas/guard)
-- [/features/pragmas/triangle](/features/pragmas/triangle)
+- [/features/advanced-statements/stencil](/features/advanced-statements/stencil)
+- [/features/advanced-statements/guard](/features/advanced-statements/guard)
+- [/features/advanced-statements/triangle](/features/advanced-statements/triangle)
 
 ## Continue
 

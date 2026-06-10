@@ -4,7 +4,7 @@ import {
   SourceSpan,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { parseIntegerLiteral } from '../pragma-args-utils.js';
+import { parseIntegerLiteral } from '../advanced-statement-args-utils.js';
 import { DataSymbolInfo } from './types.js';
 
 export function isRawAddress(expr: string): boolean {

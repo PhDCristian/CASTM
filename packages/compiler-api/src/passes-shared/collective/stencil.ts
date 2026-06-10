@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
@@ -8,39 +8,39 @@ import {
 } from '@castm/compiler-ir';
 import {
   createInstruction,
-  createMultiAtCycle
+  createMultiAtBundle
 } from '../ast-utils.js';
-import { StencilPragmaArgs } from '../advanced-args.js';
+import { StencilAdvancedStatementArgs } from '../advanced-args.js';
 
-export function buildStencilCycles(
-  pragma: StencilPragmaArgs,
+export function buildStencilBundles(
+  advancedStatement: StencilAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
+): BundleAst[] {
   if (grid.cols <= 0) {
     return [];
   }
 
-  if (!['sum', 'add', 'avg'].includes(pragma.operation)) {
+  if (!['sum', 'add', 'avg'].includes(advancedStatement.operation)) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Unsupported stencil operation '${pragma.operation}'.`,
+      `Unsupported stencil operation '${advancedStatement.operation}'.`,
       'Supported operations: sum, add, avg.'
     ));
     return [];
   }
 
-  const makeUniformRowCycle = (
-    cycleIndex: number,
+  const makeUniformRowBundle = (
+    bundleIndex: number,
     dest: string,
     srcA: string,
     srcB: string
-  ): CycleAst => createMultiAtCycle(
-    cycleIndex,
+  ): BundleAst => createMultiAtBundle(
+    bundleIndex,
     Array.from({ length: grid.rows * grid.cols }, (_, idx) => {
       const row = Math.floor(idx / grid.cols);
       const col = idx % grid.cols;
@@ -53,23 +53,23 @@ export function buildStencilCycles(
     span
   );
 
-  const cycles: CycleAst[] = [];
+  const bundles: BundleAst[] = [];
 
-  if (pragma.pattern === 'cross') {
-    cycles.push(makeUniformRowCycle(startIndex + cycles.length, 'R2', pragma.srcReg, 'RCT'));
-    cycles.push(makeUniformRowCycle(startIndex + cycles.length, 'R2', 'R2', 'RCB'));
-    cycles.push(makeUniformRowCycle(startIndex + cycles.length, 'R2', 'R2', 'RCL'));
-    cycles.push(makeUniformRowCycle(startIndex + cycles.length, pragma.destReg, 'R2', 'RCR'));
-    return cycles;
+  if (advancedStatement.pattern === 'cross') {
+    bundles.push(makeUniformRowBundle(startIndex + bundles.length, 'R2', advancedStatement.srcReg, 'RCT'));
+    bundles.push(makeUniformRowBundle(startIndex + bundles.length, 'R2', 'R2', 'RCB'));
+    bundles.push(makeUniformRowBundle(startIndex + bundles.length, 'R2', 'R2', 'RCL'));
+    bundles.push(makeUniformRowBundle(startIndex + bundles.length, advancedStatement.destReg, 'R2', 'RCR'));
+    return bundles;
   }
 
-  if (pragma.pattern === 'horizontal') {
-    cycles.push(makeUniformRowCycle(startIndex + cycles.length, 'R2', pragma.srcReg, 'RCL'));
-    cycles.push(makeUniformRowCycle(startIndex + cycles.length, pragma.destReg, 'R2', 'RCR'));
-    return cycles;
+  if (advancedStatement.pattern === 'horizontal') {
+    bundles.push(makeUniformRowBundle(startIndex + bundles.length, 'R2', advancedStatement.srcReg, 'RCL'));
+    bundles.push(makeUniformRowBundle(startIndex + bundles.length, advancedStatement.destReg, 'R2', 'RCR'));
+    return bundles;
   }
 
-  cycles.push(makeUniformRowCycle(startIndex + cycles.length, 'R2', pragma.srcReg, 'RCT'));
-  cycles.push(makeUniformRowCycle(startIndex + cycles.length, pragma.destReg, 'R2', 'RCB'));
-  return cycles;
+  bundles.push(makeUniformRowBundle(startIndex + bundles.length, 'R2', advancedStatement.srcReg, 'RCT'));
+  bundles.push(makeUniformRowBundle(startIndex + bundles.length, advancedStatement.destReg, 'R2', 'RCB'));
+  return bundles;
 }

@@ -18,7 +18,7 @@ kernel "for_if_else_compose" {
 `);
     expect(result.success).toBe(true);
     expect(result.diagnostics).toHaveLength(0);
-    expect(result.stats.cycles).toBeGreaterThan(0);
+    expect(result.stats.bundles).toBeGreaterThan(0);
   });
 
   it('reports explicit diagnostic for malformed if header without control location', () => {

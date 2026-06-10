@@ -39,7 +39,7 @@ build {
   scheduler balanced;
   scheduler_window auto;
   memory_reorder same_address_fence;
-  prune_noop_cycles on;
+  prune_noop_bundles on;
 }
 kernel "lib_example" {
   bundle { at @0,0: NOP; }
@@ -98,11 +98,11 @@ Behavior configuration is source-owned (`target`, `build`, runtime statements), 
 
 `CompileResult.stats` includes:
 
-- `cycles`
+- `bundles`
 - `instructions`
 - `activeSlots`
 - `totalSlots`
 - `utilization`
-- `estimatedCriticalCycles`
+- `estimatedCriticalBundles`
 - `schedulerMode`
 - `loweredPasses`

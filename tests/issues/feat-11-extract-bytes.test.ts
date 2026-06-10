@@ -55,7 +55,7 @@ kernel "feat11_row" {
     const malformed = compile(`
 target "uma-cgra-base";
 kernel "feat11_bad_parse" {
-  extract_bytes(src=R0);
+  std::extract_bytes(src=R0);
 }
 `);
 
@@ -67,7 +67,7 @@ kernel "feat11_bad_parse" {
     const badWidth = compile(`
 target "uma-cgra-base";
 kernel "feat11_bad_width" {
-  extract_bytes(src=R0, dest=R1, byteWidth=32);
+  std::extract_bytes(src=R0, dest=R1, byteWidth=32);
 }
 `);
 

@@ -1,10 +1,12 @@
 // Named Arrays
 //
-// Demonstrates: .data directive with named arrays,
+// Demonstrates: canonical let declarations with named arrays,
 //               array indexing (name[i]), array properties (.len(), .base()).
 
-.data input  { 10, 20, 30, 40 }
-.data output { 0, 0, 0, 0 }
+target base;
+
+let input = { 10, 20, 30, 40 };
+let output = { 0, 0, 0, 0 };
 
 kernel "NamedArrays" {
     config(0xF, 0);

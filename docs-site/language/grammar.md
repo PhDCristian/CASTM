@@ -29,7 +29,7 @@ target_decl      ::= "target" (string_lit | ident) ";"
 build_block      ::= "build" "{" build_item* "}"
 kernel_decl      ::= "kernel" string_lit "{" kernel_item* "}"
 kernel_item      ::= ... | labeled_stmt | loop_control_stmt | ...
-labeled_stmt     ::= label ":" (cycle_block | advanced_stmt | function_call | for_stmt | if_stmt | while_stmt)
+labeled_stmt     ::= label ":" (bundle_block | advanced_stmt | function_call | for_stmt | if_stmt | while_stmt)
 label            ::= ident
 
 build_item       ::= optimize_item | scheduler_item | scheduler_window_item | memory_reorder_item | expansion_mode_item | prune_noop_item | grid_item
@@ -48,11 +48,11 @@ let_data2d       ::= "let" ident "[" int_expr "]" "[" int_expr "]" "=" "{" int_l
 let_data2d_zero  ::= "let" ident "[" int_expr "]" "[" int_expr "]" ";"
 ```
 
-## Spatial Cycle Statements
+## Spatial Bundle Statements
 
 ```text
-cycle_block      ::= "cycle" "{" cycle_stmt* "}"
-cycle_stmt       ::= at_point_stmt | at_row_stmt | at_col_stmt | at_all_stmt | short_point_stmt
+bundle_block      ::= "bundle" "{" bundle_stmt* "}"
+bundle_stmt       ::= at_point_stmt | at_row_stmt | at_col_stmt | at_all_stmt | short_point_stmt
 at_point_stmt    ::= "at" "@" coord_expr "," coord_expr ":" instruction ";"
 short_point_stmt ::= "@" coord_expr "," coord_expr ":" instruction ";"
 at_row_stmt      ::= "at" "row" int_expr ":" instruction ";"

@@ -27,14 +27,14 @@ function normalizeCsvInstructions(csv: string): string {
   const lines = normalizeCsv(csv).split('\n');
   const [header, ...rows] = lines;
   const normalizedRows = rows.map((line) => {
-    const [cycle, row, col, op] = line.split(',');
-    return `${cycle},${row},${col},${normalizeInstruction(op)}`;
+    const [bundle, row, col, op] = line.split(',');
+    return `${bundle},${row},${col},${normalizeInstruction(op)}`;
   });
   return [header, ...normalizedRows].join('\n');
 }
 
 describe('issues/FEAT-11 compact kernel patterns', () => {
-  it('matches explicit row-byte extraction generated with for-in-cycle', () => {
+  it('matches explicit row-byte extraction generated with for-in-bundle', () => {
     const manualSource = `
 target "uma-cgra-base";
 kernel "manual_extract_row" {

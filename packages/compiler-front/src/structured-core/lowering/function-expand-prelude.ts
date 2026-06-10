@@ -1,4 +1,4 @@
-import { Diagnostic, ErrorCodes, KernelAst, WarningCodes, makeDiagnostic, spanAt } from '@castm/compiler-ir';
+import { Diagnostic, ErrorCodes, KernelAst, makeDiagnostic, spanAt } from '@castm/compiler-ir';
 import { parseAdvancedNamespaceIssue, parseStandardAdvancedCall } from './statements.js';
 import type { SourceLineEntry } from '../parser-utils/blocks.js';
 import { RESERVED_KEYWORDS } from '../constants.js';
@@ -19,17 +19,6 @@ export function consumeFunctionPreludeStatement(
   kernel: KernelAst,
   diagnostics: Diagnostic[]
 ): boolean {
-  if (/^#pragma\b/i.test(clean)) {
-    diagnostics.push(makeDiagnostic(
-      ErrorCodes.Parse.InvalidSyntax,
-      'error',
-      spanAt(entry.lineNo, 1, clean.length),
-      `Non-canonical pragma syntax is not supported: '${clean}'.`,
-      'Use canonical statements (for example route(...), reduce(...), scan(...)) and explicit control-flow syntax.'
-    ));
-    return true;
-  }
-
   // Strip optional label prefix (e.g. "subrC: std::extract_bytes(...)")
   const labelResult = stripLabelPrefix(clean);
   const toParse = labelResult ? labelResult.rest : clean;
@@ -46,25 +35,14 @@ export function consumeFunctionPreludeStatement(
     return true;
   }
 
-  const advancedPragma = parseStandardAdvancedCall(toParse);
-  if (!advancedPragma) {
+  const advancedAdvancedStatement = parseStandardAdvancedCall(toParse);
+  if (!advancedAdvancedStatement) {
     return false;
   }
 
-  if (advancedPragma.sourceForm === 'unqualified') {
-    diagnostics.push(makeDiagnostic(
-      WarningCodes.Style.UnqualifiedStdBuiltin,
-      'warning',
-      spanAt(entry.lineNo, 1, clean.length),
-      `Unqualified standard statement '${advancedPragma.name}(...)' is deprecated.`,
-      `Use std::${advancedPragma.name}(...) instead.`,
-      'MIG-STD-001'
-    ));
-  }
-
-  kernel.pragmas.push({
-    text: advancedPragma.text,
-    anchorCycleIndex: Array.isArray(kernel.cycles) ? kernel.cycles.length : 0,
+  kernel.advancedStatements.push({
+    text: advancedAdvancedStatement.text,
+    anchorBundleIndex: Array.isArray(kernel.bundles) ? kernel.bundles.length : 0,
     ...(labelResult ? { label: labelResult.label } : {}),
     span: spanAt(entry.lineNo, 1, clean.length)
   });

@@ -24,13 +24,13 @@ kernel "collect_multi_hop_row" {
 `, { emitArtifacts: ['ast'] });
 
     expect(result.success).toBe(true);
-    const cycles = result.artifacts.ast?.kernel?.cycles ?? [];
-    const copyCycles = cycles.filter((cycle) =>
-      cycle.statements.some((stmt) => 'instruction' in stmt && stmt.instruction.text.startsWith('SADD R3, RCT, ZERO'))
+    const bundles = result.artifacts.ast?.kernel?.bundles ?? [];
+    const copyBundles = bundles.filter((bundle) =>
+      bundle.statements.some((stmt) => 'instruction' in stmt && stmt.instruction.text.startsWith('SADD R3, RCT, ZERO'))
     );
-    expect(copyCycles.length).toBeGreaterThanOrEqual(2);
-    const firstRows = copyCycles
-      .map((cycle) => cycle.statements.find((stmt) => 'instruction' in stmt))
+    expect(copyBundles.length).toBeGreaterThanOrEqual(2);
+    const firstRows = copyBundles
+      .map((bundle) => bundle.statements.find((stmt) => 'instruction' in stmt))
       .filter((stmt): stmt is { row: number } => Boolean(stmt && 'row' in stmt))
       .map((stmt) => stmt.row);
     expect(firstRows.slice(0, 2)).toEqual([1, 2]);

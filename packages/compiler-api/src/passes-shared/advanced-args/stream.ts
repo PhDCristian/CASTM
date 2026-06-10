@@ -2,13 +2,13 @@ import {
   isIdentifier,
   parseIntegerLiteral,
   parseKeyValueArgs
-} from '../pragma-args-utils.js';
+} from '../advanced-statement-args-utils.js';
 import {
-  StreamLoadPragmaArgs,
-  StreamStorePragmaArgs
+  StreamLoadAdvancedStatementArgs,
+  StreamStoreAdvancedStatementArgs
 } from './types.js';
 
-export function parseStreamLoadPragmaArgs(text: string): StreamLoadPragmaArgs | null {
+export function parseStreamLoadAdvancedStatementArgs(text: string): StreamLoadAdvancedStatementArgs | null {
   const match = text.trim().match(/^stream_load\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);
@@ -38,7 +38,7 @@ export function parseStreamLoadPragmaArgs(text: string): StreamLoadPragmaArgs | 
   };
 }
 
-export function parseStreamStorePragmaArgs(text: string): StreamStorePragmaArgs | null {
+export function parseStreamStoreAdvancedStatementArgs(text: string): StreamStoreAdvancedStatementArgs | null {
   const match = text.trim().match(/^stream_store\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
   const args = parseKeyValueArgs(match[1]);

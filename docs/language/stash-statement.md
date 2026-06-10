@@ -17,7 +17,7 @@ Accepted values:
 
 ## Semantics
 
-Lowering emits one deterministic cycle with one placement per selected PE:
+Lowering emits one deterministic bundle with one placement per selected PE:
 
 - `save`: `SWI reg, addr`
 - `restore`: `LWI reg, addr`
@@ -48,7 +48,7 @@ std::stash(action=save, reg=R4, addr=360, target=all);
 
 ## Executable Snippet
 
-```dsl
+```castm
 target base;
 let L @360 = { 0, 0, 0, 0 };
 kernel "stash_doc" {
@@ -68,5 +68,5 @@ Executable contract tests:
 
 - `tests/issues/feat-10-stash.test.ts`
 - `tests/compiler-api.collective-builders.test.ts`
-- `tests/compiler-api.expand-pragmas.handlers.test.ts`
+- `tests/compiler-api.expand-advanced-statements.handlers.test.ts`
 - `tests/compiler-api.passes-shared.test.ts`

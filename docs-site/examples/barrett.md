@@ -35,9 +35,9 @@ Full generated CSV: `docs-site/snippets/examples/barrett/01-main.csv`.
 
 ## Related features
 
-- [/features/pragmas/carry-chain](/features/pragmas/carry-chain)
-- [/features/pragmas/normalize](/features/pragmas/normalize)
-- [/features/pragmas/conditional-sub](/features/pragmas/conditional-sub)
+- [/features/advanced-statements/carry-chain](/features/advanced-statements/carry-chain)
+- [/features/advanced-statements/normalize](/features/advanced-statements/normalize)
+- [/features/advanced-statements/conditional-sub](/features/advanced-statements/conditional-sub)
 
 ## Continue
 

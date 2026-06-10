@@ -25,27 +25,27 @@ function inferSchedulerMode(ast: AstProgram | undefined): 'safe' | 'balanced' | 
 function computeMirStats(mir: MirProgram | undefined) {
   if (!mir) {
     return {
-      cycles: 0,
+      bundles: 0,
       instructions: 0,
       activeSlots: 0,
       totalSlots: 0,
       utilization: 0,
-      estimatedCriticalCycles: 0
+      estimatedCriticalBundles: 0
     };
   }
 
-  const cycles = mir.cycles.length;
-  const activeSlots = mir.cycles.reduce((acc, cycle) => acc + cycle.slots.length, 0);
-  const totalSlots = cycles * mir.grid.rows * mir.grid.cols;
+  const bundles = mir.bundles.length;
+  const activeSlots = mir.bundles.reduce((acc, bundle) => acc + bundle.slots.length, 0);
+  const totalSlots = bundles * mir.grid.rows * mir.grid.cols;
   const utilization = totalSlots > 0 ? activeSlots / totalSlots : 0;
 
   return {
-    cycles,
+    bundles,
     instructions: activeSlots,
     activeSlots,
     totalSlots,
     utilization,
-    estimatedCriticalCycles: cycles
+    estimatedCriticalBundles: bundles
   };
 }
 
@@ -64,12 +64,12 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       diagnostics,
       artifacts: {},
       stats: {
-        cycles: 0,
+        bundles: 0,
         instructions: 0,
         activeSlots: 0,
         totalSlots: 0,
         utilization: 0,
-        estimatedCriticalCycles: 0,
+        estimatedCriticalBundles: 0,
         schedulerMode,
         loweredPasses: []
       }
@@ -90,12 +90,12 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
         symbols: parsedRuntime.symbols
       },
       stats: {
-        cycles: parseResult.ast.kernel?.cycles.length ?? 0,
+        bundles: parseResult.ast.kernel?.bundles.length ?? 0,
         instructions: 0,
         activeSlots: 0,
         totalSlots: 0,
         utilization: 0,
-        estimatedCriticalCycles: parseResult.ast.kernel?.cycles.length ?? 0,
+        estimatedCriticalBundles: parseResult.ast.kernel?.bundles.length ?? 0,
         schedulerMode,
         loweredPasses: []
       }
@@ -118,7 +118,7 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
   }
 
   const mirStats = computeMirStats(analysis.mir);
-  const astCycleCount = analysis.ast?.kernel?.cycles.length ?? 0;
+  const astBundleCount = analysis.ast?.kernel?.bundles.length ?? 0;
 
   return {
     success: !hasErrors(diagnostics),
@@ -137,12 +137,12 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       symbols: analysis.symbols
     },
     stats: {
-      cycles: analysis.mir ? mirStats.cycles : astCycleCount,
+      bundles: analysis.mir ? mirStats.bundles : astBundleCount,
       instructions: analysis.mir ? mirStats.instructions : 0,
       activeSlots: analysis.mir ? mirStats.activeSlots : 0,
       totalSlots: analysis.mir ? mirStats.totalSlots : 0,
       utilization: analysis.mir ? mirStats.utilization : 0,
-      estimatedCriticalCycles: analysis.mir ? mirStats.estimatedCriticalCycles : astCycleCount,
+      estimatedCriticalBundles: analysis.mir ? mirStats.estimatedCriticalBundles : astBundleCount,
       schedulerMode,
       loweredPasses: analysis.loweredPasses
     }

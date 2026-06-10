@@ -14,7 +14,7 @@ const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
 export function addOperation(
   operations: HirOperation[],
   occupied: Set<string>,
-  cycleIndex: number,
+  bundleIndex: number,
   row: number,
   col: number,
   instruction: InstructionAst,
@@ -33,14 +33,14 @@ export function addOperation(
     return;
   }
 
-  const key = `${cycleIndex}:${row}:${col}`;
+  const key = `${bundleIndex}:${row}:${col}`;
   if (occupied.has(key)) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.Collision,
       'error',
       instruction.span,
-      `Multiple instructions target @${row},${col} in cycle ${cycleIndex}.`,
-      'Split these writes into different cycles or coordinates.'
+      `Multiple instructions target @${row},${col} in bundle ${bundleIndex}.`,
+      'Split these writes into different bundles or coordinates.'
     ));
     return;
   }

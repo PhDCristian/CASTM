@@ -18,10 +18,10 @@ This document defines the stable I/O contract between compiler stages.
 ## Stage 3: Expand
 
 - Input: validated `StructuredProgramAst`
-- Output: `AstProgram` (flat cycles)
+- Output: `AstProgram` (flat bundles)
 - Rules:
   - `for`, `if`, `while`, function calls are lowered outside parser
-  - cycle conflict checks happen here
+  - bundle conflict checks happen here
 
 ## Stage 4: Desugar + Advanced Lowering
 
@@ -30,7 +30,7 @@ This document defines the stable I/O contract between compiler stages.
 - Rules:
   - memory sugar lowers to `LWI/SWI`
   - expression sugar lowers to ISA instructions
-  - advanced statements lower to cycle-level operations
+  - advanced statements lower to bundle-level operations
 
 ## Stage 5: Resolve + Validate Grid
 

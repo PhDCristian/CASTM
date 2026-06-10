@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ErrorCodes, spanAt } from '@castm/compiler-ir';
 import { addOperation } from '../packages/compiler-api/src/passes-shared/lowering/resolve-symbols/operations.js';
-import { lowerCycleStatements } from '../packages/compiler-api/src/passes-shared/lowering/resolve-symbols/cycle-lowering.js';
+import { lowerBundleStatements } from '../packages/compiler-api/src/passes-shared/lowering/resolve-symbols/bundle-lowering.js';
 
 function inst(opcode: string | null, operands: string[] = [], text?: string) {
   const shown = text ?? (opcode ? `${opcode}${operands.length ? ` ${operands.join(', ')}` : ''}` : 'x = y');
@@ -137,7 +137,7 @@ describe('compiler-api resolve-symbols lowering helpers', () => {
 
   it('lowers row statements for single, sparse and overflowing row forms', () => {
     const diagnosticsSingle: any[] = [];
-    const single = lowerCycleStatements(
+    const single = lowerBundleStatements(
       2,
       [
         {
@@ -156,7 +156,7 @@ describe('compiler-api resolve-symbols lowering helpers', () => {
     expect(single.every((op) => op.row === 1)).toBe(true);
 
     const diagnosticsSparse: any[] = [];
-    const sparse = lowerCycleStatements(
+    const sparse = lowerBundleStatements(
       2,
       [
         {
@@ -175,7 +175,7 @@ describe('compiler-api resolve-symbols lowering helpers', () => {
     expect(sparse.map((op) => op.opcode)).toEqual(['SADD', 'NOP', 'NOP']);
 
     const diagnosticsOverflow: any[] = [];
-    const overflow = lowerCycleStatements(
+    const overflow = lowerBundleStatements(
       2,
       [
         {
@@ -195,7 +195,7 @@ describe('compiler-api resolve-symbols lowering helpers', () => {
 
   it('lowers col/all statements and reports out-of-bounds rows/cols', () => {
     const diagnosticsCol: any[] = [];
-    const colOps = lowerCycleStatements(
+    const colOps = lowerBundleStatements(
       3,
       [
         {
@@ -214,7 +214,7 @@ describe('compiler-api resolve-symbols lowering helpers', () => {
     expect(colOps.every((op) => op.col === 2)).toBe(true);
 
     const diagnosticsAll: any[] = [];
-    const allOps = lowerCycleStatements(
+    const allOps = lowerBundleStatements(
       4,
       [
         {
@@ -231,7 +231,7 @@ describe('compiler-api resolve-symbols lowering helpers', () => {
     expect(allOps).toHaveLength(grid.rows * grid.cols);
 
     const diagnosticsBounds: any[] = [];
-    const boundsOps = lowerCycleStatements(
+    const boundsOps = lowerBundleStatements(
       5,
       [
         {

@@ -13,13 +13,13 @@ interface SnippetEntry {
   expectsFailure: boolean;
 }
 
-function collectEdslFiles(dir: string): string[] {
+function collectEcastmFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   const out: string[] = [];
   for (const entry of entries) {
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
-      out.push(...collectEdslFiles(full));
+      out.push(...collectEcastmFiles(full));
       continue;
     }
     if (entry.isFile() && full.endsWith('.castm')) out.push(full);
@@ -40,11 +40,11 @@ function classifySnippet(sourcePath: string): SnippetEntry {
   };
 }
 
-function assertNoLegacyCompileConfig(sourcePath: string): void {
+function assertNoUnsupportedCompileConfig(sourcePath: string): void {
   const configPath = sourcePath.replace(/\.castm$/i, '.compile.json');
   if (fs.existsSync(configPath)) {
     throw new Error(
-      `Legacy compile-config sidecar is not allowed: ${configPath}. ` +
+      `Unsupported compile-config sidecar is not allowed: ${configPath}. ` +
       'Move build/runtime settings into the snippet source (`target` + `build` + runtime statements).'
     );
   }
@@ -62,7 +62,7 @@ function main(): void {
     throw new Error(`Snippets root not found: ${snippetsRoot}`);
   }
 
-  const files = collectEdslFiles(snippetsRoot).sort();
+  const files = collectEcastmFiles(snippetsRoot).sort();
   if (files.length === 0) {
     throw new Error(`No .castm snippets found under ${snippetsRoot}`);
   }
@@ -73,7 +73,7 @@ function main(): void {
   for (const sourcePath of files) {
     const entry = classifySnippet(sourcePath);
     const source = fs.readFileSync(sourcePath, 'utf8');
-    assertNoLegacyCompileConfig(sourcePath);
+    assertNoUnsupportedCompileConfig(sourcePath);
     const result = compile(source, {
       emitArtifacts: ['mir'],
       strictUnsupported: false

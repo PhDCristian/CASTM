@@ -43,4 +43,4 @@ CASTM lowers to the ISA catalog in `packages/lang-spec/src/instruction-set.json`
 
 Full CSV: `docs-site/snippets/language/instruction-set/01-main.csv`.
 
-For full side-by-side examples, see [DSL to CSV Equivalence](/language/dsl-csv-equivalence).
+For full side-by-side examples, see [CASTM to CSV Equivalence](/language/castm-csv-equivalence).

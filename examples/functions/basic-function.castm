@@ -4,6 +4,8 @@
 //               parameter substitution.
 
 // Function to initialize a register with an immediate value
+target base;
+
 function init_reg(reg, val) {
     bundle {
         @0,0: SADD reg, ZERO, val;

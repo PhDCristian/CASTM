@@ -1,6 +1,6 @@
-import { CycleAst } from '@castm/compiler-ir';
+import { BundleAst } from '@castm/compiler-ir';
 import type { ParsedCondition } from '../control-flow.js';
-import { cycleHasControlFlow } from './cycle.js';
+import { bundleHasControlFlow } from './bundle.js';
 
 function getWhileFusionIncomingRegister(
   controlRow: number,
@@ -21,17 +21,17 @@ function getWhileFusionIncomingRegister(
 }
 
 export function buildWhileFusionPlan(
-  loopCycles: CycleAst[],
+  loopBundles: BundleAst[],
   controlRow: number,
   controlCol: number
 ): { bodyRow: number; bodyCol: number; incomingRegister: string } | null {
-  if (loopCycles.length !== 1) return null;
-  const cycle = loopCycles[0];
-  if (cycle.label) return null;
-  if (cycleHasControlFlow(cycle)) return null;
-  if (cycle.statements.length !== 1) return null;
+  if (loopBundles.length !== 1) return null;
+  const bundle = loopBundles[0];
+  if (bundle.label) return null;
+  if (bundleHasControlFlow(bundle)) return null;
+  if (bundle.statements.length !== 1) return null;
 
-  const statement = cycle.statements[0];
+  const statement = bundle.statements[0];
   if (statement.kind !== 'at') return null;
   if (statement.row === controlRow && statement.col === controlCol) return null;
   const incomingRegister = getWhileFusionIncomingRegister(controlRow, controlCol, statement.row, statement.col);

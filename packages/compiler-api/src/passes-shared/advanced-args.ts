@@ -1,54 +1,54 @@
 export type {
-  AccumulatePragmaArgs,
-  AllreducePragmaArgs,
-  BroadcastPragmaArgs,
-  CarryChainPragmaArgs,
-  CollectPragmaArgs,
-  ConditionalSubPragmaArgs,
-  ExtractBytesPragmaArgs,
-  GuardPragmaArgs,
-  GatherPragmaArgs,
-  LatencyHidePragmaArgs,
-  MulaccChainPragmaArgs,
-  NormalizePragmaArgs,
-  ReducePragmaArgs,
-  RotateShiftPragmaArgs,
-  ScanPragmaArgs,
-  StencilPragmaArgs,
-  StreamLoadPragmaArgs,
-  StreamStorePragmaArgs,
-  StashPragmaArgs,
+  AccumulateAdvancedStatementArgs,
+  AllreduceAdvancedStatementArgs,
+  BroadcastAdvancedStatementArgs,
+  CarryChainAdvancedStatementArgs,
+  CollectAdvancedStatementArgs,
+  ConditionalSubAdvancedStatementArgs,
+  ExtractBytesAdvancedStatementArgs,
+  GuardAdvancedStatementArgs,
+  GatherAdvancedStatementArgs,
+  LatencyHideAdvancedStatementArgs,
+  MulaccChainAdvancedStatementArgs,
+  NormalizeAdvancedStatementArgs,
+  ReduceAdvancedStatementArgs,
+  RotateShiftAdvancedStatementArgs,
+  ScanAdvancedStatementArgs,
+  StencilAdvancedStatementArgs,
+  StreamLoadAdvancedStatementArgs,
+  StreamStoreAdvancedStatementArgs,
+  StashAdvancedStatementArgs,
   StashTarget,
-  TrianglePragmaArgs,
-  TransposePragmaArgs
+  TriangleAdvancedStatementArgs,
+  TransposeAdvancedStatementArgs
 } from './advanced-args/types.js';
 
-export { parseBroadcastPragmaArgs } from './advanced-args/broadcast.js';
-export { parseRotateShiftPragmaArgs } from './advanced-args/rotate-shift.js';
+export { parseBroadcastAdvancedStatementArgs } from './advanced-args/broadcast.js';
+export { parseRotateShiftAdvancedStatementArgs } from './advanced-args/rotate-shift.js';
 export {
-  parseAllreducePragmaArgs,
-  parseReducePragmaArgs,
-  parseScanPragmaArgs
+  parseAllreduceAdvancedStatementArgs,
+  parseReduceAdvancedStatementArgs,
+  parseScanAdvancedStatementArgs
 } from './advanced-args/scan-reduce.js';
 export {
-  parseAccumulatePragmaArgs,
-  parseMulaccChainPragmaArgs,
-  parseCollectPragmaArgs,
-  parseConditionalSubPragmaArgs,
-  parseCarryChainPragmaArgs,
-  parseExtractBytesPragmaArgs,
-  parseGuardPragmaArgs,
-  parseGatherPragmaArgs,
-  parseNormalizePragmaArgs,
-  parseStencilPragmaArgs,
-  parseTrianglePragmaArgs,
-  parseTransposePragmaArgs
+  parseAccumulateAdvancedStatementArgs,
+  parseMulaccChainAdvancedStatementArgs,
+  parseCollectAdvancedStatementArgs,
+  parseConditionalSubAdvancedStatementArgs,
+  parseCarryChainAdvancedStatementArgs,
+  parseExtractBytesAdvancedStatementArgs,
+  parseGuardAdvancedStatementArgs,
+  parseGatherAdvancedStatementArgs,
+  parseNormalizeAdvancedStatementArgs,
+  parseStencilAdvancedStatementArgs,
+  parseTriangleAdvancedStatementArgs,
+  parseTransposeAdvancedStatementArgs
 } from './advanced-args/collectives.js';
 export {
-  parseLatencyHidePragmaArgs,
-  parseStashPragmaArgs
+  parseLatencyHideAdvancedStatementArgs,
+  parseStashAdvancedStatementArgs
 } from './advanced-args/optimizer.js';
 export {
-  parseStreamLoadPragmaArgs,
-  parseStreamStorePragmaArgs
+  parseStreamLoadAdvancedStatementArgs,
+  parseStreamStoreAdvancedStatementArgs
 } from './advanced-args/stream.js';

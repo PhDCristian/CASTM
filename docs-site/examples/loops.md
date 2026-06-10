@@ -29,7 +29,7 @@ Use this page when you need to choose between static expansion and runtime loop 
 - second loop: compact full-grid coverage with coordinate expressions.
 - third loop: runtime control remains explicit (`at @0,0 runtime`).
 
-The full output includes additional cycles for computed-coordinate expansion and runtime-loop control flow.
+The full output includes additional bundles for computed-coordinate expansion and runtime-loop control flow.
 Full generated CSV: `docs-site/snippets/examples/loops/01-main.csv`.
 
 ## Related features

@@ -6,8 +6,8 @@ import {
 import { parseFunctionCallLine } from './functions.js';
 import {
   instantiateFunctionBody,
-  makeCallCycle,
-  makeControlCycle
+  makeCallBundle,
+  makeControlBundle
 } from './function-expand-helpers.js';
 import { resolveJumpReuseCall } from './function-expand-context.js';
 import {
@@ -34,7 +34,7 @@ export function tryExpandFunctionCall(input: FunctionExpandStepInput): FunctionE
     functions,
     constants,
     diagnostics,
-    cycleCounter,
+    bundleCounter,
     callStack,
     expansionCounter,
     controlFlowCounter,
@@ -80,7 +80,7 @@ export function tryExpandFunctionCall(input: FunctionExpandStepInput): FunctionE
         functions,
         constants,
         diagnostics,
-        cycleCounter,
+        bundleCounter,
         [...callStack, nestedCall.name],
         expansionCounter,
         controlFlowCounter,
@@ -93,7 +93,7 @@ export function tryExpandFunctionCall(input: FunctionExpandStepInput): FunctionE
     }
 
     // Within supported depth range (0..maxDepth) → jump-reuse with
-    // register-based return via SADD + JUMP merged in one cycle.
+    // register-based return via SADD + JUMP merged in one bundle.
     const linkPe = expansionContext.linkPeByDepth[jumpReuseDepth] ?? expansionContext.linkPeByDepth[0];
 
     const resolved = resolveJumpReuseCall(
@@ -106,9 +106,9 @@ export function tryExpandFunctionCall(input: FunctionExpandStepInput): FunctionE
       expansionCounter
     );
 
-    // Emit one cycle: SADD R3, ZERO, retLabel (on link PE) + JUMP entry, ZERO (on jump PE)
-    kernel.cycles.push(makeCallCycle(
-      cycleCounter.value++,
+    // Emit one bundle: SADD R3, ZERO, retLabel (on link PE) + JUMP entry, ZERO (on jump PE)
+    kernel.bundles.push(makeCallBundle(
+      bundleCounter.value++,
       entry.lineNo,
       expansionContext.jumpPeRow,
       expansionContext.jumpPeCol,
@@ -120,8 +120,8 @@ export function tryExpandFunctionCall(input: FunctionExpandStepInput): FunctionE
     ));
 
     // NOP landing pad with return label
-    kernel.cycles.push(makeControlCycle(
-      cycleCounter.value++,
+    kernel.bundles.push(makeControlBundle(
+      bundleCounter.value++,
       entry.lineNo,
       linkPe.row,
       linkPe.col,
@@ -137,15 +137,15 @@ export function tryExpandFunctionCall(input: FunctionExpandStepInput): FunctionE
     return { handled: true, nextIndex: index, shouldBreak: false };
   }
 
-  const prevCycleCount = kernel.cycles.length;
-  const prevPragmaCount = kernel.pragmas.length;
+  const prevBundleCount = kernel.bundles.length;
+  const prevAdvancedStatementCount = kernel.advancedStatements.length;
   expandBody(
     instantiated,
     kernel,
     functions,
     constants,
     diagnostics,
-    cycleCounter,
+    bundleCounter,
     [...callStack, nestedCall.name],
     expansionCounter,
     controlFlowCounter,
@@ -154,13 +154,13 @@ export function tryExpandFunctionCall(input: FunctionExpandStepInput): FunctionE
     input.loopControlStack
   );
 
-  // Propagate label to first generated cycle, or first new pragma
-  // when the function body only contains pragmas (e.g. std::extract_bytes).
+  // Propagate label to first generated bundle, or first new advancedStatement
+  // when the function body only contains advancedStatements (e.g. std::extract_bytes).
   if (labelResult) {
-    if (kernel.cycles.length > prevCycleCount) {
-      kernel.cycles[prevCycleCount].label = labelResult.label;
-    } else if (kernel.pragmas.length > prevPragmaCount) {
-      kernel.pragmas[prevPragmaCount].label = labelResult.label;
+    if (kernel.bundles.length > prevBundleCount) {
+      kernel.bundles[prevBundleCount].label = labelResult.label;
+    } else if (kernel.advancedStatements.length > prevAdvancedStatementCount) {
+      kernel.advancedStatements[prevAdvancedStatementCount].label = labelResult.label;
     }
   }
 

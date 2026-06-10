@@ -5,7 +5,7 @@ Use this page to navigate examples by learning path and domain.
 ## What this demonstrates
 
 - how examples are grouped by learning progression and domain,
-- where to find runnable DSL↔CSV references quickly,
+- where to find runnable CASTM↔CSV references quickly,
 - how to jump between examples and feature-level docs.
 
 ## When to use
@@ -51,17 +51,17 @@ Full CSV: `docs-site/snippets/examples/index/01-main.csv`.
 ## Bridge to features
 
 - Feature map: [/features](/features/index)
-- Advanced statements index: [/features/pragmas/index](/features/pragmas/index)
+- Advanced statements index: [/features/advanced-statements/index](/features/advanced-statements/index)
 
 ## Why this CSV looks like this
 
-The preview snippet is intentionally minimal: one cycle and one placement to make the DSL→matrix mapping obvious.
+The preview snippet is intentionally minimal: one bundle and one placement to make the CASTM→matrix mapping obvious.
 
 ## Related features
 
 - [/features/index](/features/index)
 - [/features/spatial-short-forms](/features/spatial-short-forms)
-- [/features/pragmas/index](/features/pragmas/index)
+- [/features/advanced-statements/index](/features/advanced-statements/index)
 
 ## Continue
 

@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   InstructionAst,
   KernelAst,
@@ -23,7 +23,7 @@ export type ExpandFunctionBodyIntoKernel = (
   functions: ReadonlyMap<string, FunctionDefinitionLike>,
   constants: ReadonlyMap<string, number>,
   diagnostics: Diagnostic[],
-  cycleCounter: { value: number },
+  bundleCounter: { value: number },
   callStack: string[],
   expansionCounter: { value: number },
   controlFlowCounter: { value: number },
@@ -33,16 +33,16 @@ export type ExpandFunctionBodyIntoKernel = (
 ) => void;
 
 export interface ExpandForCallbacks {
-  cycleHasControlFlow: (cycle: CycleAst) => boolean;
-  cloneCycle: (cycle: CycleAst, index: number) => CycleAst;
+  bundleHasControlFlow: (bundle: BundleAst) => boolean;
+  cloneBundle: (bundle: BundleAst, index: number) => BundleAst;
   parseInstruction: (text: string, line: number, column: number) => InstructionAst;
-  makeControlCycle: (
+  makeControlBundle: (
     index: number,
     lineNo: number,
     row: number,
     col: number,
     instructionText: string,
     label?: string
-  ) => CycleAst;
+  ) => BundleAst;
   expandFunctionBodyIntoKernel: ExpandFunctionBodyIntoKernel;
 }

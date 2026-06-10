@@ -33,7 +33,7 @@ kernel "feat15_row" {
 target "uma-cgra-base";
 build {
   optimize O0;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
   grid 3x6 mesh;
 }
 kernel "feat15_row_nxm" {
@@ -72,10 +72,10 @@ kernel "feat15_row_segments" {
     expect(csv).toContain('0,0,3,NOP');
   });
 
-  it('rejects legacy row namespace without canonical at-prefix', () => {
+  it('rejects unsupported row namespace without canonical at-prefix', () => {
     const source = `
 target "uma-cgra-base";
-kernel "feat15_legacy_row" {
+kernel "feat15_unsupported_row" {
   bundle {
     row 0: NOP;
   }

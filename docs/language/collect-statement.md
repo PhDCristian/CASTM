@@ -21,15 +21,15 @@ Accepted values:
 
 ## Semantics
 
-- The statement lowers into deterministic row-major multi-placement cycles.
+- The statement lowers into deterministic row-major multi-placement bundles.
 - `path=single_hop` supports only same-lane or adjacent-lane transfers (`abs(from.index - to.index) <= 1`).
-- `path=multi_hop` emits one deterministic copy cycle per hop toward the destination lane, then applies the optional combine stage.
+- `path=multi_hop` emits one deterministic copy bundle per hop toward the destination lane, then applies the optional combine stage.
 - `via` must match the geometric direction implied by `from -> to`:
   - row: `from=to-1 => RCT`, `from=to+1 => RCB`, `from=to => SELF`
   - col: `from=to-1 => RCL`, `from=to+1 => RCR`, `from=to => SELF`
 - Lowering shape:
-  - Cycle A (copy): `SADD into, via, ZERO` at each destination lane point.
-  - Cycle B (combine), when `combine != copy`:
+  - Bundle A (copy): `SADD into, via, ZERO` at each destination lane point.
+  - Bundle B (combine), when `combine != copy`:
     - `add/sum/sub/and/or/xor/mul`: `OP into, local, into`
     - `shift_add`: first lane uses `ZERO`, remaining lanes use lane incoming (`RCL` for rows, `RCT` for cols).
 
@@ -55,7 +55,7 @@ std::collect(from=row(0), to=row(2), via=RCT, local=R2, into=R3, combine=add, pa
 
 ## Executable Snippet
 
-```dsl
+```castm
 target base;
 kernel "collect_doc" {
   std::collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
@@ -77,5 +77,5 @@ Executable contract tests:
 
 - `tests/issues/feat-12-collect.test.ts`
 - `tests/compiler-api.collective-builders.test.ts`
-- `tests/compiler-api.expand-pragmas.handlers.test.ts`
+- `tests/compiler-api.expand-advanced-statements.handlers.test.ts`
 - `tests/compiler-api.passes-shared.test.ts`

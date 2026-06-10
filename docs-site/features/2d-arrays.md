@@ -9,7 +9,7 @@
 
 ## Addressing
 
-Inside cycles you can use indexed access:
+Inside bundles you can use indexed access:
 
 - `R0 = M[i][j];`
 - `M[i][j] = R0;`

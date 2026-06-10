@@ -22,14 +22,14 @@ Accepted values:
 
 ## Semantics
 
-For each limb, lowering emits a deterministic 4-cycle stage at the resolved `(row, col)`:
+For each limb, lowering emits a deterministic 4-bundle stage at the resolved `(row, col)`:
 
 1. `SADD src, src, carry`
 2. `LAND src, src, mask`
 3. `SWI src, store[i]`
 4. `SRT carry, src, width`
 
-Total emitted cycles = `4 * limbs`.
+Total emitted bundles = `4 * limbs`.
 
 ## Examples
 
@@ -47,7 +47,7 @@ std::carry_chain(src=R4, carry=R5, store=L, limbs=2, width=8, mask=255, row=1, s
 
 ## Executable Snippet
 
-```dsl
+```castm
 target base;
 let L = { 0, 0, 0, 0 };
 kernel "carry_chain_doc" {
@@ -66,5 +66,5 @@ Executable contract tests:
 
 - `tests/issues/feat-02-carry-chain.test.ts`
 - `tests/compiler-api.collective-builders.test.ts`
-- `tests/compiler-api.expand-pragmas.handlers.test.ts`
+- `tests/compiler-api.expand-advanced-statements.handlers.test.ts`
 - `tests/compiler-api.passes-shared.test.ts`

@@ -1,12 +1,14 @@
 // 2x2 Matrix Multiplication
 //
-// Demonstrates: .data2d, nested loops, 2D array access,
+// Demonstrates: canonical 2D arrays, nested loops, 2D array access,
 //               accumulation across PEs.
 // Computes C = A * B for 2x2 matrices.
 
-.data2d A[2][2] { 1, 2, 3, 4 }
-.data2d B[2][2] { 5, 6, 7, 8 }
-.data2d C[2][2] { 0, 0, 0, 0 }
+target base;
+
+let A[2][2] = { 1, 2, 3, 4 };
+let B[2][2] = { 5, 6, 7, 8 };
+let C[2][2] = { 0, 0, 0, 0 };
 
 kernel "MatMul2x2" {
     config(0xF, 0);

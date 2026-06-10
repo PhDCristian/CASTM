@@ -8,9 +8,9 @@ import {
   pickScratchRegisters
 } from '../packages/compiler-api/src/passes-shared/collective-scan-reduce-helpers.js';
 import {
-  parseGatherPragmaArgs,
-  parseStencilPragmaArgs,
-  parseTransposePragmaArgs
+  parseGatherAdvancedStatementArgs,
+  parseStencilAdvancedStatementArgs,
+  parseTransposeAdvancedStatementArgs
 } from '../packages/compiler-api/src/passes-shared/advanced-args/collectives.js';
 import {
   parseData2dDirectiveValue,
@@ -18,7 +18,7 @@ import {
 } from '../packages/compiler-api/src/compiler-driver/data-regions/parse.js';
 import { collectDataRegions } from '../packages/compiler-api/src/compiler-driver/data-regions/collect.js';
 import { parseDirective } from '../packages/compiler-front/src/structured-core/lowering/declarations.js';
-import { cycleHasControlFlow, cloneCycle } from '../packages/compiler-front/src/structured-core/lowering/function-expand-helpers/cycle.js';
+import { bundleHasControlFlow, cloneBundle } from '../packages/compiler-front/src/structured-core/lowering/function-expand-helpers/bundle.js';
 import { consumeFunctionPreludeStatement } from '../packages/compiler-front/src/structured-core/lowering/function-expand-prelude.js';
 import { tryExpandKnownFunctionStatement } from '../packages/compiler-front/src/structured-core/lowering/function-expand-dispatch.js';
 import { tryExpandForStatement } from '../packages/compiler-front/src/structured-core/lowering/function-expand-for.js';
@@ -71,25 +71,25 @@ describe('branch coverage round 2', () => {
   });
 
   it('covers collectives arg parser negative branches', () => {
-    expect(parseStencilPragmaArgs('stencil(cross, add, R0, R1)')).toMatchObject({
+    expect(parseStencilAdvancedStatementArgs('stencil(cross, add, R0, R1)')).toMatchObject({
       pattern: 'cross',
       operation: 'add'
     });
-    expect(parseStencilPragmaArgs('stencil(diagonal, add, R0, R1)')).toBeNull();
-    expect(parseStencilPragmaArgs('stencil(cross, add)')).toBeNull();
-    expect(parseStencilPragmaArgs('stencil(cross, add, R0, 1)')).toBeNull();
+    expect(parseStencilAdvancedStatementArgs('stencil(diagonal, add, R0, R1)')).toBeNull();
+    expect(parseStencilAdvancedStatementArgs('stencil(cross, add)')).toBeNull();
+    expect(parseStencilAdvancedStatementArgs('stencil(cross, add, R0, 1)')).toBeNull();
 
-    expect(parseTransposePragmaArgs('transpose(reg=R1)')).toEqual({ reg: 'R1' });
-    expect(parseTransposePragmaArgs('transpose(reg=R1, extra=R2)')).toBeNull();
-    expect(parseTransposePragmaArgs('transpose(reg=1)')).toBeNull();
+    expect(parseTransposeAdvancedStatementArgs('transpose(reg=R1)')).toEqual({ reg: 'R1' });
+    expect(parseTransposeAdvancedStatementArgs('transpose(reg=R1, extra=R2)')).toBeNull();
+    expect(parseTransposeAdvancedStatementArgs('transpose(reg=1)')).toBeNull();
 
-    expect(parseGatherPragmaArgs('gather(src=R0, dest=@1,1, destreg=R1, op=add)')).toMatchObject({
+    expect(parseGatherAdvancedStatementArgs('gather(src=R0, dest=@1,1, destreg=R1, op=add)')).toMatchObject({
       srcReg: 'R0',
       operation: 'add'
     });
-    expect(parseGatherPragmaArgs('gather(src=R0, dest=@1,1, destreg=R1, op=1bad)')).toBeNull();
-    expect(parseGatherPragmaArgs('gather(src=R0, dest=@1,1, bad=R1, op=add)')).toBeNull();
-    expect(parseGatherPragmaArgs('gather(src=R0, dest=@bad, destreg=R1, op=add)')).toBeNull();
+    expect(parseGatherAdvancedStatementArgs('gather(src=R0, dest=@1,1, destreg=R1, op=1bad)')).toBeNull();
+    expect(parseGatherAdvancedStatementArgs('gather(src=R0, dest=@1,1, bad=R1, op=add)')).toBeNull();
+    expect(parseGatherAdvancedStatementArgs('gather(src=R0, dest=@bad, destreg=R1, op=add)')).toBeNull();
   });
 
   it('covers data region parsers and collection failures', () => {
@@ -119,8 +119,8 @@ describe('branch coverage round 2', () => {
         name: 'k',
         config: undefined,
         span,
-        pragmas: [],
-        cycles: [],
+        advancedStatements: [],
+        bundles: [],
         directives: [
           { kind: 'data', name: 'A', value: '{1,bad}', span },
           { kind: 'data2d', name: 'B', value: '[2][2] {1,2,3}', span },
@@ -145,8 +145,8 @@ describe('branch coverage round 2', () => {
     expect(parseDirective('not a directive', 8)).toBeNull();
   });
 
-  it('covers cycle helper detection/cloning across statement kinds', () => {
-    const cycle: any = {
+  it('covers bundle helper detection/cloning across statement kinds', () => {
+    const bundle: any = {
       index: 0,
       label: undefined,
       span,
@@ -158,10 +158,10 @@ describe('branch coverage round 2', () => {
         { kind: 'all', instruction: { text: 'NOP', opcode: 'NOP', operands: [], span }, span }
       ]
     };
-    expect(cycleHasControlFlow(cycle)).toBe(true);
-    expect(cycleHasControlFlow({ ...cycle, label: 'L0', statements: [] })).toBe(true);
+    expect(bundleHasControlFlow(bundle)).toBe(true);
+    expect(bundleHasControlFlow({ ...bundle, label: 'L0', statements: [] })).toBe(true);
 
-    const cloned = cloneCycle(cycle, 3);
+    const cloned = cloneBundle(bundle, 3);
     expect(cloned.index).toBe(3);
     expect((cloned.statements[1] as any).kind).toBe('at-expr');
     expect((cloned.statements[3] as any).kind).toBe('col');
@@ -169,26 +169,17 @@ describe('branch coverage round 2', () => {
   });
 
   it('covers function prelude and dispatch fallback', () => {
-    const kernel: any = { pragmas: [] };
+    const kernel: any = { advancedStatements: [] };
     const diagnostics: Diagnostic[] = [];
 
-    const pragmaHandled = consumeFunctionPreludeStatement(
-      { lineNo: 1, cleanLine: '#pragma route', rawLine: '#pragma route' },
-      '#pragma route',
-      kernel,
-      diagnostics
-    );
-    expect(pragmaHandled).toBe(true);
-    expect(diagnostics.at(-1)?.message).toContain('Non-canonical pragma syntax');
-
     const advancedHandled = consumeFunctionPreludeStatement(
-      { lineNo: 2, cleanLine: 'route(@0,1 -> @0,0, payload=R1, accum=R0);', rawLine: 'route(@0,1 -> @0,0, payload=R1, accum=R0);' },
-      'route(@0,1 -> @0,0, payload=R1, accum=R0);',
+      { lineNo: 2, cleanLine: 'std::route(@0,1 -> @0,0, payload=R1, accum=R0);', rawLine: 'std::route(@0,1 -> @0,0, payload=R1, accum=R0);' },
+      'std::route(@0,1 -> @0,0, payload=R1, accum=R0);',
       kernel,
       diagnostics
     );
     expect(advancedHandled).toBe(true);
-    expect(kernel.pragmas).toHaveLength(1);
+    expect(kernel.advancedStatements).toHaveLength(1);
 
     const badNamespaceHandled = consumeFunctionPreludeStatement(
       {
@@ -216,11 +207,11 @@ describe('branch coverage round 2', () => {
       index: 0,
       entry: { lineNo: 4, cleanLine: 'garbage', rawLine: 'garbage' },
       clean: 'garbage',
-      kernel: { name: 'k', config: undefined, directives: [], pragmas: [], cycles: [], span },
+      kernel: { name: 'k', config: undefined, directives: [], advancedStatements: [], bundles: [], span },
       functions: new Map(),
       constants: new Map(),
       diagnostics: [],
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
@@ -236,11 +227,11 @@ describe('branch coverage round 2', () => {
       index: 0,
       entry: { lineNo: 1, cleanLine: 'noop', rawLine: 'noop' },
       clean: 'noop',
-      kernel: { name: 'k', config: undefined, directives: [], pragmas: [], cycles: [], span },
+      kernel: { name: 'k', config: undefined, directives: [], advancedStatements: [], bundles: [], span },
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
@@ -253,11 +244,11 @@ describe('branch coverage round 2', () => {
       index: 0,
       entry: { lineNo: 1, cleanLine: 'for i in range(0, 3) {', rawLine: 'for i in range(0, 3) {' },
       clean: 'for i in range(0, 3) {',
-      kernel: { name: 'k', config: undefined, directives: [], pragmas: [], cycles: [], span },
+      kernel: { name: 'k', config: undefined, directives: [], advancedStatements: [], bundles: [], span },
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
@@ -352,9 +343,9 @@ kernel bad {
       computeRoutePath: () => [],
       getIncomingRegister: () => null
     }));
-    const { buildRouteTransferCycles } = await import('../packages/compiler-api/src/passes-shared/route-transfer.js');
+    const { buildRouteTransferBundles } = await import('../packages/compiler-api/src/passes-shared/route-transfer.js');
     const diagnostics: Diagnostic[] = [];
-    const cycles = buildRouteTransferCycles(
+    const bundles = buildRouteTransferBundles(
       { row: 0, col: 0 },
       { row: 1, col: 1 },
       'R0',
@@ -364,6 +355,6 @@ kernel bad {
       span,
       diagnostics
     );
-    expect(cycles).toEqual([]);
+    expect(bundles).toEqual([]);
   });
 });

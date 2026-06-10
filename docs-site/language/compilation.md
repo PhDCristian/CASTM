@@ -41,7 +41,7 @@ Full CSV: `docs-site/snippets/language/compilation/01-main.csv`.
 | `emitArtifacts` | `Array<'structured'|'ast'|'hir'|'mir'|'lir'|'csv'>` | request phase artifacts |
 | `strictUnsupported` | `boolean` | enforce strict validation for unsupported forms |
 
-Build/runtime behavior (target, grid, scheduler, memory policy, noop pruning, io pointers, cycle limits, assertions) is configured in source via `target`, `build { ... }`, and runtime statements.
+Build/runtime behavior (target, grid, scheduler, memory policy, noop pruning, io pointers, bundle limits, assertions) is configured in source via `target`, `build { ... }`, and runtime statements.
 
 ## Compile Result Artifacts
 
@@ -57,16 +57,16 @@ Build/runtime behavior (target, grid, scheduler, memory policy, noop pruning, io
 
 `compile(...).stats` includes:
 
-- `cycles`, `instructions`
+- `bundles`, `instructions`
 - `activeSlots`, `totalSlots`, `utilization`
-- `estimatedCriticalCycles`
+- `estimatedCriticalBundles`
 - `schedulerMode`
 - `loweredPasses`
 
 ## Scheduling Notes (source-driven)
 
-- slot packing is placement-level (not only whole-cycle merge) and deterministic.
-- numeric branch targets are remapped when intermediate noop cycles are removed.
+- slot packing is placement-level (not only whole-bundle merge) and deterministic.
+- numeric branch targets are remapped when intermediate noop bundles are removed.
 - in non-strict memory policy, `ROUT` producers may move earlier when no incoming-read dependency is crossed.
 - control-flow ops (`BEQ/BNE/.../EXIT`) remain barriers.
 
@@ -79,7 +79,7 @@ build {
   scheduler balanced;
   scheduler_window auto;
   memory_reorder same_address_fence;
-  prune_noop_cycles on;
+  prune_noop_bundles on;
 }
 kernel "build_config_example" {
   bundle { at @0,0: SADD R1, R0, 1; }
@@ -108,8 +108,8 @@ Each diagnostic includes:
 
 See [Error Codes](/reference/error-codes).
 
-## DSL to CSV View
+## CASTM to CSV View
 
 Use the dedicated equivalence page for side-by-side examples:
 
-- [DSL to CSV Equivalence](/language/dsl-csv-equivalence)
+- [CASTM to CSV Equivalence](/language/castm-csv-equivalence)

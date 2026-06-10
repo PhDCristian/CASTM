@@ -1,6 +1,6 @@
 import { ADVANCED_NAMES } from './constants.js';
 
-export type AdvancedSourceForm = 'qualified' | 'unqualified';
+export type AdvancedSourceForm = 'qualified';
 
 export interface ParsedAdvancedCall {
   name: string;
@@ -52,19 +52,5 @@ export function parseStandardAdvancedCall(cleanLine: string): ParsedAdvancedCall
     };
   }
 
-  const unqualified = cleanLine.match(
-    /^([A-Za-z_][A-Za-z0-9_]*)\s*\(([\s\S]*)\)\s*;?\s*$/
-  );
-  if (!unqualified) return null;
-
-  const name = unqualified[1].trim().toLowerCase();
-  if (!ADVANCED_NAMES.has(name)) return null;
-  const args = unqualified[2].trim();
-  return {
-    name,
-    args,
-    text: `${name}(${args})`,
-    sourceForm: 'unqualified',
-    namespace: null
-  };
+  return null;
 }

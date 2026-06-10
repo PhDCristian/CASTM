@@ -6,7 +6,7 @@ import {
   collectBlockFromEntries,
   SourceLineEntry
 } from '../../parser-utils/blocks.js';
-import { isElseOpenLine } from '../cycle-expand.js';
+import { isElseOpenLine } from '../bundle-expand.js';
 
 export interface ResolvedElseBlockInFunction {
   hasElse: boolean;

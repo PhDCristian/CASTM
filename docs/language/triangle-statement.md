@@ -17,7 +17,7 @@ Accepted values:
 
 ## Semantics
 
-- The compiler expands the statement to one cycle containing concrete `@row,col` placements.
+- The compiler expands the statement to one bundle containing concrete `@row,col` placements.
 - Expansion is deterministic and row-major (`row` outer loop, `col` inner loop).
 - Selection predicate:
   - `shape=upper, inclusive=true`: `col >= row`
@@ -42,7 +42,7 @@ std::triangle(shape=lower, inclusive=false, op=SADD, dest=R3, srcA=R1, srcB=R2);
 
 ## Executable Snippet
 
-```dsl
+```castm
 target base;
 kernel "triangle_doc" {
   std::triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
@@ -61,5 +61,5 @@ Malformed forms are rejected with parse diagnostics and a canonical hint. Exampl
 Executable contract tests:
 
 - `tests/issues/feat-06-triangle.test.ts`
-- `tests/compiler-api.expand-pragmas.handlers.test.ts`
+- `tests/compiler-api.expand-advanced-statements.handlers.test.ts`
 - `tests/compiler-api.passes-shared.test.ts`

@@ -13,19 +13,19 @@ import { createResolveSymbolsPass } from '../packages/compiler-api/src/passes-sh
 import { createDesugarMemoryPass } from '../packages/compiler-api/src/passes-shared/desugar/memory-pass.js';
 import { desugarExpressionsPass } from '../packages/compiler-api/src/passes-shared/desugar/expressions-pass.js';
 import {
-  parseAllreducePragmaArgs,
-  parseBroadcastPragmaArgs,
-  parseReducePragmaArgs,
-  parseScanPragmaArgs,
-  parseStreamLoadPragmaArgs,
-  parseStreamStorePragmaArgs
+  parseAllreduceAdvancedStatementArgs,
+  parseBroadcastAdvancedStatementArgs,
+  parseReduceAdvancedStatementArgs,
+  parseScanAdvancedStatementArgs,
+  parseStreamLoadAdvancedStatementArgs,
+  parseStreamStoreAdvancedStatementArgs
 } from '../packages/compiler-api/src/passes-shared/advanced-args.js';
-import { parseCoordinateLiteral, parseRoutePragmaArgs } from '../packages/compiler-api/src/passes-shared/route-args.js';
-import { buildAllreduceCycles, buildReduceCycles, buildScanCycles } from '../packages/compiler-api/src/passes-shared/collective-builders.js';
+import { parseCoordinateLiteral, parseRouteAdvancedStatementArgs } from '../packages/compiler-api/src/passes-shared/route-args.js';
+import { buildAllreduceBundles, buildReduceBundles, buildScanBundles } from '../packages/compiler-api/src/passes-shared/collective-builders.js';
 
 const span = spanAt(1, 1, 1);
 
-function makeCycle(index: number, text = 'NOP') {
+function makeBundle(index: number, text = 'NOP') {
   return {
     index,
     statements: [
@@ -46,7 +46,7 @@ function makeCycle(index: number, text = 'NOP') {
   };
 }
 
-function makeAst(cycleCount = 1, targetProfileId: string | null = 'uma-cgra-base'): AstProgram {
+function makeAst(bundleCount = 1, targetProfileId: string | null = 'uma-cgra-base'): AstProgram {
   return {
     target: targetProfileId ? { id: targetProfileId, raw: targetProfileId, span } : null,
     targetProfileId,
@@ -54,8 +54,8 @@ function makeAst(cycleCount = 1, targetProfileId: string | null = 'uma-cgra-base
     kernel: {
       name: 'k',
       config: undefined,
-      cycles: Array.from({ length: cycleCount }, (_, index) => makeCycle(index)),
-      pragmas: [],
+      bundles: Array.from({ length: bundleCount }, (_, index) => makeBundle(index)),
+      advancedStatements: [],
       directives: [],
       runtime: [],
       span
@@ -84,7 +84,7 @@ describe('compiler-api branch holes', () => {
     ast.build = {
       optimize: 'O0',
       scheduler: 'safe',
-      pruneNoopCycles: false,
+      pruneNoopBundles: false,
       span
     };
     ast.kernel!.runtime!.push({
@@ -106,7 +106,7 @@ describe('compiler-api branch holes', () => {
     const hir: HirProgram = {
       targetProfileId: 'uma-cgra-base',
       grid: { rows: 2, cols: 2, topology: 'mesh', wrapPolicy: 'clamp' },
-      cycles: [
+      bundles: [
         {
           index: 0,
           span,
@@ -138,7 +138,7 @@ describe('compiler-api branch holes', () => {
       kernel: null,
       span
     });
-    expect(noKernel.output.cycles).toEqual([]);
+    expect(noKernel.output.bundles).toEqual([]);
 
     const withDuplicateLabels = pass.run({
       targetProfileId: 'uma-cgra-base',
@@ -147,11 +147,11 @@ describe('compiler-api branch holes', () => {
         name: 'k',
         config: undefined,
         directives: [],
-        pragmas: [],
+        advancedStatements: [],
         span,
-        cycles: [
-          { ...makeCycle(0), label: 'L0' },
-          { ...makeCycle(1), label: 'L0' }
+        bundles: [
+          { ...makeBundle(0), label: 'L0' },
+          { ...makeBundle(1), label: 'L0' }
         ]
       }
     });
@@ -160,7 +160,7 @@ describe('compiler-api branch holes', () => {
 
   it('desugar-memory validates opcode arity and assignment forms', () => {
     const ast = makeAst(1);
-    ast.kernel!.cycles = [
+    ast.kernel!.bundles = [
       {
         index: 0,
         span,
@@ -209,7 +209,7 @@ describe('compiler-api branch holes', () => {
 
   it('desugar-expressions covers invalid destination and malformed binary expressions', () => {
     const ast = makeAst(1);
-    ast.kernel!.cycles = [
+    ast.kernel!.bundles = [
       {
         index: 0,
         span,
@@ -242,48 +242,48 @@ describe('compiler-api branch holes', () => {
     const result = desugarExpressionsPass.run(ast);
     expect(result.diagnostics.some((d) => d.message.includes('Invalid assignment destination'))).toBe(true);
     expect(result.diagnostics.some((d) => d.message.includes('Unsupported expression'))).toBe(true);
-    const rewritten = (result.output.kernel?.cycles[0].statements[2] as any).instruction;
+    const rewritten = (result.output.kernel?.bundles[0].statements[2] as any).instruction;
     expect(rewritten.opcode).toBe('SADD');
     expect(rewritten.text).toBe('SADD R3, IMM(7), ZERO');
   });
 
   it('parses advanced args including invalid branches and defaults', () => {
-    expect(parseBroadcastPragmaArgs('broadcast(value=R1, from=@0,0, to=row)')).toMatchObject({
+    expect(parseBroadcastAdvancedStatementArgs('broadcast(value=R1, from=@0,0, to=row)')).toMatchObject({
       valueReg: 'R1',
       scope: 'row'
     });
-    expect(parseBroadcastPragmaArgs('broadcast(value=1, from=@0,0, to=row)')).toBeNull();
-    expect(parseBroadcastPragmaArgs('broadcast(value=R1, from=@0,0, to=diag)')).toBeNull();
+    expect(parseBroadcastAdvancedStatementArgs('broadcast(value=1, from=@0,0, to=row)')).toBeNull();
+    expect(parseBroadcastAdvancedStatementArgs('broadcast(value=R1, from=@0,0, to=diag)')).toBeNull();
 
-    expect(parseScanPragmaArgs('scan(op=add, src=R0, dest=R1, dir=left, mode=exclusive)')).toMatchObject({
+    expect(parseScanAdvancedStatementArgs('scan(op=add, src=R0, dest=R1, dir=left, mode=exclusive)')).toMatchObject({
       direction: 'left',
       mode: 'exclusive'
     });
-    expect(parseScanPragmaArgs('scan(op=add, src=R0, dest=R1, dir=diag)')).toBeNull();
-    expect(parseScanPragmaArgs('scan(op=add, src=R0, dest=R1, dir=left, mode=other)')).toBeNull();
+    expect(parseScanAdvancedStatementArgs('scan(op=add, src=R0, dest=R1, dir=diag)')).toBeNull();
+    expect(parseScanAdvancedStatementArgs('scan(op=add, src=R0, dest=R1, dir=left, mode=other)')).toBeNull();
 
-    expect(parseReducePragmaArgs('reduce(op=add, dest=R1, src=R0, axis=col)')).toMatchObject({
+    expect(parseReduceAdvancedStatementArgs('reduce(op=add, dest=R1, src=R0, axis=col)')).toMatchObject({
       axis: 'col'
     });
-    expect(parseReducePragmaArgs('reduce(op=add, dest=R1, src=R0, axis=diag)')).toBeNull();
+    expect(parseReduceAdvancedStatementArgs('reduce(op=add, dest=R1, src=R0, axis=diag)')).toBeNull();
 
-    expect(parseAllreducePragmaArgs('allreduce(op=add, dest=R1, src=R0)')).toMatchObject({
+    expect(parseAllreduceAdvancedStatementArgs('allreduce(op=add, dest=R1, src=R0)')).toMatchObject({
       axis: 'row'
     });
-    expect(parseAllreducePragmaArgs('allreduce(op=add, dest=R1, src=R0, axis=diag)')).toBeNull();
+    expect(parseAllreduceAdvancedStatementArgs('allreduce(op=add, dest=R1, src=R0, axis=diag)')).toBeNull();
 
-    expect(parseStreamLoadPragmaArgs('stream_load(dest=R1)')).toEqual({
+    expect(parseStreamLoadAdvancedStatementArgs('stream_load(dest=R1)')).toEqual({
       destReg: 'R1',
       row: 0,
       count: 1
     });
-    expect(parseStreamLoadPragmaArgs('stream_load(dest=R1, row=a)')).toBeNull();
-    expect(parseStreamStorePragmaArgs('stream_store(src=R1)')).toEqual({
+    expect(parseStreamLoadAdvancedStatementArgs('stream_load(dest=R1, row=a)')).toBeNull();
+    expect(parseStreamStoreAdvancedStatementArgs('stream_store(src=R1)')).toEqual({
       srcReg: 'R1',
       row: 0,
       count: 1
     });
-    expect(parseStreamStorePragmaArgs('stream_store(src=R1, count=a)')).toBeNull();
+    expect(parseStreamStoreAdvancedStatementArgs('stream_store(src=R1, count=a)')).toBeNull();
   });
 
   it('parses route coordinate/args error branches', () => {
@@ -291,12 +291,12 @@ describe('compiler-api branch holes', () => {
     expect(parseCoordinateLiteral('@1,2 extra')).toBeNull();
     expect(parseCoordinateLiteral('1,2')).toBeNull();
 
-    expect(parseRoutePragmaArgs('route(@0,1 -> @0,0, payload=R3, accum=R1)')).toMatchObject({
+    expect(parseRouteAdvancedStatementArgs('route(@0,1 -> @0,0, payload=R3, accum=R1)')).toMatchObject({
       payload: 'R3',
       accum: 'R1'
     });
-    expect(parseRoutePragmaArgs('route(@0,1 -> @0,0, payload=R3, dest=R1, op=BAD())')).toBeNull();
-    expect(parseRoutePragmaArgs('route(@0,1 -> @0,0, payload=R3)')).toBeNull();
+    expect(parseRouteAdvancedStatementArgs('route(@0,1 -> @0,0, payload=R3, dest=R1, op=BAD())')).toBeNull();
+    expect(parseRouteAdvancedStatementArgs('route(@0,1 -> @0,0, payload=R3)')).toBeNull();
   });
 
   it('collective builders cover unsupported operations and compare-mode paths', () => {
@@ -304,7 +304,7 @@ describe('compiler-api branch holes', () => {
     const grid: any = { rows: 4, cols: 4, topology: 'torus', wrapPolicy: 'wrap' };
     const emptyGrid: any = { rows: 0, cols: 4, topology: 'mesh', wrapPolicy: 'clamp' };
 
-    const badReduce = buildReduceCycles(
+    const badReduce = buildReduceBundles(
       { operation: 'pow', destReg: 'R1', srcReg: 'R0', axis: 'row' },
       0,
       grid,
@@ -314,18 +314,18 @@ describe('compiler-api branch holes', () => {
     expect(badReduce).toEqual([]);
     expect(diagnostics.some((d) => d.message.includes('Unsupported reduce operation'))).toBe(true);
 
-    const maxReduce = buildReduceCycles(
+    const maxReduce = buildReduceBundles(
       { operation: 'max', destReg: 'R1', srcReg: 'R0', axis: 'row' },
       0,
       grid,
       span,
       []
     );
-    expect(maxReduce.some((cycle) =>
-      cycle.statements.some((stmt) => stmt.kind === 'at' && stmt.instruction.opcode === 'BSFA')
+    expect(maxReduce.some((bundle) =>
+      bundle.statements.some((stmt) => stmt.kind === 'at' && stmt.instruction.opcode === 'BSFA')
     )).toBe(true);
 
-    expect(buildScanCycles(
+    expect(buildScanBundles(
       { operation: 'pow', srcReg: 'R0', dstReg: 'R1', direction: 'left', mode: 'inclusive' },
       0,
       grid,
@@ -333,7 +333,7 @@ describe('compiler-api branch holes', () => {
       []
     )).toEqual([]);
 
-    const minScan = buildScanCycles(
+    const minScan = buildScanBundles(
       { operation: 'min', srcReg: 'R0', dstReg: 'R1', direction: 'right', mode: 'exclusive' },
       1,
       grid,
@@ -341,11 +341,11 @@ describe('compiler-api branch holes', () => {
       []
     );
     expect(minScan.length).toBeGreaterThan(0);
-    expect(minScan.some((cycle) =>
-      cycle.statements.some((stmt) => stmt.kind === 'at' && stmt.instruction.opcode === 'BSFA')
+    expect(minScan.some((bundle) =>
+      bundle.statements.some((stmt) => stmt.kind === 'at' && stmt.instruction.opcode === 'BSFA')
     )).toBe(true);
 
-    expect(buildScanCycles(
+    expect(buildScanBundles(
       { operation: 'add', srcReg: 'R0', dstReg: 'R1', direction: 'up', mode: 'inclusive' },
       0,
       emptyGrid,
@@ -353,7 +353,7 @@ describe('compiler-api branch holes', () => {
       []
     )).toEqual([]);
 
-    const allreduceError = buildAllreduceCycles(
+    const allreduceError = buildAllreduceBundles(
       { operation: 'pow', destReg: 'R1', srcReg: 'R0', axis: 'row' },
       0,
       grid,
@@ -362,7 +362,7 @@ describe('compiler-api branch holes', () => {
     );
     expect(allreduceError).toEqual([]);
 
-    const allreduceCol = buildAllreduceCycles(
+    const allreduceCol = buildAllreduceBundles(
       { operation: 'add', destReg: 'R1', srcReg: 'R0', axis: 'col' },
       0,
       grid,

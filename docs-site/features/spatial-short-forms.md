@@ -1,6 +1,6 @@
 # Spatial Short Forms
 
-Canonical spatial syntax supports concise point placements and row-segment payloads without reintroducing legacy namespace forms.
+Canonical spatial syntax supports concise point placements and row-segment payloads without reintroducing unsupported namespace forms.
 
 ## When to use
 
@@ -23,7 +23,7 @@ Canonical spatial syntax supports concise point placements and row-segment paylo
 
 Full CSV: `docs-site/snippets/features/spatial-short-forms/01-short-point.csv`.
 
-## Case B — Multiple short placements in one cycle line
+## Case B — Multiple short placements in one bundle line
 
 ::: code-group
 <<< ../snippets/features/spatial-short-forms/02-multi-short.castm{castm} [CASTM]
@@ -59,7 +59,7 @@ Full CSV: `docs-site/snippets/features/spatial-short-forms/04-row-broadcast.csv`
 
 Full CSV: `docs-site/snippets/features/spatial-short-forms/05-mixed.csv`.
 
-## Case F — Invalid legacy-style row namespace
+## Case F — Invalid unsupported-style row namespace
 
 <<< ../snippets/features/spatial-short-forms/06-invalid.castm{castm-fail} [CASTM fail]
 

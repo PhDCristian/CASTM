@@ -10,7 +10,7 @@ describe('compiler-front structured contracts', () => {
     const source = `
 target "uma-cgra-base";
 kernel "structured" {
-  route(@0,1 -> @0,0, payload=R3, accum=R1);
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
   bundle { @0,0: NOP; }
   for i in range(0, 2) {
     bundle { @0,1: NOP; }
@@ -30,7 +30,7 @@ kernel "structured" {
     expect(result.success).toBe(true);
     expect(result.structuredAst?.kernel?.body.map((stmt) => stmt.kind)).toEqual([
       'advanced',
-      'cycle',
+      'bundle',
       'for',
       'if',
       'while'
@@ -47,7 +47,7 @@ kernel "structured" {
     const source = `
 target "uma-cgra-base";
 kernel "structured_lower" {
-  route(@0,1 -> @0,0, payload=R3, accum=R1);
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
   bundle { @0,0: NOP; }
   for i in range(0, 2) {
     bundle { @0,1: NOP; }
@@ -59,10 +59,10 @@ kernel "structured_lower" {
     expect(parsed.success).toBe(true);
     const lowered = lowerStructuredProgramToAst(parsed.structuredAst!);
 
-    expect(lowered.kernel?.pragmas).toHaveLength(1);
-    expect(lowered.kernel?.pragmas[0].text).toContain('route(');
-    expect(lowered.kernel?.cycles).toHaveLength(3);
-    expect(lowered.kernel?.cycles[0].index).toBe(0);
+    expect(lowered.kernel?.advancedStatements).toHaveLength(1);
+    expect(lowered.kernel?.advancedStatements[0].text).toContain('route(');
+    expect(lowered.kernel?.bundles).toHaveLength(3);
+    expect(lowered.kernel?.bundles[0].index).toBe(0);
   });
 
   it('captures top-level function definitions and lowers function calls', () => {
@@ -81,8 +81,8 @@ kernel "fn_structured" {
     expect(parsed.structuredAst?.functions).toHaveLength(1);
     expect(parsed.structuredAst?.functions[0].name).toBe('add_one');
     const lowered = parsed.ast ?? lowerStructuredProgramToAst(parsed.structuredAst!);
-    const allInstructions = (lowered.kernel?.cycles ?? [])
-      .flatMap((cycle) => cycle.statements)
+    const allInstructions = (lowered.kernel?.bundles ?? [])
+      .flatMap((bundle) => bundle.statements)
       .map((stmt) => {
         if (stmt.kind === 'row') {
           return stmt.instructions.map((instruction) => instruction.text);
@@ -93,11 +93,11 @@ kernel "fn_structured" {
     expect(allInstructions.filter((text) => text.includes('R1 = R0 + IMM(1)'))).toHaveLength(1);
   });
 
-  it('reports invalid syntax for legacy statements without classic fallback', () => {
+  it('reports invalid syntax for unsupported statements without alternate parsing', () => {
     const source = `
 target "uma-cgra-base";
-kernel "legacy_reject" {
-  #pragma route @0,1 -> @0,0 payload(R3) accum(R1)
+kernel "unsupported_reject" {
+  not_castm route @0,1 -> @0,0 payload(R3) accum(R1)
 }
 `;
 
@@ -111,7 +111,7 @@ kernel "legacy_reject" {
     const source = `
 target "uma-cgra-base";
 kernel "unknown_stmt" {
-  this is not valid dsl;
+  this is not valid castm;
 }
 `;
 
@@ -180,11 +180,11 @@ kernel "unlabeled_adv" {
     }
   });
 
-  // ── T2-V4: Labeled cycle still works (no regression) ──
-  it('parses labeled cycle (mainEntry: bundle { ... })', () => {
+  // ── T2-V4: Labeled bundle still works (no regression) ──
+  it('parses labeled bundle (mainEntry: bundle { ... })', () => {
     const source = `
 target "uma-cgra-base";
-kernel "labeled_cycle" {
+kernel "labeled_bundle" {
   mainEntry: bundle { @0,0: NOP; }
 }
 `;
@@ -192,17 +192,17 @@ kernel "labeled_cycle" {
     expect(result.success).toBe(true);
     const body = result.structuredAst?.kernel?.body ?? [];
     expect(body).toHaveLength(1);
-    expect(body[0].kind).toBe('cycle');
-    if (body[0].kind === 'cycle') {
-      expect(body[0].cycle.label).toBe('mainEntry');
+    expect(body[0].kind).toBe('bundle');
+    if (body[0].kind === 'bundle') {
+      expect(body[0].bundle.label).toBe('mainEntry');
     }
   });
 
-  // ── T3-V1: Label propagation to PragmaAst ──
-  it('propagates label through lowering to PragmaAst', () => {
+  // ── T3-V1: Label propagation to AdvancedStatementAst ──
+  it('propagates label through lowering to AdvancedStatementAst', () => {
     const source = `
 target "uma-cgra-base";
-kernel "label_pragma" {
+kernel "label_advancedStatement" {
   subrC: std::route(@0,1 -> @0,0, payload=R3, accum=R1);
   bundle { @0,0: NOP; }
 }
@@ -210,13 +210,13 @@ kernel "label_pragma" {
     const parsed = parseStructuredSource(source);
     expect(parsed.success).toBe(true);
     const lowered = lowerStructuredProgramToAst(parsed.structuredAst!);
-    expect(lowered.kernel?.pragmas).toHaveLength(1);
-    expect(lowered.kernel?.pragmas[0].label).toBe('subrC');
-    expect(lowered.kernel?.pragmas[0].text).toContain('route(');
+    expect(lowered.kernel?.advancedStatements).toHaveLength(1);
+    expect(lowered.kernel?.advancedStatements[0].label).toBe('subrC');
+    expect(lowered.kernel?.advancedStatements[0].text).toContain('route(');
   });
 
   // ── T3-V2: Labeled fn-call propagation through lowering ──
-  it('propagates label through fn-call lowering to first cycle', () => {
+  it('propagates label through fn-call lowering to first bundle', () => {
     const source = `
 target "uma-cgra-base";
 function doWork(dst, src) {
@@ -229,11 +229,11 @@ kernel "label_fn_call" {
     const parsed = parseStructuredSource(source);
     expect(parsed.success).toBe(true);
     const lowered = lowerStructuredProgramToAst(parsed.structuredAst!);
-    expect(lowered.kernel?.cycles).toHaveLength(1);
-    expect(lowered.kernel?.cycles[0].label).toBe('entry');
+    expect(lowered.kernel?.bundles).toHaveLength(1);
+    expect(lowered.kernel?.bundles[0].label).toBe('entry');
   });
 
-  it('accepts "bundle" as alias for "cycle" in inline, block, and labeled forms', () => {
+  it('accepts "bundle" as alias for "bundle" in inline, block, and labeled forms', () => {
     // Inline bundle
     const r1 = parseStructuredSource(`
 target "uma-cgra-base";
@@ -242,7 +242,7 @@ kernel "t" {
 }
 `);
     expect(r1.success).toBe(true);
-    expect(r1.structuredAst?.kernel?.body[0].kind).toBe('cycle');
+    expect(r1.structuredAst?.kernel?.body[0].kind).toBe('bundle');
 
     // Labeled bundle
     const r2 = parseStructuredSource(`
@@ -253,8 +253,8 @@ kernel "t" {
 `);
     expect(r2.success).toBe(true);
     const b2 = r2.structuredAst?.kernel?.body[0];
-    expect(b2?.kind).toBe('cycle');
-    if (b2?.kind === 'cycle') expect(b2.cycle.label).toBe('myLabel');
+    expect(b2?.kind).toBe('bundle');
+    if (b2?.kind === 'bundle') expect(b2.bundle.label).toBe('myLabel');
 
     // Block bundle (multi-line)
     const r3 = parseStructuredSource(`
@@ -268,10 +268,10 @@ kernel "t" {
 `);
     expect(r3.success).toBe(true);
     const b3 = r3.structuredAst?.kernel?.body[0];
-    expect(b3?.kind).toBe('cycle');
-    if (b3?.kind === 'cycle') expect(b3.cycle.statements).toHaveLength(2);
+    expect(b3?.kind).toBe('bundle');
+    if (b3?.kind === 'bundle') expect(b3.bundle.statements).toHaveLength(2);
 
-    // cycle still works (backward compat)
+    // bundle still works (backward compat)
     const r4 = parseStructuredSource(`
 target "uma-cgra-base";
 kernel "t" {
@@ -279,12 +279,12 @@ kernel "t" {
 }
 `);
     expect(r4.success).toBe(true);
-    expect(r4.structuredAst?.kernel?.body[0].kind).toBe('cycle');
+    expect(r4.structuredAst?.kernel?.body[0].kind).toBe('bundle');
 
     // bundle lowers correctly
     const lowered = lowerStructuredProgramToAst(r1.structuredAst!);
-    expect(lowered.kernel?.cycles).toHaveLength(1);
-    expect(lowered.kernel?.cycles[0].statements[0]).toMatchObject({ kind: 'at', row: 0, col: 0 });
+    expect(lowered.kernel?.bundles).toHaveLength(1);
+    expect(lowered.kernel?.bundles[0].statements[0]).toMatchObject({ kind: 'at', row: 0, col: 0 });
   });
 
   it('E2E: labeled advanced stmt + labeled fn-call compile through full pipeline (T5-V1)', async () => {
@@ -308,16 +308,16 @@ kernel "Labeled_Compound_E2E" {
     expect(result.success).toBe(true);
     expect(result.diagnostics.filter(d => d.severity === 'error')).toHaveLength(0);
 
-    const cycles = result.artifacts.ast?.kernel?.cycles ?? [];
-    expect(cycles.length).toBeGreaterThanOrEqual(4); // at least: mainEntry + route expansion + loadAll + EXIT
+    const bundles = result.artifacts.ast?.kernel?.bundles ?? [];
+    expect(bundles.length).toBeGreaterThanOrEqual(4); // at least: mainEntry + route expansion + loadAll + EXIT
 
-    // mainEntry label on first cycle
-    expect(cycles[0].label).toBe('mainEntry');
-    // routePhase label on first route-expanded cycle
-    const routeCycle = cycles.find((c: { label?: string }) => c.label === 'routePhase');
-    expect(routeCycle).toBeDefined();
-    // loadPhase label on first fn-call-expanded cycle
-    const loadCycle = cycles.find((c: { label?: string }) => c.label === 'loadPhase');
-    expect(loadCycle).toBeDefined();
+    // mainEntry label on first bundle
+    expect(bundles[0].label).toBe('mainEntry');
+    // routePhase label on first route-expanded bundle
+    const routeBundle = bundles.find((c: { label?: string }) => c.label === 'routePhase');
+    expect(routeBundle).toBeDefined();
+    // loadPhase label on first fn-call-expanded bundle
+    const loadBundle = bundles.find((c: { label?: string }) => c.label === 'loadPhase');
+    expect(loadBundle).toBeDefined();
   });
 });

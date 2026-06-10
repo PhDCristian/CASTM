@@ -27,14 +27,14 @@ Use this when a kernel can be split into named stages and you want readable sequ
 
 - stage functions keep kernels small and composable.
 - `pipeline(...)` preserves lexical call order.
-- lowering stays canonical (no legacy macro layer).
+- lowering stays canonical (no unsupported macro layer).
 
 Full generated CSV: `docs-site/snippets/examples/parallel/01-main.csv`.
 
 ## Related features
 
 - [/features/functions](/features/functions)
-- [/features/pragmas/pipeline](/features/pragmas/pipeline)
+- [/features/advanced-statements/pipeline](/features/advanced-statements/pipeline)
 - [/features/loops](/features/loops)
 
 ## Continue

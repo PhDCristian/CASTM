@@ -1,6 +1,6 @@
 # Latency Hide Statement (`std::latency_hide(...)`)
 
-`std::latency_hide(...)` is a canonical scheduling statement that applies conservative cycle compaction after advanced-statement expansion.
+`std::latency_hide(...)` is a canonical scheduling statement that applies conservative bundle compaction after advanced-statement expansion.
 
 ## Canonical Syntax
 
@@ -17,11 +17,11 @@ Accepted values:
 
 `std::latency_hide(...)` runs as a deterministic post-expansion scheduler.
 
-Packing is placement-level inside a bounded lookahead window (`scheduler_window` from `build { ... }`), not only full-cycle merge.
+Packing is placement-level inside a bounded lookahead window (`scheduler_window` from `build { ... }`), not only full-bundle merge.
 
 Placements are moved earlier only when all conditions hold:
 
-1. No PE occupancy collision between both cycles.
+1. No PE occupancy collision between both bundles.
 2. No branch/control barrier is crossed.
 3. No direct route hop dependency is crossed (incoming readers `RCL/RCR/RCT/RCB/INCOMING` fence `ROUT` producers).
 4. Memory policy allows the move (`strict` or `same-address-fence`).
@@ -31,8 +31,8 @@ Independent route steps on disjoint PEs can be compacted, while direct hop depen
 When compacted:
 
 - lexical order is preserved deterministically,
-- cycle indices are re-numbered deterministically,
-- numeric branch targets are remapped to the new cycle indices.
+- bundle indices are re-numbered deterministically,
+- numeric branch targets are remapped to the new bundle indices.
 
 ## Example
 
@@ -42,11 +42,11 @@ bundle { at row 1: SMUL R2, R0, R1; }
 bundle { @0,3: LWI R1, 4; }
 ```
 
-The second cycle is compacted into the first one when hazards are absent.
+The second bundle is compacted into the first one when hazards are absent.
 
 ## Executable Snippet
 
-```dsl
+```castm
 target base;
 kernel "latency_hide_doc" {
   std::latency_hide(window=1, mode=conservative);

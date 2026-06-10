@@ -12,8 +12,8 @@ describe('issues/FEAT-10 stash statement', () => {
 target "uma-cgra-base";
 let L @360 = { 0, 0, 0, 0 };
 kernel "feat10_stash_point" {
-  stash(action=save, reg=R0, addr=L[0], target=point(3,0));
-  stash(action=restore, reg=R1, addr=L[0], target=point(3,0));
+  std::stash(action=save, reg=R0, addr=L[0], target=point(3,0));
+  std::stash(action=restore, reg=R1, addr=L[0], target=point(3,0));
 }
 `;
 
@@ -29,7 +29,7 @@ kernel "feat10_stash_point" {
 target "uma-cgra-base";
 let L @100 = { 0, 0, 0, 0 };
 kernel "feat10_row" {
-  stash(action=save, reg=R2, addr=L[0], target=row(1));
+  std::stash(action=save, reg=R2, addr=L[0], target=row(1));
 }
 `);
     expect(row.success).toBe(true);
@@ -40,7 +40,7 @@ kernel "feat10_row" {
 target "uma-cgra-base";
 let L @100 = { 0, 0, 0, 0 };
 kernel "feat10_col" {
-  stash(action=restore, reg=R3, addr=L[0], target=col(2));
+  std::stash(action=restore, reg=R3, addr=L[0], target=col(2));
 }
 `);
     expect(col.success).toBe(true);
@@ -51,7 +51,7 @@ kernel "feat10_col" {
 target "uma-cgra-base";
 let L @100 = { 0, 0, 0, 0 };
 kernel "feat10_all" {
-  stash(action=save, reg=R4, addr=L[0], target=all);
+  std::stash(action=save, reg=R4, addr=L[0], target=all);
 }
 `);
     expect(all.success).toBe(true);
@@ -63,7 +63,7 @@ kernel "feat10_all" {
 target "uma-cgra-base";
 let L @360 = { 0, 0, 0, 0 };
 kernel "feat10_oob" {
-  stash(action=save, reg=R0, addr=L[0], target=point(9,0));
+  std::stash(action=save, reg=R0, addr=L[0], target=point(9,0));
 }
 `;
     const result = compile(source);
@@ -76,7 +76,7 @@ kernel "feat10_oob" {
 target "uma-cgra-base";
 let L @360 = { 0, 0, 0, 0 };
 kernel "feat10_bad" {
-  stash(action=invalid, reg=R0, addr=L[0]);
+  std::stash(action=invalid, reg=R0, addr=L[0]);
 }
 `;
     const result = compile(source);
@@ -88,7 +88,7 @@ kernel "feat10_bad" {
     const source = `
 target "uma-cgra-base";
 kernel "feat10_raw_addr" {
-  stash(action=save, reg=R0, addr=360, target=point(0,0));
+  std::stash(action=save, reg=R0, addr=360, target=point(0,0));
 }
 `;
     const result = compile(source);

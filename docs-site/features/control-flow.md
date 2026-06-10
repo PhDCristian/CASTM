@@ -4,7 +4,7 @@ Control-flow in canonical CASTM is explicit and spatial (`if/while ... at @r,c`)
 
 ## When to use
 
-- Use `if/else` for branch-dependent cycle blocks.
+- Use `if/else` for branch-dependent bundle blocks.
 - Use `while` for explicit hardware loop control.
 - Use `break`/`continue` inside `while` and runtime `for` bodies for explicit loop exits.
 - Keep control PE placement explicit in headers.

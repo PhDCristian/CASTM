@@ -3,6 +3,8 @@
 // Demonstrates: for loop with range(n), compile-time unrolling,
 //               loop variable substitution in immediates.
 
+target base;
+
 kernel "ForBasic" {
     config(0xF, 0);
 

@@ -1,13 +1,14 @@
 // Simple Parallel Distribution
 //
-// Demonstrates: #pragma parallel, distributing work across PEs.
+// Demonstrates: static loop expansion, distributing work across PEs.
 // Each PE in the same row gets a different iteration.
+
+target base;
 
 kernel "ParallelSimple" {
     config(0xF, 0);
 
     // Distribute i=0..3 across columns 0..3
-    #pragma parallel
     for i in range(4) {
         bundle {
             @0,i: SADD R0, ZERO, i;

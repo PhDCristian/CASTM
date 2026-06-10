@@ -10,7 +10,7 @@ The `castm` CLI exposes three canonical commands.
 ## Target and assumptions
 
 - CLI examples assume canonical source with `target base;`.
-- `sim-matrix-csv` is the default documentation view format for DSL↔CSV equivalence.
+- `sim-matrix-csv` is the default documentation view format for CASTM↔CSV equivalence.
 
 ## CASTM ↔ CSV quick sample
 

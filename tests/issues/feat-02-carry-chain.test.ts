@@ -17,7 +17,7 @@ describe('issues/FEAT-2 carry_chain statement', () => {
 target "uma-cgra-base";
 let L = { 0, 0, 0, 0 };
 kernel "feat02_basic" {
-  carry_chain(src=R0, carry=R3, store=L, limbs=3, width=16, row=0, start=0, dir=right);
+  std::carry_chain(src=R0, carry=R3, store=L, limbs=3, width=16, row=0, start=0, dir=right);
 }
 `;
 
@@ -40,7 +40,7 @@ kernel "feat02_basic" {
 target "uma-cgra-base";
 let L = { 0, 0, 0, 0 };
 kernel "feat02_left" {
-  carry_chain(src=R4, carry=R5, store=L, limbs=2, width=8, mask=255, row=1, start=3, dir=left);
+  std::carry_chain(src=R4, carry=R5, store=L, limbs=2, width=8, mask=255, row=1, start=3, dir=left);
 }
 `;
 
@@ -58,7 +58,7 @@ kernel "feat02_left" {
     const malformed = compile(`
 target "uma-cgra-base";
 kernel "feat02_bad_parse" {
-  carry_chain(src=R0, carry=R3, store=L, limbs=3, width=16);
+  std::carry_chain(src=R0, carry=R3, store=L, limbs=3, width=16);
 }
 `);
     expect(malformed.success).toBe(false);
@@ -67,7 +67,7 @@ kernel "feat02_bad_parse" {
     const badDirection = compile(`
 target "uma-cgra-base";
 kernel "feat02_bad_dir" {
-  carry_chain(src=R0, carry=R3, store=L, limbs=3, width=16, row=0, dir=diag);
+  std::carry_chain(src=R0, carry=R3, store=L, limbs=3, width=16, row=0, dir=diag);
 }
 `);
     expect(badDirection.success).toBe(false);
@@ -76,7 +76,7 @@ kernel "feat02_bad_dir" {
     const overflow = compile(`
 target "uma-cgra-base";
 kernel "feat02_oob" {
-  carry_chain(src=R0, carry=R3, store=L, limbs=5, width=16, row=0, start=1, dir=right);
+  std::carry_chain(src=R0, carry=R3, store=L, limbs=5, width=16, row=0, start=1, dir=right);
 }
 `);
     expect(overflow.success).toBe(false);

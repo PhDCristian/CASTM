@@ -27,7 +27,7 @@ build {
   scheduler balanced;
   scheduler_window auto;
   memory_reorder same_address_fence;
-  prune_noop_cycles on;
+  prune_noop_bundles on;
 }
 kernel "sched_demo" {
   bundle { at @0,0: SADD R1, R0, 1; }
@@ -55,13 +55,13 @@ Full generated CSV: `docs-site/snippets/examples/scheduler-modes/01-main.csv`.
 
 ## Why this CSV looks like this
 
-The snippet contains two independent placements on different PEs. With balanced defaults (`O2`), slot packing can keep the cycle budget minimal while preserving deterministic ordering and hazards.
+The snippet contains two independent placements on different PEs. With balanced defaults (`O2`), slot packing can keep the bundle budget minimal while preserving deterministic ordering and hazards.
 
 ## Related features
 
-- [/features/pragmas/auto-cycle](/features/pragmas/auto-cycle)
-- [/features/pragmas/pipeline](/features/pragmas/pipeline)
-- [/features/pragmas/stash](/features/pragmas/stash)
+- [/features/advanced-statements/auto-bundle](/features/advanced-statements/auto-bundle)
+- [/features/advanced-statements/pipeline](/features/advanced-statements/pipeline)
+- [/features/advanced-statements/stash](/features/advanced-statements/stash)
 - [/language/compilation](/language/compilation)
 - [/examples/scheduler-practical](/examples/scheduler-practical)
 

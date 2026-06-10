@@ -4,27 +4,27 @@ import {
   Diagnostic,
   ErrorCodes,
   GridSpec,
-  HirCycle,
+  HirBundle,
   HirProgram,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { lowerCycleStatements } from './cycle-lowering.js';
+import { lowerBundleStatements } from './bundle-lowering.js';
 
 function collectLabels(ast: AstProgram, diagnostics: Diagnostic[]): Map<string, number> {
   const labels = new Map<string, number>();
-  for (const cycle of ast.kernel?.cycles ?? []) {
-    if (!cycle.label) continue;
-    if (labels.has(cycle.label)) {
+  for (const bundle of ast.kernel?.bundles ?? []) {
+    if (!bundle.label) continue;
+    if (labels.has(bundle.label)) {
       diagnostics.push(makeDiagnostic(
         ErrorCodes.Semantic.DuplicateLabel,
         'error',
-        cycle.span,
-        `Duplicate cycle label '${cycle.label}'.`,
-        'Use unique labels for each labeled cycle.'
+        bundle.span,
+        `Duplicate bundle label '${bundle.label}'.`,
+        'Use unique labels for each labeled bundle.'
       ));
       continue;
     }
-    labels.set(cycle.label, cycle.index);
+    labels.set(bundle.label, bundle.index);
   }
   return labels;
 }
@@ -36,13 +36,13 @@ export function createResolveSymbolsPass(targetProfileId: string, grid: GridSpec
       const diagnostics: Diagnostic[] = [];
 
       const kernel = input.kernel;
-      const cycles: HirCycle[] = [];
+      const bundles: HirBundle[] = [];
       if (!kernel) {
         return {
           output: {
             targetProfileId,
             grid,
-            cycles: []
+            bundles: []
           },
           diagnostics
         };
@@ -50,11 +50,11 @@ export function createResolveSymbolsPass(targetProfileId: string, grid: GridSpec
 
       const labels = collectLabels(input, diagnostics);
 
-      for (const cycle of kernel.cycles) {
-        cycles.push({
-          index: cycle.index,
-          operations: lowerCycleStatements(cycle.index, cycle.statements, grid, labels, diagnostics),
-          span: { ...cycle.span }
+      for (const bundle of kernel.bundles) {
+        bundles.push({
+          index: bundle.index,
+          operations: lowerBundleStatements(bundle.index, bundle.statements, grid, labels, diagnostics),
+          span: { ...bundle.span }
         });
       }
 
@@ -62,7 +62,7 @@ export function createResolveSymbolsPass(targetProfileId: string, grid: GridSpec
         output: {
           targetProfileId,
           grid,
-          cycles
+          bundles
         },
         diagnostics
       };

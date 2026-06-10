@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Diagnostic, ErrorCodes, spanAt } from '@castm/compiler-ir';
-import { buildStencilCycles } from '../packages/compiler-api/src/passes-shared/collective/stencil.js';
-import { parseBroadcastPragmaArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/broadcast.js';
+import { buildStencilBundles } from '../packages/compiler-api/src/passes-shared/collective/stencil.js';
+import { parseBroadcastAdvancedStatementArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/broadcast.js';
 import { parseProgramHeadersFromTokens } from '../packages/compiler-front/src/structured-core/token-stream.js';
 
 const span = spanAt(1, 1, 1);
@@ -14,7 +14,7 @@ afterEach(() => {
 
 describe('branch coverage round 5', () => {
   it('covers stencil lowering branches for empty/horizontal/vertical', () => {
-    expect(buildStencilCycles(
+    expect(buildStencilBundles(
       { pattern: 'cross', operation: 'add', srcReg: 'R0', destReg: 'R1' },
       0,
       { rows: 4, cols: 0, topology: 'mesh', wrapPolicy: 'clamp' } as any,
@@ -22,7 +22,7 @@ describe('branch coverage round 5', () => {
       []
     )).toEqual([]);
 
-    const horizontal = buildStencilCycles(
+    const horizontal = buildStencilBundles(
       { pattern: 'horizontal', operation: 'sum', srcReg: 'R0', destReg: 'R1' },
       1,
       { rows: 2, cols: 2, topology: 'torus', wrapPolicy: 'wrap' } as any,
@@ -31,7 +31,7 @@ describe('branch coverage round 5', () => {
     );
     expect(horizontal).toHaveLength(2);
 
-    const vertical = buildStencilCycles(
+    const vertical = buildStencilBundles(
       { pattern: 'vertical', operation: 'avg', srcReg: 'R0', destReg: 'R1' },
       3,
       { rows: 2, cols: 2, topology: 'torus', wrapPolicy: 'wrap' } as any,
@@ -54,31 +54,31 @@ describe('branch coverage round 5', () => {
     const gather = await import('../packages/compiler-api/src/passes-shared/collective/gather-stream/gather.js');
 
     const tDiagnostics: Diagnostic[] = [];
-    const tCycles = transpose.buildTransposeCycles(
+    const tBundles = transpose.buildTransposeBundles(
       { reg: 'R0' },
       0,
       { rows: 4, cols: 4, topology: 'torus', wrapPolicy: 'wrap' } as any,
       span,
       tDiagnostics
     );
-    expect(tCycles).toEqual([]);
+    expect(tBundles).toEqual([]);
     expect(tDiagnostics.at(-1)?.message).toContain('Could not allocate scratch registers');
 
     const gDiagnostics: Diagnostic[] = [];
-    const gCycles = gather.buildGatherCycles(
+    const gBundles = gather.buildGatherBundles(
       { srcReg: 'R0', destReg: 'R1', dest: { row: 0, col: 0 }, operation: 'add' },
       0,
       { rows: 4, cols: 4, topology: 'torus', wrapPolicy: 'wrap' } as any,
       span,
       gDiagnostics
     );
-    expect(gCycles).toEqual([]);
+    expect(gBundles).toEqual([]);
     expect(gDiagnostics.at(-1)?.message).toContain('Could not allocate scratch registers');
   });
 
   it('covers route build local and mocked unknown-incoming branches', async () => {
     const routeMod = await import('../packages/compiler-api/src/passes-shared/route-builders/build-route.js');
-    const local = routeMod.buildRouteCycles(
+    const local = routeMod.buildRouteBundles(
       { src: { row: 0, col: 0 }, dst: { row: 0, col: 0 }, payload: 'R0', accum: 'R1' },
       0,
       { rows: 4, cols: 4, topology: 'torus', wrapPolicy: 'wrap' } as any,
@@ -98,14 +98,14 @@ describe('branch coverage round 5', () => {
     });
     const mocked = await import('../packages/compiler-api/src/passes-shared/route-builders/build-route.js');
     const diagnostics: Diagnostic[] = [];
-    const cycles = mocked.buildRouteCycles(
+    const bundles = mocked.buildRouteBundles(
       { src: { row: 0, col: 0 }, dst: { row: 0, col: 1 }, payload: 'R0', accum: 'R1' },
       0,
       { rows: 4, cols: 4, topology: 'mesh', wrapPolicy: 'clamp' } as any,
       span,
       diagnostics
     );
-    expect(cycles.length).toBeGreaterThanOrEqual(1);
+    expect(bundles.length).toBeGreaterThanOrEqual(1);
     expect(diagnostics.at(-1)?.code).toBe(ErrorCodes.Internal.UnexpectedState);
   });
 
@@ -117,8 +117,8 @@ describe('branch coverage round 5', () => {
         name: 'k',
         config: undefined,
         directives: [],
-        pragmas: [],
-        cycles: [{
+        advancedStatements: [],
+        bundles: [{
           index: 0,
           span,
           statements: [{
@@ -134,7 +134,7 @@ describe('branch coverage round 5', () => {
     };
     const memoryMod = await import('../packages/compiler-api/src/passes-shared/desugar/memory-pass.js');
     const memoryResult = memoryMod.createDesugarMemoryPass(new Map([['A', { start: 100, length: 4 }]])).run(ast);
-    const memInst = (memoryResult.output.kernel.cycles[0].statements[0] as any).instruction;
+    const memInst = (memoryResult.output.kernel.bundles[0].statements[0] as any).instruction;
     expect(memInst.text).toBe('LWI R1, 100');
 
     vi.doMock('../packages/compiler-api/src/passes-shared/desugar-utils.js', async () => {
@@ -152,8 +152,8 @@ describe('branch coverage round 5', () => {
         name: 'k',
         config: undefined,
         directives: [],
-        pragmas: [],
-        cycles: [{
+        advancedStatements: [],
+        bundles: [{
           index: 0,
           span,
           statements: [{
@@ -171,9 +171,9 @@ describe('branch coverage round 5', () => {
   });
 
   it('covers broadcast direct parser branch guards', () => {
-    expect(parseBroadcastPragmaArgs('broadcast(value=1, from=@0,0, to=row)')).toBeNull();
-    expect(parseBroadcastPragmaArgs('broadcast(value=R1, from=@bad, to=row)')).toBeNull();
-    expect(parseBroadcastPragmaArgs('broadcast(value=R1, from=@0,0, to=row)')).toMatchObject({
+    expect(parseBroadcastAdvancedStatementArgs('broadcast(value=1, from=@0,0, to=row)')).toBeNull();
+    expect(parseBroadcastAdvancedStatementArgs('broadcast(value=R1, from=@bad, to=row)')).toBeNull();
+    expect(parseBroadcastAdvancedStatementArgs('broadcast(value=R1, from=@0,0, to=row)')).toMatchObject({
       valueReg: 'R1',
       scope: 'row'
     });
@@ -190,8 +190,8 @@ kernel not_a_string {
     expect(headers.kernelHeaderLine).toBeNull();
   });
 
-  it('covers cycle-loop spatial handled branch with step mocks', async () => {
-    vi.doMock('../packages/compiler-front/src/structured-core/lowering/cycle-loop/steps.js', () => ({
+  it('covers bundle-loop spatial handled branch with step mocks', async () => {
+    vi.doMock('../packages/compiler-front/src/structured-core/lowering/bundle-loop/steps.js', () => ({
       tryExpandNestedForLoopStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 }),
       tryExpandSpatialAtBlockStep: () => ({
         handled: true,
@@ -199,9 +199,9 @@ kernel not_a_string {
         shouldBreak: false,
         nextIndex: 0
       }),
-      tryExpandSingleCycleStatementStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 })
+      tryExpandSingleBundleStatementStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 })
     }));
-    const { expandLoopBody } = await import('../packages/compiler-front/src/structured-core/lowering/cycle-loop.js');
+    const { expandLoopBody } = await import('../packages/compiler-front/src/structured-core/lowering/bundle-loop.js');
     const out = expandLoopBody(
       [{ lineNo: 1, rawLine: 'at @0,0 { NOP; }', cleanLine: 'at @0,0 { NOP; }' }],
       new Map(),
@@ -220,7 +220,7 @@ kernel not_a_string {
       };
     });
     const mod = await import('../packages/compiler-front/src/structured-core/lowering/for-expand-static.js');
-    const outKernel: any = { name: 'k', config: undefined, directives: [], pragmas: [], cycles: [], span };
+    const outKernel: any = { name: 'k', config: undefined, directives: [], advancedStatements: [], bundles: [], span };
     mod.expandStaticForLoop({
       header: { variable: 'i', start: 0, end: 4, step: 1 },
       loopBody: [],
@@ -230,18 +230,18 @@ kernel not_a_string {
       functions: new Map(),
       constants: new Map(),
       diagnostics: [],
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
       callbacks: {
-        cycleHasControlFlow: () => false,
-        cloneCycle: (cycle: any) => cycle,
+        bundleHasControlFlow: () => false,
+        cloneBundle: (bundle: any) => bundle,
         parseInstruction: () => ({ text: 'NOP', opcode: 'NOP', operands: [], span }),
-        makeControlCycle: () => ({ index: 0, span, statements: [] }),
+        makeControlBundle: () => ({ index: 0, span, statements: [] }),
         expandFunctionBodyIntoKernel: () => {}
       }
     } as any);
-    expect(outKernel.cycles).toEqual([]);
+    expect(outKernel.bundles).toEqual([]);
   });
 });

@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
@@ -7,49 +7,49 @@ import {
   makeDiagnostic
 } from '@castm/compiler-ir';
 import {
-  createAtCycle,
+  createAtBundle,
   createInstruction
 } from './ast-utils.js';
-import { ReducePragmaArgs } from './advanced-args.js';
+import { ReduceAdvancedStatementArgs } from './advanced-args.js';
 import { RoutePoint } from './route-args.js';
-import { buildRouteTransferCycles } from './route-builders.js';
+import { buildRouteTransferBundles } from './route-builders.js';
 import {
   getReduceOpcode,
   pickScratchRegisters
 } from './collective-scan-reduce-helpers.js';
 
-export function buildReduceCycles(
-  pragma: ReducePragmaArgs,
+export function buildReduceBundles(
+  advancedStatement: ReduceAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
-  const compareOp = pragma.operation === 'max' || pragma.operation === 'min';
-  const simpleOpcode = getReduceOpcode(pragma.operation);
+): BundleAst[] {
+  const compareOp = advancedStatement.operation === 'max' || advancedStatement.operation === 'min';
+  const simpleOpcode = getReduceOpcode(advancedStatement.operation);
   if (!compareOp && !simpleOpcode) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Unsupported reduce operation '${pragma.operation}'.`,
+      `Unsupported reduce operation '${advancedStatement.operation}'.`,
       'Supported operations: sum, add, and, or, xor, mul, max, min.'
     ));
     return [];
   }
 
-  const lanes = pragma.axis === 'row' ? grid.cols : grid.rows;
+  const lanes = advancedStatement.axis === 'row' ? grid.cols : grid.rows;
   if (lanes <= 0) {
     return [];
   }
 
-  const scratch = pickScratchRegisters([pragma.srcReg, pragma.destReg]);
+  const scratch = pickScratchRegisters([advancedStatement.srcReg, advancedStatement.destReg]);
   if (!scratch) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Could not allocate scratch registers for reduce destination '${pragma.destReg}'.`,
+      `Could not allocate scratch registers for reduce destination '${advancedStatement.destReg}'.`,
       'Use a target profile with temporary registers available.'
     ));
     return [];
@@ -61,7 +61,7 @@ export function buildReduceCycles(
   const sources: RoutePoint[] = [];
   for (let i = 1; i < lanes; i++) {
     sources.push(
-      pragma.axis === 'row'
+      advancedStatement.axis === 'row'
         ? { row: 0, col: i }
         : { row: i, col: 0 }
     );
@@ -74,57 +74,57 @@ export function buildReduceCycles(
     return a.col - b.col;
   });
 
-  const cycles: CycleAst[] = [];
-  cycles.push(createAtCycle(
-    startIndex + cycles.length,
+  const bundles: BundleAst[] = [];
+  bundles.push(createAtBundle(
+    startIndex + bundles.length,
     anchor.row,
     anchor.col,
-    createInstruction('SADD', [pragma.destReg, pragma.srcReg, 'ZERO'], span),
+    createInstruction('SADD', [advancedStatement.destReg, advancedStatement.srcReg, 'ZERO'], span),
     span
   ));
 
   for (const source of sources) {
-    const transfer = buildRouteTransferCycles(
+    const transfer = buildRouteTransferBundles(
       source,
       anchor,
-      pragma.srcReg,
+      advancedStatement.srcReg,
       relayReg,
-      startIndex + cycles.length,
+      startIndex + bundles.length,
       grid,
       span,
       diagnostics
     );
-    cycles.push(...transfer);
+    bundles.push(...transfer);
 
     if (!compareOp && simpleOpcode) {
-      cycles.push(createAtCycle(
-        startIndex + cycles.length,
+      bundles.push(createAtBundle(
+        startIndex + bundles.length,
         anchor.row,
         anchor.col,
-        createInstruction(simpleOpcode, [pragma.destReg, pragma.destReg, relayReg], span),
+        createInstruction(simpleOpcode, [advancedStatement.destReg, advancedStatement.destReg, relayReg], span),
         span
       ));
       continue;
     }
 
-    cycles.push(createAtCycle(
-      startIndex + cycles.length,
+    bundles.push(createAtBundle(
+      startIndex + bundles.length,
       anchor.row,
       anchor.col,
-      createInstruction('SSUB', [cmpReg, pragma.destReg, relayReg], span),
+      createInstruction('SSUB', [cmpReg, advancedStatement.destReg, relayReg], span),
       span
     ));
 
-    const first = pragma.operation === 'max' ? relayReg : pragma.destReg;
-    const second = pragma.operation === 'max' ? pragma.destReg : relayReg;
-    cycles.push(createAtCycle(
-      startIndex + cycles.length,
+    const first = advancedStatement.operation === 'max' ? relayReg : advancedStatement.destReg;
+    const second = advancedStatement.operation === 'max' ? advancedStatement.destReg : relayReg;
+    bundles.push(createAtBundle(
+      startIndex + bundles.length,
       anchor.row,
       anchor.col,
-      createInstruction('BSFA', [pragma.destReg, first, second, 'SELF'], span),
+      createInstruction('BSFA', [advancedStatement.destReg, first, second, 'SELF'], span),
       span
     ));
   }
 
-  return cycles;
+  return bundles;
 }

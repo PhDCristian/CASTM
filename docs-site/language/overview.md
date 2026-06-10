@@ -47,7 +47,7 @@ kernel "overview" {
 ## What This Gives You
 
 - direct mapping from high-level intent to deterministic CSV output
-- predictable cycle ordering and lowering
+- predictable bundle ordering and lowering
 - typed compilation artifacts for tooling and debugging (`structuredAst`, `ast`, `hir`, `mir`, `lir`, `csv`)
 
 ## References
@@ -56,7 +56,7 @@ kernel "overview" {
 - [Configuration in Source](/language/configuration)
 - [Target Profiles](/language/target-profiles)
 - [Compilation Pipeline](/language/compilation)
-- [DSL to CSV Equivalence](/language/dsl-csv-equivalence)
+- [CASTM to CSV Equivalence](/language/castm-csv-equivalence)
 - [Formal Grammar](/language/grammar)
 
 

@@ -3,7 +3,9 @@
 // Demonstrates: range(start, end) and range(start, end, step),
 //               loop variable used in array indexing.
 
-.data values { 100, 200, 300, 400, 500, 600, 700, 800 }
+target base;
+
+let values = { 100, 200, 300, 400, 500, 600, 700, 800 };
 
 kernel "ForStep" {
     config(0xF, 0);

@@ -60,7 +60,7 @@ export interface AssertionParseFailure {
 }
 
 function inferDefaultAssertionBundle(ast: AstProgram, span: SourceSpan): number {
-  const bundles = ast.kernel?.cycles ?? [];
+  const bundles = ast.kernel?.bundles ?? [];
   if (bundles.length === 0) return 0;
 
   let lastBeforeSpan: number | null = null;

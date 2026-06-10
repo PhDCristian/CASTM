@@ -21,8 +21,8 @@ function makeAst() {
       name: 'k',
       config: undefined,
       directives: [],
-      pragmas: [],
-      cycles: [
+      advancedStatements: [],
+      bundles: [
         {
           index: 0,
           statements: [
@@ -110,11 +110,11 @@ describe('compiler-api desugar utils', () => {
     }));
 
     expect(diagnostics).toHaveLength(0);
-    expect(output.kernel?.cycles[0].statements[0]).toMatchObject({
+    expect(output.kernel?.bundles[0].statements[0]).toMatchObject({
       kind: 'at'
     });
-    expect((output.kernel!.cycles[0].statements[0] as any).instruction.text).toContain('transformed');
-    expect((input.kernel!.cycles[0].statements[0] as any).instruction.text).toBe('SADD R1, R2, R3');
+    expect((output.kernel!.bundles[0].statements[0] as any).instruction.text).toContain('transformed');
+    expect((input.kernel!.bundles[0].statements[0] as any).instruction.text).toBe('SADD R1, R2, R3');
 
     const noKernel = transformInstructions(
       { ...input, kernel: null } as any,

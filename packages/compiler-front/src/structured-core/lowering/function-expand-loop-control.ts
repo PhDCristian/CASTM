@@ -3,7 +3,7 @@ import {
   makeDiagnostic,
   spanAt
 } from '@castm/compiler-ir';
-import { makeControlCycle } from './function-expand-helpers.js';
+import { makeControlBundle } from './function-expand-helpers.js';
 import {
   FunctionExpandStepInput,
   FunctionExpandStepResult
@@ -78,8 +78,8 @@ export function tryExpandLoopControlStatement(input: FunctionExpandStepInput): F
   }
 
   const jumpTarget = parsed.kind === 'break' ? scope.breakLabel : scope.continueLabel;
-  input.kernel.cycles.push(makeControlCycle(
-    input.cycleCounter.value++,
+  input.kernel.bundles.push(makeControlBundle(
+    input.bundleCounter.value++,
     input.entry.lineNo,
     scope.row,
     scope.col,

@@ -3,7 +3,7 @@ import {
   buildFalseBranchInstruction,
   parseControlHeader
 } from './control-flow.js';
-import { makeControlCycle } from './function-expand-helpers.js';
+import { makeControlBundle } from './function-expand-helpers.js';
 import {
   collectBlockFromEntries
 } from '../parser-utils/blocks.js';
@@ -33,7 +33,7 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
     functions,
     constants,
     diagnostics,
-    cycleCounter,
+    bundleCounter,
     callStack,
     expansionCounter,
     controlFlowCounter,
@@ -60,8 +60,8 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
     return { handled: true, nextIndex: index, shouldBreak: true };
   }
 
-  const prevCycleCount = kernel.cycles.length;
-  const prevPragmaCount = kernel.pragmas.length;
+  const prevBundleCount = kernel.bundles.length;
+  const prevAdvancedStatementCount = kernel.advancedStatements.length;
   const suffixId = controlFlowCounter.value++;
   const elseLabel = `__if_else_${suffixId}`;
   const endLabel = `__if_end_${suffixId}`;
@@ -74,8 +74,8 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
   const consumedEnd = resolvedElse.consumedEnd;
 
   const falseTarget = hasElse ? elseLabel : endLabel;
-  kernel.cycles.push(makeControlCycle(
-    cycleCounter.value++,
+  kernel.bundles.push(makeControlBundle(
+    bundleCounter.value++,
     entry.lineNo,
     ifHeader.row,
     ifHeader.col,
@@ -88,7 +88,7 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
     functions,
     constants,
     diagnostics,
-    cycleCounter,
+    bundleCounter,
     callStack,
     expansionCounter,
     controlFlowCounter,
@@ -98,16 +98,16 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
   );
 
   if (hasElse && elseBlock) {
-    kernel.cycles.push(makeControlCycle(
-      cycleCounter.value++,
+    kernel.bundles.push(makeControlBundle(
+      bundleCounter.value++,
       entry.lineNo,
       ifHeader.row,
       ifHeader.col,
       `JUMP ZERO, ${endLabel}`
     ));
 
-    kernel.cycles.push(makeControlCycle(
-      cycleCounter.value++,
+    kernel.bundles.push(makeControlBundle(
+      bundleCounter.value++,
       entry.lineNo,
       ifHeader.row,
       ifHeader.col,
@@ -121,7 +121,7 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
       functions,
       constants,
       diagnostics,
-      cycleCounter,
+      bundleCounter,
       callStack,
       expansionCounter,
       controlFlowCounter,
@@ -131,8 +131,8 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
     );
   }
 
-  kernel.cycles.push(makeControlCycle(
-    cycleCounter.value++,
+  kernel.bundles.push(makeControlBundle(
+    bundleCounter.value++,
     entry.lineNo,
     ifHeader.row,
     ifHeader.col,
@@ -141,9 +141,9 @@ export function tryExpandIfStatement(input: ExpandControlBaseInput): ExpandContr
   ));
 
   if (labelResult) {
-    // tryExpandIfStatement always emits at least one control cycle.
-    if (kernel.cycles.length > prevCycleCount) {
-      kernel.cycles[prevCycleCount].label = labelResult.label;
+    // tryExpandIfStatement always emits at least one control bundle.
+    if (kernel.bundles.length > prevBundleCount) {
+      kernel.bundles[prevBundleCount].label = labelResult.label;
     }
   }
 

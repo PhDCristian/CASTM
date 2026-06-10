@@ -14,7 +14,7 @@ export const ErrorCodes = {
     UnknownOpcode: 'E3005',
     UnknownTargetProfile: 'E3006',
     InvalidGridSpec: 'E3007',
-    UnsupportedPragma: 'E3008',
+    UnsupportedAdvancedStatement: 'E3008',
     UnknownLabel: 'E3009',
     DuplicateLabel: 'E3010',
     UnresolvedCoordinateExpression: 'E3011',

@@ -1,13 +1,13 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
   SourceSpan,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { ConditionalSubPragmaArgs } from '../advanced-args.js';
-import { createInstruction, createMultiAtCycle } from '../ast-utils.js';
+import { ConditionalSubAdvancedStatementArgs } from '../advanced-args.js';
+import { createInstruction, createMultiAtBundle } from '../ast-utils.js';
 
 function upperToken(value: string): string {
   return value.trim().toUpperCase();
@@ -28,7 +28,7 @@ function appendOutOfBoundsDiagnostic(
 }
 
 function resolvePlacements(
-  target: ConditionalSubPragmaArgs['target'],
+  target: ConditionalSubAdvancedStatementArgs['target'],
   grid: GridSpec,
   diagnostics: Diagnostic[],
   span: SourceSpan
@@ -81,19 +81,19 @@ function resolvePlacements(
   return [{ row: target.row, col: target.col }];
 }
 
-export function buildConditionalSubCycles(
-  pragma: ConditionalSubPragmaArgs,
+export function buildConditionalSubBundles(
+  advancedStatement: ConditionalSubAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
-  const points = resolvePlacements(pragma.target, grid, diagnostics, span);
+): BundleAst[] {
+  const points = resolvePlacements(advancedStatement.target, grid, diagnostics, span);
   if (points.length === 0) return [];
 
-  const valueReg = upperToken(pragma.valueReg);
-  const subReg = upperToken(pragma.subReg);
-  const destReg = upperToken(pragma.destReg);
+  const valueReg = upperToken(advancedStatement.valueReg);
+  const subReg = upperToken(advancedStatement.subReg);
+  const destReg = upperToken(advancedStatement.destReg);
 
   const subtractPlacements = points.map((point) => ({
     row: point.row,
@@ -107,7 +107,7 @@ export function buildConditionalSubCycles(
   }));
 
   return [
-    createMultiAtCycle(startIndex, subtractPlacements, span),
-    createMultiAtCycle(startIndex + 1, selectPlacements, span)
+    createMultiAtBundle(startIndex, subtractPlacements, span),
+    createMultiAtBundle(startIndex + 1, selectPlacements, span)
   ];
 }

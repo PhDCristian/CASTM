@@ -46,7 +46,7 @@ std::conditional_sub(value=R7, sub=R1, dest=R0, target=point(1,2));
 
 ## Executable Snippet
 
-```dsl
+```castm
 target base;
 kernel "conditional_sub_doc" {
   std::conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
@@ -64,5 +64,5 @@ Executable contract tests:
 
 - `tests/issues/feat-14-conditional-sub.test.ts`
 - `tests/compiler-api.collective-builders.test.ts`
-- `tests/compiler-api.expand-pragmas.handlers.test.ts`
+- `tests/compiler-api.expand-advanced-statements.handlers.test.ts`
 - `tests/compiler-api.passes-shared.test.ts`

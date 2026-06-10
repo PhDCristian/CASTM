@@ -11,7 +11,7 @@ describe('issues/FEAT-6 triangle statement', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat6_upper" {
-  triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  std::triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 }
 `;
 
@@ -30,7 +30,7 @@ kernel "feat6_upper" {
     const source = `
 target "uma-cgra-base";
 kernel "feat6_lower_exclusive" {
-  triangle(shape=lower, inclusive=false, op=SADD, dest=R3, srcA=R1, srcB=R2);
+  std::triangle(shape=lower, inclusive=false, op=SADD, dest=R3, srcA=R1, srcB=R2);
 }
 `;
 
@@ -53,7 +53,7 @@ build {
   grid 2x4 mesh;
 }
 kernel "feat6_nxm" {
-  triangle(shape=upper, inclusive=true, op=NOP);
+  std::triangle(shape=upper, inclusive=true, op=NOP);
 }
 `;
 
@@ -66,7 +66,7 @@ build {
   grid 2x4 mesh;
 }
 kernel "feat6_nxm_fixed" {
-  triangle(shape=upper, inclusive=true, op=SADD, dest=R1, srcA=R0, srcB=ZERO);
+  std::triangle(shape=upper, inclusive=true, op=SADD, dest=R1, srcA=R0, srcB=ZERO);
 }
 `;
     const fixed = compile(fixedSource);
@@ -84,7 +84,7 @@ kernel "feat6_nxm_fixed" {
     const source = `
 target "uma-cgra-base";
 kernel "feat6_bad" {
-  triangle(shape=diag, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  std::triangle(shape=diag, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 }
 `;
 

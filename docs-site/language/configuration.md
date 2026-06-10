@@ -35,7 +35,7 @@ build {
   scheduler_window auto;
   memory_reorder same_address_fence;
   expansion_mode full-unroll;
-  prune_noop_cycles on;
+  prune_noop_bundles on;
   grid 4x4 torus;
 }
 
@@ -46,7 +46,7 @@ kernel "configured" {
 
 ## Presets (`optimize`)
 
-| Preset | Scheduler | Window | Memory Reorder | Prune Noop Cycles |
+| Preset | Scheduler | Window | Memory Reorder | Prune Noop Bundles |
 |---|---|---|---|---|
 | `O0` | `safe` | `0` | `strict` | `off` |
 | `O1` | `safe` | `1` | `strict` | `on` |

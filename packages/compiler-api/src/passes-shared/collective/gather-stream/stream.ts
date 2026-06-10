@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
@@ -8,10 +8,10 @@ import {
 } from '@castm/compiler-ir';
 import {
   createInstruction,
-  createRowCycle
+  createRowBundle
 } from '../../ast-utils.js';
 
-export function buildStreamCycles(
+export function buildStreamBundles(
   opcode: 'LWD' | 'SWD',
   reg: string,
   row: number,
@@ -20,7 +20,7 @@ export function buildStreamCycles(
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
+): BundleAst[] {
   if (!Number.isInteger(row) || row < 0 || row >= grid.rows) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.CoordinateOutOfBounds,
@@ -43,13 +43,13 @@ export function buildStreamCycles(
     return [];
   }
 
-  const cycles: CycleAst[] = [];
+  const bundles: BundleAst[] = [];
   for (let i = 0; i < count; i++) {
     const instructions = Array.from(
       { length: grid.cols },
       () => createInstruction(opcode, [reg], span)
     );
-    cycles.push(createRowCycle(startIndex + cycles.length, row, instructions, span));
+    bundles.push(createRowBundle(startIndex + bundles.length, row, instructions, span));
   }
-  return cycles;
+  return bundles;
 }

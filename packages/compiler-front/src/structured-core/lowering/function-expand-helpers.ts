@@ -1,9 +1,9 @@
 export {
-  cloneCycle,
-  cycleHasControlFlow,
-  makeCallCycle,
-  makeControlCycle
-} from './function-expand-helpers/cycle.js';
+  cloneBundle,
+  bundleHasControlFlow,
+  makeCallBundle,
+  makeControlBundle
+} from './function-expand-helpers/bundle.js';
 export {
   buildWhileFusionPlan,
   rewriteConditionForWhileFusion

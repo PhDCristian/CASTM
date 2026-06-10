@@ -10,9 +10,9 @@ afterEach(() => {
 });
 
 describe('branch coverage round 7', () => {
-  it('covers cycle-loop branches: empty line and clean-erased binding', async () => {
+  it('covers bundle-loop branches: empty line and clean-erased binding', async () => {
     vi.resetModules();
-    const mod1 = await import('../packages/compiler-front/src/structured-core/lowering/cycle-loop.js');
+    const mod1 = await import('../packages/compiler-front/src/structured-core/lowering/bundle-loop.js');
     const out1 = mod1.expandLoopBody(
       [{ lineNo: 1, rawLine: '', cleanLine: '' }],
       new Map(),
@@ -29,12 +29,12 @@ describe('branch coverage round 7', () => {
         applyBindings: () => ''
       };
     });
-    vi.doMock('../packages/compiler-front/src/structured-core/lowering/cycle-loop/steps.js', () => ({
+    vi.doMock('../packages/compiler-front/src/structured-core/lowering/bundle-loop/steps.js', () => ({
       tryExpandNestedForLoopStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 }),
       tryExpandSpatialAtBlockStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 }),
-      tryExpandSingleCycleStatementStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 })
+      tryExpandSingleBundleStatementStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 })
     }));
-    const mod2 = await import('../packages/compiler-front/src/structured-core/lowering/cycle-loop.js');
+    const mod2 = await import('../packages/compiler-front/src/structured-core/lowering/bundle-loop.js');
     const out2 = mod2.expandLoopBody(
       [{ lineNo: 1, rawLine: 'x', cleanLine: 'x' }],
       new Map(),
@@ -44,32 +44,32 @@ describe('branch coverage round 7', () => {
     expect(out2).toEqual([]);
   });
 
-  it('covers cycle-loop shouldBreak branches for nested/spatial/statement handlers', async () => {
+  it('covers bundle-loop shouldBreak branches for nested/spatial/statement handlers', async () => {
     vi.resetModules();
-    vi.doMock('../packages/compiler-front/src/structured-core/lowering/cycle-loop/steps.js', () => ({
+    vi.doMock('../packages/compiler-front/src/structured-core/lowering/bundle-loop/steps.js', () => ({
       tryExpandNestedForLoopStep: () => ({ handled: true, statements: [], shouldBreak: true, nextIndex: 0 }),
       tryExpandSpatialAtBlockStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 }),
-      tryExpandSingleCycleStatementStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 })
+      tryExpandSingleBundleStatementStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 })
     }));
-    let mod = await import('../packages/compiler-front/src/structured-core/lowering/cycle-loop.js');
+    let mod = await import('../packages/compiler-front/src/structured-core/lowering/bundle-loop.js');
     mod.expandLoopBody([{ lineNo: 1, rawLine: 'x', cleanLine: 'x' }], new Map(), new Map(), []);
 
     vi.resetModules();
-    vi.doMock('../packages/compiler-front/src/structured-core/lowering/cycle-loop/steps.js', () => ({
+    vi.doMock('../packages/compiler-front/src/structured-core/lowering/bundle-loop/steps.js', () => ({
       tryExpandNestedForLoopStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 }),
       tryExpandSpatialAtBlockStep: () => ({ handled: true, statements: [], shouldBreak: true, nextIndex: 0 }),
-      tryExpandSingleCycleStatementStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 })
+      tryExpandSingleBundleStatementStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 })
     }));
-    mod = await import('../packages/compiler-front/src/structured-core/lowering/cycle-loop.js');
+    mod = await import('../packages/compiler-front/src/structured-core/lowering/bundle-loop.js');
     mod.expandLoopBody([{ lineNo: 1, rawLine: 'x', cleanLine: 'x' }], new Map(), new Map(), []);
 
     vi.resetModules();
-    vi.doMock('../packages/compiler-front/src/structured-core/lowering/cycle-loop/steps.js', () => ({
+    vi.doMock('../packages/compiler-front/src/structured-core/lowering/bundle-loop/steps.js', () => ({
       tryExpandNestedForLoopStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 }),
       tryExpandSpatialAtBlockStep: () => ({ handled: false, statements: [], shouldBreak: false, nextIndex: 0 }),
-      tryExpandSingleCycleStatementStep: () => ({ handled: true, statements: [], shouldBreak: true, nextIndex: 0 })
+      tryExpandSingleBundleStatementStep: () => ({ handled: true, statements: [], shouldBreak: true, nextIndex: 0 })
     }));
-    mod = await import('../packages/compiler-front/src/structured-core/lowering/cycle-loop.js');
+    mod = await import('../packages/compiler-front/src/structured-core/lowering/bundle-loop.js');
     mod.expandLoopBody([{ lineNo: 1, rawLine: 'x', cleanLine: 'x' }], new Map(), new Map(), []);
 
     expect(true).toBe(true);
@@ -107,7 +107,7 @@ describe('branch coverage round 7', () => {
   });
 
   it('covers runtime-plan fallback relay register branch', () => {
-    const cycle: any = {
+    const bundle: any = {
       index: 0,
       label: undefined,
       span: { startLine: 1, startColumn: 1, endLine: 1, endColumn: 2 },
@@ -120,7 +120,7 @@ describe('branch coverage round 7', () => {
       }]
     };
     const plan = buildRuntimeNoUnrollAggressivePlan(
-      [cycle],
+      [bundle],
       'R0',
       0,
       0,

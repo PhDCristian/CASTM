@@ -49,7 +49,7 @@ kernel "scheduler_modes" {
     expect(implicit.stats.loweredPasses).not.toContain('scheduler:aggressive');
   });
 
-  it('keeps observable instruction workload while allowing cycle compaction', () => {
+  it('keeps observable instruction workload while allowing bundle compaction', () => {
     const safe = compile(`
 target "uma-cgra-base";
 build { scheduler safe; }
@@ -82,11 +82,11 @@ kernel "scheduler_modes" {
     expect(balanced.stats.instructions).toBe(safe.stats.instructions);
     expect(aggressive.stats.instructions).toBe(safe.stats.instructions);
 
-    expect(balanced.stats.cycles).toBeLessThanOrEqual(safe.stats.cycles);
-    expect(aggressive.stats.cycles).toBeLessThanOrEqual(balanced.stats.cycles);
+    expect(balanced.stats.bundles).toBeLessThanOrEqual(safe.stats.bundles);
+    expect(aggressive.stats.bundles).toBeLessThanOrEqual(balanced.stats.bundles);
 
-    expect(balanced.stats.totalSlots).toBe(balanced.stats.cycles * 16);
-    expect(aggressive.stats.totalSlots).toBe(aggressive.stats.cycles * 16);
+    expect(balanced.stats.totalSlots).toBe(balanced.stats.bundles * 16);
+    expect(aggressive.stats.totalSlots).toBe(aggressive.stats.bundles * 16);
     expect(balanced.stats.utilization).toBeGreaterThanOrEqual(safe.stats.utilization);
     expect(aggressive.stats.utilization).toBeGreaterThanOrEqual(balanced.stats.utilization);
   });

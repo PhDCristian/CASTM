@@ -6,7 +6,7 @@ This section is organized as executable, practical examples with deterministic l
 
 - the global examples map with practical outcomes,
 - direct navigation between examples and feature docs,
-- one canonical DSL↔CSV preview to anchor interpretation.
+- one canonical CASTM↔CSV preview to anchor interpretation.
 
 ## When to use
 
@@ -44,13 +44,13 @@ Full CSV: `docs-site/snippets/examples/overview/01-main.csv`.
 
 | Page | Main goal | Practical outcome |
 |---|---|---|
-| [/examples/basic](/examples/basic) | first canonical kernel | load/add/store in 2 cycles |
+| [/examples/basic](/examples/basic) | first canonical kernel | load/add/store in 2 bundles |
 | [/examples/loops](/examples/loops) | static + runtime loop syntax | correct expansion and runtime control PE |
 | [/examples/loop-strategies](/examples/loop-strategies) | `unroll(k)` + `collapse(n)` | deterministic static scheduling strategy |
 | [/examples/for-control-flow](/examples/for-control-flow) | `for` with `if/else` and `while` | explicit control-flow placement in kernel |
 | [/examples/scheduler-modes](/examples/scheduler-modes) | API options | deterministic scheduler configuration |
-| [/examples/scheduler-practical](/examples/scheduler-practical) | measured scheduler behavior | real cycle deltas and branch remap behavior |
-| [/examples/optimization-profiles](/examples/optimization-profiles) | same kernel, different presets | direct O0/O1/O2/O3 cycle comparison |
+| [/examples/scheduler-practical](/examples/scheduler-practical) | measured scheduler behavior | real bundle deltas and branch remap behavior |
+| [/examples/optimization-profiles](/examples/optimization-profiles) | same kernel, different presets | direct O0/O1/O2/O3 bundle comparison |
 | [/examples/kernel-compaction](/examples/kernel-compaction) | replacing boilerplate | shorter source with same semantics |
 | [/examples/parallel](/examples/parallel) | `pipeline(...)` | ordered function composition |
 | [/examples/scan](/examples/scan) | lane collectives | scan/reduce/allreduce composition |
@@ -61,18 +61,18 @@ Full CSV: `docs-site/snippets/examples/overview/01-main.csv`.
 ## Related sections
 
 - Feature map: [/features](/features/index)
-- Advanced statements: [/features/pragmas/index](/features/pragmas/index)
+- Advanced statements: [/features/advanced-statements/index](/features/advanced-statements/index)
 - Examples index: [/examples](/examples/index)
 
 ## Why this CSV looks like this
 
-The preview snippet is intentionally small so cycle headers and slot placement can be read without noise.
+The preview snippet is intentionally small so bundle headers and slot placement can be read without noise.
 
 ## Related features
 
 - [/features/index](/features/index)
 - [/features/spatial-short-forms](/features/spatial-short-forms)
-- [/features/pragmas/index](/features/pragmas/index)
+- [/features/advanced-statements/index](/features/advanced-statements/index)
 
 ## Continue
 

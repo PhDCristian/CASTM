@@ -45,7 +45,7 @@ function extractDslSnippets(markdown: string): DslSnippet[] {
     const source = match[2].trim();
     if (!source) continue;
 
-    if (language === 'castm' || language === 'dsl') {
+    if (language === 'castm' || language === 'castm') {
       snippets.push({
         source,
         mode: 'pass',
@@ -54,7 +54,7 @@ function extractDslSnippets(markdown: string): DslSnippet[] {
       continue;
     }
 
-    if (language === 'castm-fail' || language === 'dsl-fail') {
+    if (language === 'castm-fail' || language === 'castm-fail') {
       const expectedErrorCodes = Array.from(
         source.matchAll(/^\s*\/\/\s*expect-error:\s*([A-Z]\d{4})\s*$/gim)
       ).map((codeMatch) => codeMatch[1]);
@@ -68,7 +68,7 @@ function extractDslSnippets(markdown: string): DslSnippet[] {
   }
 
   for (const line of markdown.split('\n')) {
-    const includeMatch = line.match(/^\s*<<<\s+.+\{(castm|dsl|castm-fail|dsl-fail)\}.*$/i);
+    const includeMatch = line.match(/^\s*<<<\s+.+\{(castm|castm|castm-fail|castm-fail)\}.*$/i);
     if (!includeMatch) continue;
     const language = includeMatch[1].toLowerCase();
     snippets.push({
@@ -127,7 +127,7 @@ function resolveSnippetSource(markdownFile: string, source: string): string {
 }
 
 describe('docs snippets contracts', () => {
-  it('compiles executable DSL snippets from canonical docs and docs-site', () => {
+  it('compiles executable CASTM snippets from canonical docs and docs-site', () => {
     const __filename = fileURLToPath(import.meta.url);
     const __dirname = path.dirname(__filename);
     const docsRoots = [

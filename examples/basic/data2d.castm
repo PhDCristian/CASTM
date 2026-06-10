@@ -1,9 +1,11 @@
 // 2D Arrays
 //
-// Demonstrates: .data2d directive, 2D array access with A[row][col],
+// Demonstrates: canonical 2D arrays, 2D access with A[row][col],
 //               row-major memory layout.
 
-.data2d matrix[2][2] { 1, 2, 3, 4 }
+target base;
+
+let matrix[2][2] = { 1, 2, 3, 4 };
 // Memory layout (row-major):
 //   matrix[0][0] = 1  (addr 0)
 //   matrix[0][1] = 2  (addr 4)

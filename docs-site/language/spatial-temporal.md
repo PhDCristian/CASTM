@@ -1,10 +1,10 @@
 # Spatial-Temporal Model
 
-CASTM maps source operations to space (`row,col`) and time (`cycle index`).
+CASTM maps source operations to space (`row,col`) and time (`bundle index`).
 
 ## Spatial Placement
 
-Canonical forms inside `cycle`:
+Canonical forms inside `bundle`:
 
 - `at @r,c: INSTR;`
 - `@r,c: INSTR;` (short canonical point form)
@@ -19,9 +19,9 @@ Coordinate expressions and ranges are supported:
 
 ## Temporal Ordering
 
-- Each `bundle { ... }` contributes one or more placements at a cycle index.
-- Advanced statements can emit multiple generated cycles.
-- `std::latency_hide(...)` may compact adjacent cycles conservatively when hazards are absent.
+- Each `bundle { ... }` contributes one or more placements at a bundle index.
+- Advanced statements can emit multiple generated bundles.
+- `std::latency_hide(...)` may compact adjacent bundles conservatively when hazards are absent.
 
 ## Executable Snippet
 

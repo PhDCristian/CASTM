@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ErrorCodes } from '@castm/compiler-ir';
-import { expandSpatialAtBlockStatements } from '../packages/compiler-front/src/structured-core/lowering/cycle-expand.js';
+import { expandSpatialAtBlockStatements } from '../packages/compiler-front/src/structured-core/lowering/bundle-expand.js';
 import {
   bindFunctionCallArgs,
   parseFunctionParams

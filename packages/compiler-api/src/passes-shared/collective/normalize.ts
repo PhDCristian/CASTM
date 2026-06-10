@@ -1,13 +1,13 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
   SourceSpan,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { createInstruction, createMultiAtCycle } from '../ast-utils.js';
-import { NormalizePragmaArgs } from '../advanced-args.js';
+import { createInstruction, createMultiAtBundle } from '../ast-utils.js';
+import { NormalizeAdvancedStatementArgs } from '../advanced-args.js';
 
 function laneLength(axis: 'row' | 'col', grid: GridSpec): number {
   return axis === 'row' ? grid.cols : grid.rows;
@@ -46,52 +46,52 @@ function iterationOrder(length: number, direction: 'left' | 'right' | 'up' | 'do
   return Array.from({ length }, (_, index) => index);
 }
 
-export function buildNormalizeCycles(
-  pragma: NormalizePragmaArgs,
+export function buildNormalizeBundles(
+  advancedStatement: NormalizeAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
-  if (pragma.width <= 0 || pragma.width >= 31) {
+): BundleAst[] {
+  if (advancedStatement.width <= 0 || advancedStatement.width >= 31) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Unsupported normalize width '${pragma.width}'.`,
+      `Unsupported normalize width '${advancedStatement.width}'.`,
       'Use width in range [1, 30].'
     ));
     return [];
   }
 
-  const laneMax = laneLimit(pragma.axis, grid);
-  if (pragma.lane < 0 || pragma.lane >= laneMax) {
+  const laneMax = laneLimit(advancedStatement.axis, grid);
+  if (advancedStatement.lane < 0 || advancedStatement.lane >= laneMax) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.CoordinateOutOfBounds,
       'error',
       span,
-      `Normalize lane out of bounds: ${pragma.lane}.`,
-      pragma.axis === 'row'
+      `Normalize lane out of bounds: ${advancedStatement.lane}.`,
+      advancedStatement.axis === 'row'
         ? `Lane must be in [0, ${Math.max(0, grid.rows - 1)}] for axis=row.`
         : `Lane must be in [0, ${Math.max(0, grid.cols - 1)}] for axis=col.`
     ));
     return [];
   }
 
-  const length = laneLength(pragma.axis, grid);
+  const length = laneLength(advancedStatement.axis, grid);
   if (length <= 0) {
     return [];
   }
 
-  const reg = pragma.reg.trim().toUpperCase();
-  const carryReg = pragma.carryReg.trim().toUpperCase();
-  const width = String(pragma.width);
-  const mask = String(pragma.mask);
+  const reg = advancedStatement.reg.trim().toUpperCase();
+  const carryReg = advancedStatement.carryReg.trim().toUpperCase();
+  const width = String(advancedStatement.width);
+  const mask = String(advancedStatement.mask);
 
-  const order = iterationOrder(length, pragma.direction);
+  const order = iterationOrder(length, advancedStatement.direction);
 
   const shiftPlacements = order.map((index) => {
-    const point = positionFor(pragma.axis, pragma.lane, index);
+    const point = positionFor(advancedStatement.axis, advancedStatement.lane, index);
     return {
       row: point.row,
       col: point.col,
@@ -100,7 +100,7 @@ export function buildNormalizeCycles(
   });
 
   const maskPlacements = order.map((index) => {
-    const point = positionFor(pragma.axis, pragma.lane, index);
+    const point = positionFor(advancedStatement.axis, advancedStatement.lane, index);
     return {
       row: point.row,
       col: point.col,
@@ -109,7 +109,7 @@ export function buildNormalizeCycles(
   });
 
   const relayPlacements = order.map((index) => {
-    const point = positionFor(pragma.axis, pragma.lane, index);
+    const point = positionFor(advancedStatement.axis, advancedStatement.lane, index);
     return {
       row: point.row,
       col: point.col,
@@ -118,8 +118,8 @@ export function buildNormalizeCycles(
   });
 
   const addPlacements = order.map((index) => {
-    const point = positionFor(pragma.axis, pragma.lane, index);
-    const incoming = incomingFor(pragma.axis, pragma.direction, index, length);
+    const point = positionFor(advancedStatement.axis, advancedStatement.lane, index);
+    const incoming = incomingFor(advancedStatement.axis, advancedStatement.direction, index, length);
     return {
       row: point.row,
       col: point.col,
@@ -128,9 +128,9 @@ export function buildNormalizeCycles(
   });
 
   return [
-    createMultiAtCycle(startIndex, shiftPlacements, span),
-    createMultiAtCycle(startIndex + 1, maskPlacements, span),
-    createMultiAtCycle(startIndex + 2, relayPlacements, span),
-    createMultiAtCycle(startIndex + 3, addPlacements, span)
+    createMultiAtBundle(startIndex, shiftPlacements, span),
+    createMultiAtBundle(startIndex + 1, maskPlacements, span),
+    createMultiAtBundle(startIndex + 2, relayPlacements, span),
+    createMultiAtBundle(startIndex + 3, addPlacements, span)
   ];
 }

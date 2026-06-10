@@ -4,7 +4,7 @@ build {
   scheduler safe;
   scheduler_window 1;
   memory_reorder strict;
-  prune_noop_cycles on;
+  prune_noop_bundles on;
 }
 kernel "window_demo" {
   bundle { at @0,0: SADD R1, R0, 1; }

@@ -1,13 +1,13 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
   SourceSpan,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { CarryChainPragmaArgs } from '../advanced-args.js';
-import { createInstruction, createMultiAtCycle } from '../ast-utils.js';
+import { CarryChainAdvancedStatementArgs } from '../advanced-args.js';
+import { createInstruction, createMultiAtBundle } from '../ast-utils.js';
 
 function upperToken(value: string): string {
   return value.trim().toUpperCase();
@@ -27,31 +27,31 @@ function pushOutOfBounds(
   ));
 }
 
-export function buildCarryChainCycles(
-  pragma: CarryChainPragmaArgs,
+export function buildCarryChainBundles(
+  advancedStatement: CarryChainAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
-  if (pragma.row < 0 || pragma.row >= grid.rows) {
+): BundleAst[] {
+  if (advancedStatement.row < 0 || advancedStatement.row >= grid.rows) {
     pushOutOfBounds(
       diagnostics,
       span,
-      `carry_chain row(${pragma.row}) is outside grid rows [0, ${Math.max(0, grid.rows - 1)}].`
+      `carry_chain row(${advancedStatement.row}) is outside grid rows [0, ${Math.max(0, grid.rows - 1)}].`
     );
     return [];
   }
 
-  const srcReg = upperToken(pragma.srcReg);
-  const carryReg = upperToken(pragma.carryReg);
-  const storeSymbol = pragma.storeSymbol.trim();
+  const srcReg = upperToken(advancedStatement.srcReg);
+  const carryReg = upperToken(advancedStatement.carryReg);
+  const storeSymbol = advancedStatement.storeSymbol.trim();
 
-  const cycles: CycleAst[] = [];
-  const delta = pragma.direction === 'right' ? 1 : -1;
+  const bundles: BundleAst[] = [];
+  const delta = advancedStatement.direction === 'right' ? 1 : -1;
 
-  for (let limb = 0; limb < pragma.limbs; limb++) {
-    const col = pragma.startCol + limb * delta;
+  for (let limb = 0; limb < advancedStatement.limbs; limb++) {
+    const col = advancedStatement.startCol + limb * delta;
     if (col < 0 || col >= grid.cols) {
       pushOutOfBounds(
         diagnostics,
@@ -62,27 +62,27 @@ export function buildCarryChainCycles(
     }
 
     const baseIndex = startIndex + limb * 4;
-    cycles.push(createMultiAtCycle(baseIndex, [{
-      row: pragma.row,
+    bundles.push(createMultiAtBundle(baseIndex, [{
+      row: advancedStatement.row,
       col,
       instruction: createInstruction('SADD', [srcReg, srcReg, carryReg], span)
     }], span));
-    cycles.push(createMultiAtCycle(baseIndex + 1, [{
-      row: pragma.row,
+    bundles.push(createMultiAtBundle(baseIndex + 1, [{
+      row: advancedStatement.row,
       col,
-      instruction: createInstruction('LAND', [srcReg, srcReg, String(pragma.mask)], span)
+      instruction: createInstruction('LAND', [srcReg, srcReg, String(advancedStatement.mask)], span)
     }], span));
-    cycles.push(createMultiAtCycle(baseIndex + 2, [{
-      row: pragma.row,
+    bundles.push(createMultiAtBundle(baseIndex + 2, [{
+      row: advancedStatement.row,
       col,
       instruction: createInstruction('SWI', [srcReg, `${storeSymbol}[${limb}]`], span)
     }], span));
-    cycles.push(createMultiAtCycle(baseIndex + 3, [{
-      row: pragma.row,
+    bundles.push(createMultiAtBundle(baseIndex + 3, [{
+      row: advancedStatement.row,
       col,
-      instruction: createInstruction('SRT', [carryReg, srcReg, String(pragma.width)], span)
+      instruction: createInstruction('SRT', [carryReg, srcReg, String(advancedStatement.width)], span)
     }], span));
   }
 
-  return cycles;
+  return bundles;
 }

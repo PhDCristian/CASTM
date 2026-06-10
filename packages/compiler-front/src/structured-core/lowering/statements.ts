@@ -1,10 +1,10 @@
-import { CycleStatementAst, InstructionAst, spanAt } from '@castm/compiler-ir';
+import { BundleStatementAst, InstructionAst, spanAt } from '@castm/compiler-ir';
 import { parseInstruction } from './instructions.js';
 import { evaluateCoordinateExpression, evaluateNumericExpression } from '../parser-utils/numbers.js';
 import { splitTopLevel } from '../parser-utils/strings.js';
 import { parseAdvancedNamespaceIssue, parseStandardAdvancedCall } from '../advanced.js';
 
-export function parseAdvancedStatementAsPragma(clean: string): string | null {
+export function parseAdvancedStatementAsAdvancedStatement(clean: string): string | null {
   const parsed = parseStandardAdvancedCall(clean);
   if (!parsed) return null;
   return parsed.text;
@@ -74,13 +74,13 @@ function cloneInstruction(instruction: InstructionAst): InstructionAst {
 
 type CoordinateValue = number | string;
 
-export function parseCycleStatement(
+export function parseBundleStatement(
   clean: string,
   line: number,
   rawLine: string,
   constants: ReadonlyMap<string, number>,
   bindings: ReadonlyMap<string, number>
-): CycleStatementAst[] | null {
+): BundleStatementAst[] | null {
   const atMatch = clean.match(/^(?:at\s+)?@\s*([^,]+)\s*,\s*([^:]+)\s*:\s*(.+);\s*$/i);
   if (atMatch) {
     const rowExpr = atMatch[1].trim();
@@ -131,7 +131,7 @@ export function parseCycleStatement(
         return value === null ? [colExpr] : [value];
       })();
 
-    const statements: CycleStatementAst[] = [];
+    const statements: BundleStatementAst[] = [];
     for (const rowValue of rowValues) {
       for (const colValue of colValues) {
         if (typeof rowValue === 'number' && typeof colValue === 'number') {

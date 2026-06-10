@@ -1,17 +1,17 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
   SourceSpan,
   makeDiagnostic
 } from '@castm/compiler-ir';
-import { createInstruction, createMultiAtCycle } from '../ast-utils.js';
-import { CollectPragmaArgs } from '../advanced-args.js';
+import { createInstruction, createMultiAtBundle } from '../ast-utils.js';
+import { CollectAdvancedStatementArgs } from '../advanced-args.js';
 
 const VALID_VIA_REGS = new Set(['SELF', 'RCT', 'RCB', 'RCL', 'RCR']);
 
-const COMBINE_OPCODE: ReadonlyMap<CollectPragmaArgs['combine'], string | null> = new Map([
+const COMBINE_OPCODE: ReadonlyMap<CollectAdvancedStatementArgs['combine'], string | null> = new Map([
   ['copy', null],
   ['add', 'SADD'],
   ['sum', 'SADD'],
@@ -75,16 +75,16 @@ function resolvePlacement(axis: 'row' | 'col', fixedIndex: number, lane: number)
   return { row: lane, col: fixedIndex };
 }
 
-export function buildCollectCycles(
-  pragma: CollectPragmaArgs,
+export function buildCollectBundles(
+  advancedStatement: CollectAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
-  const axis = pragma.from.axis;
-  const fromIndex = pragma.from.index;
-  const toIndex = pragma.to.index;
+): BundleAst[] {
+  const axis = advancedStatement.from.axis;
+  const fromIndex = advancedStatement.from.index;
+  const toIndex = advancedStatement.to.index;
 
   if (!inBounds(axis, fromIndex, grid) || !inBounds(axis, toIndex, grid)) {
     diagnostics.push(makeDiagnostic(
@@ -99,20 +99,20 @@ export function buildCollectCycles(
     return [];
   }
 
-  const viaReg = toUpperToken(pragma.viaReg);
+  const viaReg = toUpperToken(advancedStatement.viaReg);
   if (!VALID_VIA_REGS.has(viaReg)) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
       span,
-      `Unsupported collect via register '${pragma.viaReg}'.`,
+      `Unsupported collect via register '${advancedStatement.viaReg}'.`,
       'Use SELF, RCT, RCB, RCL or RCR.'
     ));
     return [];
   }
 
   const laneDistance = Math.abs(fromIndex - toIndex);
-  const pathMode = pragma.path ?? 'single_hop';
+  const pathMode = advancedStatement.path ?? 'single_hop';
   const expectedVia = pathMode === 'single_hop'
     ? expectedViaForSingleHop(axis, fromIndex, toIndex)
     : expectedViaForDirection(axis, fromIndex, toIndex);
@@ -128,12 +128,12 @@ export function buildCollectCycles(
     return [];
   }
 
-  if (pathMode === 'multi_hop' && pragma.maxHops !== undefined && laneDistance > pragma.maxHops) {
+  if (pathMode === 'multi_hop' && advancedStatement.maxHops !== undefined && laneDistance > advancedStatement.maxHops) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.InvalidCollectPath,
       'error',
       span,
-      `collect(..., path=multi_hop, max_hops=${pragma.maxHops}) cannot cover ${laneDistance} hops.`,
+      `collect(..., path=multi_hop, max_hops=${advancedStatement.maxHops}) cannot cover ${laneDistance} hops.`,
       `Increase max_hops to at least ${laneDistance}, or reduce from/to distance.`
     ));
     return [];
@@ -159,7 +159,7 @@ export function buildCollectCycles(
     return [];
   }
 
-  const combine = pragma.combine;
+  const combine = advancedStatement.combine;
   const combineOpcode = COMBINE_OPCODE.get(combine);
   if (combineOpcode === undefined) {
     diagnostics.push(makeDiagnostic(
@@ -172,8 +172,8 @@ export function buildCollectCycles(
     return [];
   }
 
-  const destReg = toUpperToken(pragma.destReg);
-  const localReg = toUpperToken(pragma.localReg);
+  const destReg = toUpperToken(advancedStatement.destReg);
+  const localReg = toUpperToken(advancedStatement.localReg);
 
   const hopTargets: number[] = [];
   if (pathMode === 'single_hop' || laneDistance === 0) {
@@ -185,7 +185,7 @@ export function buildCollectCycles(
     }
   }
 
-  const cycles: CycleAst[] = [];
+  const bundles: BundleAst[] = [];
   for (const hopTarget of hopTargets) {
     const copyPlacements = Array.from({ length: laneLength }, (_, lane) => {
       const point = resolvePlacement(axis, hopTarget, lane);
@@ -195,11 +195,11 @@ export function buildCollectCycles(
         instruction: createInstruction('SADD', [destReg, viaReg, 'ZERO'], span)
       };
     });
-    cycles.push(createMultiAtCycle(startIndex + cycles.length, copyPlacements, span));
+    bundles.push(createMultiAtBundle(startIndex + bundles.length, copyPlacements, span));
   }
 
   if (combineOpcode === null) {
-    return cycles;
+    return bundles;
   }
 
   const combinePlacements = Array.from({ length: laneLength }, (_, lane) => {
@@ -225,7 +225,7 @@ export function buildCollectCycles(
     };
   });
 
-  cycles.push(createMultiAtCycle(startIndex + cycles.length, combinePlacements, span));
+  bundles.push(createMultiAtBundle(startIndex + bundles.length, combinePlacements, span));
 
-  return cycles;
+  return bundles;
 }

@@ -12,7 +12,7 @@ export interface LirSlot {
   instruction: LirInstruction;
 }
 
-export interface LirCycle {
+export interface LirBundle {
   index: number;
   slots: LirSlot[];
 }
@@ -20,5 +20,5 @@ export interface LirCycle {
 export interface LirProgram {
   targetProfileId: string;
   grid: GridSpec;
-  cycles: LirCycle[];
+  bundles: LirBundle[];
 }

@@ -11,7 +11,7 @@ describe('issues/FEAT-17 guard condition statement', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat17_upper" {
-  guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 }
 `;
 
@@ -30,7 +30,7 @@ kernel "feat17_upper" {
     const source = `
 target "uma-cgra-base";
 kernel "feat17_idx" {
-  guard(cond=(idx%2)==0, op=SADD, dest=R3, srcA=R0, srcB=ZERO);
+  std::guard(cond=(idx%2)==0, op=SADD, dest=R3, srcA=R0, srcB=ZERO);
 }
 `;
 
@@ -48,7 +48,7 @@ kernel "feat17_idx" {
     const source = `
 target "uma-cgra-base";
 kernel "feat17_truthy" {
-  guard(cond=idx%2, op=SADD, dest=R3, srcA=R0, srcB=ZERO);
+  std::guard(cond=idx%2, op=SADD, dest=R3, srcA=R0, srcB=ZERO);
 }
 `;
     const result = compile(source);
@@ -64,7 +64,7 @@ build {
   grid 3x5 mesh;
 }
 kernel "feat17_nxm" {
-  guard(cond=row<2, op=SADD, dest=R0, srcA=ZERO, srcB=ZERO);
+  std::guard(cond=row<2, op=SADD, dest=R0, srcA=ZERO, srcB=ZERO);
 }
 `;
 
@@ -81,7 +81,7 @@ kernel "feat17_nxm" {
     const malformed = compile(`
 target "uma-cgra-base";
 kernel "feat17_bad" {
-  guard(cond=col>=row, op=SADD);
+  std::guard(cond=col>=row, op=SADD);
 }
 `);
     expect(malformed.success).toBe(false);
@@ -90,7 +90,7 @@ kernel "feat17_bad" {
     const invalidCondition = compile(`
 target "uma-cgra-base";
 kernel "feat17_bad_cond" {
-  guard(cond=foo>=row, op=SADD, dest=R1, srcA=R0, srcB=ZERO);
+  std::guard(cond=foo>=row, op=SADD, dest=R1, srcA=R0, srcB=ZERO);
 }
 `);
     expect(invalidCondition.success).toBe(false);
@@ -99,7 +99,7 @@ kernel "feat17_bad_cond" {
     const brokenCondition = compile(`
 target "uma-cgra-base";
 kernel "feat17_broken_cond" {
-  guard(cond=col>=, op=SADD, dest=R1, srcA=R0, srcB=ZERO);
+  std::guard(cond=col>=, op=SADD, dest=R1, srcA=R0, srcB=ZERO);
 }
 `);
     expect(brokenCondition.success).toBe(false);
@@ -108,7 +108,7 @@ kernel "feat17_broken_cond" {
     const invalidExpression = compile(`
 target "uma-cgra-base";
 kernel "feat17_invalid_expr" {
-  guard(cond=(row+, op=SADD, dest=R1, srcA=R0, srcB=ZERO);
+  std::guard(cond=(row+, op=SADD, dest=R1, srcA=R0, srcB=ZERO);
 }
 `);
     expect(invalidExpression.success).toBe(false);

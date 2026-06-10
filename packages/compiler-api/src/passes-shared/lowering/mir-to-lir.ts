@@ -14,9 +14,9 @@ export const lowerToLirPass: CompilerPass<MirProgram, LirProgram> = {
       output: {
         targetProfileId: input.targetProfileId,
         grid: { ...input.grid },
-        cycles: input.cycles.map((cycle) => ({
-          index: cycle.index,
-          slots: cycle.slots.map((slot) => ({
+        bundles: input.bundles.map((bundle) => ({
+          index: bundle.index,
+          slots: bundle.slots.map((slot) => ({
             row: slot.row,
             col: slot.col,
             instruction: {

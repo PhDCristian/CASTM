@@ -8,7 +8,7 @@
 
 ## When to use
 
-Use this as the first reference for validating end-to-end toolchain setup and DSL↔CSV understanding.
+Use this as the first reference for validating end-to-end toolchain setup and CASTM↔CSV understanding.
 
 ## Target and assumptions
 
@@ -25,9 +25,9 @@ Use this as the first reference for validating end-to-end toolchain setup and DS
 
 ## Why this CSV looks like this
 
-- 2 cycles total.
-- Cycle 0 loads two values.
-- Cycle 1 computes sum and stores result.
+- 2 bundles total.
+- Bundle 0 loads two values.
+- Bundle 1 computes sum and stores result.
 
 ## API check
 
@@ -35,7 +35,7 @@ Use this as the first reference for validating end-to-end toolchain setup and DS
 import { compile } from '@castm/compiler-api';
 
 const result = compile(source);
-console.log(result.success, result.stats.cycles);
+console.log(result.success, result.stats.bundles);
 ```
 
 Full generated CSV: `docs-site/snippets/examples/basic/01-main.csv`.

@@ -40,11 +40,11 @@ export function tryParseControlStatement(
   index: number,
   cleanLine: string,
   lineNo: number,
-  cycleCounter: { value: number },
+  bundleCounter: { value: number },
   diagnostics: Diagnostic[],
   parseNestedStatements: (
     entries: SourceLineEntry[],
-    cycleCounter: { value: number },
+    bundleCounter: { value: number },
     diagnostics: Diagnostic[]
   ) => StructuredKernelStmtAst[],
   label?: string
@@ -65,7 +65,7 @@ export function tryParseControlStatement(
         kind: 'for',
         header: cleanLine.slice(0, cleanLine.lastIndexOf('{')).trim(),
         ...(label ? { label } : {}),
-        body: parseNestedStatements(block.body, cycleCounter, diagnostics),
+        body: parseNestedStatements(block.body, bundleCounter, diagnostics),
         span: spanAt(lineNo, cleanLine.length)
       }
     };
@@ -114,14 +114,14 @@ export function tryParseControlStatement(
     }
     const row = parsedRow ?? 0;
     const col = parsedCol ?? 0;
-    const thenBody = parseNestedStatements(thenBlock.body, cycleCounter, diagnostics);
+    const thenBody = parseNestedStatements(thenBlock.body, bundleCounter, diagnostics);
     let elseBody: StructuredKernelStmtAst[] | undefined;
     let consumedEnd = thenBlock.endIndex;
 
     if (thenBlock.trailingAfterClose && isElseOpenLine(thenBlock.trailingAfterClose)) {
       const parsedElse = collectBlockAfterOpenFromEntries(entries, thenBlock.endIndex + 1);
       if (parsedElse.endIndex !== null) {
-        elseBody = parseNestedStatements(parsedElse.body, cycleCounter, diagnostics);
+        elseBody = parseNestedStatements(parsedElse.body, bundleCounter, diagnostics);
         consumedEnd = parsedElse.endIndex;
       }
     } else {
@@ -129,7 +129,7 @@ export function tryParseControlStatement(
       if (maybeElse < entries.length && isElseOpenLine(entries[maybeElse].cleanLine)) {
         const parsedElse = collectBlockFromEntries(entries, maybeElse);
         if (parsedElse.endIndex !== null) {
-          elseBody = parseNestedStatements(parsedElse.body, cycleCounter, diagnostics);
+          elseBody = parseNestedStatements(parsedElse.body, bundleCounter, diagnostics);
           consumedEnd = parsedElse.endIndex;
         }
       }
@@ -190,7 +190,7 @@ export function tryParseControlStatement(
     condition: whileHeader[1].trim(),
     control: { row, col },
     ...(label ? { label } : {}),
-    body: parseNestedStatements(block.body, cycleCounter, diagnostics),
+    body: parseNestedStatements(block.body, bundleCounter, diagnostics),
     span: spanAt(lineNo, cleanLine.length)
   };
 

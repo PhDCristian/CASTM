@@ -163,7 +163,7 @@ exports[`compiler-api pipeline contracts > keeps deterministic snapshots across 
     ],
     "bodyKinds": [
       "advanced",
-      "cycle",
+      "bundle",
     ],
     "kernelName": "pipeline_contract",
     "targetProfileId": "uma-cgra-base",

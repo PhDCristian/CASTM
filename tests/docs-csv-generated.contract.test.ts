@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-function pragmaPages(root: string): string[] {
+function advancedStatementPages(root: string): string[] {
   return fs
     .readdirSync(root)
     .filter((name) => name.endsWith('.md') && name !== 'index.md')
@@ -11,9 +11,9 @@ function pragmaPages(root: string): string[] {
 }
 
 describe('docs generated CSV policy', () => {
-  it('rejects inline manual CSV in pragmas pages and requires generated includes', () => {
-    const root = path.resolve(process.cwd(), 'docs-site/features/pragmas');
-    const pages = pragmaPages(root);
+  it('rejects inline manual CSV in advancedStatements pages and requires generated includes', () => {
+    const root = path.resolve(process.cwd(), 'docs-site/features/advanced-statements');
+    const pages = advancedStatementPages(root);
 
     for (const page of pages) {
       const content = fs.readFileSync(page, 'utf8');
@@ -38,7 +38,7 @@ describe('docs generated CSV policy', () => {
 
       for (const line of includes) {
         const includePath = line.replace(/^\s*<<<\s+/, '').trim();
-        expect(includePath.includes('../../snippets/pragmas/')).toBe(true);
+        expect(includePath.includes('../../snippets/advanced-statements/')).toBe(true);
       }
     }
   });

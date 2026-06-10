@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Diagnostic, ErrorCodes, spanAt } from '@castm/compiler-ir';
 import { parseAssertionDirectiveValue } from '../packages/compiler-api/src/compiler-driver/assertions.js';
 import { collectDirectiveArtifacts } from '../packages/compiler-api/src/compiler-driver/runtime-artifacts/directives.js';
-import { parseRotateShiftPragmaArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/rotate-shift.js';
-import { parseStreamLoadPragmaArgs, parseStreamStorePragmaArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/stream.js';
+import { parseRotateShiftAdvancedStatementArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/rotate-shift.js';
+import { parseStreamLoadAdvancedStatementArgs, parseStreamStoreAdvancedStatementArgs } from '../packages/compiler-api/src/passes-shared/advanced-args/stream.js';
 import { isStep, getIncomingRegister } from '../packages/compiler-api/src/passes-shared/grid-utils.js';
 import { instantiateEntriesWithBindings } from '../packages/compiler-front/src/structured-core/lowering/for-expand-helpers/bindings.js';
 import { buildWhileFusionPlan } from '../packages/compiler-front/src/structured-core/lowering/function-expand-helpers/while-fusion.js';
@@ -40,8 +40,8 @@ describe('branch coverage round 4', () => {
         config: undefined,
         directives: [],
         runtime: [],
-        pragmas: [],
-        cycles: [{ index: 7, statements: [], span }],
+        advancedStatements: [],
+        bundles: [{ index: 7, statements: [], span }],
         span
       }
     };
@@ -75,8 +75,8 @@ describe('branch coverage round 4', () => {
       kernel: {
         name: 'k',
         config: undefined,
-        cycles: [],
-        pragmas: [],
+        bundles: [],
+        advancedStatements: [],
         directives: [],
         runtime: [
           { kind: 'io_load', addresses: ['nope'], raw: 'io.load(nope)', span },
@@ -97,11 +97,11 @@ describe('branch coverage round 4', () => {
   });
 
   it('covers rotate/shift and stream parser invalid branches', () => {
-    expect(parseRotateShiftPragmaArgs('rotate(reg=R0, direction=up)', 'rotate')).toBeNull();
-    expect(parseRotateShiftPragmaArgs('shift(reg=R0, direction=left, distance=1, fill=x)', 'shift')).toBeNull();
+    expect(parseRotateShiftAdvancedStatementArgs('rotate(reg=R0, direction=up)', 'rotate')).toBeNull();
+    expect(parseRotateShiftAdvancedStatementArgs('shift(reg=R0, direction=left, distance=1, fill=x)', 'shift')).toBeNull();
 
-    expect(parseStreamLoadPragmaArgs('stream_load(dest=1, row=0, count=1)')).toBeNull();
-    expect(parseStreamStorePragmaArgs('stream_store(src=1, row=0, count=1)')).toBeNull();
+    expect(parseStreamLoadAdvancedStatementArgs('stream_load(dest=1, row=0, count=1)')).toBeNull();
+    expect(parseStreamStoreAdvancedStatementArgs('stream_store(src=1, row=0, count=1)')).toBeNull();
   });
 
   it('covers grid-utils non-step/unknown incoming paths', () => {
@@ -118,7 +118,7 @@ describe('branch coverage round 4', () => {
   });
 
   it('covers while-fusion vertical and invalid-plan branches', () => {
-    const verticalCycle: any = {
+    const verticalBundle: any = {
       index: 0,
       span,
       statements: [{
@@ -129,13 +129,13 @@ describe('branch coverage round 4', () => {
         span
       }]
     };
-    const down = buildWhileFusionPlan([verticalCycle], 0, 0);
+    const down = buildWhileFusionPlan([verticalBundle], 0, 0);
     expect(down?.incomingRegister).toBe('RCB');
 
-    const up = buildWhileFusionPlan([{ ...verticalCycle, statements: [{ ...verticalCycle.statements[0], row: -1 }] }], 0, 0);
+    const up = buildWhileFusionPlan([{ ...verticalBundle, statements: [{ ...verticalBundle.statements[0], row: -1 }] }], 0, 0);
     expect(up?.incomingRegister).toBe('RCT');
 
-    const invalid = buildWhileFusionPlan([{ ...verticalCycle, statements: [{ ...verticalCycle.statements[0], col: 2 }] }], 0, 0);
+    const invalid = buildWhileFusionPlan([{ ...verticalBundle, statements: [{ ...verticalBundle.statements[0], col: 2 }] }], 0, 0);
     expect(invalid).toBeNull();
   });
 
@@ -147,7 +147,7 @@ describe('branch coverage round 4', () => {
 
   it('covers expandFunctionBody break on handled+shouldBreak and skip empty lines', () => {
     const diagnostics: Diagnostic[] = [];
-    const k: any = { name: 'k', config: undefined, directives: [], pragmas: [], cycles: [], span };
+    const k: any = { name: 'k', config: undefined, directives: [], advancedStatements: [], bundles: [], span };
     expandFunctionBodyIntoKernel(
       [
         entry(1, ''),
@@ -167,7 +167,7 @@ describe('branch coverage round 4', () => {
 
   it('covers while expansion branchCondition fallback (no fusion plan)', () => {
     const diagnostics: Diagnostic[] = [];
-    const outKernel: any = { name: 'k', config: undefined, directives: [], pragmas: [], cycles: [], span };
+    const outKernel: any = { name: 'k', config: undefined, directives: [], advancedStatements: [], bundles: [], span };
     const result = tryExpandWhileStatement({
       body: [
         entry(1, 'while (R0 < IMM(3)) at @0,0 {'),
@@ -181,17 +181,17 @@ describe('branch coverage round 4', () => {
       functions: new Map(),
       constants: new Map(),
       diagnostics,
-      cycleCounter: { value: 0 },
+      bundleCounter: { value: 0 },
       callStack: [],
       expansionCounter: { value: 0 },
       controlFlowCounter: { value: 0 },
       expandBody: (_body, kernel) => {
-        kernel.cycles.push({ index: 0, span, statements: [] });
-        kernel.cycles.push({ index: 1, span, statements: [] });
+        kernel.bundles.push({ index: 0, span, statements: [] });
+        kernel.bundles.push({ index: 1, span, statements: [] });
       }
     } as any);
     expect(result.handled).toBe(true);
-    expect(outKernel.cycles.length).toBeGreaterThan(0);
+    expect(outKernel.bundles.length).toBeGreaterThan(0);
   });
 
   it('covers control-handler unterminated if branch and block utility edge branches', () => {

@@ -304,12 +304,12 @@ Extender `collect` con path explícito y hops acotados, manteniendo backward com
 - `tests/issues/feat-25-collect-multi-hop.test.ts`
 - `tests/issues/feat-12-collect.test.ts`
 - `tests/compiler-api.collective-builders.test.ts`
-- `tests/compiler-api.expand-pragmas.handlers.test.ts`
+- `tests/compiler-api.expand-advanced-statements.handlers.test.ts`
 
 ### Comando de validación
 ```bash
 cd /Users/ccampos/UMA/ZKP/cgra-thesis-workspace/submodules/CASTM
-npm run test -- tests/issues/feat-25-collect-multi-hop.test.ts tests/issues/feat-12-collect.test.ts tests/compiler-api.collective-builders.test.ts tests/compiler-api.expand-pragmas.handlers.test.ts
+npm run test -- tests/issues/feat-25-collect-multi-hop.test.ts tests/issues/feat-12-collect.test.ts tests/compiler-api.collective-builders.test.ts tests/compiler-api.expand-advanced-statements.handlers.test.ts
 ```
 
 ### Criterio de cierre
@@ -327,6 +327,6 @@ npm run test -- tests/issues/feat-25-collect-multi-hop.test.ts tests/issues/feat
 
 ## Suposiciones y defaults
 - Compatibilidad hacia atrás preservada salvo validaciones explícitas nuevas.
-- No se introduce sintaxis legacy.
+- No se introduce sintaxis unsupported.
 - El objetivo 100% de cobertura aplica al compilador completo (no solo archivos tocados).
 - Cualquier cambio semántico de opcode/label se documenta y se valida con tests de contrato antes de cerrar Sprint 1.

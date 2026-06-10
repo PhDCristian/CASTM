@@ -27,18 +27,18 @@ kernel "k" {
     const source = `
 target "uma-cgra-base";
 kernel "k" {
-  route(@0,1 -> @0,0, payload=R3, accum=R1);
-  reduce(op=add, dest=R1, src=R0, axis=row);
-  guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
-  accumulate(pattern=row, products=R2, accum=R3, out=ROUT);
-  mulacc_chain(src=R0, coeff=R1, acc=R3, out=R2, target=row(0), width=16, dir=right);
-  carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0);
-  conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
+  std::route(@0,1 -> @0,0, payload=R3, accum=R1);
+  std::reduce(op=add, dest=R1, src=R0, axis=row);
+  std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  std::accumulate(pattern=row, products=R2, accum=R3, out=ROUT);
+  std::mulacc_chain(src=R0, coeff=R1, acc=R3, out=R2, target=row(0), width=16, dir=right);
+  std::carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0);
+  std::conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));
   pipeline(step0(), step1(R0));
-  collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
-  normalize(reg=R3, carry=R1, width=16, lane=0);
-  extract_bytes(src=R0, dest=R1, axis=col);
-  triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
+  std::collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);
+  std::normalize(reg=R3, carry=R1, width=16, lane=0);
+  std::extract_bytes(src=R0, dest=R1, axis=col);
+  std::triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);
 }
 `;
     const tokens = tokenizeSource(source);

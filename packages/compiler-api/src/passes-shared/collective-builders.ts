@@ -1,22 +1,22 @@
 export {
-  buildReduceCycles,
-  buildScanCycles
+  buildReduceBundles,
+  buildScanBundles
 } from './collective-scan-reduce.js';
 
 export {
-  buildAllreduceCycles,
-  buildAccumulateCycles,
-  buildMulaccChainCycles,
-  buildCarryChainCycles,
-  buildConditionalSubCycles,
-  buildCollectCycles,
-  buildExtractBytesCycles,
-  buildStashCycles,
-  buildGuardCycles,
-  buildGatherCycles,
-  buildNormalizeCycles,
-  buildStencilCycles,
-  buildTriangleCycles,
-  buildStreamCycles,
-  buildTransposeCycles
+  buildAllreduceBundles,
+  buildAccumulateBundles,
+  buildMulaccChainBundles,
+  buildCarryChainBundles,
+  buildConditionalSubBundles,
+  buildCollectBundles,
+  buildExtractBytesBundles,
+  buildStashBundles,
+  buildGuardBundles,
+  buildGatherBundles,
+  buildNormalizeBundles,
+  buildStencilBundles,
+  buildTriangleBundles,
+  buildStreamBundles,
+  buildTransposeBundles
 } from './collective-misc-builders.js';

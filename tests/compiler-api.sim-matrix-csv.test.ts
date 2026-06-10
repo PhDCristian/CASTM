@@ -6,7 +6,7 @@ describe('compiler-api sim-matrix-csv emitter', () => {
     const mir: MirProgram = {
       targetProfileId: 'uma-cgra-base',
       grid: { rows: 4, cols: 4, topology: 'torus' },
-      cycles: [
+      bundles: [
         {
           index: 0,
           slots: [

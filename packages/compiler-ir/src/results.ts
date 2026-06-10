@@ -45,12 +45,12 @@ export interface CompileResult {
     symbols?: SymbolInfo;
   };
   stats: {
-    cycles: number;
+    bundles: number;
     instructions: number;
     activeSlots: number;
     totalSlots: number;
     utilization: number;
-    estimatedCriticalCycles: number;
+    estimatedCriticalBundles: number;
     schedulerMode: 'safe' | 'balanced' | 'aggressive';
     loweredPasses: string[];
   };

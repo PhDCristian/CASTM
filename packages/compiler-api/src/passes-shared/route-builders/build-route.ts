@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   GridSpec,
@@ -7,32 +7,32 @@ import {
   makeDiagnostic
 } from '@castm/compiler-ir';
 import {
-  createAtCycle,
+  createAtBundle,
   createInstruction,
   replaceIncoming
 } from '../ast-utils.js';
 import { computeRoutePath, getIncomingRegister } from '../grid-utils.js';
-import { RoutePragmaArgs } from '../route-args.js';
+import { RouteAdvancedStatementArgs } from '../route-args.js';
 
-export function buildRouteCycles(
-  route: RoutePragmaArgs,
+export function buildRouteBundles(
+  route: RouteAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
+): BundleAst[] {
   const path = computeRoutePath(route.src, route.dst, grid);
-  const cycles: CycleAst[] = [];
+  const bundles: BundleAst[] = [];
 
   if (path.length === 1) {
-    cycles.push(createAtCycle(
+    bundles.push(createAtBundle(
       startIndex,
       route.src.row,
       route.src.col,
       createInstruction('SADD', [route.accum, route.accum, route.payload], span),
       span
     ));
-    return cycles;
+    return bundles;
   }
 
   for (let i = 0; i < path.length; i++) {
@@ -41,7 +41,7 @@ export function buildRouteCycles(
     const isLast = i === path.length - 1;
 
     if (isFirst) {
-      cycles.push(createAtCycle(
+      bundles.push(createAtBundle(
         startIndex + i,
         point.row,
         point.col,
@@ -63,7 +63,7 @@ export function buildRouteCycles(
     }
 
     if (!isLast) {
-      cycles.push(createAtCycle(
+      bundles.push(createAtBundle(
         startIndex + i,
         point.row,
         point.col,
@@ -76,7 +76,7 @@ export function buildRouteCycles(
     if (route.customOp) {
       const srcA = replaceIncoming(route.customOp.srcA, incoming);
       const srcB = replaceIncoming(route.customOp.srcB, incoming);
-      cycles.push(createAtCycle(
+      bundles.push(createAtBundle(
         startIndex + i,
         point.row,
         point.col,
@@ -86,7 +86,7 @@ export function buildRouteCycles(
       continue;
     }
 
-    cycles.push(createAtCycle(
+    bundles.push(createAtBundle(
       startIndex + i,
       point.row,
       point.col,
@@ -95,5 +95,5 @@ export function buildRouteCycles(
     ));
   }
 
-  return cycles;
+  return bundles;
 }

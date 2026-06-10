@@ -1,6 +1,6 @@
 import { compile } from '@castm/compiler-api';
 import { CompileOptions, Diagnostic } from '@castm/compiler-ir';
-import { getInstructionSet, getPragmas, getTargetProfile } from '@castm/lang-spec';
+import { getInstructionSet, getAdvancedStatements, getTargetProfile } from '@castm/lang-spec';
 
 export interface CompletionItem {
   label: string;
@@ -16,19 +16,11 @@ export function getCompletions(prefix: string, targetProfileId = 'uma-cgra-base'
   const needle = prefix.trim().toUpperCase();
   const out: CompletionItem[] = [];
 
-  const keywords = ['let', 'target', 'kernel', 'cycle', 'at', 'if', 'else', 'while', 'for', 'break', 'continue', 'range', 'runtime', 'pipeline'];
-  const advancedStatements = getPragmas().flatMap((pragma) => [
-    {
-      label: `std::${pragma.name}(...);`,
-      detail: 'standard advanced statement',
-      canonical: true
-    },
-    {
-      label: `${pragma.name}(...);`,
-      detail: 'compatibility form (deprecated)',
-      canonical: false
-    }
-  ]);
+  const keywords = ['let', 'target', 'kernel', 'bundle', 'at', 'if', 'else', 'while', 'for', 'break', 'continue', 'range', 'runtime', 'pipeline'];
+  const advancedStatements = getAdvancedStatements().map((advancedStatement) => ({
+    label: `std::${advancedStatement.name}(...);`,
+    detail: 'standard advanced statement'
+  }));
 
   for (const keyword of keywords) {
     if (!needle || keyword.toUpperCase().startsWith(needle)) {

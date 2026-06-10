@@ -1,9 +1,11 @@
-// Hello World - Minimal OpenEdge-DSL program
+// Hello World - Minimal CASTM program
 //
 // Demonstrates: kernel declaration, config, bundle blocks,
 //               @row,col coordinate syntax, EXIT instruction.
 //
 // This is the smallest valid program: a single PE executes EXIT.
+
+target base;
 
 kernel "Hello" {
     config(0xF, 0);

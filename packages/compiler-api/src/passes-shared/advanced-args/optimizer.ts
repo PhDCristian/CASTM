@@ -2,12 +2,12 @@ import {
   isIdentifier,
   parseIntegerLiteral,
   parseKeyValueArgs
-} from '../pragma-args-utils.js';
-import { LatencyHidePragmaArgs, StashPragmaArgs, StashTarget } from './types.js';
+} from '../advanced-statement-args-utils.js';
+import { LatencyHideAdvancedStatementArgs, StashAdvancedStatementArgs, StashTarget } from './types.js';
 
 const LATENCY_HIDE_MAX_WINDOW = 256;
 
-export function parseLatencyHidePragmaArgs(text: string): LatencyHidePragmaArgs | null {
+export function parseLatencyHideAdvancedStatementArgs(text: string): LatencyHideAdvancedStatementArgs | null {
   const match = text.trim().match(/^latency_hide\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
 
@@ -55,7 +55,7 @@ function parseStashTarget(raw: string): StashTarget | null {
   };
 }
 
-export function parseStashPragmaArgs(text: string): StashPragmaArgs | null {
+export function parseStashAdvancedStatementArgs(text: string): StashAdvancedStatementArgs | null {
   const match = text.trim().match(/^stash\s*\((.+)\)\s*;?\s*$/i);
   if (!match) return null;
 

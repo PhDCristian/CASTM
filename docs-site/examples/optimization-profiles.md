@@ -3,7 +3,7 @@
 ## What this demonstrates
 
 - one identical kernel body compiled under different `optimize` profiles,
-- how source-owned build settings change cycle packing,
+- how source-owned build settings change bundle packing,
 - why explicit overrides can beat presets for specific kernels.
 
 ## When to use
@@ -69,9 +69,9 @@ Full CSV: `docs-site/snippets/examples/optimization-profiles/05-o2-window0.csv`.
 The data path is the same in all five snippets; only scheduler policy changes.
 This isolates optimization behavior and avoids confusion from feature differences.
 
-Measured cycle counts (generated CSV headers):
+Measured bundle counts (generated CSV headers):
 
-| Case | Build config | Cycles |
+| Case | Build config | Bundles |
 |---|---|---:|
 | A | `optimize O0` | `7` |
 | B | `optimize O1` | `6` |
@@ -92,9 +92,9 @@ Typical interpretation:
 - [/language/configuration](/language/configuration)
 - [/language/target-profiles](/language/target-profiles)
 - [/features/loops](/features/loops)
-- [/features/pragmas/auto-cycle](/features/pragmas/auto-cycle)
-- [/features/pragmas/pipeline](/features/pragmas/pipeline)
-- [/features/pragmas/stash](/features/pragmas/stash)
+- [/features/advanced-statements/auto-bundle](/features/advanced-statements/auto-bundle)
+- [/features/advanced-statements/pipeline](/features/advanced-statements/pipeline)
+- [/features/advanced-statements/stash](/features/advanced-statements/stash)
 - [/examples/scheduler-modes](/examples/scheduler-modes)
 - [/examples/scheduler-practical](/examples/scheduler-practical)
 

@@ -1,45 +1,45 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   GridSpec,
   SourceSpan
 } from '@castm/compiler-ir';
 import { isSamePoint } from '../grid-utils.js';
 import { RoutePoint } from '../route-args.js';
-import { BroadcastPragmaArgs } from '../advanced-args.js';
-import { buildRouteTransferCycles } from '../route-transfer.js';
+import { BroadcastAdvancedStatementArgs } from '../advanced-args.js';
+import { buildRouteTransferBundles } from '../route-transfer.js';
 
-export function buildBroadcastCycles(
-  pragma: BroadcastPragmaArgs,
+export function buildBroadcastBundles(
+  advancedStatement: BroadcastAdvancedStatementArgs,
   startIndex: number,
   grid: GridSpec,
   span: SourceSpan,
   diagnostics: Diagnostic[]
-): CycleAst[] {
+): BundleAst[] {
   const targets: RoutePoint[] = [];
 
-  if (pragma.scope === 'row' || pragma.scope === 'all') {
+  if (advancedStatement.scope === 'row' || advancedStatement.scope === 'all') {
     for (let col = 0; col < grid.cols; col++) {
-      if (col === pragma.from.col) continue;
-      targets.push({ row: pragma.from.row, col });
+      if (col === advancedStatement.from.col) continue;
+      targets.push({ row: advancedStatement.from.row, col });
     }
   }
 
-  if (pragma.scope === 'column' || pragma.scope === 'all') {
+  if (advancedStatement.scope === 'column' || advancedStatement.scope === 'all') {
     for (let row = 0; row < grid.rows; row++) {
-      if (row === pragma.from.row) continue;
-      const point = { row, col: pragma.from.col };
+      if (row === advancedStatement.from.row) continue;
+      const point = { row, col: advancedStatement.from.col };
       if (!targets.some((existing) => isSamePoint(existing, point))) {
         targets.push(point);
       }
     }
   }
 
-  if (pragma.scope === 'all') {
+  if (advancedStatement.scope === 'all') {
     for (let row = 0; row < grid.rows; row++) {
       for (let col = 0; col < grid.cols; col++) {
         const point = { row, col };
-        if (isSamePoint(point, pragma.from)) continue;
+        if (isSamePoint(point, advancedStatement.from)) continue;
         if (!targets.some((existing) => isSamePoint(existing, point))) {
           targets.push(point);
         }
@@ -47,20 +47,20 @@ export function buildBroadcastCycles(
     }
   }
 
-  const cycles: CycleAst[] = [];
+  const bundles: BundleAst[] = [];
   for (const target of targets) {
-    const transfer = buildRouteTransferCycles(
-      pragma.from,
+    const transfer = buildRouteTransferBundles(
+      advancedStatement.from,
       target,
-      pragma.valueReg,
-      pragma.valueReg,
-      startIndex + cycles.length,
+      advancedStatement.valueReg,
+      advancedStatement.valueReg,
+      startIndex + bundles.length,
       grid,
       span,
       diagnostics
     );
-    cycles.push(...transfer);
+    bundles.push(...transfer);
   }
 
-  return cycles;
+  return bundles;
 }

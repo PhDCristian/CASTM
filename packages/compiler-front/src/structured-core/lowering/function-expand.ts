@@ -19,11 +19,11 @@ import type { LoopControlScope } from './loop-control-scope.js';
 
 export {
   buildWhileFusionPlan,
-  cloneCycle,
-  cycleHasControlFlow,
+  cloneBundle,
+  bundleHasControlFlow,
   instantiateFunctionBody,
-  makeCallCycle,
-  makeControlCycle,
+  makeCallBundle,
+  makeControlBundle,
   rewriteConditionForWhileFusion
 } from './function-expand-helpers.js';
 
@@ -33,7 +33,7 @@ export function expandFunctionBodyIntoKernel(
   functions: ReadonlyMap<string, FunctionDefinitionLike>,
   constants: ReadonlyMap<string, number>,
   diagnostics: Diagnostic[],
-  cycleCounter: { value: number },
+  bundleCounter: { value: number },
   callStack: string[],
   expansionCounter: { value: number },
   controlFlowCounter: { value: number },
@@ -59,7 +59,7 @@ export function expandFunctionBodyIntoKernel(
       functions,
       constants,
       diagnostics,
-      cycleCounter,
+      bundleCounter,
       callStack,
       expansionCounter,
       controlFlowCounter,
@@ -89,7 +89,7 @@ export function expandFunctionBodyIntoKernel(
       functions,
       constants,
       diagnostics,
-      cycleCounter,
+      bundleCounter,
       expansionCounter,
       controlFlowCounter,
       expandBody: expandFunctionBodyIntoKernel,

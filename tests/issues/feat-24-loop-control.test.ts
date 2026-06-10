@@ -5,9 +5,9 @@ import { ErrorCodes } from '@castm/compiler-ir';
 function jumpTexts(source: string): string[] {
   const result = compile(source, { emitArtifacts: ['ast'] });
   expect(result.success).toBe(true);
-  const cycles = result.artifacts.ast?.kernel?.cycles ?? [];
-  return cycles.flatMap((cycle) =>
-    cycle.statements
+  const bundles = result.artifacts.ast?.kernel?.bundles ?? [];
+  return bundles.flatMap((bundle) =>
+    bundle.statements
       .map((stmt) => ('instruction' in stmt ? stmt.instruction.text : ''))
       .filter((text) => text.startsWith('JUMP '))
   );

@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   Diagnostic,
   ErrorCodes,
   KernelAst,
@@ -30,7 +30,7 @@ interface ExpandStaticForInput {
   functions: ReadonlyMap<string, FunctionDefinitionLike>;
   constants: ReadonlyMap<string, number>;
   diagnostics: Diagnostic[];
-  cycleCounter: { value: number };
+  bundleCounter: { value: number };
   callStack: string[];
   expansionCounter: { value: number };
   controlFlowCounter: { value: number };
@@ -189,7 +189,7 @@ export function expandStaticForLoop(input: ExpandStaticForInput): void {
     functions,
     constants,
     diagnostics,
-    cycleCounter,
+    bundleCounter,
     callStack,
     expansionCounter,
     controlFlowCounter,
@@ -218,9 +218,9 @@ export function expandStaticForLoop(input: ExpandStaticForInput): void {
       const tmpKernel: KernelAst = {
         name: '__for_iter__',
         config: undefined,
-        cycles: [],
+        bundles: [],
         directives: [],
-        pragmas: [],
+        advancedStatements: [],
         span: spanAt(lineNo, 1, lineLength)
       };
       const tmpCounter = { value: 0 };
@@ -250,8 +250,8 @@ export function expandStaticForLoop(input: ExpandStaticForInput): void {
         ]
       );
 
-      for (const cycle of tmpKernel.cycles) {
-        kernel.cycles.push(callbacks.cloneCycle(cycle, cycleCounter.value++));
+      for (const bundle of tmpKernel.bundles) {
+        kernel.bundles.push(callbacks.cloneBundle(bundle, bundleCounter.value++));
       }
     }
   }

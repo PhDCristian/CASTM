@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { compile } from '@castm/compiler-api';
 
 describe('FEAT-23 labeled control-flow statements', () => {
-  it('attaches label to first emitted cycle of labeled for/if/while', () => {
+  it('attaches label to first emitted bundle of labeled for/if/while', () => {
     const source = `
 target "uma-cgra-base";
 kernel "labeled_control_flow" {
@@ -24,10 +24,10 @@ kernel "labeled_control_flow" {
 
     const result = compile(source, { emitArtifacts: ['ast'] });
     expect(result.success).toBe(true);
-    const cycles = result.artifacts.ast?.kernel?.cycles ?? [];
-    expect(cycles.some((cycle) => cycle.label === 'loopLabel')).toBe(true);
-    expect(cycles.some((cycle) => cycle.label === 'ifLabel')).toBe(true);
-    expect(cycles.some((cycle) => cycle.label === 'whileLabel')).toBe(true);
+    const bundles = result.artifacts.ast?.kernel?.bundles ?? [];
+    expect(bundles.some((bundle) => bundle.label === 'loopLabel')).toBe(true);
+    expect(bundles.some((bundle) => bundle.label === 'ifLabel')).toBe(true);
+    expect(bundles.some((bundle) => bundle.label === 'whileLabel')).toBe(true);
   });
 
   it('keeps nested labels resolvable and deterministic', () => {
@@ -45,12 +45,12 @@ kernel "nested_labeled_control" {
 
     const result = compile(source, { emitArtifacts: ['ast'] });
     expect(result.success).toBe(true);
-    const cycles = result.artifacts.ast?.kernel?.cycles ?? [];
-    expect(cycles.some((cycle) => cycle.label === 'outerLoop')).toBe(true);
-    expect(cycles.some((cycle) => cycle.label === 'innerLoop')).toBe(true);
+    const bundles = result.artifacts.ast?.kernel?.bundles ?? [];
+    expect(bundles.some((bundle) => bundle.label === 'outerLoop')).toBe(true);
+    expect(bundles.some((bundle) => bundle.label === 'innerLoop')).toBe(true);
   });
 
-  it('emits an empty labeled cycle when labeled static for expands to zero iterations', () => {
+  it('emits an empty labeled bundle when labeled static for expands to zero iterations', () => {
     const source = `
 target "uma-cgra-base";
 kernel "labeled_empty_for" {
@@ -62,8 +62,8 @@ kernel "labeled_empty_for" {
 
     const result = compile(source, { emitArtifacts: ['ast'] });
     expect(result.success).toBe(true);
-    const cycle = result.artifacts.ast?.kernel?.cycles.find((entry) => entry.label === 'emptyLoop');
-    expect(cycle).toBeDefined();
-    expect(cycle?.statements).toHaveLength(0);
+    const bundle = result.artifacts.ast?.kernel?.bundles.find((entry) => entry.label === 'emptyLoop');
+    expect(bundle).toBeDefined();
+    expect(bundle?.statements).toHaveLength(0);
   });
 });

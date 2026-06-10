@@ -17,10 +17,10 @@ function makeAst(): AstProgram {
     kernel: {
       name: 'k',
       config: undefined,
-      pragmas: [],
+      advancedStatements: [],
       directives: [],
       runtime: [],
-      cycles: [
+      bundles: [
         { index: 0, statements: [], span: spanAt(3, 1, 1) },
         { index: 4, statements: [], span: spanAt(8, 1, 1) }
       ],

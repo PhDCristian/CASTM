@@ -8,7 +8,7 @@ export interface HirOperation {
   span: SourceSpan;
 }
 
-export interface HirCycle {
+export interface HirBundle {
   index: number;
   operations: HirOperation[];
   span: SourceSpan;
@@ -17,5 +17,5 @@ export interface HirCycle {
 export interface HirProgram {
   targetProfileId: string;
   grid: GridSpec;
-  cycles: HirCycle[];
+  bundles: HirBundle[];
 }

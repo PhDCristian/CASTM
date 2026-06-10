@@ -1,7 +1,6 @@
 import {
   Diagnostic,
   ErrorCodes,
-  WarningCodes,
   makeDiagnostic,
   StructuredKernelStmtAst
 } from '@castm/compiler-ir';
@@ -16,7 +15,7 @@ import {
   parseFunctionCall,
   shouldSkipStructuredLine
 } from './statements/matchers.js';
-import { tryParseCycleStatement } from './statements/cycle-handler.js';
+import { tryParseBundleStatement } from './statements/bundle-handler.js';
 import { tryParseControlStatement } from './statements/control-handler.js';
 import { INTERPOLATED_IDENT, RESERVED_KEYWORDS } from './constants.js';
 
@@ -41,7 +40,7 @@ function parseLoopControlStatement(clean: string): { kind: 'break' | 'continue';
 
 export function parseStructuredStatements(
   entries: SourceLineEntry[],
-  cycleCounter: { value: number },
+  bundleCounter: { value: number },
   diagnostics: Diagnostic[]
 ): StructuredKernelStmtAst[] {
   const out: StructuredKernelStmtAst[] = [];
@@ -67,16 +66,6 @@ export function parseStructuredStatements(
 
     const advanced = parseAdvancedStatement(clean);
     if (advanced) {
-      if (advanced.sourceForm === 'unqualified') {
-        diagnostics.push(makeDiagnostic(
-          WarningCodes.Style.UnqualifiedStdBuiltin,
-          'warning',
-          spanAt(entry.lineNo, clean.length),
-          `Unqualified standard statement '${advanced.name}(...)' is deprecated.`,
-          `Use std::${advanced.name}(...) instead.`,
-          'MIG-STD-001'
-        ));
-      }
       out.push({
         kind: 'advanced',
         name: advanced.name,
@@ -113,11 +102,11 @@ export function parseStructuredStatements(
       continue;
     }
 
-    const cycleResult = tryParseCycleStatement(entries, i, clean, entry.lineNo, cycleCounter, diagnostics);
-    if (cycleResult.handled) {
-      if (cycleResult.node) out.push(cycleResult.node);
-      if (cycleResult.stop) break;
-      i = cycleResult.nextIndex;
+    const bundleResult = tryParseBundleStatement(entries, i, clean, entry.lineNo, bundleCounter, diagnostics);
+    if (bundleResult.handled) {
+      if (bundleResult.node) out.push(bundleResult.node);
+      if (bundleResult.stop) break;
+      i = bundleResult.nextIndex;
       continue;
     }
 
@@ -126,7 +115,7 @@ export function parseStructuredStatements(
       i,
       clean,
       entry.lineNo,
-      cycleCounter,
+      bundleCounter,
       diagnostics,
       parseStructuredStatements
     );
@@ -163,7 +152,7 @@ export function parseStructuredStatements(
         i,
         labeled.rest,
         entry.lineNo,
-        cycleCounter,
+        bundleCounter,
         diagnostics,
         parseStructuredStatements,
         labeled.label
@@ -205,7 +194,7 @@ export function parseStructuredStatements(
       'error',
       spanAt(entry.lineNo, clean.length),
       `Unrecognized kernel statement: '${clean}'.`,
-      'Use canonical statements (bundle, at, for, if, while, route/reduce/scan/broadcast/...).'
+      'Use canonical statements (bundle, at, for, if, while, std::route/std::reduce/std::scan/std::broadcast/...).'
     ));
   }
 

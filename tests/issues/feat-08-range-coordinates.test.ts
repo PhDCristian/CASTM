@@ -3,12 +3,12 @@ import { compile } from '@castm/compiler-api';
 import { ErrorCodes } from '@castm/compiler-ir';
 
 describe('issues/FEAT-8 range coordinate syntax', () => {
-  it('expands horizontal ranges in a cycle statement', () => {
+  it('expands horizontal ranges in a bundle statement', () => {
     const source = `
 target "uma-cgra-base";
 build {
   scheduler safe;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "feat8_horizontal" {
   bundle {
@@ -26,12 +26,12 @@ kernel "feat8_horizontal" {
     expect(csv).toContain('0,0,3,NOP');
   });
 
-  it('expands vertical ranges in a cycle statement', () => {
+  it('expands vertical ranges in a bundle statement', () => {
     const source = `
 target "uma-cgra-base";
 build {
   scheduler safe;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "feat8_vertical" {
   bundle {
@@ -73,7 +73,7 @@ kernel "feat8_rect" {
 target "uma-cgra-base";
 build {
   scheduler safe;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "feat8_descending" {
   bundle {
@@ -90,12 +90,12 @@ kernel "feat8_descending" {
     expect(csv).toContain('0,0,1,NOP');
   });
 
-  it('supports range syntax with loop-bound coordinates inside cycle scope', () => {
+  it('supports range syntax with loop-bound coordinates inside bundle scope', () => {
     const source = `
 target "uma-cgra-base";
 build {
   scheduler safe;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "feat8_loop_bound" {
   for r in range(2) {
@@ -120,7 +120,7 @@ kernel "feat8_loop_bound" {
 target "uma-cgra-base";
 build {
   scheduler safe;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "feat8_invalid_unresolved" {
   bundle {
@@ -139,7 +139,7 @@ kernel "feat8_invalid_unresolved" {
 target "uma-cgra-base";
 build {
   scheduler safe;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "feat8_unresolved_axis" {
   bundle {

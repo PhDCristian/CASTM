@@ -76,7 +76,7 @@ kernel "collapse_non_perfect" {
   it('rejects collapse inside bundle-level nested loop expansion', () => {
     const result = compile(`
 target "uma-cgra-base";
-kernel "cycle_scope_collapse" {
+kernel "bundle_scope_collapse" {
   bundle {
     for i in range(0, 2) collapse(2) {
       @0,i: NOP;
@@ -91,7 +91,7 @@ kernel "cycle_scope_collapse" {
   it('rejects unroll inside bundle-level nested loop expansion', () => {
     const result = compile(`
 target "uma-cgra-base";
-kernel "cycle_scope_unroll" {
+kernel "bundle_scope_unroll" {
   bundle {
     for i in range(0, 4) unroll(2) {
       @0,i: NOP;

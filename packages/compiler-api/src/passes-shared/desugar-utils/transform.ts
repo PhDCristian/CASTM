@@ -7,7 +7,7 @@ import {
   makeDiagnostic
 } from '@castm/compiler-ir';
 import { cloneAst } from '../ast-utils.js';
-import { isIdentifier } from '../pragma-args-utils.js';
+import { isIdentifier } from '../advanced-statement-args-utils.js';
 
 export function transformInstructions(
   ast: AstProgram,
@@ -18,8 +18,8 @@ export function transformInstructions(
 
   const diagnostics: Diagnostic[] = [];
 
-  for (const cycle of out.kernel.cycles) {
-    for (const stmt of cycle.statements) {
+  for (const bundle of out.kernel.bundles) {
+    for (const stmt of bundle.statements) {
       if (stmt.kind === 'row') {
         stmt.instructions = stmt.instructions.map((inst) => transformer(inst, diagnostics));
         continue;

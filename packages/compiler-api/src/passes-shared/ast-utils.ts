@@ -1,4 +1,4 @@
-import { AstProgram, CycleAst, InstructionAst, SourceSpan } from '@castm/compiler-ir';
+import { AstProgram, BundleAst, InstructionAst, SourceSpan } from '@castm/compiler-ir';
 
 export function cloneInstruction(instruction: InstructionAst): InstructionAst {
   return {
@@ -60,12 +60,12 @@ export function cloneAst(ast: AstProgram): AstProgram {
           span: { ...statement.span }
         };
       }),
-      pragmas: ast.kernel.pragmas.map((p) => ({ ...p, span: { ...p.span } })),
-      cycles: ast.kernel.cycles.map((cycle) => ({
-        ...cycle,
-        label: cycle.label,
-        span: { ...cycle.span },
-        statements: cycle.statements.map((stmt) => {
+      advancedStatements: ast.kernel.advancedStatements.map((p) => ({ ...p, span: { ...p.span } })),
+      bundles: ast.kernel.bundles.map((bundle) => ({
+        ...bundle,
+        label: bundle.label,
+        span: { ...bundle.span },
+        statements: bundle.statements.map((stmt) => {
           if (stmt.kind === 'at') {
             return {
               ...stmt,
@@ -117,14 +117,14 @@ export function createInstruction(opcode: string, operands: string[], span: Sour
   };
 }
 
-export function createAtCycle(
+export function createAtBundle(
   index: number,
   row: number,
   col: number,
   instruction: InstructionAst,
   span: SourceSpan,
   label?: string
-): CycleAst {
+): BundleAst {
   return {
     index,
     label,
@@ -139,12 +139,12 @@ export function createAtCycle(
   };
 }
 
-export function createRowCycle(
+export function createRowBundle(
   index: number,
   row: number,
   instructions: InstructionAst[],
   span: SourceSpan
-): CycleAst {
+): BundleAst {
   return {
     index,
     statements: [{
@@ -161,11 +161,11 @@ export function createRowCycle(
   };
 }
 
-export function createMultiAtCycle(
+export function createMultiAtBundle(
   index: number,
   placements: Array<{ row: number; col: number; instruction: InstructionAst }>,
   span: SourceSpan
-): CycleAst {
+): BundleAst {
   return {
     index,
     statements: placements.map((placement) => ({

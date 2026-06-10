@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { spanAt } from '@castm/compiler-ir';
-import { parseIntegerLiteral } from '../packages/compiler-api/src/passes-shared/pragma-args-utils.js';
-import { parseRoutePragmaArgs } from '../packages/compiler-api/src/passes-shared/route-args.js';
+import { parseIntegerLiteral } from '../packages/compiler-api/src/passes-shared/advanced-statement-args-utils.js';
+import { parseRouteAdvancedStatementArgs } from '../packages/compiler-api/src/passes-shared/route-args.js';
 import {
-  parseBroadcastPragmaArgs,
-  parseGatherPragmaArgs,
-  parseStencilPragmaArgs
+  parseBroadcastAdvancedStatementArgs,
+  parseGatherAdvancedStatementArgs,
+  parseStencilAdvancedStatementArgs
 } from '../packages/compiler-api/src/passes-shared/advanced-args.js';
 import { parseForHeader } from '../packages/compiler-front/src/structured-core/lowering/control-flow-for.js';
 import {
@@ -31,8 +31,8 @@ describe('branch coverage round 11', () => {
   });
 
   it('covers route custom-op empty-operand guard branch via controlled split mock', async () => {
-    vi.doMock('../packages/compiler-api/src/passes-shared/pragma-args-utils.js', async () => {
-      const actual = await vi.importActual<any>('../packages/compiler-api/src/passes-shared/pragma-args-utils.js');
+    vi.doMock('../packages/compiler-api/src/passes-shared/advanced-statement-args-utils.js', async () => {
+      const actual = await vi.importActual<any>('../packages/compiler-api/src/passes-shared/advanced-statement-args-utils.js');
       return {
         ...actual,
         splitPositionalArgs: () => ['R1', ' ', 'R2']
@@ -40,7 +40,7 @@ describe('branch coverage round 11', () => {
     });
 
     const routeArgs = await import('../packages/compiler-api/src/passes-shared/route-args.js');
-    const parsed = routeArgs.parseRoutePragmaArgs('route(@0,0 -> @0,1, payload=R0, dest=R1, op=ADD(R1,R2,R3))');
+    const parsed = routeArgs.parseRouteAdvancedStatementArgs('route(@0,0 -> @0,1, payload=R0, dest=R1, op=ADD(R1,R2,R3))');
     expect(parsed).toBeNull();
   });
 
@@ -52,7 +52,7 @@ describe('branch coverage round 11', () => {
         parseCoordinateLiteral: () => ({ row: 0, col: 0 })
       };
     });
-    const { parseBroadcastPragmaArgs: parseBroadcastFallback } = await import('../packages/compiler-api/src/passes-shared/advanced-args/broadcast.js');
+    const { parseBroadcastAdvancedStatementArgs: parseBroadcastFallback } = await import('../packages/compiler-api/src/passes-shared/advanced-args/broadcast.js');
 
     expect(parseBroadcastFallback('broadcast(from=(0,0), to=row)')).toBeNull();
     expect(parseBroadcastFallback('broadcast(from=(0,0), value=1, to=row)')).toBeNull();
@@ -63,10 +63,10 @@ describe('branch coverage round 11', () => {
   });
 
   it('covers collectives fallback and ternary/default branches', () => {
-    expect(parseStencilPragmaArgs('stencil(cross, R0, R1)')).toMatchObject({ operation: 'sum', srcReg: 'R0', destReg: 'R1' });
+    expect(parseStencilAdvancedStatementArgs('stencil(cross, R0, R1)')).toMatchObject({ operation: 'sum', srcReg: 'R0', destReg: 'R1' });
 
-    expect(parseGatherPragmaArgs('gather(dest=@0,0,destreg=R1,op=add)')).toBeNull();
-    expect(parseGatherPragmaArgs('gather(dest=@0,0,src=R0,destreg=R1,op=1)')).toBeNull();
+    expect(parseGatherAdvancedStatementArgs('gather(dest=@0,0,destreg=R1,op=add)')).toBeNull();
+    expect(parseGatherAdvancedStatementArgs('gather(dest=@0,0,src=R0,destreg=R1,op=1)')).toBeNull();
   });
 
   it('covers gather fallback missing-op and invalid-op identifier branches via coordinate parser mock', async () => {
@@ -79,8 +79,8 @@ describe('branch coverage round 11', () => {
     });
     const collectives = await import('../packages/compiler-api/src/passes-shared/advanced-args/collectives.js');
 
-    expect(collectives.parseGatherPragmaArgs('gather(src=R0,dest=@0,destreg=R1)')).toBeNull();
-    expect(collectives.parseGatherPragmaArgs('gather(src=R0,dest=@0,destreg=R1,op=1)')).toBeNull();
+    expect(collectives.parseGatherAdvancedStatementArgs('gather(src=R0,dest=@0,destreg=R1)')).toBeNull();
+    expect(collectives.parseGatherAdvancedStatementArgs('gather(src=R0,dest=@0,destreg=R1,op=1)')).toBeNull();
   });
 
   it('covers parseForHeader nullish control-location branches via custom match payloads', () => {
@@ -153,6 +153,6 @@ describe('branch coverage round 11', () => {
   });
 
   it('keeps route parser direct path reachable sanity check', () => {
-    expect(parseRoutePragmaArgs('route(@0,0 -> @0,1, payload=R0, accum=R1)')).toMatchObject({ payload: 'R0' });
+    expect(parseRouteAdvancedStatementArgs('route(@0,0 -> @0,1, payload=R0, accum=R1)')).toMatchObject({ payload: 'R0' });
   });
 });

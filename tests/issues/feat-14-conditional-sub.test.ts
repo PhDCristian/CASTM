@@ -7,11 +7,11 @@ function csvRows(csv: string): string[] {
 }
 
 describe('issues/FEAT-14 conditional_sub statement', () => {
-  it('lowers all-target conditional subtraction into deterministic two-cycle sequence', () => {
+  it('lowers all-target conditional subtraction into deterministic two-bundle sequence', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat14_all" {
-  conditional_sub(value=R0, sub=R1, dest=R2);
+  std::conditional_sub(value=R0, sub=R1, dest=R2);
 }
 `;
 
@@ -34,7 +34,7 @@ build {
   grid 3x5 mesh;
 }
 kernel "feat14_row" {
-  conditional_sub(value=R4, sub=R5, dest=R6, target=row(1));
+  std::conditional_sub(value=R4, sub=R5, dest=R6, target=row(1));
 }
 `);
     expect(rowResult.success).toBe(true);
@@ -50,7 +50,7 @@ build {
   grid 3x5 mesh;
 }
 kernel "feat14_point" {
-  conditional_sub(value=R7, sub=R1, dest=R0, target=point(1,2));
+  std::conditional_sub(value=R7, sub=R1, dest=R0, target=point(1,2));
 }
 `);
     expect(pointResult.success).toBe(true);
@@ -64,7 +64,7 @@ kernel "feat14_point" {
     const malformed = compile(`
 target "uma-cgra-base";
 kernel "feat14_bad_parse" {
-  conditional_sub(value=R0, sub=R1);
+  std::conditional_sub(value=R0, sub=R1);
 }
 `);
     expect(malformed.success).toBe(false);
@@ -73,7 +73,7 @@ kernel "feat14_bad_parse" {
     const invalidTarget = compile(`
 target "uma-cgra-base";
 kernel "feat14_bad_target" {
-  conditional_sub(value=R0, sub=R1, dest=R2, target=diag(1));
+  std::conditional_sub(value=R0, sub=R1, dest=R2, target=diag(1));
 }
 `);
     expect(invalidTarget.success).toBe(false);
@@ -82,7 +82,7 @@ kernel "feat14_bad_target" {
     const oobTarget = compile(`
 target "uma-cgra-base";
 kernel "feat14_oob" {
-  conditional_sub(value=R0, sub=R1, dest=R2, target=col(99));
+  std::conditional_sub(value=R0, sub=R1, dest=R2, target=col(99));
 }
 `);
     expect(oobTarget.success).toBe(false);

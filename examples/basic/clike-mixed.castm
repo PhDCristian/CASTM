@@ -6,8 +6,10 @@
 // Assembly is used for: memory ops (LWI, SWI), control (EXIT)
 // C-like is used for: arithmetic and bitwise operations
 
-.data input { 5, 10, 15, 20 }
-.data output 100 { 0, 0, 0, 0 }
+target base;
+
+let input = { 5, 10, 15, 20 };
+let output @100 = { 0, 0, 0, 0 };
 
 kernel "MixedSyntax" {
     config(0xF, 0);

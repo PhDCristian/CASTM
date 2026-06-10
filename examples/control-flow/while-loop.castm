@@ -3,6 +3,8 @@
 // Demonstrates: while loop with runtime branch,
 //               labels and conditional branching.
 
+target base;
+
 kernel "WhileLoop" {
     config(0xF, 0);
 
@@ -12,7 +14,7 @@ kernel "WhileLoop" {
     }
 
     // Count from 0 to 9
-    while (R0 < 10) @0,0 {
+    while (R0 < 10) at @0,0 {
         bundle {
             @0,0: SADD R0, R0, 1;
         }

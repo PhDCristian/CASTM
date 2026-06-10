@@ -11,7 +11,7 @@ import {
   ExpandControlBaseInput,
   ExpandControlFlowResult
 } from './function-expand-control-types.js';
-import { emitWhileControlFlowCycles } from './control-flow-emit/while-cycles.js';
+import { emitWhileControlFlowBundles } from './control-flow-emit/while-bundles.js';
 import { RESERVED_KEYWORDS } from '../constants.js';
 
 function stripLabelPrefix(clean: string): { label: string; rest: string } | null {
@@ -33,7 +33,7 @@ export function tryExpandWhileStatement(input: ExpandControlBaseInput): ExpandCo
     functions,
     constants,
     diagnostics,
-    cycleCounter,
+    bundleCounter,
     callStack,
     expansionCounter,
     controlFlowCounter,
@@ -67,9 +67,9 @@ export function tryExpandWhileStatement(input: ExpandControlBaseInput): ExpandCo
   const loopKernel = {
     name: '__while_body__',
     config: undefined,
-    cycles: [],
+    bundles: [],
     directives: [],
-    pragmas: [],
+    advancedStatements: [],
     span: spanAt(entry.lineNo, 1, clean.length)
   };
   const loopCounter = { value: 0 };
@@ -99,29 +99,29 @@ export function tryExpandWhileStatement(input: ExpandControlBaseInput): ExpandCo
     ]
   );
 
-  const fusionPlan = buildWhileFusionPlan(loopKernel.cycles, whileHeader.row, whileHeader.col);
+  const fusionPlan = buildWhileFusionPlan(loopKernel.bundles, whileHeader.row, whileHeader.col);
   const branchCondition = fusionPlan
     ? rewriteConditionForWhileFusion(whileHeader.condition, fusionPlan.incomingRegister)
     : whileHeader.condition;
-  const prevCycleCount = kernel.cycles.length;
-  const prevPragmaCount = kernel.pragmas.length;
-  cycleCounter.value = emitWhileControlFlowCycles({
+  const prevBundleCount = kernel.bundles.length;
+  const prevAdvancedStatementCount = kernel.advancedStatements.length;
+  bundleCounter.value = emitWhileControlFlowBundles({
     kernel,
-    cycleIndex: cycleCounter.value,
+    bundleIndex: bundleCounter.value,
     lineNo: entry.lineNo,
     row: whileHeader.row,
     col: whileHeader.col,
     condition: branchCondition,
     startLabel,
     endLabel,
-    loopCycles: loopKernel.cycles,
+    loopBundles: loopKernel.bundles,
     fusionPlan
   });
 
   if (labelResult) {
-    // emitWhileControlFlowCycles always emits at least one control cycle.
-    if (kernel.cycles.length > prevCycleCount) {
-      kernel.cycles[prevCycleCount].label = labelResult.label;
+    // emitWhileControlFlowBundles always emits at least one control bundle.
+    if (kernel.bundles.length > prevBundleCount) {
+      kernel.bundles[prevBundleCount].label = labelResult.label;
     }
   }
 

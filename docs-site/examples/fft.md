@@ -25,15 +25,15 @@ Use this pattern when data enters/exits via stream endpoints and needs determini
 
 ## Why this CSV looks like this
 
-The first cycles place stream ingress/egress operations and then route transfer cycles according to the declared source and sink points.
+The first bundles place stream ingress/egress operations and then route transfer bundles according to the declared source and sink points.
 
 Full generated CSV: `docs-site/snippets/examples/fft/01-main.csv`.
 
 ## Related features
 
-- [/features/pragmas/stream](/features/pragmas/stream)
-- [/features/pragmas/route](/features/pragmas/route)
-- [/features/pragmas/route-variants](/features/pragmas/route-variants)
+- [/features/advanced-statements/stream](/features/advanced-statements/stream)
+- [/features/advanced-statements/route](/features/advanced-statements/route)
+- [/features/advanced-statements/route-variants](/features/advanced-statements/route-variants)
 
 ## Continue
 

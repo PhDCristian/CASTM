@@ -53,7 +53,7 @@ onMounted(() => {
           <span class="dot yellow"></span>
           <span class="dot green"></span>
         </div>
-        <span class="filename">vector_reduce.dsl</span>
+        <span class="filename">vector_reduce.castm</span>
       </div>
       <div class="code-body">
         <pre><code>{{ displayed }}<span v-if="!isComplete && showCursor" class="cursor">▎</span></code></pre>

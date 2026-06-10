@@ -6,12 +6,12 @@ import {
 } from '../packages/compiler-front/src/structured-core/lowering/control-flow.js';
 import {
   expandLoopBody,
-  parseInlineCycleStatements,
-  parseLabeledCycleLine
-} from '../packages/compiler-front/src/structured-core/lowering/cycle-expand.js';
+  parseInlineBundleStatements,
+  parseLabeledBundleLine
+} from '../packages/compiler-front/src/structured-core/lowering/bundle-expand.js';
 import {
   instantiateFunctionBody,
-  makeControlCycle
+  makeControlBundle
 } from '../packages/compiler-front/src/structured-core/lowering/function-expand.js';
 import { parseDirective } from '../packages/compiler-front/src/structured-core/lowering/declarations.js';
 import {
@@ -23,8 +23,8 @@ import {
 import { parseInstruction } from '../packages/compiler-front/src/structured-core/lowering/instructions.js';
 import {
   parseAdvancedNamespaceIssue,
-  parseAdvancedStatementAsPragma,
-  parseCycleStatement,
+  parseAdvancedStatementAsAdvancedStatement,
+  parseBundleStatement,
   parseStandardAdvancedCall
 } from '../packages/compiler-front/src/structured-core/lowering/statements.js';
 import { collectBlockFromEntries } from '../packages/compiler-front/src/structured-core/parser-utils/blocks.js';
@@ -55,44 +55,44 @@ describe('compiler-front lowering module contracts', () => {
     expect(opcode.operands).toEqual(['R1', 'R2', 'R3']);
   });
 
-  it('parses advanced statements and cycle placements', () => {
-    expect(parseAdvancedStatementAsPragma('route(@0,1 -> @0,0, payload=R3, accum=R1);')).toBe(
+  it('parses advanced statements and bundle placements', () => {
+    expect(parseAdvancedStatementAsAdvancedStatement('std::route(@0,1 -> @0,0, payload=R3, accum=R1);')).toBe(
       'route(@0,1 -> @0,0, payload=R3, accum=R1)'
     );
-    expect(parseAdvancedStatementAsPragma('triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);')).toBe(
+    expect(parseAdvancedStatementAsAdvancedStatement('std::triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1);')).toBe(
       'triangle(shape=upper, inclusive=true, op=SMUL, dest=R2, srcA=R0, srcB=R1)'
     );
-    expect(parseAdvancedStatementAsPragma('guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);')).toBe(
+    expect(parseAdvancedStatementAsAdvancedStatement('std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);')).toBe(
       'guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1)'
     );
-    expect(parseAdvancedStatementAsPragma('accumulate(pattern=row, products=R2, accum=R3, out=ROUT);')).toBe(
+    expect(parseAdvancedStatementAsAdvancedStatement('std::accumulate(pattern=row, products=R2, accum=R3, out=ROUT);')).toBe(
       'accumulate(pattern=row, products=R2, accum=R3, out=ROUT)'
     );
-    expect(parseAdvancedStatementAsPragma('mulacc_chain(src=R0, coeff=R1, acc=R3, out=R0, target=row(0), width=16, dir=right);')).toBe(
+    expect(parseAdvancedStatementAsAdvancedStatement('std::mulacc_chain(src=R0, coeff=R1, acc=R3, out=R0, target=row(0), width=16, dir=right);')).toBe(
       'mulacc_chain(src=R0, coeff=R1, acc=R3, out=R0, target=row(0), width=16, dir=right)'
     );
-    expect(parseAdvancedStatementAsPragma('carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0);')).toBe(
+    expect(parseAdvancedStatementAsAdvancedStatement('std::carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0);')).toBe(
       'carry_chain(src=R0, carry=R3, store=L, limbs=4, width=16, row=0)'
     );
-    expect(parseAdvancedStatementAsPragma('conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));')).toBe(
+    expect(parseAdvancedStatementAsAdvancedStatement('std::conditional_sub(value=R0, sub=R1, dest=R2, target=row(1));')).toBe(
       'conditional_sub(value=R0, sub=R1, dest=R2, target=row(1))'
     );
-    expect(parseAdvancedStatementAsPragma('collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);')).toBe(
+    expect(parseAdvancedStatementAsAdvancedStatement('std::collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add);')).toBe(
       'collect(from=row(1), to=row(0), via=RCB, local=R2, into=R3, combine=add)'
     );
-    expect(parseAdvancedStatementAsPragma('stash(action=save, reg=R0, addr=L[0], target=point(3,0));')).toBe(
+    expect(parseAdvancedStatementAsAdvancedStatement('std::stash(action=save, reg=R0, addr=L[0], target=point(3,0));')).toBe(
       'stash(action=save, reg=R0, addr=L[0], target=point(3,0))'
     );
-    expect(parseAdvancedStatementAsPragma('normalize(reg=R3, carry=R1, width=16, lane=0);')).toBe(
+    expect(parseAdvancedStatementAsAdvancedStatement('std::normalize(reg=R3, carry=R1, width=16, lane=0);')).toBe(
       'normalize(reg=R3, carry=R1, width=16, lane=0)'
     );
-    expect(parseAdvancedStatementAsPragma('extract_bytes(src=R0, dest=R1, axis=col);')).toBe(
+    expect(parseAdvancedStatementAsAdvancedStatement('std::extract_bytes(src=R0, dest=R1, axis=col);')).toBe(
       'extract_bytes(src=R0, dest=R1, axis=col)'
     );
-    expect(parseAdvancedStatementAsPragma('latency_hide(window=1, mode=conservative);')).toBe(
+    expect(parseAdvancedStatementAsAdvancedStatement('std::latency_hide(window=1, mode=conservative);')).toBe(
       'latency_hide(window=1, mode=conservative)'
     );
-    expect(parseAdvancedStatementAsPragma('foo();')).toBeNull();
+    expect(parseAdvancedStatementAsAdvancedStatement('foo();')).toBeNull();
     expect(parseStandardAdvancedCall('std::unknown(x);')).toBeNull();
     expect(parseAdvancedNamespaceIssue('vendor::unknown(x);')).toBeNull();
     expect(parseAdvancedNamespaceIssue('vendor::route(@0,1 -> @0,0, payload=R3, accum=R1);')).toMatchObject({
@@ -100,15 +100,15 @@ describe('compiler-front lowering module contracts', () => {
       name: 'route'
     });
 
-    const cycleStmt = parseCycleStatement(
+    const bundleStmt = parseBundleStatement(
       'at @0,1: SADD R1, R2, R3;',
       7,
       'at @0,1: SADD R1, R2, R3;',
       new Map(),
       new Map()
     );
-    expect(cycleStmt).toHaveLength(1);
-    expect(cycleStmt?.[0]).toMatchObject({
+    expect(bundleStmt).toHaveLength(1);
+    expect(bundleStmt?.[0]).toMatchObject({
       kind: 'at',
       row: 0,
       col: 1
@@ -182,16 +182,16 @@ describe('compiler-front lowering module contracts', () => {
     expect(buildFalseBranchInstruction({ lhs: 'R2', operator: '<', rhs: 'IMM(8)' }, 'L2')).toBe('BGE R2, IMM(8), L2');
   });
 
-  it('parses and expands inline/labeled cycle statements', () => {
+  it('parses and expands inline/labeled bundle statements', () => {
     const diagnostics: any[] = [];
-    const inline = parseInlineCycleStatements('@0,0: NOP; at row 1: NOP | NOP;', 20, new Map(), diagnostics);
+    const inline = parseInlineBundleStatements('@0,0: NOP; at row 1: NOP | NOP;', 20, new Map(), diagnostics);
     expect(inline).toHaveLength(2);
     expect(inline[0]).toMatchObject({ kind: 'at', row: 0, col: 0 });
-    expect(parseLabeledCycleLine('L0: bundle { @0,0: NOP; }')).toMatchObject({ label: 'L0' });
+    expect(parseLabeledBundleLine('L0: bundle { @0,0: NOP; }')).toMatchObject({ label: 'L0' });
     expect(diagnostics).toHaveLength(0);
   });
 
-  it('expands compile-time for loops inside cycle bodies', () => {
+  it('expands compile-time for loops inside bundle bodies', () => {
     const diagnostics: any[] = [];
     const body = [
       { lineNo: 1, rawLine: 'for i in range(0, 2) {', cleanLine: 'for i in range(0, 2) {' },
@@ -227,32 +227,32 @@ describe('compiler-front lowering module contracts', () => {
     expect(instantiated?.[0].cleanLine).toContain('R1 = R2 + IMM(1)');
   });
 
-  it('builds constant map and explicit control cycle helper', () => {
+  it('builds constant map and explicit control bundle helper', () => {
     const diagnostics: any[] = [];
     const constants = buildConstantMap([
       { kind: 'const', name: 'N', value: '8', span: { startLine: 1, startColumn: 1, endLine: 1, endColumn: 5 } }
     ], diagnostics);
     expect(constants.get('N')).toBe(8);
 
-    const control = makeControlCycle(0, 1, 0, 0, 'BNE R0, IMM(0), L1', 'L0');
+    const control = makeControlBundle(0, 1, 0, 0, 'BNE R0, IMM(0), L1', 'L0');
     expect(control.label).toBe('L0');
     expect(control.statements[0]).toMatchObject({ kind: 'at', row: 0, col: 0 });
     expect(diagnostics).toHaveLength(0);
   });
 
-  it('accepts "bundle" as alias for "cycle" in inline and labeled forms', () => {
+  it('accepts "bundle" as alias for "bundle" in inline and labeled forms', () => {
     const diagnostics: any[] = [];
 
     // Inline bundle
-    const inline = parseInlineCycleStatements('@0,0: NOP;', 1, new Map(), diagnostics);
+    const inline = parseInlineBundleStatements('@0,0: NOP;', 1, new Map(), diagnostics);
     expect(inline).toHaveLength(1);
 
     // Labeled bundle
-    expect(parseLabeledCycleLine('L0: bundle { @0,0: NOP; }')).toMatchObject({ label: 'L0', inlinePayload: '@0,0: NOP; ' });
-    expect(parseLabeledCycleLine('L1: bundle {')).toMatchObject({ label: 'L1' });
+    expect(parseLabeledBundleLine('L0: bundle { @0,0: NOP; }')).toMatchObject({ label: 'L0', inlinePayload: '@0,0: NOP; ' });
+    expect(parseLabeledBundleLine('L1: bundle {')).toMatchObject({ label: 'L1' });
 
-    // Labeled cycle still works
-    expect(parseLabeledCycleLine('L2: bundle { @0,0: NOP; }')).toMatchObject({ label: 'L2' });
+    // Labeled bundle still works
+    expect(parseLabeledBundleLine('L2: bundle { @0,0: NOP; }')).toMatchObject({ label: 'L2' });
 
     expect(diagnostics).toHaveLength(0);
   });

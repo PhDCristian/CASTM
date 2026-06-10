@@ -1,11 +1,11 @@
 import {
   AstProgram,
-  CycleAst,
-  CycleStatementAst,
+  BundleAst,
+  BundleStatementAst,
   Diagnostic,
   ExpansionMode,
   KernelAst,
-  PragmaAst,
+  AdvancedStatementAst,
   StructuredKernelStmtAst,
   StructuredProgramAst
 } from '@castm/compiler-ir';
@@ -43,7 +43,7 @@ function resolveJumpReuseDepth(
   return 0;
 }
 
-function renderCycleStatement(statement: CycleStatementAst): string {
+function renderBundleStatement(statement: BundleStatementAst): string {
   if (statement.kind === 'at') {
     return `@${statement.row},${statement.col}: ${statement.instruction.text};`;
   }
@@ -82,11 +82,11 @@ function emitStructuredBodyAsEntries(
       continue;
     }
 
-    if (stmt.kind === 'cycle') {
-      const prefix = stmt.cycle.label ? `${stmt.cycle.label}: ` : '';
+    if (stmt.kind === 'bundle') {
+      const prefix = stmt.bundle.label ? `${stmt.bundle.label}: ` : '';
       pushLine(`${prefix}bundle {`);
-      for (const cycleStmt of stmt.cycle.statements) {
-        pushLine(renderCycleStatement(cycleStmt));
+      for (const bundleStmt of stmt.bundle.statements) {
+        pushLine(renderBundleStatement(bundleStmt));
       }
       pushLine('}');
       continue;
@@ -138,20 +138,20 @@ function emitStructuredBodyAsEntries(
 
 // ── NOP landing-pad elimination ──────────────────────────────────────
 // After jump-reuse expansion each call emits:
-//   CALL cycle  (SADD + JUMP)
-//   NOP cycle   (labeled with __ret_label_N)
+//   CALL bundle  (SADD + JUMP)
+//   NOP bundle   (labeled with __ret_label_N)
 //
-// By forwarding the NOP's label to the next non-NOP cycle we save one
-// cycle per call and remove scheduler barriers.
+// By forwarding the NOP's label to the next non-NOP bundle we save one
+// bundle per call and remove scheduler barriers.
 
 function isNopText(text: string): boolean {
   const t = text.trim();
   return t === '' || t.toUpperCase() === 'NOP' || t === '_';
 }
 
-function cycleIsNoopOnly(cycle: CycleAst): boolean {
-  if (cycle.statements.length === 0) return true;
-  return cycle.statements.every((s: CycleStatementAst) => {
+function bundleIsNoopOnly(bundle: BundleAst): boolean {
+  if (bundle.statements.length === 0) return true;
+  return bundle.statements.every((s: BundleStatementAst) => {
     if (s.kind === 'row') {
       return s.instructions.every((i) => isNopText(i.text));
     }
@@ -159,52 +159,52 @@ function cycleIsNoopOnly(cycle: CycleAst): boolean {
   });
 }
 
-function eliminateNoopLandingPads(cycles: CycleAst[], pragmas: PragmaAst[]): CycleAst[] {
-  const result: CycleAst[] = [];
+function eliminateNoopLandingPads(bundles: BundleAst[], advancedStatements: AdvancedStatementAst[]): BundleAst[] {
+  const result: BundleAst[] = [];
   let pendingLabel: string | undefined;
 
-  // Track old-index → new-index mapping so we can fix pragma anchors.
+  // Track old-index → new-index mapping so we can fix advancedStatement anchors.
   // -1 = removed (will be patched to the forwarded target afterwards).
-  const newIndexOf: number[] = new Array(cycles.length).fill(-1);
+  const newIndexOf: number[] = new Array(bundles.length).fill(-1);
 
-  for (let origIdx = 0; origIdx < cycles.length; origIdx++) {
-    const cycle = cycles[origIdx];
-    const noop = cycleIsNoopOnly(cycle);
+  for (let origIdx = 0; origIdx < bundles.length; origIdx++) {
+    const bundle = bundles[origIdx];
+    const noop = bundleIsNoopOnly(bundle);
 
     // 1. Apply any pending label from a previously-skipped NOP.
     if (pendingLabel) {
-      if (!cycle.label) {
-        cycle.label = pendingLabel;
+      if (!bundle.label) {
+        bundle.label = pendingLabel;
         pendingLabel = undefined;
       } else {
         // Both pending and current have labels — emit a bare labeled
-        // cycle to preserve the pending label (rare edge-case).
+        // bundle to preserve the pending label (rare edge-case).
         result.push({
           index: 0,
           label: pendingLabel,
           statements: [],
-          span: cycle.span
+          span: bundle.span
         });
         pendingLabel = undefined;
       }
     }
 
-    // 2. Labeled NOP: defer the label to the next useful cycle.
-    if (noop && cycle.label) {
-      pendingLabel = cycle.label;
+    // 2. Labeled NOP: defer the label to the next useful bundle.
+    if (noop && bundle.label) {
+      pendingLabel = bundle.label;
       // newIndexOf[origIdx] stays -1 (removed)
       continue;
     }
 
     // 3. Keep everything else.
     newIndexOf[origIdx] = result.length;
-    result.push(cycle);
+    result.push(bundle);
   }
 
-  // Trailing pending label — emit a final labeled empty cycle.
+  // Trailing pending label — emit a final labeled empty bundle.
   if (pendingLabel) {
-    // pendingLabel can only exist if at least one cycle was visited.
-    const lastSpan = cycles[cycles.length - 1].span;
+    // pendingLabel can only exist if at least one bundle was visited.
+    const lastSpan = bundles[bundles.length - 1].span;
     result.push({
       index: 0,
       label: pendingLabel,
@@ -213,7 +213,7 @@ function eliminateNoopLandingPads(cycles: CycleAst[], pragmas: PragmaAst[]): Cyc
     });
   }
 
-  // Fix up removed-cycle mappings: point to the next kept cycle
+  // Fix up removed-bundle mappings: point to the next kept bundle
   // (where the label was forwarded).
   for (let i = newIndexOf.length - 1; i >= 0; i--) {
     if (newIndexOf[i] === -1) {
@@ -222,10 +222,10 @@ function eliminateNoopLandingPads(cycles: CycleAst[], pragmas: PragmaAst[]): Cyc
     }
   }
 
-  // Re-map pragma anchor indices so they stay consistent.
-  for (const pragma of pragmas) {
-    if (pragma.anchorCycleIndex !== undefined && pragma.anchorCycleIndex < newIndexOf.length) {
-      pragma.anchorCycleIndex = newIndexOf[pragma.anchorCycleIndex];
+  // Re-map advancedStatement anchor indices so they stay consistent.
+  for (const advancedStatement of advancedStatements) {
+    if (advancedStatement.anchorBundleIndex !== undefined && advancedStatement.anchorBundleIndex < newIndexOf.length) {
+      advancedStatement.anchorBundleIndex = newIndexOf[advancedStatement.anchorBundleIndex];
     }
   }
 
@@ -244,8 +244,8 @@ function lowerStructuredBodyWithExpansionKernel(
     config: kernel.config,
     directives: kernel.directives,
     runtime: kernel.runtime ?? [],
-    pragmas: [],
-    cycles: [],
+    advancedStatements: [],
+    bundles: [],
     span: kernel.span
   };
   const entries: SourceLineEntry[] = [];
@@ -253,7 +253,7 @@ function lowerStructuredBodyWithExpansionKernel(
 
   const diagnostics: Diagnostic[] = [];
   const constants = buildConstantMap(loweredKernel.directives, diagnostics);
-  const cycleCounter = { value: 0 };
+  const bundleCounter = { value: 0 };
   const expansionContext = createFunctionExpansionContext(
     resolveExpansionMode(structured, options),
     resolveJumpReuseDepth(structured, options)
@@ -280,7 +280,7 @@ function lowerStructuredBodyWithExpansionKernel(
     functions,
     constants,
     diagnostics,
-    cycleCounter,
+    bundleCounter,
     [],
     { value: 1 },
     { value: 0 },
@@ -288,12 +288,12 @@ function lowerStructuredBodyWithExpansionKernel(
   );
 
   // Eliminate NOP-only landing pads by forwarding their labels to the
-  // next non-NOP cycle.  This removes the 1-cycle overhead per
+  // next non-NOP bundle.  This removes the 1-bundle overhead per
   // jump-reuse call and allows downstream passes (latency-hide,
   // scheduler) to work with fewer barrier points.
-  loweredKernel.cycles = eliminateNoopLandingPads(loweredKernel.cycles, loweredKernel.pragmas);
+  loweredKernel.bundles = eliminateNoopLandingPads(loweredKernel.bundles, loweredKernel.advancedStatements);
 
-  loweredKernel.cycles = loweredKernel.cycles.map((cycle, index) => ({ ...cycle, index }));
+  loweredKernel.bundles = loweredKernel.bundles.map((bundle, index) => ({ ...bundle, index }));
   return {
     kernel: loweredKernel,
     diagnostics
@@ -314,25 +314,25 @@ export function toStructuredProgramAst(ast: AstProgram): StructuredProgramAst {
   }
 
   const body: StructuredKernelStmtAst[] = [];
-  for (const pragma of cloned.kernel.pragmas) {
-    const open = pragma.text.indexOf('(');
-    const close = pragma.text.lastIndexOf(')');
-    const name = open > 0 ? pragma.text.slice(0, open).trim() : pragma.text.trim();
-    const args = open >= 0 && close > open ? pragma.text.slice(open + 1, close).trim() : '';
+  for (const advancedStatement of cloned.kernel.advancedStatements) {
+    const open = advancedStatement.text.indexOf('(');
+    const close = advancedStatement.text.lastIndexOf(')');
+    const name = open > 0 ? advancedStatement.text.slice(0, open).trim() : advancedStatement.text.trim();
+    const args = open >= 0 && close > open ? advancedStatement.text.slice(open + 1, close).trim() : '';
     body.push({
       kind: 'advanced',
       name,
       args,
-      text: pragma.text,
-      span: pragma.span
+      text: advancedStatement.text,
+      span: advancedStatement.span
     });
   }
 
-  for (const cycle of cloned.kernel.cycles) {
+  for (const bundle of cloned.kernel.bundles) {
     body.push({
-      kind: 'cycle',
-      cycle,
-      span: cycle.span
+      kind: 'bundle',
+      bundle,
+      span: bundle.span
     });
   }
 

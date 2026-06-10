@@ -29,11 +29,11 @@ c(y,z);
 Expansion happens before function-body lowering, so label hygiene and existing function expansion rules remain unchanged.
 
 After expansion, normal scheduler compaction rules still apply.  
-Independent stage placements may be packed into fewer cycles depending on source `build { ... }` settings (`optimize`, `scheduler`, `scheduler_window`).
+Independent stage placements may be packed into fewer bundles depending on source `build { ... }` settings (`optimize`, `scheduler`, `scheduler_window`).
 
 ## Example
 
-```dsl
+```castm
 target base;
 
 function stage_load(src) {

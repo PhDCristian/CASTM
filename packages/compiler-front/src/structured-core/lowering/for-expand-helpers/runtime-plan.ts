@@ -1,5 +1,5 @@
 import {
-  CycleAst,
+  BundleAst,
   InstructionAst
 } from '@castm/compiler-ir';
 import { escapeRegExp } from '../../parser-utils/strings.js';
@@ -57,20 +57,20 @@ function pickRuntimeRelayRegister(loopRegister: string, instructionText: string)
 }
 
 export function buildRuntimeNoUnrollAggressivePlan(
-  loopCycles: CycleAst[],
+  loopBundles: BundleAst[],
   loopRegister: string,
   controlRow: number,
   controlCol: number,
-  cycleHasControlFlow: (cycle: CycleAst) => boolean,
+  bundleHasControlFlow: (bundle: BundleAst) => boolean,
   parseInstruction: (text: string, line: number, column: number) => InstructionAst
 ): RuntimeNoUnrollAggressivePlan | null {
-  if (loopCycles.length !== 1) return null;
-  const cycle = loopCycles[0];
-  if (cycle.label) return null;
-  if (cycleHasControlFlow(cycle)) return null;
-  if (cycle.statements.length !== 1) return null;
+  if (loopBundles.length !== 1) return null;
+  const bundle = loopBundles[0];
+  if (bundle.label) return null;
+  if (bundleHasControlFlow(bundle)) return null;
+  if (bundle.statements.length !== 1) return null;
 
-  const statement = cycle.statements[0];
+  const statement = bundle.statements[0];
   if (statement.kind !== 'at') return null;
   if (statement.row !== controlRow) return null;
   if (statement.col === controlCol) return null;

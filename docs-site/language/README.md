@@ -25,6 +25,6 @@ Full CSV: `docs-site/snippets/language/readme/01-main.csv`.
 4. [Target Profiles](/language/target-profiles)
 5. [Spatial-Temporal Model](/language/spatial-temporal)
 6. [Compilation Pipeline](/language/compilation)
-7. [DSL to CSV Equivalence](/language/dsl-csv-equivalence)
+7. [CASTM to CSV Equivalence](/language/castm-csv-equivalence)
 8. [Formal Grammar](/language/grammar)
 9. [Instruction Set](/language/instruction-set)

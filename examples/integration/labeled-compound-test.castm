@@ -9,6 +9,8 @@
 //   loadPhase:  labeled function call (NEW)
 
 target base;
+
+target base;
 build {
     optimize O0;
     scheduler safe;

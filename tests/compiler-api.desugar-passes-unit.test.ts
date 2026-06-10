@@ -13,8 +13,8 @@ function makeAstFromInstructions(instructions: Array<{ text: string; opcode: str
       name: 'k',
       config: undefined,
       directives: [],
-      pragmas: [],
-      cycles: [
+      advancedStatements: [],
+      bundles: [
         {
           index: 0,
           statements: instructions.map((inst, idx) => ({
@@ -46,7 +46,7 @@ describe('compiler-api desugar pass units', () => {
     ]);
 
     const result = desugarInlineArithmeticPass.run(input as any);
-    const statements = result.output.kernel!.cycles[0].statements as any[];
+    const statements = result.output.kernel!.bundles[0].statements as any[];
 
     expect(statements[0].instruction.operands[2]).toBe('5');
     expect(statements[1].instruction.operands[2]).toBe('1 +');
@@ -61,7 +61,7 @@ describe('compiler-api desugar pass units', () => {
     ]);
 
     const result = specializePass.run(input as any);
-    const statements = result.output.kernel!.cycles[0].statements as any[];
+    const statements = result.output.kernel!.bundles[0].statements as any[];
 
     expect(statements[0].instruction.text).toBe('SADD R1, R0, ZERO');
     expect(statements[1].instruction.text).toBe('SADD R2, R0, ZERO');

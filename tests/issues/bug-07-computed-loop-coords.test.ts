@@ -8,7 +8,7 @@ describe('issues/BUG-7 computed loop coordinates', () => {
 target "uma-cgra-base";
 build {
   scheduler safe;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "bug7_var_coords" {
   for i in range(4) {
@@ -30,7 +30,7 @@ kernel "bug7_var_coords" {
 target "uma-cgra-base";
 build {
   scheduler safe;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "bug7_expr_coords" {
   for k in range(16) {
@@ -52,7 +52,7 @@ kernel "bug7_expr_coords" {
 target "uma-cgra-base";
 build {
   scheduler safe;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "bug7_unresolved" {
   bundle { @0,i: NOP; }

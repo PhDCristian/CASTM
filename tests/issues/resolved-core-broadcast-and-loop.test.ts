@@ -48,7 +48,7 @@ kernel "issue5_row_broadcast" {
 target "uma-cgra-base";
 build {
   optimize O0;
-  prune_noop_cycles off;
+  prune_noop_bundles off;
 }
 kernel "issue9_col_broadcast" {
   bundle {
@@ -87,7 +87,7 @@ kernel "issue10_col_var" {
     expect(csv).toContain('1,0,0,SADD R1 ZERO 2');
   });
 
-  it('keeps BUG-1 fixed: mixed row/at styles in same cycle do not corrupt output', () => {
+  it('keeps BUG-1 fixed: mixed row/at styles in same bundle do not corrupt output', () => {
     const source = `
 target "uma-cgra-base";
 kernel "bug1_mixed_broadcast" {

@@ -7,11 +7,11 @@ function csvRows(csv: string): string[] {
 }
 
 describe('issues/FEAT-13 accumulate statement', () => {
-  it('lowers anti_diagonal accumulation into deterministic staged cycles', () => {
+  it('lowers anti_diagonal accumulation into deterministic staged bundles', () => {
     const source = `
 target "uma-cgra-base";
 kernel "feat13_antidiag" {
-  accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
+  std::accumulate(pattern=anti_diagonal, products=R2, accum=R3, out=ROUT, combine=add);
 }
 `;
 
@@ -35,7 +35,7 @@ build {
   grid 2x3 mesh;
 }
 kernel "feat13_row" {
-  accumulate(pattern=row, products=R1, accum=R4, out=R5, combine=xor);
+  std::accumulate(pattern=row, products=R1, accum=R4, out=R5, combine=xor);
 }
 `);
     expect(rowResult.success).toBe(true);
@@ -50,7 +50,7 @@ build {
   grid 3x2 mesh;
 }
 kernel "feat13_col" {
-  accumulate(pattern=col, products=R1, accum=R4, out=R5, combine=sub);
+  std::accumulate(pattern=col, products=R1, accum=R4, out=R5, combine=sub);
 }
 `);
     expect(colResult.success).toBe(true);
@@ -67,11 +67,11 @@ build {
   grid 2x3 mesh;
 }
 kernel "feat13_steps" {
-  accumulate(pattern=row, products=R1, accum=R4, out=R5, combine=xor, steps=2);
+  std::accumulate(pattern=row, products=R1, accum=R4, out=R5, combine=xor, steps=2);
 }
 `);
     expect(stepped.success).toBe(true);
-    expect(stepped.artifacts.mir?.cycles).toHaveLength(4);
+    expect(stepped.artifacts.mir?.bundles).toHaveLength(4);
 
     const tooDeep = compile(`
 target "uma-cgra-base";
@@ -79,7 +79,7 @@ build {
   grid 2x3 mesh;
 }
 kernel "feat13_too_deep" {
-  accumulate(pattern=row, products=R1, accum=R4, out=R5, steps=8);
+  std::accumulate(pattern=row, products=R1, accum=R4, out=R5, steps=8);
 }
 `);
     expect(tooDeep.success).toBe(false);
@@ -90,7 +90,7 @@ kernel "feat13_too_deep" {
     const scopedRow = compile(`
 target "uma-cgra-base";
 kernel "feat13_scope_row" {
-  accumulate(pattern=row, products=R1, accum=R4, out=R5, scope=row(1));
+  std::accumulate(pattern=row, products=R1, accum=R4, out=R5, scope=row(1));
 }
 `);
     expect(scopedRow.success).toBe(true);
@@ -101,7 +101,7 @@ kernel "feat13_scope_row" {
     const scopedCol = compile(`
 target "uma-cgra-base";
 kernel "feat13_scope_col" {
-  accumulate(pattern=col, products=R1, accum=R4, out=R5, scope=col(2));
+  std::accumulate(pattern=col, products=R1, accum=R4, out=R5, scope=col(2));
 }
 `);
     expect(scopedCol.success).toBe(true);
@@ -112,7 +112,7 @@ kernel "feat13_scope_col" {
     const incompatible = compile(`
 target "uma-cgra-base";
 kernel "feat13_scope_mismatch" {
-  accumulate(pattern=anti_diagonal, products=R1, accum=R4, out=R5, scope=row(1));
+  std::accumulate(pattern=anti_diagonal, products=R1, accum=R4, out=R5, scope=row(1));
 }
 `);
     expect(incompatible.success).toBe(false);
@@ -123,11 +123,11 @@ kernel "feat13_scope_mismatch" {
     const result = compile(`
 target "uma-cgra-base";
 kernel "feat13_compact" {
-  accumulate(pattern=row, products=R3, accum=R3, out=R3, combine=xor);
+  std::accumulate(pattern=row, products=R3, accum=R3, out=R3, combine=xor);
 }
 `);
     expect(result.success).toBe(true);
-    expect(result.artifacts.mir?.cycles).toHaveLength(1);
+    expect(result.artifacts.mir?.bundles).toHaveLength(1);
 
     const csv = result.artifacts.csv ?? '';
     expect(csv).toContain('0,0,1,LXOR R3 R3 RCL');
@@ -138,7 +138,7 @@ kernel "feat13_compact" {
     const badPattern = compile(`
 target "uma-cgra-base";
 kernel "feat13_bad_pattern" {
-  accumulate(pattern=diag, products=R2, accum=R3, out=ROUT);
+  std::accumulate(pattern=diag, products=R2, accum=R3, out=ROUT);
 }
 `);
     expect(badPattern.success).toBe(false);
@@ -147,7 +147,7 @@ kernel "feat13_bad_pattern" {
     const missingFields = compile(`
 target "uma-cgra-base";
 kernel "feat13_missing" {
-  accumulate(pattern=row, products=R2, out=ROUT);
+  std::accumulate(pattern=row, products=R2, out=ROUT);
 }
 `);
     expect(missingFields.success).toBe(false);

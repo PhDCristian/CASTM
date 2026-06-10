@@ -37,7 +37,7 @@ export const RESERVED_KEYWORDS = new Set([
   'for',
   'break',
   'continue',
-  'cycle',
+  'bundle',
   'at',
   'pipeline',
   'target',

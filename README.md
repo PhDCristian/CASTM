@@ -1,27 +1,27 @@
 # CASTM -- CGRA API Spatial-Temporal Mapper
 
 A domain-specific compiler toolchain for programming Coarse-Grained Reconfigurable Array (CGRA) architectures.
-CASTM compiles high-level spatial-temporal programs (`.castm`) into cycle-accurate instruction schedules
+CASTM compiles high-level spatial-temporal programs (`.castm`) into bundle-accurate instruction schedules
 targeting configurable CGRA grids (e.g., 4x4 PE arrays with torus/mesh interconnect).
 
 Developed as part of a doctoral thesis at the [University of Malaga](https://www.uma.es/) (UMA),
-CASTM has been validated on the [OpenEdgeCGRA](https://github.com/esl-epfl/OpenEdgeCGRA) architecture
+CASTM has been validated on the [CASTMCGRA](https://github.com/esl-epfl/CASTMCGRA) architecture
 integrated within the [HEEPsilon](https://github.com/esl-epfl/HEEPsilon) SoC,
 demonstrating up to **5.58x speedup** over CPU-only execution
 for the Poseidon2 zero-knowledge proof hash function (t=16, BabyBear field).
 
 ## Features
 
-- **Spatial-temporal programming model**: Bundles group instructions across PEs per clock cycle;
-  `for`, `while`, `if/else` expand into unrolled cycle schedules at compile time.
+- **Spatial-temporal programming model**: Bundles group instructions across PEs per clock bundle;
+  `for`, `while`, `if/else` expand into unrolled bundle schedules at compile time.
 - **CGRA-aware code generation**: Emits flat or simulator-compatible CSV instruction matrices
   for arbitrary grid dimensions and topologies.
 - **Structured control flow**: Labeled loops, `break`/`continue`, functions with call/return via memory,
   `include` directives, and `macro` definitions with label interpolation.
-- **Communication pragmas**: `#pragma broadcast`, `reduce`, `allreduce`, `scan`, `rotate`, `shift`,
-  `transpose`, `gather`, `route` -- generate multi-cycle PE coordination patterns.
+- **Standard advanced statements**: `std::broadcast`, `std::reduce`, `std::allreduce`, `std::scan`,
+  `std::rotate`, `std::shift`, `std::transpose`, `std::gather`, and `std::route` generate multi-bundle PE coordination patterns.
 - **C-like expression syntax**: Write `R0 = R1 + R2;` instead of `SADD R0, R1, R2;`.
-- **Multi-target profiles**: ISA definitions, target profiles, and pragma specifications
+- **Multi-target profiles**: ISA definitions, target profiles, and advanced-statement specifications
   are data-driven (JSON), enabling retargetability.
 - **Language Server Protocol**: IDE integration with diagnostics, hover info, and completions.
 - **100% test coverage**: Enforced on core compiler packages via CI.
@@ -30,7 +30,7 @@ for the Poseidon2 zero-knowledge proof hash function (t=16, BabyBear field).
 
 ```
 packages/
-  lang-spec/            ISA, pragmas, target profiles (JSON specs)
+  lang-spec/            ISA, advanced statements, target profiles (JSON specs)
   compiler-ir/          Shared IR types and diagnostics
   compiler-front/       Tokenizer, parser, AST construction
   compiler-backend-csv/ CSV emitters (flat-csv, sim-matrix-csv)

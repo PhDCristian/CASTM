@@ -4,7 +4,7 @@ Functions are canonical reusable blocks and expand deterministically at call sit
 
 ## When to use
 
-- Encapsulate repeated cycle patterns.
+- Encapsulate repeated bundle patterns.
 - Keep kernels readable with named stages.
 - Use `pipeline(...)` for explicit ordered staging.
 
@@ -68,4 +68,4 @@ Expected diagnostic: `E2002`.
 ## Related examples
 
 - [/examples/parallel](/examples/parallel)
-- [/features/pragmas/pipeline](/features/pragmas/pipeline)
+- [/features/advanced-statements/pipeline](/features/advanced-statements/pipeline)

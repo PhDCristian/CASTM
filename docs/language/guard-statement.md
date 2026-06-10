@@ -2,7 +2,7 @@
 
 `std::guard(...)` is a canonical advanced statement for predicate-driven spatial activation.
 
-It expands to one cycle containing only placements whose coordinates satisfy a compile-time boolean condition.
+It expands to one bundle containing only placements whose coordinates satisfy a compile-time boolean condition.
 
 ## Canonical Syntax
 
@@ -35,7 +35,7 @@ Supported operators:
 
 - Expansion order is deterministic row-major (`row` first, `col` second).
 - Evaluation is done at compile-time for every PE on the active grid.
-- Non-matching PEs are omitted from the generated cycle.
+- Non-matching PEs are omitted from the generated bundle.
 - Invalid or unevaluable predicates produce diagnostics.
 
 ## Examples
@@ -47,7 +47,7 @@ std::guard(cond=(idx%2)==0, op=SADD, dest=R3, srcA=R0, srcB=ZERO);
 
 ## Executable Snippet
 
-```dsl
+```castm
 target base;
 kernel "guard_doc" {
   std::guard(cond=col>=row, op=SMUL, dest=R2, srcA=R0, srcB=R1);
@@ -57,5 +57,5 @@ kernel "guard_doc" {
 ## Verification
 
 - `tests/issues/feat-17-guard-condition.test.ts`
-- `tests/compiler-api.expand-pragmas.handlers.test.ts`
+- `tests/compiler-api.expand-advanced-statements.handlers.test.ts`
 - `tests/compiler-api.passes-shared.test.ts`
