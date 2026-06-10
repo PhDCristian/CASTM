@@ -221,16 +221,8 @@ describe('branch coverage round 4', () => {
     expect(afterOpen.endIndex).toBe(0);
   });
 
-  it('covers parse-source compute span edge and invalid config numeric fallback', () => {
+  it('covers parse-source compute span edge', () => {
     const empty = parseStructuredProgramFromSource('');
     expect(empty.program.span.endColumn).toBe(1);
-
-    const parsed = parseStructuredProgramFromSource(`
-target "uma-cgra-base";
-kernel "k" {
-  config(foo, bar);
-}
-`);
-    expect(parsed.program.kernel?.config).toMatchObject({ mask: 0, startAddr: 0 });
   });
 });

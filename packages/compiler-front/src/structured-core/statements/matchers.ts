@@ -8,7 +8,6 @@ import { parseAdvancedNamespaceIssue, parseStandardAdvancedCall } from '../advan
 
 export function shouldSkipStructuredLine(cleanLine: string): boolean {
   return (
-    /^config\s*\(/i.test(cleanLine) ||
     /^let\s+/i.test(cleanLine) ||
     /^io\.(load|store)\s*\(/i.test(cleanLine) ||
     /^limit\s*\(/i.test(cleanLine) ||

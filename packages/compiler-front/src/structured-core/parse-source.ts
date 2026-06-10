@@ -17,7 +17,7 @@ import { splitTopLevel, stripLineComment } from './parser-utils/strings.js';
 import { parseDirective } from './lowering/declarations.js';
 import { parseFunctionHeader, parseMacroHeader, parseFunctionParams } from './lowering/functions.js';
 import { parseStructuredStatements } from './statements.js';
-import { parseInteger, spanAt } from './utils.js';
+import { spanAt } from './utils.js';
 import { parseProgramHeadersFromTokens } from './token-stream.js';
 import { parseBuildConfig } from './parse-build-config.js';
 
@@ -448,16 +448,6 @@ export function parseStructuredProgramFromSource(source: string): StructuredProg
     ));
   }
 
-  const configEntry = kernelBlock.body.find((entry) => /^config\s*\(/i.test(entry.cleanLine));
-  const configMatch = configEntry?.cleanLine.match(/^config\s*\(\s*([^,]+)\s*,\s*([^\)]+)\)\s*;?\s*$/i);
-  const config = configMatch
-    ? {
-        mask: parseInteger(configMatch[1]) ?? 0,
-        startAddr: parseInteger(configMatch[2]) ?? 0,
-        span: spanAt(configEntry!.lineNo, configEntry!.cleanLine.length)
-      }
-    : undefined;
-
   const topLevelDirectives = entries
     .slice(0, kernelHeaderIdx)
     .filter((entry) => !functionLines.has(entry.lineNo))
@@ -490,7 +480,6 @@ export function parseStructuredProgramFromSource(source: string): StructuredProg
       ...(build ? { build } : {}),
       kernel: {
         name: kernelName,
-        ...(config ? { config } : {}),
         directives,
         runtime,
         body,

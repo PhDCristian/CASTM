@@ -296,16 +296,7 @@ describe('branch coverage round 2', () => {
     expect(entryRes.endIndex).toBe(1);
   });
 
-  it('covers parse-source config extraction and mocked invalid kernel header', async () => {
-    const withConfig = parseStructuredProgramFromSource(`
-target "uma-cgra-base";
-kernel "k" {
-  config(0xF, 32);
-  bundle { @0,0: NOP; }
-}
-`);
-    expect(withConfig.program.kernel?.config).toMatchObject({ mask: 15, startAddr: 32 });
-
+  it('covers parse-source mocked invalid kernel header', async () => {
     vi.doMock('../packages/compiler-front/src/structured-core/token-stream.js', () => ({
       parseProgramHeadersFromTokens: () => ({
         targetProfileId: 'uma-cgra-base',
