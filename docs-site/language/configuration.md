@@ -119,7 +119,7 @@ kernel "runtime_cfg" {
   io.load(0, 4, 8);
   io.store(100, 104);
   limit(128);
-  assert(at=@0,0, reg=R0, equals=0, cycle=0);
+  assert(at=@0,0, reg=R0, equals=0);
 }
 ```
 

@@ -12,7 +12,7 @@ export interface LirSlot {
   instruction: LirInstruction;
 }
 
-export interface Lirbundle {
+export interface LirCycle {
   index: number;
   slots: LirSlot[];
 }

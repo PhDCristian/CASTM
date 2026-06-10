@@ -33,7 +33,7 @@ describe('compiler-api sim-matrix-csv emitter', () => {
       ]
     };
 
-    const result = emit(mir, { format: 'sim-matrix-csv', includeCycleHeader: true });
+    const result = emit(mir, { format: 'sim-matrix-csv', includeBundleHeader: true });
     expect(result.success).toBe(true);
 
     const lines = (result.csv ?? '').split('\n');

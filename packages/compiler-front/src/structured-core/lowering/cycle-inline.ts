@@ -3,13 +3,13 @@ import { parseCycleStatement } from './statements.js';
 import { splitTopLevel } from '../parser-utils/strings.js';
 import { INTERPOLATED_IDENT } from '../constants.js';
 
-export interface ParsedLabeledbundle {
+export interface ParsedLabeledCycle {
   label: string;
   inlinePayload?: string;
 }
 
 export function parseLabeledCycleLine(cleanLine: string): ParsedLabeledCycle | null {
-  const inline = cleanLine.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*(?:cycle|bundle)\\s*\\{\\s*(.+)\\s*\\}\\s*$`, 'i'));
+  const inline = cleanLine.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*bundle\\s*\\{\\s*(.+)\\s*\\}\\s*$`, 'i'));
   if (inline) {
     return {
       label: inline[1],
@@ -17,7 +17,7 @@ export function parseLabeledCycleLine(cleanLine: string): ParsedLabeledCycle | n
     };
   }
 
-  const block = cleanLine.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*(?:cycle|bundle)\\s*\\{\\s*$`, 'i'));
+  const block = cleanLine.match(new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*bundle\\s*\\{\\s*$`, 'i'));
   if (block) {
     return {
       label: block[1]
@@ -43,8 +43,8 @@ export function parseInlineCycleStatements(
         ErrorCodes.Parse.InvalidSyntax,
         'error',
         spanAt(lineNo, 1, cleanStmt.length),
-        `Invalid inline cycle statement: '${part}'.`,
-        'Use valid cycle placement syntax like @r,c:, at @r,c:, at row:, at col:, or at all:.'
+        `Invalid inline bundle statement: '${part}'.`,
+        'Use valid bundle placement syntax like @r,c:, at @r,c:, at row:, at col:, or at all:.'
       ));
       continue;
     }

@@ -31,7 +31,7 @@ function formatInstruction(opcode: string, operands: string[]): string {
 function emitFlatCsv(program: CsvProgram, includeHeader: boolean): string {
   const lines: string[] = [];
   if (includeHeader) {
-    lines.push('cycle,row,col,instruction');
+    lines.push('bundle,row,col,instruction');
   }
 
   const cycles = [...program.cycles].sort((a, b) => a.index - b.index);
@@ -74,7 +74,7 @@ function emitSimMatrixCsv(program: CsvProgram): string {
 export function emitCsv(program: CsvProgram, options: EmitOptions = {}): EmitResult {
   const diagnostics: Diagnostic[] = [];
   const normalized = sortSlotsByPosition(program);
-  const includeHeader = options.includeCycleHeader !== false;
+  const includeHeader = options.includeBundleHeader !== false;
   const format = options.format ?? 'flat-csv';
 
   const csv = format === 'sim-matrix-csv'

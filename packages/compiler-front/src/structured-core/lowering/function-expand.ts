@@ -78,7 +78,7 @@ export function expandFunctionBodyIntoKernel(
       'error',
       spanAt(entry.lineNo, 1, clean.length),
       `Unsupported function body statement: '${clean}'.`,
-      'Function bodies currently support advanced statements, for/while/if control-flow, cycle blocks, labeled cycles, loop control (break/continue), and function calls.'
+      'Function bodies currently support advanced statements, for/while/if control-flow, bundle blocks, labeled bundles, loop control (break/continue), and function calls.'
     ));
   }
 

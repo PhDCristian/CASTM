@@ -57,7 +57,7 @@ export function tryExpandNestedForLoopStep(
       ErrorCodes.Parse.InvalidSyntax,
       'error',
       spanAt(input.entry.lineNo, 1, input.clean.length),
-      'Control location @row,col is not supported for for-loops inside cycle blocks.',
+      'Control location @row,col is not supported for for-loops inside bundle blocks.',
       'Move the loop to kernel/function scope to use runtime-control syntax.'
     ));
     return { handled: true, nextIndex: input.index, shouldBreak: false, statements: [] };
@@ -68,7 +68,7 @@ export function tryExpandNestedForLoopStep(
       ErrorCodes.Parse.InvalidSyntax,
       'error',
       spanAt(input.entry.lineNo, 1, input.clean.length),
-      'Runtime for-loops are not supported inside cycle blocks.',
+      'Runtime for-loops are not supported inside bundle blocks.',
       'Move the runtime loop to kernel/function scope.'
     ));
     return { handled: true, nextIndex: input.index, shouldBreak: false, statements: [] };
@@ -79,8 +79,8 @@ export function tryExpandNestedForLoopStep(
       ErrorCodes.Parse.InvalidSyntax,
       'error',
       spanAt(input.entry.lineNo, 1, input.clean.length),
-      'collapse(n) is not supported for for-loops inside cycle blocks.',
-      'Use collapse(n) at kernel/function scope where loops expand into cycles.'
+      'collapse(n) is not supported for for-loops inside bundle blocks.',
+      'Use collapse(n) at kernel/function scope where loops expand into bundles.'
     ));
     return { handled: true, nextIndex: input.index, shouldBreak: false, statements: [] };
   }
@@ -90,8 +90,8 @@ export function tryExpandNestedForLoopStep(
       ErrorCodes.Parse.InvalidSyntax,
       'error',
       spanAt(input.entry.lineNo, 1, input.clean.length),
-      'unroll(k) is not supported for for-loops inside cycle blocks.',
-      'Use unroll(k) at kernel/function scope where loops expand into cycles.'
+      'unroll(k) is not supported for for-loops inside bundle blocks.',
+      'Use unroll(k) at kernel/function scope where loops expand into bundles.'
     ));
     return { handled: true, nextIndex: input.index, shouldBreak: false, statements: [] };
   }
@@ -102,7 +102,7 @@ export function tryExpandNestedForLoopStep(
       ErrorCodes.Parse.InvalidSyntax,
       'error',
       spanAt(input.entry.lineNo, 1, input.clean.length),
-      'Unterminated for loop inside cycle block.',
+      'Unterminated for loop inside bundle block.',
       'Add a closing brace for for { ... }.'
     ));
     return { handled: true, nextIndex: input.index, shouldBreak: true, statements: [] };
@@ -171,8 +171,8 @@ export function tryExpandSingleCycleStatementStep(input: ExpandLoopEntryInput): 
       ErrorCodes.Parse.InvalidSyntax,
       'error',
       spanAt(input.entry.lineNo, 1, input.clean.length),
-      'Unexpected closing brace inside cycle block.',
-      'Check for mismatched braces around for/cycle blocks.'
+      'Unexpected closing brace inside bundle block.',
+      'Check for mismatched braces around for/bundle blocks.'
     ));
     return { handled: true, nextIndex: input.index, shouldBreak: false, statements: [] };
   }
@@ -195,7 +195,7 @@ export function tryExpandSingleCycleStatementStep(input: ExpandLoopEntryInput): 
         ErrorCodes.Parse.InvalidSyntax,
         'error',
         spanAt(input.entry.lineNo, 1, Math.max(1, visible.length)),
-        `Invalid cycle statement: '${visible}'`,
+        `Invalid bundle statement: '${visible}'`,
         'Expected @row,col:, at @row,col:, at @row,col { ... }, at row/col/all, or for ... in range(...) { ... }.'
       ));
       continue;

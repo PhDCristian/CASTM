@@ -95,7 +95,7 @@ function main(): void {
 
     const emitted = emit(result.artifacts.mir, {
       format: 'sim-matrix-csv',
-      includeCycleHeader: true
+      includeBundleHeader: true
     });
 
     if (!emitted.success || !emitted.csv) {

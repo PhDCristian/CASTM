@@ -47,21 +47,21 @@ describe('branch coverage round 4', () => {
     };
     const ok = parseAssertionDirectiveValue(ast, span, 'assert(at=@0,1, reg=R1, equals=42)');
     expect('message' in ok).toBe(false);
-    expect((ok as any).cycle).toBe(7);
+    expect((ok as any).bundle).toBe(7);
 
     expect(parseAssertionDirectiveValue(ast, span, 'assert(bad payload)')).toMatchObject({
       message: expect.stringContaining('Invalid assert(...) payload')
     });
-    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@-1,0, reg=R1, equals=1, cycle=0)')).toMatchObject({
+    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@-1,0, reg=R1, equals=1, bundle=0)')).toMatchObject({
       message: expect.stringContaining('Invalid assert row')
     });
-    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@0,-1, reg=R1, equals=1, cycle=0)')).toMatchObject({
+    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@0,-1, reg=R1, equals=1, bundle=0)')).toMatchObject({
       message: expect.stringContaining('Invalid assert column')
     });
-    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@0,0, reg=R1, equals=1, cycle=-1)')).toMatchObject({
-      message: expect.stringContaining('Invalid assert cycle')
+    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@0,0, reg=R1, equals=1, bundle=-1)')).toMatchObject({
+      message: expect.stringContaining('Invalid assert bundle')
     });
-    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@0,0, reg=R1, equals=nope, cycle=0)')).toMatchObject({
+    expect(parseAssertionDirectiveValue(ast, span, 'assert(at=@0,0, reg=R1, equals=nope, bundle=0)')).toMatchObject({
       message: expect.stringContaining('Invalid assert value')
     });
   });

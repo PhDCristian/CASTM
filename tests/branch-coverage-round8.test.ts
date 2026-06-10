@@ -25,13 +25,13 @@ describe('branch coverage round 8', () => {
     vi.doMock('../packages/compiler-api/src/compiler-driver/runtime-artifacts.js', () => ({
       collectRuntimeArtifacts: () => ({
         ioConfig: { loadAddrs: [], storeAddrs: [] },
-        cycleLimit: undefined,
+        bundleLimit: undefined,
         assertions: [],
         symbols: { constants: {}, aliases: {}, labels: {} }
       }),
       createEmptyRuntimeArtifacts: () => ({
         ioConfig: { loadAddrs: [], storeAddrs: [] },
-        cycleLimit: undefined,
+        bundleLimit: undefined,
         assertions: [],
         symbols: { constants: {}, aliases: {}, labels: {} }
       })
@@ -60,7 +60,7 @@ describe('branch coverage round 8', () => {
         lir: undefined,
         memoryRegions: undefined,
         ioConfig: { loadAddrs: [], storeAddrs: [] },
-        cycleLimit: undefined,
+        bundleLimit: undefined,
         assertions: [],
         symbols: { constants: {}, aliases: {}, labels: {} },
         loweredPasses: []
@@ -69,13 +69,13 @@ describe('branch coverage round 8', () => {
     vi.doMock('../packages/compiler-api/src/compiler-driver/runtime-artifacts.js', () => ({
       collectRuntimeArtifacts: () => ({
         ioConfig: { loadAddrs: [], storeAddrs: [] },
-        cycleLimit: undefined,
+        bundleLimit: undefined,
         assertions: [],
         symbols: { constants: {}, aliases: {}, labels: {} }
       }),
       createEmptyRuntimeArtifacts: () => ({
         ioConfig: { loadAddrs: [], storeAddrs: [] },
-        cycleLimit: undefined,
+        bundleLimit: undefined,
         assertions: [],
         symbols: { constants: {}, aliases: {}, labels: {} }
       })

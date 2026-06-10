@@ -7,8 +7,8 @@ import {
 
 export interface RuntimeArtifactCollection {
   ioConfig: IoConfigInfo;
-  cycleLimit?: number;
-  cycleLimitSpan?: SourceSpan;
+  bundleLimit?: number;
+  bundleLimitSpan?: SourceSpan;
   assertions: AssertionInfo[];
   symbols: SymbolInfo;
 }

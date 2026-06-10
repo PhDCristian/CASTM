@@ -71,7 +71,7 @@ describe('branch coverage round 10 - compiler api', () => {
   it('covers assertion fallback branches and object payload miss', () => {
     const noKernelAst = { targetProfileId: 'uma-cgra-base', kernel: null, span } as AstProgram;
     const parsedNoKernel = parseAssertionDirectiveValue(noKernelAst, span, 'assert(at=@0,0, reg=R1, equals=1)');
-    expect('cycle' in parsedNoKernel && parsedNoKernel.cycle).toBe(0);
+    expect('bundle' in parsedNoKernel && parsedNoKernel.bundle).toBe(0);
 
     const ast = makeAst();
     ast.kernel!.cycles = [
@@ -79,7 +79,7 @@ describe('branch coverage round 10 - compiler api', () => {
       { index: 3, span: spanAt(20, 1, 1), statements: [] }
     ];
     const parsed = parseAssertionDirectiveValue(ast, spanAt(30, 1, 1), 'assert(at=@0,0, reg=R1, equals=1)');
-    expect('cycle' in parsed && parsed.cycle).toBe(3);
+    expect('bundle' in parsed && parsed.bundle).toBe(3);
 
     const invalidObject = parseAssertionDirectiveValue(ast, span, 'assert(location=0,0, reg=R1)');
     expect('message' in invalidObject).toBe(true);

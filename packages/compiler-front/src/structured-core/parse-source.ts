@@ -141,7 +141,7 @@ function parseRuntimeStatementLine(
         'error',
         spanAt(lineNo, cleanLine.length),
         `Invalid assert statement '${cleanLine}'.`,
-        'Use: assert(at=@0,0, reg=R1, equals=42, cycle=0).'
+        'Use: assert(at=@0,0, reg=R1, equals=42).'
       ));
       return { handled: true };
     }
@@ -153,13 +153,29 @@ function parseRuntimeStatementLine(
     const parsedArgs = new Map<string, string>();
     const args = remaining.length > 0 ? splitTopLevel(remaining, ',') : [];
     let valid = true;
+    let unsupportedArg: string | null = null;
     for (const part of args) {
       const kv = part.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/);
       if (!kv) {
         valid = false;
         break;
       }
-      parsedArgs.set(kv[1].toLowerCase(), kv[2].trim());
+      const name = kv[1].toLowerCase();
+      if (name !== 'reg' && name !== 'equals' && name !== 'bundle') {
+        unsupportedArg = kv[1];
+        break;
+      }
+      parsedArgs.set(name, kv[2].trim());
+    }
+    if (unsupportedArg !== null) {
+      diagnostics.push(makeDiagnostic(
+        ErrorCodes.Parse.InvalidSyntax,
+        'error',
+        spanAt(lineNo, cleanLine.length),
+        `Unsupported assert argument '${unsupportedArg}'.`,
+        'Use current assert arguments: at, reg, equals, and optional bundle.'
+      ));
+      return { handled: true };
     }
     if (!valid || !parsedArgs.has('reg') || !parsedArgs.has('equals')) {
       diagnostics.push(makeDiagnostic(
@@ -167,7 +183,7 @@ function parseRuntimeStatementLine(
         'error',
         spanAt(lineNo, cleanLine.length),
         `Invalid assert statement '${cleanLine}'.`,
-        'Use: assert(at=@0,0, reg=R1, equals=42, cycle=0).'
+        'Use: assert(at=@0,0, reg=R1, equals=42).'
       ));
       return { handled: true };
     }
@@ -182,7 +198,7 @@ function parseRuntimeStatementLine(
           },
           reg: parsedArgs.get('reg')!.trim(),
           equals: parsedArgs.get('equals')!.trim(),
-          ...(parsedArgs.get('cycle') ? { cycle: parsedArgs.get('cycle')!.trim() } : {}),
+          ...(parsedArgs.get('bundle') ? { bundle: parsedArgs.get('bundle')!.trim() } : {}),
           raw: cleanLine,
           span: spanAt(lineNo, cleanLine.length)
         }

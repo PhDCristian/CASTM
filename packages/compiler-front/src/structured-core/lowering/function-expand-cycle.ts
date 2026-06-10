@@ -61,7 +61,7 @@ export function tryExpandCycleStatement(input: FunctionExpandStepInput): Functio
     return { handled: true, nextIndex: block.endIndex, shouldBreak: false };
   }
 
-  const inlineCycleMatch = clean.match(/^(?:cycle|bundle)\s*\{\s*(.+)\s*\}\s*$/i);
+  const inlineCycleMatch = clean.match(/^bundle\s*\{\s*(.+)\s*\}\s*$/i);
   if (inlineCycleMatch) {
     const cycle: CycleAst = {
       index: cycleCounter.value++,
@@ -72,7 +72,7 @@ export function tryExpandCycleStatement(input: FunctionExpandStepInput): Functio
     return { handled: true, nextIndex: index, shouldBreak: false };
   }
 
-  if (!/^(?:cycle|bundle)\s*\{\s*$/i.test(clean)) {
+  if (!/^bundle\s*\{\s*$/i.test(clean)) {
     return { handled: false, nextIndex: index, shouldBreak: false };
   }
 

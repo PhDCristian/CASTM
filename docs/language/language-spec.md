@@ -51,7 +51,7 @@ kernel "canonical_example" {
   io.load(0, 4, 8);
   io.store(16, 20);
   limit(256);
-  assert(at=@0,0, reg=R0, equals=0, cycle=0);
+  assert(at=@0,0, reg=R0, equals=0);
 
   std::latency_hide(window=1, mode=conservative);
   std::stash(action=save, reg=R0, addr=output[0], target=point(3,0));

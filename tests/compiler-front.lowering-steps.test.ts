@@ -223,7 +223,7 @@ describe('compiler-front lowering cycle/function step handlers', () => {
     );
     expect(invalid.handled).toBe(true);
     expect(invalid.statements).toHaveLength(0);
-    expect(invalidDiagnostics[0].message).toContain('Invalid cycle statement');
+    expect(invalidDiagnostics[0].message).toContain('Invalid bundle statement');
 
     const okDiagnostics: any[] = [];
     const ok = tryExpandSingleCycleStatementStep(

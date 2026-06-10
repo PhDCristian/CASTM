@@ -144,7 +144,7 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     const diagnostics: any[] = [];
     const symbols = createEmptySymbolCollections();
     const runtime = collectDirectiveArtifacts(ast, diagnostics, symbols);
-    expect(runtime.cycleLimit).toBeUndefined();
+    expect(runtime.bundleLimit).toBeUndefined();
     expect(diagnostics.some((d: any) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);
 
     const symbolCollection = collectArrayAndLabelSymbols(
@@ -190,10 +190,10 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     };
 
     const a = parseAssertionDirectiveValue(ast, spanAt(1, 1, 1), 'assert(at=@0,0, reg=R1, equals=1)');
-    expect('cycle' in a && a.cycle).toBe(13);
+    expect('bundle' in a && a.bundle).toBe(13);
 
     const b = parseAssertionDirectiveValue(ast, spanAt(15, 1, 1), 'assert(at=@0,0, reg=R1, equals=1)');
-    expect('cycle' in b && b.cycle).toBe(9);
+    expect('bundle' in b && b.bundle).toBe(9);
   });
 
   it('covers ast-utils conditional branches', () => {
@@ -382,15 +382,15 @@ describe('branch coverage round 9 - compiler api helpers', () => {
     expect(expr.output.kernel?.cycles.length).toBe(1);
   });
 
-  it('covers analyze-driver nullable cycleLimitSpan branch via mock', async () => {
+  it('covers analyze-driver nullable bundleLimitSpan branch via mock', async () => {
     vi.doMock('../packages/compiler-api/src/compiler-driver/runtime-artifacts.js', async () => {
       const actual = await vi.importActual<any>('../packages/compiler-api/src/compiler-driver/runtime-artifacts.js');
       return {
         ...actual,
         collectRuntimeArtifacts: () => ({
           ioConfig: { loadAddrs: [], storeAddrs: [] },
-          cycleLimit: 0,
-          cycleLimitSpan: undefined,
+          bundleLimit: 0,
+          bundleLimitSpan: undefined,
           assertions: [],
           symbols: { constants: {}, aliases: {}, arrays: [], labels: {} }
         })
@@ -573,6 +573,6 @@ describe('branch coverage round 9 - compiler front helpers', () => {
       diagnostics
     } as any, () => []);
     expect(out.handled).toBe(true);
-    expect(diagnostics.at(-1)?.message).toContain('Runtime for-loops are not supported inside cycle blocks');
+    expect(diagnostics.at(-1)?.message).toContain('Runtime for-loops are not supported inside bundle blocks');
   });
 });

@@ -14,7 +14,7 @@ export interface IoConfigInfo {
 }
 
 export interface AssertionInfo {
-  cycle?: number;
+  bundle?: number;
   row?: number;
   col?: number;
   register?: string;

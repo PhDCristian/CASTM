@@ -39,7 +39,7 @@ function splitTopLevel(text: string, delimiter: string): string[] {
 }
 
 interface AssertionFieldTokens {
-  cycleText?: string;
+  bundleText?: string;
   rowText: string;
   colText: string;
   registerText: string;
@@ -47,7 +47,7 @@ interface AssertionFieldTokens {
 }
 
 export interface ParsedAssertionPayload {
-  cycle: number;
+  bundle: number;
   row: number;
   col: number;
   register: string;
@@ -59,30 +59,40 @@ export interface AssertionParseFailure {
   hint: string;
 }
 
-function inferDefaultAssertionCycle(ast: AstProgram, span: SourceSpan): number {
-  const cycles = ast.kernel?.cycles ?? [];
-  if (cycles.length === 0) return 0;
+function inferDefaultAssertionBundle(ast: AstProgram, span: SourceSpan): number {
+  const bundles = ast.kernel?.cycles ?? [];
+  if (bundles.length === 0) return 0;
 
   let lastBeforeSpan: number | null = null;
-  for (const cycle of cycles) {
-    if (cycle.span.startLine <= span.startLine) {
-      if (lastBeforeSpan === null || cycle.index > lastBeforeSpan) {
-        lastBeforeSpan = cycle.index;
+  for (const bundle of bundles) {
+    if (bundle.span.startLine <= span.startLine) {
+      if (lastBeforeSpan === null || bundle.index > lastBeforeSpan) {
+        lastBeforeSpan = bundle.index;
       }
     }
   }
 
   if (lastBeforeSpan !== null) return lastBeforeSpan;
-  return cycles[cycles.length - 1].index;
+  return bundles[bundles.length - 1].index;
 }
 
-function parseAssertionTokens(rawValue: string): AssertionFieldTokens | null {
+function parseAssertionTokens(rawValue: string): AssertionFieldTokens | AssertionParseFailure {
   const call = rawValue.match(/^assert\s*\(([\s\S]*)\)\s*;?\s*$/i);
-  if (!call) return null;
+  if (!call) {
+    return {
+      message: `Invalid assert(...) payload '${rawValue}'.`,
+      hint: 'Expected `assert(at=@0,0, reg=R1, equals=42)`.'
+    };
+  }
 
   const body = call[1].trim();
   const atMatch = body.match(/\bat\s*=\s*@\s*([^,\s]+)\s*,\s*([^\s,]+)\s*/i);
-  if (!atMatch) return null;
+  if (!atMatch) {
+    return {
+      message: `Invalid assert(...) payload '${rawValue}'.`,
+      hint: 'Expected `assert(at=@0,0, reg=R1, equals=42)`.'
+    };
+  }
 
   const remaining = body
     .replace(atMatch[0], '')
@@ -95,16 +105,34 @@ function parseAssertionTokens(rawValue: string): AssertionFieldTokens | null {
   const args = new Map<string, string>();
   for (const pair of kvPairs) {
     const kv = pair.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/);
-    if (!kv) return null;
-    args.set(kv[1].toLowerCase(), kv[2].trim());
+    if (!kv) {
+      return {
+        message: `Invalid assert argument '${pair}'.`,
+        hint: 'Expected named arguments: reg=..., equals=..., optional bundle=...'
+      };
+    }
+
+    const name = kv[1].toLowerCase();
+    if (name !== 'reg' && name !== 'equals' && name !== 'bundle') {
+      return {
+        message: `Unsupported assert argument '${kv[1]}'.`,
+        hint: 'Use current assert arguments: at, reg, equals, and optional bundle.'
+      };
+    }
+    args.set(name, kv[2].trim());
   }
 
   const registerText = args.get('reg');
   const valueText = args.get('equals');
-  if (!registerText || !valueText) return null;
+  if (!registerText || !valueText) {
+    return {
+      message: `Invalid assert(...) payload '${rawValue}'.`,
+      hint: 'Expected `assert(at=@0,0, reg=R1, equals=42)`.'
+    };
+  }
 
   return {
-    cycleText: args.get('cycle'),
+    bundleText: args.get('bundle'),
     rowText: atMatch[1].trim(),
     colText: atMatch[2].trim(),
     registerText,
@@ -118,12 +146,7 @@ export function parseAssertionDirectiveValue(
   rawValue: string
 ): ParsedAssertionPayload | AssertionParseFailure {
   const tokens = parseAssertionTokens(rawValue);
-  if (!tokens) {
-    return {
-      message: `Invalid assert(...) payload '${rawValue}'.`,
-      hint: 'Expected `assert(at=@0,0, reg=R1, equals=42, cycle=0)`.'
-    };
-  }
+  if ('message' in tokens) return tokens;
 
   const row = parseNumericLiteral(tokens.rowText);
   if (row === null || !Number.isInteger(row) || row < 0) {
@@ -141,18 +164,18 @@ export function parseAssertionDirectiveValue(
     };
   }
 
-  let cycle: number;
-  if (tokens.cycleText) {
-    const parsedCycle = parseNumericLiteral(tokens.cycleText);
-    if (parsedCycle === null || !Number.isInteger(parsedCycle) || parsedCycle < 0) {
+  let bundle: number;
+  if (tokens.bundleText) {
+    const parsedBundle = parseNumericLiteral(tokens.bundleText);
+    if (parsedBundle === null || !Number.isInteger(parsedBundle) || parsedBundle < 0) {
       return {
-        message: `Invalid assert cycle '${tokens.cycleText}'.`,
-        hint: 'Cycle must be a non-negative integer.'
+        message: `Invalid assert bundle '${tokens.bundleText}'.`,
+        hint: 'Bundle must be a non-negative integer.'
       };
     }
-    cycle = parsedCycle;
+    bundle = parsedBundle;
   } else {
-    cycle = inferDefaultAssertionCycle(ast, directiveSpan);
+    bundle = inferDefaultAssertionBundle(ast, directiveSpan);
   }
 
   const value = parseNumericLiteral(tokens.valueText);
@@ -164,7 +187,7 @@ export function parseAssertionDirectiveValue(
   }
 
   return {
-    cycle,
+    bundle,
     row,
     col,
     register: tokens.registerText,

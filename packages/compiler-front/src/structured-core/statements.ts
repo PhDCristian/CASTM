@@ -205,7 +205,7 @@ export function parseStructuredStatements(
       'error',
       spanAt(entry.lineNo, clean.length),
       `Unrecognized kernel statement: '${clean}'.`,
-      'Use canonical statements (bundle/cycle, at, for, if, while, route/reduce/scan/broadcast/...).'
+      'Use canonical statements (bundle, at, for, if, while, route/reduce/scan/broadcast/...).'
     ));
   }
 

@@ -39,7 +39,7 @@ export function instantiateFunctionBody(
   }
 
   const labelMap = new Map<string, string>();
-  const labelPattern = new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*(?:cycle|bundle)\\b`, 'i');
+  const labelPattern = new RegExp(`^(${INTERPOLATED_IDENT})\\s*:\\s*bundle\\b`, 'i');
   for (const entry of def.body) {
     const match = entry.cleanLine.match(labelPattern);
     if (!match) continue;

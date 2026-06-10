@@ -190,13 +190,13 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
   );
   const lir = lirPipeline.output as LirProgram;
 
-  if (runtime.cycleLimit !== undefined && mir.cycles.length > runtime.cycleLimit) {
+  if (runtime.bundleLimit !== undefined && mir.cycles.length > runtime.bundleLimit) {
     diagnostics.push(makeDiagnostic(
       ErrorCodes.Semantic.UnsupportedOperation,
       'error',
-      runtime.cycleLimitSpan ?? semaAst.span,
-      `Kernel expands to ${mir.cycles.length} cycles but limit(...) is ${runtime.cycleLimit}.`,
-      'Increase limit(...) or reduce generated cycles.'
+      runtime.bundleLimitSpan ?? semaAst.span,
+      `Kernel expands to ${mir.cycles.length} bundles but limit(...) is ${runtime.bundleLimit}.`,
+      'Increase limit(...) or reduce generated bundles.'
     ));
   }
 
@@ -210,7 +210,7 @@ export function analyze(input: AnalyzeInput, options: CompileOptions = {}): Anal
     lir,
     memoryRegions: memory.regions,
     ioConfig: runtime.ioConfig,
-    cycleLimit: runtime.cycleLimit,
+    bundleLimit: runtime.bundleLimit,
     assertions: runtime.assertions,
     symbols: runtime.symbols,
     loweredPasses: [

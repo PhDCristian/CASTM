@@ -12,7 +12,7 @@ export interface MirSlot {
   instruction: MirInstruction;
 }
 
-export interface Mirbundle {
+export interface MirCycle {
   index: number;
   slots: MirSlot[];
 }

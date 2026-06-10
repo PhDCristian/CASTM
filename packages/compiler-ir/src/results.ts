@@ -22,7 +22,7 @@ export interface AnalysisResult {
   lir?: LirProgram;
   memoryRegions?: MemoryRegionInfo[];
   ioConfig?: IoConfigInfo;
-  cycleLimit?: number;
+  bundleLimit?: number;
   assertions?: AssertionInfo[];
   symbols?: SymbolInfo;
   loweredPasses: string[];
@@ -40,7 +40,7 @@ export interface CompileResult {
     lir?: LirProgram;
     memoryRegions?: MemoryRegionInfo[];
     ioConfig?: IoConfigInfo;
-    cycleLimit?: number;
+    bundleLimit?: number;
     assertions?: AssertionInfo[];
     symbols?: SymbolInfo;
   };

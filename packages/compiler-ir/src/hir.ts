@@ -8,7 +8,7 @@ export interface HirOperation {
   span: SourceSpan;
 }
 
-export interface Hirbundle {
+export interface HirCycle {
   index: number;
   operations: HirOperation[];
   span: SourceSpan;

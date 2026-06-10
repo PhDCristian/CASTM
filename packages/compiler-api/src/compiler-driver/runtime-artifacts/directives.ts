@@ -7,13 +7,14 @@ import {
   SourceSpan,
   makeDiagnostic
 } from '@castm/compiler-ir';
+import { parseAssertionDirectiveValue } from '../assertions.js';
 import { parseNumericLiteral } from '../numbers.js';
 import { SymbolCollections } from './symbols.js';
 
 export interface RuntimeDirectiveArtifacts {
   ioConfig: IoConfigInfo;
-  cycleLimit?: number;
-  cycleLimitSpan?: SourceSpan;
+  bundleLimit?: number;
+  bundleLimitSpan?: SourceSpan;
   assertions: AssertionInfo[];
 }
 
@@ -23,8 +24,8 @@ export function collectDirectiveArtifacts(
   symbols: SymbolCollections
 ): RuntimeDirectiveArtifacts {
   const ioConfig: IoConfigInfo = { loadAddrs: [], storeAddrs: [] };
-  let cycleLimit: number | undefined;
-  let cycleLimitSpan: SourceSpan | undefined;
+  let bundleLimit: number | undefined;
+  let bundleLimitSpan: SourceSpan | undefined;
   const assertions: AssertionInfo[] = [];
 
   const declarations = ast.kernel?.directives ?? [];
@@ -93,74 +94,44 @@ export function collectDirectiveArtifacts(
     }
 
     if (statement.kind === 'assert') {
-      const row = parseNumericLiteral(statement.at.row);
-      const col = parseNumericLiteral(statement.at.col);
-      const value = parseNumericLiteral(statement.equals);
-      const cycle = statement.cycle !== undefined
-        ? parseNumericLiteral(statement.cycle)
-        : undefined;
+      const assertionRaw = /^assert\s*\(/i.test(statement.raw)
+        ? statement.raw
+        : [
+            `assert(at=@${statement.at.row},${statement.at.col}`,
+            ` reg=${statement.reg}`,
+            ` equals=${statement.equals}`,
+            statement.bundle !== undefined ? ` bundle=${statement.bundle}` : ''
+          ].join(',') + ')';
+      const parsed = parseAssertionDirectiveValue(ast, statement.span, assertionRaw);
 
-      if (row === null || !Number.isInteger(row) || row < 0) {
+      if ('message' in parsed) {
         diagnostics.push(makeDiagnostic(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
           statement.span,
-          `Invalid assert row '${statement.at.row}'.`,
-          'Assert row must be a non-negative integer.'
+          parsed.message,
+          parsed.hint
         ));
         continue;
       }
 
-      if (col === null || !Number.isInteger(col) || col < 0) {
+      if (!/^(?:R\d+|ROUT|ZERO|RC[A-Z]+)$/i.test(parsed.register)) {
         diagnostics.push(makeDiagnostic(
           ErrorCodes.Parse.InvalidSyntax,
           'error',
           statement.span,
-          `Invalid assert col '${statement.at.col}'.`,
-          'Assert col must be a non-negative integer.'
-        ));
-        continue;
-      }
-
-      if (!/^(?:R\d+|ROUT|ZERO|RC[A-Z]+)$/i.test(statement.reg)) {
-        diagnostics.push(makeDiagnostic(
-          ErrorCodes.Parse.InvalidSyntax,
-          'error',
-          statement.span,
-          `Invalid assert register '${statement.reg}'.`,
+          `Invalid assert register '${parsed.register}'.`,
           'Use a valid register (for example R0, R1, R2, R3, ROUT, ZERO).'
         ));
         continue;
       }
 
-      if (value === null || !Number.isInteger(value)) {
-        diagnostics.push(makeDiagnostic(
-          ErrorCodes.Parse.InvalidSyntax,
-          'error',
-          statement.span,
-          `Invalid assert equals value '${statement.equals}'.`,
-          'Assert equals must be an integer literal (decimal or hex).'
-        ));
-        continue;
-      }
-
-      if (cycle !== undefined && (cycle === null || !Number.isInteger(cycle) || cycle < 0)) {
-        diagnostics.push(makeDiagnostic(
-          ErrorCodes.Parse.InvalidSyntax,
-          'error',
-          statement.span,
-          `Invalid assert cycle '${statement.cycle}'.`,
-          'Assert cycle must be a non-negative integer when provided.'
-        ));
-        continue;
-      }
-
       assertions.push({
-        ...(cycle !== undefined ? { cycle } : {}),
-        row,
-        col,
-        register: statement.reg,
-        value,
+        bundle: parsed.bundle,
+        row: parsed.row,
+        col: parsed.col,
+        register: parsed.register,
+        value: parsed.value,
         raw: statement.raw,
         span: { ...statement.span }
       });
@@ -180,15 +151,15 @@ export function collectDirectiveArtifacts(
         continue;
       }
 
-      cycleLimit = parsed;
-      cycleLimitSpan = { ...statement.span };
+      bundleLimit = parsed;
+      bundleLimitSpan = { ...statement.span };
     }
   }
 
   return {
     ioConfig,
-    cycleLimit,
-    cycleLimitSpan,
+    bundleLimit,
+    bundleLimitSpan,
     assertions
   };
 }

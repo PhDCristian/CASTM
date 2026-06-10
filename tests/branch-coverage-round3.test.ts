@@ -308,7 +308,7 @@ describe('branch coverage round 3', () => {
       })
     }));
     vi.doMock('../packages/compiler-api/src/compiler-driver/emit-driver.js', () => ({
-      emit: () => ({ csv: 'cycle,row,col,instruction\n', diagnostics: [] })
+      emit: () => ({ csv: 'bundle,row,col,instruction\n', diagnostics: [] })
     }));
 
     const { compile } = await import('../packages/compiler-api/src/compiler-driver/compile-driver.js');

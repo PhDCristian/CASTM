@@ -130,7 +130,7 @@ export async function runCli(argv = process.argv.slice(2)): Promise<number> {
   }
 
   const emitted = emit(result.artifacts.lir ?? result.artifacts.mir!, {
-    includeCycleHeader: true,
+    includeBundleHeader: true,
     format: args.format ?? 'flat-csv'
   });
   if (!emitted.success) {

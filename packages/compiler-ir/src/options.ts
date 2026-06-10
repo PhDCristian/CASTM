@@ -9,6 +9,6 @@ export interface CompileOptions {
 }
 
 export interface EmitOptions {
-  includeCycleHeader?: boolean;
+  includeBundleHeader?: boolean;
   format?: 'flat-csv' | 'sim-matrix-csv';
 }

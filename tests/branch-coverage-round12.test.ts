@@ -122,17 +122,17 @@ build { optimize O1; }
     expect(parsed.program.build?.optimize).toBe('O1');
   });
 
-  it('covers parse-source assert runtime optional cycle branches', () => {
+  it('covers parse-source assert runtime optional bundle branches', () => {
     const parsed = parseStructuredProgramFromSource(`
 target base;
 kernel "k" {
   assert(at=@0,0, reg=R1, equals=1);
-  assert(at=@0,0, reg=R1, equals=2, cycle=7);
+  assert(at=@0,0, reg=R1, equals=2, bundle=7);
 }
 `);
     const runtime = parsed.program.kernel?.runtime ?? [];
-    expect(runtime.some((stmt: any) => stmt.kind === 'assert' && stmt.cycle === undefined)).toBe(true);
-    expect(runtime.some((stmt: any) => stmt.kind === 'assert' && stmt.cycle === '7')).toBe(true);
+    expect(runtime.some((stmt: any) => stmt.kind === 'assert' && stmt.bundle === undefined)).toBe(true);
+    expect(runtime.some((stmt: any) => stmt.kind === 'assert' && stmt.bundle === '7')).toBe(true);
   });
 
   it('covers duplicate/unterminated build handling and invalid kernel declaration', () => {
@@ -635,9 +635,9 @@ describe('branch coverage round 12 - passes and lowering edges', () => {
     const diagnostics: any[] = [];
     const artifacts = collectDirectiveArtifacts(ast, diagnostics, createEmptySymbolCollections());
     expect(artifacts.assertions).toEqual([]);
-    expect(diagnostics.some((d) => d.message.includes('Invalid assert col'))).toBe(true);
+    expect(diagnostics.some((d) => d.message.includes('Invalid assert column'))).toBe(true);
     expect(diagnostics.some((d) => d.message.includes('Invalid assert register'))).toBe(true);
-    expect(diagnostics.some((d) => d.message.includes('Invalid assert equals value'))).toBe(true);
+    expect(diagnostics.some((d) => d.message.includes('Invalid assert value'))).toBe(true);
   });
 
   it('covers runtime artifact io.store invalid-address and empty-address branches', () => {

@@ -96,8 +96,8 @@ describe('compiler-api compiler-driver modules', () => {
         at: { row: '0', col: '0' },
         reg: 'R1',
         equals: '42',
-        cycle: '0',
-        raw: 'assert(at=@0,0, reg=R1, equals=42, cycle=0)',
+        bundle: '0',
+        raw: 'assert(at=@0,0, reg=R1, equals=42)',
         span: spanAt(7, 1, 1)
       }
     );
@@ -108,7 +108,7 @@ describe('compiler-api compiler-driver modules', () => {
     expect(diagnostics).toHaveLength(0);
     expect(runtime.ioConfig.loadAddrs).toEqual([100, 104]);
     expect(runtime.ioConfig.storeAddrs).toEqual([200]);
-    expect(runtime.cycleLimit).toBe(12);
+    expect(runtime.bundleLimit).toBe(12);
     expect(runtime.assertions).toHaveLength(1);
     expect(runtime.symbols.constants.MASK).toBe('0xFFFF');
     expect(runtime.symbols.aliases.acc).toBe('R1');

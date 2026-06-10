@@ -73,7 +73,7 @@ kernel "collapse_non_perfect" {
     expect(result.diagnostics.some((d) => d.message.includes('perfectly nested'))).toBe(true);
   });
 
-  it('rejects collapse inside cycle-level nested loop expansion', () => {
+  it('rejects collapse inside bundle-level nested loop expansion', () => {
     const result = compile(`
 target "uma-cgra-base";
 kernel "cycle_scope_collapse" {
@@ -85,10 +85,10 @@ kernel "cycle_scope_collapse" {
 }
 `);
     expect(result.success).toBe(false);
-    expect(result.diagnostics.some((d) => d.message.includes('inside cycle blocks'))).toBe(true);
+    expect(result.diagnostics.some((d) => d.message.includes('inside bundle blocks'))).toBe(true);
   });
 
-  it('rejects unroll inside cycle-level nested loop expansion', () => {
+  it('rejects unroll inside bundle-level nested loop expansion', () => {
     const result = compile(`
 target "uma-cgra-base";
 kernel "cycle_scope_unroll" {

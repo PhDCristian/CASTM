@@ -85,7 +85,7 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
         ast: want.has('ast') ? parseResult.ast : undefined,
         memoryRegions: [],
         ioConfig: parsedRuntime.ioConfig,
-        cycleLimit: parsedRuntime.cycleLimit,
+        bundleLimit: parsedRuntime.bundleLimit,
         assertions: parsedRuntime.assertions,
         symbols: parsedRuntime.symbols
       },
@@ -112,7 +112,7 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
 
   let csv: string | undefined;
   if ((analysis.lir || analysis.mir) && want.has('csv')) {
-    const emitted = emit(analysis.lir ?? analysis.mir!, { includeCycleHeader: true });
+    const emitted = emit(analysis.lir ?? analysis.mir!, { includeBundleHeader: true });
     diagnostics.push(...emitted.diagnostics);
     csv = emitted.csv;
   }
@@ -132,7 +132,7 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       lir: want.has('lir') ? analysis.lir : undefined,
       memoryRegions: analysis.memoryRegions ?? [],
       ioConfig: analysis.ioConfig,
-      cycleLimit: analysis.cycleLimit,
+      bundleLimit: analysis.bundleLimit,
       assertions: analysis.assertions,
       symbols: analysis.symbols
     },

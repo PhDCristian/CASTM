@@ -13,8 +13,8 @@ import { RuntimeArtifactCollection } from './types.js';
 export function createEmptyRuntimeArtifacts(): RuntimeArtifactCollection {
   return {
     ioConfig: { loadAddrs: [], storeAddrs: [] },
-    cycleLimit: undefined,
-    cycleLimitSpan: undefined,
+    bundleLimit: undefined,
+    bundleLimitSpan: undefined,
     assertions: [],
     symbols: { constants: {}, aliases: {}, arrays: [], labels: {} }
   };
@@ -34,8 +34,8 @@ export function collectRuntimeArtifacts(
 
   return {
     ioConfig: directiveArtifacts.ioConfig,
-    cycleLimit: directiveArtifacts.cycleLimit,
-    cycleLimitSpan: directiveArtifacts.cycleLimitSpan,
+    bundleLimit: directiveArtifacts.bundleLimit,
+    bundleLimitSpan: directiveArtifacts.bundleLimitSpan,
     assertions: directiveArtifacts.assertions,
     symbols: {
       constants: symbols.constants,

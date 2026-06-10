@@ -30,7 +30,7 @@ function makeAst(): AstProgram {
 }
 
 describe('compiler-api runtime directives and assertions', () => {
-  it('parses assert(...) payload and infers cycle when omitted', () => {
+  it('parses assert(...) payload and infers bundle when omitted', () => {
     const ast = makeAst();
     const parsed = parseAssertionDirectiveValue(
       ast,
@@ -42,25 +42,25 @@ describe('compiler-api runtime directives and assertions', () => {
       throw new Error(`unexpected parse failure: ${parsed.message}`);
     }
 
-    expect(parsed.cycle).toBe(0);
+    expect(parsed.bundle).toBe(0);
     expect(parsed.row).toBe(0);
     expect(parsed.col).toBe(1);
     expect(parsed.register).toBe('R2');
     expect(parsed.value).toBe(42);
   });
 
-  it('parses assert(...) with explicit cycle and validates fields', () => {
+  it('parses assert(...) with explicit bundle and validates fields', () => {
     const ast = makeAst();
     const ok = parseAssertionDirectiveValue(
       ast,
       spanAt(10, 1, 1),
-      'assert(at=@1,2, reg=R3, equals=17, cycle=4)'
+      'assert(at=@1,2, reg=R3, equals=17, bundle=4)'
     );
     if ('message' in ok) {
       throw new Error(`unexpected parse failure: ${ok.message}`);
     }
     expect(ok).toMatchObject({
-      cycle: 4,
+      bundle: 4,
       row: 1,
       col: 2,
       register: 'R3',
@@ -70,7 +70,7 @@ describe('compiler-api runtime directives and assertions', () => {
     const badRow = parseAssertionDirectiveValue(
       ast,
       spanAt(10, 1, 1),
-      'assert(at=@-1,0, reg=R1, equals=1, cycle=0)'
+      'assert(at=@-1,0, reg=R1, equals=1, bundle=0)'
     );
     expect('message' in badRow).toBe(true);
     if ('message' in badRow) {
@@ -80,7 +80,7 @@ describe('compiler-api runtime directives and assertions', () => {
     const badValue = parseAssertionDirectiveValue(
       ast,
       spanAt(10, 1, 1),
-      'assert(at=@0,0, reg=R1, equals=nope, cycle=0)'
+      'assert(at=@0,0, reg=R1, equals=nope, bundle=0)'
     );
     expect('message' in badValue).toBe(true);
     if ('message' in badValue) {
@@ -103,8 +103,8 @@ describe('compiler-api runtime directives and assertions', () => {
         at: { row: '0', col: '0' },
         reg: 'R1',
         equals: '30',
-        cycle: '4',
-        raw: 'assert(at=@0,0, reg=R1, equals=30, cycle=4)',
+        bundle: '4',
+        raw: 'assert(at=@0,0, reg=R1, equals=30, bundle=4)',
         span: spanAt(6, 1, 1)
       }
     );
@@ -118,7 +118,7 @@ describe('compiler-api runtime directives and assertions', () => {
       loadAddrs: [100, 104],
       storeAddrs: [200]
     });
-    expect(artifacts.cycleLimit).toBe(12);
+    expect(artifacts.bundleLimit).toBe(12);
     expect(artifacts.assertions).toHaveLength(1);
     expect(symbols.constants.MASK).toBe('0xFFFF');
     expect(symbols.aliases.acc).toBe('R1');
@@ -135,8 +135,8 @@ describe('compiler-api runtime directives and assertions', () => {
         at: { row: '0', col: '0' },
         reg: 'R1',
         equals: '1',
-        cycle: '-1',
-        raw: 'assert(at=@0,0, reg=R1, equals=1, cycle=-1)',
+        bundle: '-1',
+        raw: 'assert(at=@0,0, reg=R1, equals=1, bundle=-1)',
         span: spanAt(6, 1, 1)
       }
     );
@@ -147,7 +147,7 @@ describe('compiler-api runtime directives and assertions', () => {
 
     expect(artifacts.ioConfig.loadAddrs).toEqual([]);
     expect(artifacts.ioConfig.storeAddrs).toEqual([]);
-    expect(artifacts.cycleLimit).toBeUndefined();
+    expect(artifacts.bundleLimit).toBeUndefined();
     expect(artifacts.assertions).toEqual([]);
     expect(diagnostics.length).toBeGreaterThanOrEqual(4);
     expect(diagnostics.some((d) => d.code === ErrorCodes.Parse.InvalidSyntax)).toBe(true);

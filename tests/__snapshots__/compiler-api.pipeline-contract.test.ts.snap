@@ -40,7 +40,7 @@ exports[`compiler-api pipeline contracts > keeps deterministic snapshots across 
     },
   ],
   "csv": [
-    "cycle,row,col,instruction",
+    "bundle,row,col,instruction",
     "0,0,1,SADD ROUT R3 ZERO",
     "1,0,0,SADD R1 R1 RCR",
     "1,0,1,SADD R2 R0 1",

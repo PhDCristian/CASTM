@@ -189,18 +189,18 @@ describe('branch coverage round 6', () => {
         lir: undefined,
         memoryRegions: [],
         ioConfig: { loadAddrs: [], storeAddrs: [] },
-        cycleLimit: 3,
+        bundleLimit: 3,
         assertions: [],
         symbols: { constants: {}, aliases: {}, labels: {} },
         loweredPasses: ['a', 'b']
       })
     }));
     vi.doMock('../packages/compiler-api/src/compiler-driver/emit-driver.js', () => ({
-      emit: () => ({ csv: 'cycle,row,col,instruction\n0,0,0,NOP', diagnostics: [] })
+      emit: () => ({ csv: 'bundle,row,col,instruction\n0,0,0,NOP', diagnostics: [] })
     }));
     const { compile } = await import('../packages/compiler-api/src/compiler-driver/compile-driver.js');
     const full = compile('kernel "k" {}', { emitArtifacts: ['structured', 'ast', 'hir', 'mir', 'csv'] as any });
-    expect(full.artifacts.csv).toContain('cycle,row,col');
+    expect(full.artifacts.csv).toContain('bundle,row,col');
     expect(full.artifacts.lir).toBeUndefined();
     expect(full.stats.instructions).toBe(1);
     expect(full.stats.cycles).toBe(1);
@@ -218,7 +218,7 @@ describe('branch coverage round 6', () => {
         lir: undefined,
         memoryRegions: [],
         ioConfig: { loadAddrs: [], storeAddrs: [] },
-        cycleLimit: undefined,
+        bundleLimit: undefined,
         assertions: [],
         symbols: { constants: {}, aliases: {}, labels: {} },
         loweredPasses: []

@@ -146,7 +146,7 @@ export interface AssertStmtAst {
   };
   reg: string;
   equals: string;
-  cycle?: string;
+  bundle?: string;
   raw: string;
   span: SourceSpan;
 }

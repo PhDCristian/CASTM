@@ -64,7 +64,7 @@ Full CSV: `docs-site/snippets/language/dsl-csv-equivalence/06-scan-reduce.csv`.
 
 ## Output modes
 
-- `flat-csv`: instruction list by `(cycle,row,col)`.
+- `flat-csv`: instruction list by `(bundle,row,col)`.
 - `sim-matrix-csv`: matrix per cycle (used in this documentation).
 
 Use:
