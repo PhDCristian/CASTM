@@ -60,7 +60,7 @@ Notes:
 - Coordinate ranges expand inclusively. Example: `@0,0..3` expands to `@0,0`, `@0,1`, `@0,2`, `@0,3`; `@1..2,1..2` expands to the cartesian product.
 - `at row N: INSTR;` with a single instruction auto-broadcasts across every column in row `N`.
 - `at row N: instr0 | instr1 | ...` is canonical segmented-row syntax (explicit per-column payload).
-- `row N: ...` without `at` is invalid canonical syntax and rejected with parse diagnostic `E2002`.
+- Row-scoped placements must use the `at row N:` grammar form.
 
 ## Control-flow
 
