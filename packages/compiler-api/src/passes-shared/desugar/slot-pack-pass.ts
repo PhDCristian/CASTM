@@ -3,6 +3,7 @@ import {
   CompilerPass,
   BundleAst,
   BundleStatementAst,
+  CastmSlotOriginKind,
   GridSpec,
   InstructionAst
 } from '@castm/compiler-ir';
@@ -53,6 +54,7 @@ interface Placement {
   col: number;
   instruction: InstructionAst;
   span: BundleStatementAst['span'];
+  originKind?: CastmSlotOriginKind;
   originOrder: number;
   hasControl: boolean;
   hasMemory: boolean;
@@ -68,6 +70,7 @@ interface ExpandedPlacement {
   col: number;
   instruction: InstructionAst;
   span: BundleStatementAst['span'];
+  originKind?: CastmSlotOriginKind;
 }
 
 interface BundleBucket {
@@ -149,7 +152,8 @@ function expandStatement(statement: BundleStatementAst, grid: GridSpec): Expande
       row: statement.row,
       col: statement.col,
       instruction: statement.instruction,
-      span: statement.span
+      span: statement.span,
+      originKind: statement.originKind
     }];
   }
 
@@ -177,7 +181,8 @@ function expandStatement(statement: BundleStatementAst, grid: GridSpec): Expande
         row: statement.row,
         col,
         instruction,
-        span: statement.span
+        span: statement.span,
+        originKind: 'row-expanded'
       });
     }
     return placements;
@@ -191,7 +196,8 @@ function expandStatement(statement: BundleStatementAst, grid: GridSpec): Expande
         row,
         col: statement.col,
         instruction: statement.instruction,
-        span: statement.span
+        span: statement.span,
+        originKind: 'col-expanded'
       });
     }
     return placements;
@@ -204,7 +210,8 @@ function expandStatement(statement: BundleStatementAst, grid: GridSpec): Expande
         row,
         col,
         instruction: statement.instruction,
-        span: statement.span
+        span: statement.span,
+        originKind: 'at-all-expanded'
       });
     }
   }
@@ -405,6 +412,7 @@ export function createSlotPackPass(
               col: candidate.col,
               instruction: candidate.instruction,
               span: candidate.span,
+              originKind: candidate.originKind,
               originOrder: originOrder++,
               hasControl: control,
               hasMemory: memory,
@@ -514,7 +522,8 @@ export function createSlotPackPass(
             row: placement.row,
             col: placement.col,
             instruction: placement.instruction,
-            span: placement.span
+            span: placement.span,
+            ...(placement.originKind ? { originKind: placement.originKind } : {})
           }))
         });
       }

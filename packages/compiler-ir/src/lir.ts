@@ -1,4 +1,5 @@
 import { GridSpec, SourceSpan } from './common.js';
+import type { CastmSlotSource } from './source-map.js';
 
 export interface LirInstruction {
   opcode: string;
@@ -10,6 +11,7 @@ export interface LirSlot {
   row: number;
   col: number;
   instruction: LirInstruction;
+  source?: CastmSlotSource;
 }
 
 export interface LirBundle {

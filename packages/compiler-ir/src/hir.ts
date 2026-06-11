@@ -1,4 +1,5 @@
 import { GridSpec, SourceSpan } from './common.js';
+import type { CastmSlotSource } from './source-map.js';
 
 export interface HirOperation {
   row: number;
@@ -6,6 +7,7 @@ export interface HirOperation {
   opcode: string;
   operands: string[];
   span: SourceSpan;
+  source?: CastmSlotSource;
 }
 
 export interface HirBundle {

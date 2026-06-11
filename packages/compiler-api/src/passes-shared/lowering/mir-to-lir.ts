@@ -23,7 +23,8 @@ export const lowerToLirPass: CompilerPass<MirProgram, LirProgram> = {
               opcode: slot.instruction.opcode,
               operands: [...slot.instruction.operands],
               span: { ...slot.instruction.span }
-            }
+            },
+            ...(slot.source ? { source: { ...slot.source } } : {})
           }))
         }))
       },

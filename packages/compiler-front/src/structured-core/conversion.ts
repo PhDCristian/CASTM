@@ -7,7 +7,8 @@ import {
   KernelAst,
   AdvancedStatementAst,
   StructuredKernelStmtAst,
-  StructuredProgramAst
+  StructuredProgramAst,
+  type CastmSlotOriginKind
 } from '@castm/compiler-ir';
 import { cloneAstProgram } from './utils.js';
 import { SourceLineEntry } from './parser-utils/blocks.js';
@@ -63,11 +64,12 @@ function emitStructuredBodyAsEntries(
   body: StructuredKernelStmtAst[],
   entries: SourceLineEntry[]
 ): void {
-  const pushLine = (text: string) => {
+  const pushLine = (text: string, lineNo?: number, originKind?: CastmSlotOriginKind) => {
     entries.push({
-      lineNo: entries.length + 1,
+      lineNo: lineNo ?? entries.length + 1,
       rawLine: text,
-      cleanLine: text.trim()
+      cleanLine: text.trim(),
+      ...(originKind ? { originKind } : {})
     });
   };
 
@@ -75,64 +77,68 @@ function emitStructuredBodyAsEntries(
     if (stmt.kind === 'advanced') {
       const labelPrefix = stmt.label ? `${stmt.label}: ` : '';
       if (stmt.sourceForm === 'qualified' || stmt.namespace === 'std') {
-        pushLine(`${labelPrefix}std::${stmt.name}(${stmt.args});`);
+        pushLine(`${labelPrefix}std::${stmt.name}(${stmt.args});`, stmt.span.startLine);
       } else {
-        pushLine(`${labelPrefix}${stmt.text};`);
+        pushLine(`${labelPrefix}${stmt.text};`, stmt.span.startLine);
       }
       continue;
     }
 
     if (stmt.kind === 'bundle') {
       const prefix = stmt.bundle.label ? `${stmt.bundle.label}: ` : '';
-      pushLine(`${prefix}bundle {`);
+      pushLine(`${prefix}bundle {`, stmt.bundle.span.startLine);
       for (const bundleStmt of stmt.bundle.statements) {
-        pushLine(renderBundleStatement(bundleStmt));
+        pushLine(
+          renderBundleStatement(bundleStmt),
+          bundleStmt.span.startLine,
+          bundleStmt.kind === 'at' ? bundleStmt.originKind : undefined
+        );
       }
-      pushLine('}');
+      pushLine('}', stmt.bundle.span.endLine);
       continue;
     }
 
     if (stmt.kind === 'for') {
       const labelPrefix = stmt.label ? `${stmt.label}: ` : '';
-      pushLine(`${labelPrefix}${stmt.header} {`);
+      pushLine(`${labelPrefix}${stmt.header} {`, stmt.span.startLine);
       emitStructuredBodyAsEntries(stmt.body, entries);
-      pushLine('}');
+      pushLine('}', stmt.span.endLine);
       continue;
     }
 
     if (stmt.kind === 'if') {
       const labelPrefix = stmt.label ? `${stmt.label}: ` : '';
-      pushLine(`${labelPrefix}if (${stmt.condition}) at @${stmt.control.row},${stmt.control.col} {`);
+      pushLine(`${labelPrefix}if (${stmt.condition}) at @${stmt.control.row},${stmt.control.col} {`, stmt.span.startLine);
       emitStructuredBodyAsEntries(stmt.thenBody, entries);
-      pushLine('}');
+      pushLine('}', stmt.span.endLine);
       if (stmt.elseBody && stmt.elseBody.length > 0) {
-        pushLine('else {');
+        pushLine('else {', stmt.span.endLine);
         emitStructuredBodyAsEntries(stmt.elseBody, entries);
-        pushLine('}');
+        pushLine('}', stmt.span.endLine);
       }
       continue;
     }
 
     if (stmt.kind === 'while') {
       const labelPrefix = stmt.label ? `${stmt.label}: ` : '';
-      pushLine(`${labelPrefix}while (${stmt.condition}) at @${stmt.control.row},${stmt.control.col} {`);
+      pushLine(`${labelPrefix}while (${stmt.condition}) at @${stmt.control.row},${stmt.control.col} {`, stmt.span.startLine);
       emitStructuredBodyAsEntries(stmt.body, entries);
-      pushLine('}');
+      pushLine('}', stmt.span.endLine);
       continue;
     }
 
     if (stmt.kind === 'break') {
-      pushLine(`break${stmt.targetLabel ? ` ${stmt.targetLabel}` : ''};`);
+      pushLine(`break${stmt.targetLabel ? ` ${stmt.targetLabel}` : ''};`, stmt.span.startLine);
       continue;
     }
 
     if (stmt.kind === 'continue') {
-      pushLine(`continue${stmt.targetLabel ? ` ${stmt.targetLabel}` : ''};`);
+      pushLine(`continue${stmt.targetLabel ? ` ${stmt.targetLabel}` : ''};`, stmt.span.startLine);
       continue;
     }
 
     const fnLabelPrefix = stmt.label ? `${stmt.label}: ` : '';
-    pushLine(`${fnLabelPrefix}${stmt.name}(${stmt.args.join(', ')});`);
+    pushLine(`${fnLabelPrefix}${stmt.name}(${stmt.args.join(', ')});`, stmt.span.startLine);
   }
 }
 

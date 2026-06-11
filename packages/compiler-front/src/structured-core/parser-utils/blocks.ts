@@ -1,9 +1,11 @@
 import { countChar, stripLineComment } from './strings.js';
+import type { CastmSlotOriginKind } from '@castm/compiler-ir';
 
 export interface SourceLineEntry {
   lineNo: number;
   rawLine: string;
   cleanLine: string;
+  originKind?: CastmSlotOriginKind;
 }
 
 export interface CollectedBlock {

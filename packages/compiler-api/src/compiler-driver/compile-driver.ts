@@ -111,10 +111,12 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
   diagnostics.push(...analysis.diagnostics);
 
   let csv: string | undefined;
+  let sourceMap: CompileResult['artifacts']['sourceMap'] | undefined;
   if ((analysis.lir || analysis.mir) && want.has('csv')) {
     const emitted = emit(analysis.lir ?? analysis.mir!, { includeBundleHeader: true });
     diagnostics.push(...emitted.diagnostics);
     csv = emitted.csv;
+    sourceMap = emitted.sourceMap;
   }
 
   const mirStats = computeMirStats(analysis.mir);
@@ -134,7 +136,8 @@ export function compile(source: string, options: CompileOptions = {}): CompileRe
       ioConfig: analysis.ioConfig,
       bundleLimit: analysis.bundleLimit,
       assertions: analysis.assertions,
-      symbols: analysis.symbols
+      symbols: analysis.symbols,
+      sourceMap
     },
     stats: {
       bundles: analysis.mir ? mirStats.bundles : astBundleCount,

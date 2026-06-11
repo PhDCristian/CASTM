@@ -2,6 +2,7 @@ import {
   BundleAst,
   ErrorCodes,
   makeDiagnostic,
+  SourceSpan,
   spanAt
 } from '@castm/compiler-ir';
 import {
@@ -14,6 +15,20 @@ import {
   FunctionExpandStepInput,
   FunctionExpandStepResult
 } from './function-expand-types.js';
+
+function spanFromBlock(
+  startLine: number,
+  startLength: number,
+  endLine: number,
+  endLength: number
+): SourceSpan {
+  return {
+    startLine,
+    startColumn: 1,
+    endLine,
+    endColumn: Math.max(2, endLength + 1)
+  };
+}
 
 export function tryExpandBundleStatement(input: FunctionExpandStepInput): FunctionExpandStepResult {
   const {
@@ -56,7 +71,12 @@ export function tryExpandBundleStatement(input: FunctionExpandStepInput): Functi
       index: bundleCounter.value++,
       label: labeledBundle.label,
       statements: expandLoopBody(block.body, constants, new Map(), diagnostics),
-      span: spanAt(entry.lineNo, 1, clean.length)
+      span: spanFromBlock(
+        entry.lineNo,
+        clean.length,
+        body[block.endIndex].lineNo,
+        body[block.endIndex].cleanLine.length
+      )
     });
     return { handled: true, nextIndex: block.endIndex, shouldBreak: false };
   }
@@ -91,7 +111,12 @@ export function tryExpandBundleStatement(input: FunctionExpandStepInput): Functi
   kernel.bundles.push({
     index: bundleCounter.value++,
     statements: expandLoopBody(block.body, constants, new Map(), diagnostics),
-    span: spanAt(entry.lineNo, 1, clean.length)
+    span: spanFromBlock(
+      entry.lineNo,
+      clean.length,
+      body[block.endIndex].lineNo,
+      body[block.endIndex].cleanLine.length
+    )
   });
   return { handled: true, nextIndex: block.endIndex, shouldBreak: false };
 }

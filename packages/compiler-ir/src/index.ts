@@ -6,6 +6,7 @@ export * from './hir.js';
 export * from './mir.js';
 export * from './lir.js';
 export * from './results.js';
+export * from './source-map.js';
 export * from './types.js';
 export * from './diagnostics.js';
 export * from './passes.js';

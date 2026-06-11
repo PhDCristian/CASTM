@@ -24,7 +24,8 @@ export const lowerToMirPass: CompilerPass<HirProgram, MirProgram> = {
               opcode: op.opcode,
               operands: [...op.operands],
               span: { ...op.span }
-            }
+            },
+            ...(op.source ? { source: { ...op.source } } : {})
           }))
       }))
     };

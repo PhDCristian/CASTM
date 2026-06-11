@@ -1,4 +1,5 @@
 import { GridSpec, SourceSpan } from './common.js';
+import type { CastmSlotSource } from './source-map.js';
 
 export interface MirInstruction {
   opcode: string;
@@ -10,6 +11,7 @@ export interface MirSlot {
   row: number;
   col: number;
   instruction: MirInstruction;
+  source?: CastmSlotSource;
 }
 
 export interface MirBundle {

@@ -1,6 +1,7 @@
 import {
   BundleStatementAst,
   Diagnostic,
+  SourceSpan,
   StructuredBundleStmtAst
 } from '@castm/compiler-ir';
 import {
@@ -22,9 +23,16 @@ function makeBundleNode(
   cleanLength: number,
   index: number,
   statements: BundleStatementAst[],
-  label?: string
+  label?: string,
+  endLineNo = lineNo,
+  endCleanLength = cleanLength
 ): StructuredBundleStmtAst {
-  const span = spanAt(lineNo, cleanLength);
+  const span: SourceSpan = {
+    startLine: lineNo,
+    startColumn: 1,
+    endLine: endLineNo,
+    endColumn: Math.max(2, endCleanLength + 1)
+  };
   return {
     kind: 'bundle',
     bundle: {
@@ -70,7 +78,16 @@ export function tryParseBundleStatement(
     const bundleDiagnostics: Diagnostic[] = [];
     const statements = expandLoopBody(block.body, new Map(), new Map(), bundleDiagnostics);
     diagnostics.push(...bundleDiagnostics);
-    const node = makeBundleNode(lineNo, cleanLine.length, bundleCounter.value++, statements, labeledBundle.label);
+    const endEntry = block.endIndex === null ? entries[index] : entries[block.endIndex];
+    const node = makeBundleNode(
+      lineNo,
+      cleanLine.length,
+      bundleCounter.value++,
+      statements,
+      labeledBundle.label,
+      endEntry.lineNo,
+      endEntry.cleanLine.length
+    );
     return {
       handled: true,
       nextIndex: block.endIndex ?? index,
@@ -106,7 +123,16 @@ export function tryParseBundleStatement(
   const bundleDiagnostics: Diagnostic[] = [];
   const statements = expandLoopBody(block.body, new Map(), new Map(), bundleDiagnostics);
   diagnostics.push(...bundleDiagnostics);
-  const node = makeBundleNode(lineNo, cleanLine.length, bundleCounter.value++, statements);
+  const endEntry = block.endIndex === null ? entries[index] : entries[block.endIndex];
+  const node = makeBundleNode(
+    lineNo,
+    cleanLine.length,
+    bundleCounter.value++,
+    statements,
+    undefined,
+    endEntry.lineNo,
+    endEntry.cleanLine.length
+  );
   return {
     handled: true,
     nextIndex: block.endIndex ?? index,

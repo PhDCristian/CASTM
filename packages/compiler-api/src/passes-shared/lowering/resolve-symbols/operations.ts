@@ -5,11 +5,45 @@ import {
   GridSpec,
   HirOperation,
   InstructionAst,
+  CastmEditPolicy,
+  CastmSlotOriginKind,
+  CastmSlotSource,
   makeDiagnostic
 } from '@castm/compiler-ir';
 import { resolveLabelOperand } from './labels.js';
 
 const VALID_OPCODES = new Set(getInstructionSet().map((x) => x.opcode));
+
+export interface OperationSourceInput {
+  originKind: CastmSlotOriginKind;
+  editPolicy: CastmEditPolicy;
+  originSpan: CastmSlotSource['originSpan'];
+  humanAuthored?: boolean;
+  astPath?: string;
+  bundlePath?: string;
+}
+
+function buildSlotSource(
+  bundleIndex: number,
+  row: number,
+  col: number,
+  instruction: InstructionAst,
+  source: OperationSourceInput | undefined
+): CastmSlotSource {
+  const stableBundleId = `bundle:${bundleIndex}`;
+  const stableSlotId = `${stableBundleId}:@${row},${col}`;
+  return {
+    stableBundleId,
+    stableSlotId,
+    originKind: source?.originKind ?? 'direct',
+    editPolicy: source?.editPolicy ?? 'direct-editable',
+    originSpan: { ...(source?.originSpan ?? instruction.span) },
+    instructionSpan: { ...instruction.span },
+    humanAuthored: source?.humanAuthored ?? true,
+    ...(source?.astPath ? { astPath: source.astPath } : {}),
+    ...(source?.bundlePath ? { bundlePath: source.bundlePath } : {})
+  };
+}
 
 export function addOperation(
   operations: HirOperation[],
@@ -20,7 +54,8 @@ export function addOperation(
   instruction: InstructionAst,
   grid: GridSpec,
   labels: ReadonlyMap<string, number>,
-  diagnostics: Diagnostic[]
+  diagnostics: Diagnostic[],
+  source?: OperationSourceInput
 ): void {
   if (row < 0 || row >= grid.rows || col < 0 || col >= grid.cols) {
     diagnostics.push(makeDiagnostic(
@@ -75,6 +110,7 @@ export function addOperation(
     col,
     opcode,
     operands: resolvedOperands,
-    span: { ...instruction.span }
+    span: { ...instruction.span },
+    source: buildSlotSource(bundleIndex, row, col, instruction, source)
   });
 }

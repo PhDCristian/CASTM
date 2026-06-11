@@ -31,7 +31,14 @@ export function lowerBundleStatements(
     }
 
     if (stmt.kind === 'at') {
-      addOperation(operations, occupied, bundleIndex, stmt.row, stmt.col, stmt.instruction, grid, labels, diagnostics);
+      const originKind = stmt.originKind ?? 'direct';
+      addOperation(operations, occupied, bundleIndex, stmt.row, stmt.col, stmt.instruction, grid, labels, diagnostics, {
+        originKind,
+        editPolicy: originKind === 'direct' ? 'direct-editable' : 'canonicalize-region',
+        originSpan: stmt.span,
+        astPath: `kernel.bundles[${bundleIndex}].statements`,
+        bundlePath: `kernel.bundles[${bundleIndex}]`
+      });
       continue;
     }
 
@@ -51,7 +58,13 @@ export function lowerBundleStatements(
 
       if (stmt.instructions.length === 1) {
         for (let col = 0; col < grid.cols; col++) {
-          addOperation(operations, occupied, bundleIndex, stmt.row, col, stmt.instructions[0], grid, labels, diagnostics);
+          addOperation(operations, occupied, bundleIndex, stmt.row, col, stmt.instructions[0], grid, labels, diagnostics, {
+            originKind: 'row-expanded',
+            editPolicy: 'canonicalize-region',
+            originSpan: stmt.span,
+            astPath: `kernel.bundles[${bundleIndex}].statements`,
+            bundlePath: `kernel.bundles[${bundleIndex}]`
+          });
         }
         continue;
       }
@@ -68,7 +81,13 @@ export function lowerBundleStatements(
 
       const max = Math.min(stmt.instructions.length, grid.cols);
       for (let col = 0; col < max; col++) {
-        addOperation(operations, occupied, bundleIndex, stmt.row, col, stmt.instructions[col], grid, labels, diagnostics);
+        addOperation(operations, occupied, bundleIndex, stmt.row, col, stmt.instructions[col], grid, labels, diagnostics, {
+          originKind: 'row-expanded',
+          editPolicy: 'canonicalize-region',
+          originSpan: stmt.span,
+          astPath: `kernel.bundles[${bundleIndex}].statements`,
+          bundlePath: `kernel.bundles[${bundleIndex}]`
+        });
       }
 
       for (let col = max; col < grid.cols; col++) {
@@ -77,7 +96,13 @@ export function lowerBundleStatements(
           opcode: 'NOP',
           operands: [],
           span: { ...stmt.span }
-        }, grid, labels, diagnostics);
+        }, grid, labels, diagnostics, {
+          originKind: 'row-expanded',
+          editPolicy: 'canonicalize-region',
+          originSpan: stmt.span,
+          astPath: `kernel.bundles[${bundleIndex}].statements`,
+          bundlePath: `kernel.bundles[${bundleIndex}]`
+        });
       }
       continue;
     }
@@ -95,14 +120,26 @@ export function lowerBundleStatements(
       }
 
       for (let row = 0; row < grid.rows; row++) {
-        addOperation(operations, occupied, bundleIndex, row, stmt.col, stmt.instruction, grid, labels, diagnostics);
+        addOperation(operations, occupied, bundleIndex, row, stmt.col, stmt.instruction, grid, labels, diagnostics, {
+          originKind: 'col-expanded',
+          editPolicy: 'canonicalize-region',
+          originSpan: stmt.span,
+          astPath: `kernel.bundles[${bundleIndex}].statements`,
+          bundlePath: `kernel.bundles[${bundleIndex}]`
+        });
       }
       continue;
     }
 
     for (let row = 0; row < grid.rows; row++) {
       for (let col = 0; col < grid.cols; col++) {
-        addOperation(operations, occupied, bundleIndex, row, col, stmt.instruction, grid, labels, diagnostics);
+        addOperation(operations, occupied, bundleIndex, row, col, stmt.instruction, grid, labels, diagnostics, {
+          originKind: 'at-all-expanded',
+          editPolicy: 'canonicalize-region',
+          originSpan: stmt.span,
+          astPath: `kernel.bundles[${bundleIndex}].statements`,
+          bundlePath: `kernel.bundles[${bundleIndex}]`
+        });
       }
     }
   }

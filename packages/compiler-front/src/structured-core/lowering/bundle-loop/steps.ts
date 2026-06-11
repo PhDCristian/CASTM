@@ -187,7 +187,8 @@ export function tryExpandSingleBundleStatementStep(input: ExpandLoopEntryInput):
       input.entry.lineNo,
       input.raw,
       input.constants,
-      input.bindings
+      input.bindings,
+      input.entry.originKind
     );
     if (!parsedStatements || parsedStatements.length === 0) {
       const visible = candidate.endsWith(';') ? candidate.slice(0, -1) : candidate;

@@ -1,4 +1,12 @@
-import { Diagnostic, EmitOptions, EmitResult, LirProgram, MirProgram } from '@castm/compiler-ir';
+import {
+  CastmSlotSource,
+  CastmSourceMap,
+  Diagnostic,
+  EmitOptions,
+  EmitResult,
+  LirProgram,
+  MirProgram
+} from '@castm/compiler-ir';
 
 type CsvProgram = MirProgram | LirProgram;
 
@@ -26,6 +34,79 @@ function formatMatrixCell(value: string): string {
 function formatInstruction(opcode: string, operands: string[]): string {
   if (!operands.length) return opcode;
   return `${opcode} ${operands.join(', ')}`;
+}
+
+function fallbackSource(bundleIndex: number, row: number, col: number, slot: CsvProgram['bundles'][number]['slots'][number]): CastmSlotSource {
+  const stableBundleId = `bundle:${bundleIndex}`;
+  const stableSlotId = `${stableBundleId}:@${row},${col}`;
+  return {
+    stableBundleId,
+    stableSlotId,
+    originKind: 'synthetic',
+    editPolicy: 'materialization-required',
+    originSpan: { ...slot.instruction.span },
+    instructionSpan: { ...slot.instruction.span },
+    humanAuthored: false
+  };
+}
+
+function buildSourceMap(program: CsvProgram, format: NonNullable<EmitOptions['format']>, includeHeader: boolean): CastmSourceMap {
+  const entries: CastmSourceMap['entries'] = [];
+  const bundles = [...program.bundles].sort((a, b) => a.index - b.index);
+  let line = includeHeader && format === 'flat-csv' ? 2 : 1;
+
+  for (const bundle of bundles) {
+    if (format === 'sim-matrix-csv') {
+      const bundleHeaderLine = line;
+      line += 1 + program.grid.rows;
+      for (const slot of bundle.slots) {
+        const instruction = formatInstruction(slot.instruction.opcode, slot.instruction.operands);
+        const source = slot.source ?? fallbackSource(bundle.index, slot.row, slot.col, slot);
+        entries.push({
+          stableBundleId: source.stableBundleId,
+          stableSlotId: source.stableSlotId,
+          bundle: bundle.index,
+          row: slot.row,
+          col: slot.col,
+          instruction,
+          source,
+          emit: {
+            format,
+            line: bundleHeaderLine + 1 + slot.row,
+            column: slot.col + 1
+          }
+        });
+      }
+      continue;
+    }
+
+    for (const slot of bundle.slots) {
+      const instruction = formatInstruction(slot.instruction.opcode, slot.instruction.operands);
+      const source = slot.source ?? fallbackSource(bundle.index, slot.row, slot.col, slot);
+      entries.push({
+        stableBundleId: source.stableBundleId,
+        stableSlotId: source.stableSlotId,
+        bundle: bundle.index,
+        row: slot.row,
+        col: slot.col,
+        instruction,
+        source,
+        emit: {
+          format,
+          line,
+          column: 1
+        }
+      });
+      line++;
+    }
+  }
+
+  return {
+    version: 1,
+    targetProfileId: program.targetProfileId,
+    grid: { ...program.grid },
+    entries
+  };
 }
 
 function emitFlatCsv(program: CsvProgram, includeHeader: boolean): string {
@@ -80,10 +161,12 @@ export function emitCsv(program: CsvProgram, options: EmitOptions = {}): EmitRes
   const csv = format === 'sim-matrix-csv'
     ? emitSimMatrixCsv(normalized)
     : emitFlatCsv(normalized, includeHeader);
+  const sourceMap = buildSourceMap(normalized, format, includeHeader);
 
   return {
     success: diagnostics.every((d) => d.severity !== 'error'),
     diagnostics,
-    csv
+    csv,
+    sourceMap
   };
 }

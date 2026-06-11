@@ -1,4 +1,5 @@
 import { SourceSpan } from './common.js';
+import type { CastmSlotOriginKind } from './source-map.js';
 import type { ExpansionMode } from './options.js';
 
 export interface InstructionAst {
@@ -14,6 +15,7 @@ export interface BundleStmtAt {
   col: number;
   instruction: InstructionAst;
   span: SourceSpan;
+  originKind?: CastmSlotOriginKind;
 }
 
 export interface BundleStmtAtExpr {

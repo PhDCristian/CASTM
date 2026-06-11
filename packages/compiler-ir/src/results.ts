@@ -4,6 +4,7 @@ import { HirProgram } from './hir.js';
 import { MirProgram } from './mir.js';
 import { LirProgram } from './lir.js';
 import { AssertionInfo, IoConfigInfo, MemoryRegionInfo, SymbolInfo } from './runtime.js';
+import { CastmSourceMap } from './source-map.js';
 
 export interface ParseResult {
   success: boolean;
@@ -43,6 +44,7 @@ export interface CompileResult {
     bundleLimit?: number;
     assertions?: AssertionInfo[];
     symbols?: SymbolInfo;
+    sourceMap?: CastmSourceMap;
   };
   stats: {
     bundles: number;
@@ -60,4 +62,5 @@ export interface EmitResult {
   success: boolean;
   diagnostics: Diagnostic[];
   csv?: string;
+  sourceMap?: CastmSourceMap;
 }
