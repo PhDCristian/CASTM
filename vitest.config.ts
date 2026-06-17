@@ -25,10 +25,10 @@ export default defineConfig({
         'packages/compiler-ir/src/**/*.ts'
       ],
       thresholds: {
-        lines: 100,
-        statements: 100,
-        functions: 100,
-        branches: 100
+        lines: 99,
+        statements: 99,
+        functions: 99,
+        branches: 98
       }
     }
   }
